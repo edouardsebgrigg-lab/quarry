@@ -19,7 +19,8 @@ A PC quarry tycoon game. You start with a rusty excavator, a rusty truck and a r
 | Topic | Decision |
 |---|---|
 | Language/tools | Plain JavaScript (ES modules), Vite, Vitest for tests |
-| 3D (later) | Three.js, loading your Blender `.glb` models |
+| 3D (later) | Three.js, loading your Blender `.glb` models, aiming for realistic graphics |
+| Physics (later) | Rapier (a proper physics engine that runs in the browser), for driving and collisions |
 | Desktop app (last) | Electron |
 | Game logic | Runs separately from the screen at a fixed 10 ticks per second, with seeded randomness so tests and the balance tester give repeatable results |
 | Before 3D | HUD and panels, plus a **2D top-down site view** drawn on a canvas |
@@ -219,9 +220,24 @@ Game UI rules: full screen, no browser-looking bits, no page scrolling, and ever
 ## 17. 3D world (later milestones)
 
 - Three.js scene per site. The pit is drawn as **terraced steps** (benches) that drop as zones get deeper. No free-form terrain digging.
-- **E** to get into or out of a machine. **WASD + mouse** to drive, with arcade handling (no physics simulation).
+- **E** to get into or out of a machine. **WASD + mouse** to drive, with a chase camera and a cab camera.
 - Driving triggers the same jobs: the bucket at the face calls Dig, and reaching the yard calls unload.
 - Your `.glb` models replace simple placeholder shapes as you make them.
+
+### Realistic graphics
+- **Realistic materials (PBR)** so metal, rust, dirt, rock and dust look right. Your Blender textures carry straight over in `.glb`.
+- **Sky lighting from an HDRI** (a real photo of the sky), sun with soft shadows, distance haze.
+- **Post-processing:** ambient occlusion (soft contact shadows), bloom, tone mapping, a little depth of field.
+- **Detail:** dust clouds when digging, driving and blasting; tyre tracks; a truck bed that visibly fills with rock.
+- **Graphics settings** (Low / Medium / High / Ultra) so it runs on weaker PCs.
+- How realistic it ends up depends a lot on your models and textures. The engine side can deliver the look.
+
+### Driving physics
+- **Rapier physics** with a proper vehicle model: suspension, tyre grip, weight and momentum.
+- **A loaded truck feels heavier.** It's slower to speed up, longer to stop and leans in corners. Better tiers have stronger engines and better suspension.
+- Slopes on the haul ramps matter: a heavy load going uphill is slow.
+- Excavators and loaders: the tracks and body are physical, but the **arm is controlled directly** (keys or mouse move the boom, stick and bucket). Simulating a real hydraulic arm with physics is fiddly and not much fun.
+- **Rocks tipping into the truck** use a small number of physics rocks for show. The actual tonnage is still counted by the game logic, so physics glitches can never break the economy.
 
 ## 18. Save / load
 
@@ -252,7 +268,7 @@ Game UI rules: full screen, no browser-looking bits, no page scrolling, and ever
 - Offline or idle progress
 - Prestige / "sell the company" (maybe a post-game extra, much later)
 - Seasons (maybe later, on top of the calendar)
-- Free-form terrain digging, realistic vehicle physics
+- Free-form terrain digging (you can't carve any shape into the ground, you dig down in steps)
 - Multiplayer, mods, mobile, a web release
 - Deep operator systems (morale, fatigue, shifts)
 
