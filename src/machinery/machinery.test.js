@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createGame } from '../game/index.js';
+import { createTestGame } from '../game/testing.js';
 import {
   getStats, startJob, tickJobs, buyMachine, sellMachine, buyMod, breakdownChance,
   describeStats, resaleValue, playerJob,
@@ -7,7 +7,7 @@ import {
 import { addToFacePile, facePileTotal, yardTotal } from '../quarry/index.js';
 
 function setup(seed = 1) {
-  const game = createGame({ seed });
+  const game = createTestGame(seed);
   const ctx = game.ctx;
   const excavator = ctx.state.machines.find((m) => m.type === 'excavator');
   const truck = ctx.state.machines.find((m) => m.type === 'truck');

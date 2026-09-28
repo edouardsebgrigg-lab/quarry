@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { createGame } from '../game/index.js';
+import { createTestGame } from '../game/testing.js';
 import { getStats, tickJobs } from './index.js';
 import { pileTotal, facePileTotal, yardTotal, addToFacePile } from '../quarry/index.js';
 import { createSaveSystem, createMemoryStorage, migrations } from '../core/index.js';
 
 function setup() {
-  const game = createGame({ seed: 1 });
+  const game = createTestGame(1);
   const ex = game.state.machines.find((m) => m.type === 'excavator');
   const truck = game.state.machines.find((m) => m.type === 'truck');
   return { game, ctx: game.ctx, ex, truck };

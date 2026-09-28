@@ -6,4 +6,6 @@ export const migrations = {
     ...state,
     machines: state.machines.map((m) => ({ ...m, load: m.load ?? {} })),
   }),
+  // v3: the getting-started goals. Older saves are past the tutorial.
+  2: (state) => ({ ...state, objectives: state.objectives ?? { index: 999, introSeen: true } }),
 };

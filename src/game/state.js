@@ -3,6 +3,7 @@ import { startTick } from '../core/index.js';
 import { createMarketState, recordPriceHistory } from '../economy/index.js';
 import { createSitesState } from '../quarry/index.js';
 import { createMachine } from '../machinery/index.js';
+import { createObjectivesState } from '../progression/index.js';
 
 export function createNewState(data, seed) {
   const state = {
@@ -21,6 +22,7 @@ export function createNewState(data, seed) {
     player: { selectedMachineId: null },
     unlocks: {},
     flags: {},
+    objectives: createObjectivesState(),
   };
   for (const { type, tier } of data.game.startingMachines) {
     createMachine(state, data, type, tier, state.currentSiteId);

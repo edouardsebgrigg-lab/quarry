@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createGame } from '../game/index.js';
+import { createTestGame } from '../game/testing.js';
 import {
   getZoneInfo, extractRock, addToYard, yardTotal, yardRoom, addToFacePile,
   takeFromFacePile, facePileTotal, pileTotal,
@@ -7,14 +7,14 @@ import {
 
 // A fresh game, with every zone reset to untouched ground.
 function setup() {
-  const ctx = createGame({ seed: 1 }).ctx;
+  const ctx = createTestGame(1).ctx;
   for (const z of Object.values(ctx.state.sites.gravelPit.zones)) z.dug = 0;
   return ctx;
 }
 
 describe('zones and layers', () => {
   it('starts each zone at its configured depth', () => {
-    const ctx = createGame({ seed: 1 }).ctx;
+    const ctx = createTestGame(1).ctx;
     for (const z of ctx.data.sites.gravelPit.zones) {
       expect(ctx.state.sites.gravelPit.zones[z.id].dug).toBe(z.startDug ?? 0);
     }

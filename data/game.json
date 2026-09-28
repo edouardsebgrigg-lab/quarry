@@ -2,12 +2,13 @@
   "ticksPerSecond": 10,
   "dayLengthSeconds": 120,
   "startHour": 7,
-  "speeds": [1, 2, 4],
+  "speeds": [
+    1,
+    2,
+    4
+  ],
   "devSpeed": 10,
-  "saveVersion": 2,
+  "saveVersion": 3,
   "startSite": "gravelPit",
-  "startingMachines": [
-    { "type": "excavator", "tier": "rusty" },
-    { "type": "truck", "tier": "rusty" }
-  ]
+  "startingMachines": []
 }

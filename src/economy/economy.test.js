@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { createGame } from '../game/index.js';
+import { createTestGame } from '../game/testing.js';
 import {
   integrateMultiplier, currentPrice, quoteSale, sellProduct, sellAll, canAfford,
   chargeDailyInterest, marketHourly, chargeFuel, fuelPrice, spendMoney,
 } from './index.js';
 
 function setup(seed = 1) {
-  const game = createGame({ seed });
+  const game = createTestGame(seed);
   return { game, ctx: game.ctx };
 }
 
