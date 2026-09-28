@@ -27,21 +27,30 @@ function makeTexture(size, draw, { repeat = 1, color = true } = {}) {
 
 // Light grey speckle used on top of vertex colours (gravel/dirt detail).
 export function gravelDetail() {
-  return makeTexture(256, (g, n) => {
+  return makeTexture(512, (g, n) => {
     const r = rand(1);
-    g.fillStyle = '#d8d8d8';
+    g.fillStyle = '#cfcfcf';
     g.fillRect(0, 0, n, n);
-    for (let i = 0; i < 5000; i++) {
-      const v = 150 + Math.floor(r() * 105);
-      g.fillStyle = `rgb(${v},${v},${v})`;
-      const s = 1 + r() * 3;
-      g.fillRect(r() * n, r() * n, s, s);
-    }
-    for (let i = 0; i < 120; i++) {
-      const v = 110 + Math.floor(r() * 60);
-      g.fillStyle = `rgba(${v},${v},${v},0.6)`;
+    // Soft large-scale variation.
+    for (let i = 0; i < 60; i++) {
+      const v = 175 + Math.floor(r() * 60);
+      g.fillStyle = `rgba(${v},${v},${v},0.25)`;
       g.beginPath();
-      g.arc(r() * n, r() * n, 2 + r() * 5, 0, Math.PI * 2);
+      g.arc(r() * n, r() * n, 20 + r() * 50, 0, Math.PI * 2);
+      g.fill();
+    }
+    // Stones and grit.
+    for (let i = 0; i < 14000; i++) {
+      const v = 120 + Math.floor(r() * 135);
+      g.fillStyle = `rgb(${v},${v},${v})`;
+      const s = 1 + r() * 2.5;
+      g.fillRect(r() * n, r() * n, s, s * (0.6 + r() * 0.8));
+    }
+    for (let i = 0; i < 500; i++) {
+      const v = 90 + Math.floor(r() * 70);
+      g.fillStyle = `rgba(${v},${v - 4},${v - 8},0.55)`;
+      g.beginPath();
+      g.arc(r() * n, r() * n, 1.5 + r() * 3, 0, Math.PI * 2);
       g.fill();
     }
   });

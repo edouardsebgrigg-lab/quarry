@@ -1,7 +1,8 @@
 // The quarry ground: one heightfield (1 sample per metre) for both the visible mesh and
 // the physics collider. Zones are dug as terraced pits whose depth comes from the game state.
 import * as THREE from 'three';
-import { gravelDetail, roadGravel, concrete, planks } from './textures.js';
+import { gravelDetail, roadGravel, concrete } from './textures.js';
+import { addProps } from './props.js';
 import { inRect } from './layouts.js';
 
 const RIM = 0.75; // flat lip at the top of each pit wall
@@ -62,8 +63,8 @@ export function createTerrain({ scene, physics, layout, siteData, materials, get
       const i = r * vx + c;
       positions[i * 3] = T.x0 + c;
       positions[i * 3 + 2] = T.z0 + r;
-      uvs[i * 2] = (T.x0 + c) / 6;
-      uvs[i * 2 + 1] = (T.z0 + r) / 6;
+      uvs[i * 2] = (T.x0 + c) / 4;
+      uvs[i * 2 + 1] = (T.z0 + r) / 4;
       noise[i] = 0.9 + Math.random() * 0.2;
     }
   }
@@ -133,7 +134,8 @@ export function createTerrain({ scene, physics, layout, siteData, materials, get
 
   rebuild();
   rebuildCollider();
-  addSiteDressing(scene, physics, layout);
+  addSiteDressing(scene, layout);
+  addProps({ scene, physics, layout, heightAt: (x, z) => heightAt(x, z) });
 
   let sinceCheck = 0;
   return {
@@ -158,9 +160,8 @@ export function createTerrain({ scene, physics, layout, siteData, materials, get
   };
 }
 
-// Road, yard slab, tipping bay, site cabin.
-function addSiteDressing(scene, physics, layout) {
-  const { RAPIER, world } = physics;
+// Road, yard slab, tipping bay markings, signs.
+function addSiteDressing(scene, layout) {
   const flat = (r, tex, y, repeatScale) => {
     const w = r.x1 - r.x0;
     const d = r.z1 - r.z0;
@@ -199,42 +200,8 @@ function addSiteDressing(scene, physics, layout) {
   line(bay.x0, bay.z0, bay.x1, bay.z1);
   addSign(scene, 'TIP HERE', (bay.x0 + bay.x1) / 2, bay.z1 + 1.5);
 
-  // Concrete blocks behind the stockpiles.
-  const blockMat = new THREE.MeshStandardMaterial({ color: 0x9a968d, roughness: 0.9 });
-  for (let i = 0; i < 8; i++) {
-    const b = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 4), blockMat);
-    b.position.set(layout.yard.x1 - 2, 0.8, layout.yard.z0 + 3 + i * 4.4);
-    b.castShadow = true;
-    b.receiveShadow = true;
-    scene.add(b);
-    world.createCollider(RAPIER.ColliderDesc.cuboid(0.8, 0.8, 2).setTranslation(b.position.x, 0.8, b.position.z));
-  }
-
-  // Site cabin.
-  const c = layout.cabin;
-  const cabin = new THREE.Group();
-  const walls = new THREE.Mesh(new THREE.BoxGeometry(8, 3, 4),
-    new THREE.MeshStandardMaterial({ map: planks(), roughness: 0.9 }));
-  walls.position.y = 1.5;
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(8.6, 0.25, 4.8),
-    new THREE.MeshStandardMaterial({ color: 0x4a4f55, roughness: 0.6, metalness: 0.4 }));
-  roof.position.y = 3.15;
-  roof.rotation.z = 0.05;
-  const windowMat = new THREE.MeshStandardMaterial({ color: 0x223344, roughness: 0.1, metalness: 0.6 });
-  for (const wx of [-2.2, 2.2]) {
-    const w = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1, 0.05), windowMat);
-    w.position.set(wx, 1.8, 2.01);
-    cabin.add(w);
-  }
-  const door = new THREE.Mesh(new THREE.BoxGeometry(1, 2.1, 0.05), new THREE.MeshStandardMaterial({ color: 0x5b3b25 }));
-  door.position.set(0, 1.05, 2.01);
-  cabin.add(walls, roof, door);
-  cabin.traverse((o) => { o.castShadow = true; o.receiveShadow = true; });
-  cabin.position.set(c.x, 0, c.z);
-  cabin.rotation.y = c.yaw;
-  scene.add(cabin);
-  world.createCollider(RAPIER.ColliderDesc.cuboid(4, 1.5, 2).setTranslation(c.x, 1.5, c.z));
-  addSign(scene, 'SITE OFFICE', c.x, c.z + 3.2);
+  // Office, block walls, boulders and cones are in props.js.
+  addSign(scene, 'SITE OFFICE', layout.cabin.x - 5, layout.cabin.z + 3.5);
 }
 
 function addSign(scene, text, x, z) {

@@ -70,3 +70,4 @@ All keys can be changed in Settings.
 - `docs/design-spec.md`: the game design
 - `docs/implementation-plan.md`: milestones
 - `docs/modules.md`: a short guide to the code
+- `docs/models.md`: the 3D models, how to rebuild them in Blender, and how to make your own

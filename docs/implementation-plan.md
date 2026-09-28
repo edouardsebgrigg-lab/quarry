@@ -46,8 +46,8 @@ Based on `docs/design-spec.md`. Every milestone ends with something you can run 
 - Manager overview screen, auto-sell rules, rail link
 - A balance pass over the whole ~10 h game using the balance tester
 
-## Milestone 6: Your Blender models and more realism
-- Load your `.glb` models (with a short naming and export guide), falling back to the placeholders
+## Milestone 6: More realism
+- ✅ Blender models for the truck, excavator and site props, loaded from `.glb` with placeholder fallback (see `docs/models.md`)
 - More detailed terrain textures, post-processing (ambient occlusion, bloom), better lighting
 - Proper excavator arm reach toward the target, tyre tracks, loaded-truck sway
 

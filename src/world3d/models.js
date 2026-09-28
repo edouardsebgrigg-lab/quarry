@@ -1,6 +1,7 @@
-// Placeholder machine models built from simple shapes. Each faces +X locally.
-// Later: if assets/models/<type>_<tier>.glb exists it can replace these (see docs).
+// Machine models. Uses the Blender models (assets/models/*.glb) when they exist,
+// otherwise placeholders built from simple shapes. Each faces +X locally.
 import * as THREE from 'three';
+import { glbTruck, glbExcavator } from './glbModels.js';
 import { rustyMetal } from './textures.js';
 import { createHeap } from './piles.js';
 import { TRUCK_SHAPE } from './truckPhysics.js';
@@ -35,6 +36,8 @@ function box(w, h, d, mat, x = 0, y = 0, z = 0) {
 
 // ---------- haul truck ----------
 export function buildTruckModel(tier) {
+  const fromFile = glbTruck(tier);
+  if (fromFile) return fromFile;
   const S = TRUCK_SHAPE;
   const body = paint(tier);
   const root = new THREE.Group();
@@ -126,6 +129,8 @@ export function buildTruckModel(tier) {
 
 // ---------- excavator ----------
 export function buildExcavatorModel(tier) {
+  const fromFile = glbExcavator(tier);
+  if (fromFile) return fromFile;
   const body = paint(tier);
   const root = new THREE.Group();
 

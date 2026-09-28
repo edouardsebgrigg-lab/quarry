@@ -10,6 +10,7 @@ import { createPlayer } from './player.js';
 import { createTruck } from './truck.js';
 import { createExcavator } from './excavator.js';
 import { createMouse } from './mouse.js';
+import { preloadModels } from './glbModels.js';
 import { LAYOUTS, zoneAt, inRect } from './layouts.js';
 import { getSiteData, getZoneInfo, pileTotal } from '../quarry/index.js';
 import {
@@ -25,7 +26,7 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
   const layout = LAYOUTS[siteId];
   const siteData = getSiteData(data, siteId);
 
-  const physics = await createPhysics();
+  const [physics] = await Promise.all([createPhysics(), preloadModels()]);
   const canvas = document.createElement('canvas');
   canvas.className = 'world-canvas';
   container.append(canvas);
@@ -454,11 +455,15 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
     swing(delta) {
       if (current()?.type === 'excavator') current().swingBy(delta);
     },
+    setFootPitch(pitch) {
+      player.look.pitch = pitch;
+    },
     setHouseYaw(yaw) {
       const v = current();
       if (v?.type === 'excavator') Object.assign(v.state, { houseYaw: yaw, targetHouseYaw: yaw });
     },
     mode: () => mode.kind,
+    scene,
     look: () => ({ ...look, foot: { ...player.look } }),
   };
 

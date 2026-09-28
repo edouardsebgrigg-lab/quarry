@@ -1,0 +1,15 @@
+{
+  "models": [
+    "excavator_rusty",
+    "excavator_used",
+    "prop_block",
+    "prop_boulder1",
+    "prop_boulder2",
+    "prop_boulder3",
+    "prop_cone",
+    "prop_fueltank",
+    "prop_office",
+    "truck_rusty",
+    "truck_used"
+  ]
+}
