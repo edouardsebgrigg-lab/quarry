@@ -21,7 +21,7 @@ import {
 const MOUSE_SCALE = 0.0022;
 const ENTER_DISTANCE = 2.8;
 
-export async function createWorld3D({ container, game, settings, notify, onPointerLockLost }) {
+export async function createWorld3D({ container, game, settings, notify, onPointerLockLost, onUseOffice }) {
   const { data } = game;
   const siteId = game.state.currentSiteId;
   const layout = LAYOUTS[siteId];
@@ -107,6 +107,13 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
     return best;
   }
 
+  // The office laptop (opens the shop) is by the office door.
+  const officeDoor = { x: layout.cabin.x + 0.5, z: layout.cabin.z + 2.6 };
+  function nearOffice() {
+    const f = player.feet();
+    return Math.hypot(f.x - officeDoor.x, f.z - officeDoor.z) < 3;
+  }
+
   function enter(v) {
     mode = { kind: v.type, v };
     player.setEnabled(false);
@@ -161,6 +168,7 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
         else {
           const near = nearestVehicle(ENTER_DISTANCE);
           if (near) enter(near);
+          else if (nearOffice()) onUseOffice?.();
         }
         return true;
       }
@@ -396,6 +404,8 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
         prompt = nm.broken
           ? { key: key('repair'), text: `Repair ${machineName(data, nm)}` }
           : { key: key('interact'), text: `Get in ${machineName(data, nm)}` };
+      } else if (nearOffice()) {
+        prompt = { key: key('interact'), text: 'Use the office laptop (buy machines)' };
       }
     } else if (m.broken) {
       prompt = { key: key('repair'), text: 'Broken down — repair' };

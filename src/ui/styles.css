@@ -325,6 +325,17 @@ h3 {
 .hud-date { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 550; }
 .hud-speed { margin-top: 0.6rem; }
 .hud-shortcuts { display: flex; gap: 0.4rem; }
+.hud-left { display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-start; }
+.hud-goal { width: 20rem; padding: 0.75rem 0.95rem 0.85rem; border-left: 3px solid var(--accent); }
+.hud-goal.goal-new { animation: goal-in 0.9s ease-out; }
+@keyframes goal-in { 0% { transform: translateX(-12px); opacity: 0; } 30% { opacity: 1; } 100% { transform: none; } }
+.goal-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+.goal-label { font-family: var(--display); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+.goal-count { font-size: 0.72rem; color: var(--faint); font-variant-numeric: tabular-nums; }
+.goal-reward { margin-left: auto; font-size: 0.72rem; font-weight: 700; color: var(--good); }
+.goal-title { font-weight: 650; font-size: 0.98rem; }
+.goal-text { margin-top: 0.2rem; font-size: 0.8rem; line-height: 1.45; color: var(--muted); }
+.goal-bar { margin-top: 0.55rem; }
 .shortcut {
   display: inline-flex; align-items: center; gap: 0.45rem;
   font: inherit; font-size: 0.8rem; font-weight: 550; color: rgba(236, 238, 241, 0.85);
@@ -393,11 +404,11 @@ h3 {
 .toast-out { opacity: 0; transform: translateY(-6px); }
 @keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
 
-.log { position: fixed; left: 1.1rem; top: 10.8rem; display: flex; flex-direction: column; gap: 0.25rem; max-width: 30rem; pointer-events: none; z-index: 20; }
-.log-line { font-size: 0.8rem; padding: 0.3rem 0.65rem; background: rgba(12, 13, 15, 0.62); border-radius: 6px; transition: opacity 1.2s; align-self: flex-start;
-  border-left: 2px solid rgba(255, 255, 255, 0.25); }
-.log-warn { border-left-color: var(--warn); }
-.log-bad { border-left-color: var(--bad); }
+.log { position: fixed; right: 1.1rem; bottom: 12.5rem; display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; max-width: 30rem; pointer-events: none; z-index: 20; }
+.log-line { font-size: 0.8rem; padding: 0.3rem 0.65rem; background: rgba(12, 13, 15, 0.62); border-radius: 6px; transition: opacity 1.2s;
+  border-right: 2px solid rgba(255, 255, 255, 0.25); }
+.log-warn { border-right-color: var(--warn); }
+.log-bad { border-right-color: var(--bad); }
 .log-old { opacity: 0; }
 
 .upgrade-card {
@@ -488,3 +499,10 @@ h3 {
 
 /* pause menu sits on the left like the main menu */
 .overlay:has(.overlay-pause) { justify-content: flex-start; padding-left: 8vw; }
+
+/* intro */
+.overlay-intro { max-width: 36rem; }
+.intro-text p { color: var(--text); line-height: 1.65; margin: 0 0 0.9rem; font-size: 0.95rem; }
+.intro-goal { display: flex; gap: 0.7rem; align-items: center; margin-top: 1.1rem; padding: 0.75rem 0.9rem; border-radius: var(--radius);
+  background: rgba(245, 184, 46, 0.08); border: 1px solid rgba(245, 184, 46, 0.25); font-size: 0.88rem; }
+.intro-goal b { color: var(--accent); font-family: var(--display); letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.8rem; }

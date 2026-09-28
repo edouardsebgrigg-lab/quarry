@@ -4,6 +4,7 @@ import { money, clockTime } from '../format.js';
 import { getDate } from '../../core/index.js';
 import { getSiteData } from '../../quarry/index.js';
 import { keyLabel } from '../../input/index.js';
+import { currentObjective } from '../../progression/index.js';
 
 export function createHud({ game, runtime, settings, onShop, onMarket, onMap, onMenu }) {
   const moneyText = el('div', { class: 'hud-money' });
@@ -24,11 +25,24 @@ export function createHud({ game, runtime, settings, onShop, onMarket, onMap, on
   const key = (action) => kbd(keyLabel(settings.bindings[action]));
   const shortcut = (label, k, onClick) => el('button', { class: 'shortcut', onClick }, k, label);
 
+  // Current goal card.
+  const goalCount = el('span', { class: 'goal-count' });
+  const goalTitle = el('div', { class: 'goal-title' });
+  const goalText = el('div', { class: 'goal-text' });
+  const goalBar = el('div', { class: 'bar bar-thin goal-bar' }, el('div', { class: 'bar-fill' }));
+  const goalReward = el('span', { class: 'goal-reward' });
+  const goal = el('div', { class: 'hud-goal glass' },
+    el('div', { class: 'goal-head' }, el('span', { class: 'goal-label' }, 'Goal'), goalCount, goalReward),
+    goalTitle, goalText, goalBar);
+  let goalKey = '';
+
   const node = el('div', { class: 'hud' },
+    el('div', { class: 'hud-left' },
     el('div', { class: 'hud-status glass' },
       el('div', { class: 'hud-money-row' }, moneyText, debtTag),
       el('div', { class: 'hud-meta' }, dateText, el('span', { class: 'sep' }, '•'), siteText),
       el('div', { class: 'hud-speed seg' }, speedButtons.map((b) => b.node))),
+    goal),
     el('div', { class: 'hud-shortcuts' },
       shortcut('Shop', key('shop'), onShop),
       shortcut('Market', key('market'), onMarket),
@@ -52,6 +66,24 @@ export function createHud({ game, runtime, settings, onShop, onMarket, onMap, on
       setText(dateText, clockTime(getDate(game.state, game.data)));
       setText(siteText, getSiteData(game.data, game.state.currentSiteId).name);
       for (const b of speedButtons) b.node.classList.toggle('active', b.isActive());
+
+      const o = currentObjective(game.ctx);
+      goal.style.display = o ? '' : 'none';
+      if (o) {
+        const key = `${o.id}`;
+        if (key !== goalKey) {
+          goalKey = key;
+          setText(goalCount, `${o.number} / ${o.total}`);
+          setText(goalTitle, o.title);
+          setText(goalText, o.text);
+          setText(goalReward, o.reward ? `+${money(o.reward)}` : '');
+          goal.classList.remove('goal-new');
+          void goal.offsetWidth; // restart the highlight animation
+          goal.classList.add('goal-new');
+        }
+        goalBar.style.display = o.progress === null ? 'none' : '';
+        if (o.progress !== null) goalBar.firstChild.style.width = `${Math.round(o.progress * 100)}%`;
+      }
     },
   };
 }

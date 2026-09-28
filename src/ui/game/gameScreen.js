@@ -9,6 +9,8 @@ import { createDevPanel } from './devPanel.js';
 import { openShop } from './shop.js';
 import { openMarket } from './market.js';
 import { toggleMap } from './mapOverlay.js';
+import { openIntro } from '../screens/intro.js';
+import { markIntroSeen } from '../../progression/index.js';
 
 const MAX_TICKS_PER_FRAME = 400;
 
@@ -65,6 +67,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     game,
     settings,
     notify: (text, level) => feedback.message(text, level),
+    onUseOffice: () => openOverlay(() => openShop(app.overlays, { game, feedback })),
     // Esc (or alt-tab) released the mouse: show the pause menu, like any PC game.
     onPointerLockLost: () => {
       if (expectUnlock) {
@@ -164,6 +167,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     lockMouse: () => world?.lockMouse(),
     start() {
       raf = requestAnimationFrame(frame);
+      if (!game.state.objectives?.introSeen) openIntro(app.overlays, { game, onDone: () => markIntroSeen(game.ctx) });
     },
     destroy() {
       destroyed = true;

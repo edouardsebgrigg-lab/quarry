@@ -54,7 +54,7 @@ export function createFeedback({ game, getMoneyNode }) {
         el('span', { class: `card-mult ${worse ? 'worse' : ''}` }, mult)) : null;
     }).filter(Boolean);
     const card = el('div', { class: 'upgrade-card', onClick: () => card.remove() },
-      el('div', { class: 'card-kicker' }, 'UPGRADE!'),
+      el('div', { class: 'card-kicker' }, before ? 'UPGRADE!' : 'NEW MACHINE'),
       el('div', { class: 'card-title' }, title),
       subtitle ? el('div', { class: 'card-sub' }, subtitle) : null,
       rows);
@@ -69,6 +69,14 @@ export function createFeedback({ game, getMoneyNode }) {
   };
 
   const offs = [
+    game.events.on('objectiveCompleted', (e) => {
+      toast(`Goal complete: ${e.title}${e.reward ? `  +${money(e.reward)}` : ''}`, 'good');
+      if (e.reward) floatText(signedMoney(e.reward), 'gain', getMoneyNode());
+    }),
+    game.events.on('machineBought', (e) => {
+      const m = getMachine(game.ctx, e.machineId);
+      if (m) toast(`${machineName(data, m)} delivered to the pit`, 'good');
+    }),
     game.events.on('productSold', (e) => {
       floatText(signedMoney(e.revenue), 'gain', getMoneyNode());
       message(`Sold ${tonnes(e.tonnes)} ${data.materials[e.productId].name.toLowerCase()} for ${money(e.revenue)}`);
