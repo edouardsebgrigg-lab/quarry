@@ -25,6 +25,15 @@ export function openSettings(overlays, { settings, onChange, keyboard }) {
         type: 'checkbox', checked: settings[key], onChange: (e) => update({ [key]: e.target.checked }),
       });
 
+      const sensitivity = el('input', {
+        type: 'range', min: 0.2, max: 3, step: 0.1, value: settings.mouseSensitivity,
+        onInput: (e) => update({ mouseSensitivity: Number(e.target.value) }),
+      });
+
+      const graphics = el('select', { onChange: (e) => update({ graphics: e.target.value }) },
+        ['low', 'medium', 'high', 'ultra'].map((v) => el('option', { value: v, selected: v === settings.graphics },
+          v[0].toUpperCase() + v.slice(1))));
+
       const bindingsList = el('div', { class: 'bindings' });
       function renderBindings() {
         clear(bindingsList);
@@ -47,6 +56,9 @@ export function openSettings(overlays, { settings, onChange, keyboard }) {
       return el('div', { class: 'settings' },
         el('div', { class: 'settings-grid' },
           el('label', {}, 'Master volume'), volume,
+          el('label', {}, 'Mouse sensitivity'), sensitivity,
+          el('label', {}, 'Invert mouse Y'), toggle('invertY'),
+          el('label', {}, 'Graphics quality (applies when a game starts)'), graphics,
           el('label', {}, 'Interface size'), scale,
           el('label', {}, 'Full screen'), toggle('fullscreen'),
           el('label', {}, 'Autosave every game day'), toggle('autosave'),

@@ -7,7 +7,7 @@ export function createSitesState(data) {
   const sites = {};
   for (const [id, site] of Object.entries(data.sites)) {
     const zones = {};
-    for (const z of site.zones) zones[z.id] = { dug: 0 };
+    for (const z of site.zones) zones[z.id] = { dug: z.startDug ?? 0 };
     sites[id] = {
       owned: !!site.startOwned,
       selectedZoneId: site.zones[0].id,

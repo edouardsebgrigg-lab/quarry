@@ -1,14 +1,14 @@
-// The in-game screen and the real-time loop that drives the game clock.
+// The in-game screen: 3D world, HUD, and the real-time loop that drives the game clock.
 import { el } from '../dom.js';
 import { getDate } from '../../core/index.js';
-import { isPlayerBusy } from '../../machinery/index.js';
+import { createWorld3D } from '../../world3d/index.js';
 import { createHud } from './hud.js';
-import { createSidebar } from './sidebar.js';
-import { createSiteView } from './siteView.js';
+import { createHud3d } from './hud3d.js';
 import { createFeedback } from './feedback.js';
 import { createDevPanel } from './devPanel.js';
 import { openShop } from './shop.js';
 import { openMarket } from './market.js';
+import { toggleMap } from './mapOverlay.js';
 
 const MAX_TICKS_PER_FRAME = 400;
 
@@ -29,56 +29,54 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
   };
 
   let feedback = null;
-  // One job pressed while you were busy runs as soon as you're free.
-  let queued = null;
-  const QUEUEABLE = new Set(['dig', 'haul', 'repair']);
-
-  // Gameplay actions shared by buttons and hotkeys. `quiet` hides failure messages
-  // (used for held keys, which retry every frame).
-  function run(action, { quiet = false } = {}) {
-    if (!quiet && QUEUEABLE.has(action) && isPlayerBusy(game.ctx)) {
-      queued = action;
-      return;
-    }
-    const a = game.actions;
-    const handlers = {
-      dig: a.dig,
-      haul: a.haul,
-      sell: a.sellAll,
-      repair: a.serviceOrRepair,
-      nextMachine: a.nextMachine,
-    };
-    const fn = handlers[action];
-    if (!fn) return;
-    const r = fn();
-    if (!r.ok && !quiet) feedback.message(r.reason, 'warn');
-  }
+  let world = null;
+  let destroyed = false;
+  const openOverlay = (fn) => {
+    fn();
+    world?.unlockMouse();
+  };
 
   const hud = createHud({
     game,
     runtime,
     settings,
-    onShop: () => openShop(app.overlays, { game, feedback }),
-    onMarket: () => openMarket(app.overlays, { game, feedback }),
+    onShop: () => openOverlay(() => openShop(app.overlays, { game, feedback })),
+    onMarket: () => openOverlay(() => openMarket(app.overlays, { game, feedback })),
     onMenu: () => app.openPauseMenu(),
   });
   feedback = createFeedback({ game, getMoneyNode: () => hud.moneyNode });
-  const siteView = createSiteView({
-    game,
-    onSelectZone: (id) => game.actions.selectZone(id),
-    onSelectMachine: (id) => game.actions.selectMachine(id),
-  });
-  const sidebar = createSidebar({ game, settings, run });
+  const hud3d = createHud3d({ settings });
   const devPanel = isDev ? createDevPanel({ game, runtime, feedback }) : null;
+  const viewport = el('div', { class: 'world-view' });
 
   const pausedBanner = el('div', { class: 'paused-banner' }, 'PAUSED');
   const node = el('div', { class: 'game-screen' },
     hud.node,
-    el('div', { class: 'game-main' }, siteView.node, sidebar.node),
+    el('div', { class: 'game-main' }, viewport, hud3d.node),
     pausedBanner,
     feedback.node,
     devPanel?.node,
   );
+
+  createWorld3D({
+    container: viewport,
+    game,
+    settings,
+    notify: (text, level) => feedback.message(text, level),
+    // Esc (or alt-tab) released the mouse: show the pause menu, like any PC game.
+    onPointerLockLost: () => { if (app.overlays.count() === 0) app.openPauseMenu({ fromLockLoss: true }); },
+  }).then((w) => {
+    if (destroyed) {
+      w.destroy();
+      return;
+    }
+    world = w;
+    hud3d.setLoading(false);
+    if (isDev) window.__quarry = { game, world }; // handy in the browser console and for automated play tests
+  }).catch((err) => {
+    console.error(err);
+    hud3d.showError(`Could not start 3D: ${err.message ?? err}`);
+  });
 
   function handleAction(action) {
     switch (action) {
@@ -86,15 +84,23 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
       case 'speed1': runtime.setSpeed(0); break;
       case 'speed2': runtime.setSpeed(1); break;
       case 'speed3': runtime.setSpeed(2); break;
-      case 'shop': openShop(app.overlays, { game, feedback }); break;
-      case 'market': openMarket(app.overlays, { game, feedback }); break;
-      case 'dev': devPanel?.toggle(); break;
-      default: run(action);
+      case 'shop': openOverlay(() => openShop(app.overlays, { game, feedback })); break;
+      case 'market': openOverlay(() => openMarket(app.overlays, { game, feedback })); break;
+      case 'map': openOverlay(() => toggleMap(app.overlays, { game, settings })); break;
+      case 'dev':
+        devPanel?.toggle();
+        world?.unlockMouse();
+        break;
+      default: world?.handleAction(action);
     }
   }
 
   function summary() {
     return { day: getDate(game.state, data).day, money: Math.round(game.state.money) };
+  }
+
+  function beforeSave() {
+    world?.writePositions(game.state);
   }
 
   const offAutosave = game.events.on('dayStarted', () => {
@@ -107,19 +113,12 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
   let acc = 0;
 
   function frame(now) {
-    const realDt = last ? Math.min(0.25, (now - last) / 1000) : 0;
+    const realDt = last ? Math.min(0.1, (now - last) / 1000) : 0;
     last = now;
+    const overlayOpen = app.overlays.count() > 0;
     const paused = userPaused || app.overlays.anyPausing();
+    if (overlayOpen && world?.isMouseLocked()) world.unlockMouse();
     if (!paused) {
-      // Held keys repeat their action whenever you are free again.
-      if (!isPlayerBusy(game.ctx) && queued) {
-        const action = queued;
-        queued = null;
-        run(action);
-      }
-      if (!isPlayerBusy(game.ctx)) {
-        for (const action of keyboard.heldActions()) run(action, { quiet: true });
-      }
       const speed = devFast ? data.game.devSpeed : data.game.speeds[speedIndex];
       acc += realDt * speed;
       const step = 1 / data.game.ticksPerSecond;
@@ -131,10 +130,10 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
       }
       if (n >= MAX_TICKS_PER_FRAME) acc = 0;
     }
+    world?.update(realDt, { paused: paused || overlayOpen, keyboard });
     pausedBanner.style.display = paused ? '' : 'none';
     hud.update(realDt);
-    sidebar.update(realDt);
-    siteView.update(realDt);
+    hud3d.update(world?.hudInfo() ?? null, { overlayOpen });
     devPanel?.update(realDt);
     app.overlays.update(realDt);
     raf = requestAnimationFrame(frame);
@@ -145,16 +144,18 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     game,
     feedback,
     summary,
+    beforeSave,
     handleAction,
+    lockMouse: () => world?.lockMouse(),
     start() {
       raf = requestAnimationFrame(frame);
     },
     destroy() {
+      destroyed = true;
       cancelAnimationFrame(raf);
       offAutosave();
-      sidebar.destroy();
-      siteView.destroy();
       feedback.destroy();
+      world?.destroy();
     },
   };
 }

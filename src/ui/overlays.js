@@ -1,7 +1,7 @@
 // A stack of pop-up panels (menus, shop, market...). Pausing overlays stop the game clock.
 import { el } from './dom.js';
 
-export function createOverlayStack(root) {
+export function createOverlayStack(root, { onEmpty } = {}) {
   const layer = el('div', { class: 'overlay-layer' });
   root.append(layer);
   const stack = [];
@@ -37,6 +37,7 @@ export function createOverlayStack(root) {
     entry.onClose?.();
     const top = stack[stack.length - 1];
     if (top) focusFirst(top.panel);
+    else onEmpty?.();
   }
 
   function isOpen(id) {

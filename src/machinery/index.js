@@ -4,7 +4,7 @@ export {
 export { breakdownChance, serviceCost } from './wear.js';
 export {
   createMachine, getMachine, machineName, machinesAt, isTierUnlocked,
-  buyMachine, resaleValue, sellMachine, modsFor, buyMod, fixAllMachines,
+  buyMachine, resaleValue, sellMachine, modsFor, buyMod, fixAllMachines, dumpBucket,
 } from './fleet.js';
 export {
   JOBS, startJob, tickJobs, whyCannotStart, playerJob, isPlayerBusy, jobProgress,

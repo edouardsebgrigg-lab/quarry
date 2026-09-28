@@ -27,7 +27,9 @@
           "serviceTime": 6,
           "repairCost": 25,
           "repairTime": 12,
-          "repairTo": 70
+          "repairTo": 70,
+          "reach": 5.5,
+          "swingSpeed": 0.9
         },
         "used": {
           "price": 170,
@@ -43,7 +45,9 @@
           "serviceTime": 6,
           "repairCost": 80,
           "repairTime": 12,
-          "repairTo": 75
+          "repairTo": 75,
+          "reach": 6.0,
+          "swingSpeed": 1.25
         }
       }
     },

@@ -2,7 +2,7 @@
 // 3D driving (later) all start work through startJob().
 import {
   getSiteData, getZoneInfo, extractRock, facePileRoom, facePileTotal,
-  addToFacePile, takeFromFacePile, yardRoom, addToYard, pileTotal,
+  addToFacePile, takeFromFacePile, yardRoom, addToYard, pileTotal, addToPile,
 } from '../quarry/index.js';
 import { chargeFuel, spendMoney } from '../economy/index.js';
 import { getStats, haulTiming, typeName } from './stats.js';
@@ -21,30 +21,79 @@ function deliverLoad(ctx, m, job) {
 }
 
 export const JOBS = {
+  // params: { zoneId?, toBucket? } — toBucket keeps the scoop in the bucket
+  // (hands-on digging); otherwise it goes straight onto the face pile.
   dig: {
     machineType: 'excavator',
     label: 'Digging',
-    check(ctx, m, stats) {
-      const site = ctx.state.sites[m.siteId];
-      const info = getZoneInfo(ctx, m.siteId, site.selectedZoneId);
+    check(ctx, m, stats, params) {
+      const zoneId = params.zoneId ?? ctx.state.sites[m.siteId].selectedZoneId;
+      const info = getZoneInfo(ctx, m.siteId, zoneId);
       if (info.exhausted) return 'This zone is dug out. Pick another zone.';
       if (info.layer.hardness > stats.maxHardness) {
         return `Rock too hard (hardness ${info.layer.hardness}). You need a stronger excavator.`;
       }
-      if (facePileRoom(ctx, m.siteId) < MIN_LOAD) return 'The face pile is full. Haul it away first.';
+      if (params.toBucket) {
+        if (pileTotal(m.load) >= 0.01) return 'The bucket is full. Dump it first.';
+      } else if (facePileRoom(ctx, m.siteId) < MIN_LOAD) {
+        return 'The face pile is full. Haul it away first.';
+      }
       return null;
     },
     begin(ctx, m, stats, job) {
-      job.zoneId = ctx.state.sites[m.siteId].selectedZoneId;
+      job.zoneId = job.params.zoneId ?? ctx.state.sites[m.siteId].selectedZoneId;
       chargeFuel(ctx, stats.fuelPerJob);
       return stats.cycleTime;
     },
     finish(ctx, m, stats, job) {
-      const want = Math.min(stats.bucket, facePileRoom(ctx, m.siteId));
+      const toBucket = !!job.params.toBucket;
+      const want = toBucket ? stats.bucket : Math.min(stats.bucket, facePileRoom(ctx, m.siteId));
       const got = extractRock(ctx, m.siteId, job.zoneId, want);
-      addToFacePile(ctx, m.siteId, got.materials);
+      if (toBucket) m.load = got.materials;
+      else addToFacePile(ctx, m.siteId, got.materials);
       ctx.state.stats.tonnesDug += got.tonnes;
-      ctx.events.emit('rockDug', { machineId: m.id, tonnes: got.tonnes, zoneId: job.zoneId });
+      ctx.events.emit('rockDug', { machineId: m.id, tonnes: got.tonnes, zoneId: job.zoneId, toBucket });
+      applyWear(ctx, m, stats);
+    },
+  },
+
+  // A truck parked at the face pile loads itself from it.
+  loadFromPile: {
+    machineType: 'truck',
+    label: 'Loading',
+    check(ctx, m, stats) {
+      if (stats.capacity - pileTotal(m.load) < MIN_LOAD) return 'The truck is already full';
+      if (facePileTotal(ctx, m.siteId) < MIN_LOAD) return 'The face pile is empty';
+      return null;
+    },
+    begin(ctx, m, stats) {
+      return stats.loadTime;
+    },
+    finish(ctx, m, stats) {
+      const room = stats.capacity - pileTotal(m.load);
+      addToPile(m.load, takeFromFacePile(ctx, m.siteId, room));
+      ctx.events.emit('truckLoaded', { machineId: m.id, tonnes: pileTotal(m.load) });
+    },
+  },
+
+  // Tipping a driven truck's load into the yard. Counts as one haul trip for
+  // fuel and wear. The 3D world only allows this when the truck is at the yard.
+  tip: {
+    machineType: 'truck',
+    label: 'Tipping',
+    check(ctx, m) {
+      if (pileTotal(m.load) < MIN_LOAD) return 'The truck is empty';
+      if (yardRoom(ctx, m.siteId) < MIN_LOAD) return 'The yard is full. Sell some stock.';
+      return null;
+    },
+    begin(ctx, m, stats) {
+      chargeFuel(ctx, stats.fuelPerJob);
+      return stats.loadTime * 0.6;
+    },
+    finish(ctx, m, stats, job) {
+      job.load = m.load;
+      m.load = {};
+      deliverLoad(ctx, m, job);
       applyWear(ctx, m, stats);
     },
   },
@@ -125,7 +174,7 @@ export function isPlayerBusy(ctx) {
 }
 
 // Checks whether a job could start, without starting it. Returns a reason or null.
-export function whyCannotStart(ctx, m, jobType, { byPlayer = true } = {}) {
+export function whyCannotStart(ctx, m, jobType, { byPlayer = true, params = {} } = {}) {
   const def = JOBS[jobType];
   if (!def) return 'Unknown job';
   if (!m) return 'No such machine';
@@ -135,15 +184,15 @@ export function whyCannotStart(ctx, m, jobType, { byPlayer = true } = {}) {
   if (m.job) return `${machineName(ctx.data, m)} is busy`;
   if (m.broken && !def.worksWhenBroken) return `${machineName(ctx.data, m)} is broken down. Repair it first.`;
   if (byPlayer && isPlayerBusy(ctx)) return 'You are busy with another job';
-  return def.check(ctx, m, getStats(ctx.data, m));
+  return def.check(ctx, m, getStats(ctx.data, m), params);
 }
 
-export function startJob(ctx, machineId, jobType, { byPlayer = true } = {}) {
+export function startJob(ctx, machineId, jobType, { byPlayer = true, params = {} } = {}) {
   const m = getMachine(ctx, machineId);
-  const reason = whyCannotStart(ctx, m, jobType, { byPlayer });
+  const reason = whyCannotStart(ctx, m, jobType, { byPlayer, params });
   if (reason) return { ok: false, reason };
   const def = JOBS[jobType];
-  const job = { type: jobType, elapsed: 0, duration: 0, byPlayer };
+  const job = { type: jobType, elapsed: 0, duration: 0, byPlayer, params };
   job.duration = def.begin(ctx, m, getStats(ctx.data, m), job);
   m.job = job;
   ctx.events.emit('jobStarted', { machineId, type: jobType, byPlayer });

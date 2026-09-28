@@ -70,7 +70,7 @@ describe('jobs', () => {
   it('refuses rock that is too hard', () => {
     const { ctx, excavator } = setup();
     const site = ctx.data.sites.gravelPit;
-    site.layerProfile[0].hardness = 9;
+    for (const layer of site.layerProfile) layer.hardness = 9;
     const r = startJob(ctx, excavator.id, 'dig');
     expect(r.ok).toBe(false);
     expect(r.reason).toMatch(/too hard/);

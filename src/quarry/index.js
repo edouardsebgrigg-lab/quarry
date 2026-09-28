@@ -3,4 +3,4 @@ export {
   facePileTotal, facePileRoom, addToFacePile, takeFromFacePile,
   yardTotal, yardRoom, yardAmount, addToYard, takeFromYard,
 } from './sites.js';
-export { pileTotal } from './piles.js';
+export { pileTotal, addToPile, takeProportional } from './piles.js';

@@ -1,5 +1,5 @@
-// Keyboard handling: turns key presses into named actions.
-import { HOLD_ACTIONS } from './bindings.js';
+// Keyboard handling: turns key presses into named actions and tracks held keys
+// (for walking and driving).
 
 const TYPING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 
@@ -17,8 +17,7 @@ export function createKeyboard({ target = window, getBindings, onAction, onEscap
       e.preventDefault();
       const cb = captureNext;
       captureNext = null;
-      if (e.code !== 'Escape') cb(e.code);
-      else cb(null);
+      cb(e.code === 'Escape' ? null : e.code);
       return;
     }
     if (TYPING_TAGS.has(e.target?.tagName)) return;
@@ -30,7 +29,7 @@ export function createKeyboard({ target = window, getBindings, onAction, onEscap
     const action = actionFor(e.code);
     if (!action) return;
     e.preventDefault();
-    if (HOLD_ACTIONS.has(action)) held.add(action);
+    held.add(action);
     if (e.repeat) return;
     onAction(action);
   }
@@ -50,7 +49,7 @@ export function createKeyboard({ target = window, getBindings, onAction, onEscap
 
   return {
     isHeld: (action) => held.has(action),
-    heldActions: () => [...held],
+    releaseAll: () => held.clear(),
     // The next key press is handed to `cb` instead of triggering an action (for rebinding).
     captureNextKey(cb) {
       captureNext = cb;

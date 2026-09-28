@@ -1,6 +1,9 @@
 // Owning machines: create, buy, sell, fit mods.
 import { canAfford, spendMoney, addMoney, isInDebt } from '../economy/index.js';
-import { tierData, typeName, tierName } from './stats.js';
+import {
+  pileTotal, addToPile, takeProportional, facePileRoom, addToFacePile,
+} from '../quarry/index.js';
+import { tierData, typeName, tierName, getStats } from './stats.js';
 
 export function createMachine(state, data, type, tier, siteId) {
   const td = tierData(data, type, tier);
@@ -16,6 +19,7 @@ export function createMachine(state, data, type, tier, siteId) {
     broken: false,
     mods: [],
     job: null,
+    load: {}, // rock in an excavator's bucket or a truck's bed
   };
   state.machines.push(machine);
   return machine;
@@ -100,6 +104,33 @@ export function buyMod(ctx, machineId, modId) {
   m.mods.push(modId);
   ctx.events.emit('modBought', { machineId, modId, price: mod.price });
   return { ok: true };
+}
+
+// Empties an excavator's bucket into a truck (if given and it has room),
+// otherwise onto the site's face pile. Returns where it went.
+export function dumpBucket(ctx, excavatorId, truckId = null) {
+  const ex = getMachine(ctx, excavatorId);
+  if (!ex || ex.type !== 'excavator') return { ok: false, reason: 'Not an excavator' };
+  const amount = pileTotal(ex.load);
+  if (amount < 0.01) return { ok: false, reason: 'The bucket is empty' };
+  const truck = truckId ? getMachine(ctx, truckId) : null;
+  let intoTruck = 0;
+  if (truck && truck.type === 'truck') {
+    const room = Math.max(0, getStats(ctx.data, truck).capacity - pileTotal(truck.load));
+    intoTruck = Math.min(room, amount);
+    addToPile(truck.load, takeProportional(ex.load, intoTruck));
+  }
+  const rest = pileTotal(ex.load);
+  let spilled = 0;
+  if (rest > 0.001) {
+    const fit = Math.min(rest, facePileRoom(ctx, ex.siteId));
+    addToFacePile(ctx, ex.siteId, takeProportional(ex.load, fit));
+    spilled = rest - fit;
+    ex.load = {};
+  }
+  ctx.events.emit('bucketDumped', { machineId: excavatorId, truckId: intoTruck > 0 ? truckId : null, intoTruck, spilled });
+  if (spilled > 0.01) ctx.events.emit('message', { level: 'warn', text: `Face pile full: ${spilled.toFixed(1)} t spilled` });
+  return { ok: true, intoTruck, toPile: rest - spilled };
 }
 
 // Dev helper: every machine back to perfect condition.

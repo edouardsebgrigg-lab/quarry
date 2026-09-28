@@ -31,8 +31,10 @@ export function startApp(root, { data, storage, isDev }) {
 
   const screenRoot = el('div', { class: 'screen-root' });
   root.append(screenRoot);
-  const overlays = createOverlayStack(root);
+  // Back to the game when the last menu closes (a click or key press, so the browser allows it).
+  const overlays = createOverlayStack(root, { onEmpty: () => session?.lockMouse() });
   let session = null;
+  let lastLockPause = -Infinity;
 
   const keyboard = createKeyboard({
     getBindings: () => settings.bindings,
@@ -41,6 +43,8 @@ export function startApp(root, { data, storage, isDev }) {
       session.handleAction(action);
     },
     onEscape: () => {
+      // The same Esc press may already have released the mouse and opened the pause menu.
+      if (performance.now() - lastLockPause < 400) return;
       if (overlays.closeTop()) return;
       if (session) openPause();
     },
@@ -59,8 +63,8 @@ export function startApp(root, { data, storage, isDev }) {
   }
 
   function showMainMenu() {
-    overlays.closeAll();
     endSession();
+    overlays.closeAll();
     setScreen(buildMainMenu({
       hasSave: !!saves.latest(),
       onContinue: () => {
@@ -104,6 +108,7 @@ export function startApp(root, { data, storage, isDev }) {
   function saveTo(slotId, { silent = false } = {}) {
     if (!session) return;
     try {
+      session.beforeSave();
       saves.save(slotId, session.game.state, session.summary());
       if (!silent) session.feedback.toast('Game saved', 'good');
     } catch (err) {
@@ -124,7 +129,8 @@ export function startApp(root, { data, storage, isDev }) {
     });
   }
 
-  function openPause() {
+  function openPause({ fromLockLoss = false } = {}) {
+    if (fromLockLoss) lastLockPause = performance.now();
     openPauseMenu(overlays, {
       onSave: () => openSlotPicker(overlays, { mode: 'save', saves, onPick: (slot) => saveTo(slot) }),
       onLoad: () => openSlotPicker(overlays, { mode: 'load', saves, onPick: loadSlot }),

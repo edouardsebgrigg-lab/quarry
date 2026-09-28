@@ -1,12 +1,11 @@
 // Right-hand panel: your current job, action buttons, zone, piles and fleet.
 import { el, clear, setText, progressBar } from '../dom.js';
 import { tonnes, pct, conditionColor, money } from '../format.js';
-import { keyLabel } from '../../input/index.js';
 import {
   getZoneInfo, getSiteData, facePileTotal, yardTotal,
 } from '../../quarry/index.js';
 import {
-  machinesAt, machineName, playerJob, jobProgress, JOBS, getStats,
+  machinesAt, machineName, jobProgress, JOBS, getStats,
 } from '../../machinery/index.js';
 import { currentPrice } from '../../economy/index.js';
 
@@ -17,18 +16,9 @@ function mixText(data, mix) {
     .join(' · ');
 }
 
-export function createSidebar({ game, settings, run }) {
+// Site details for the map: zone, piles and fleet.
+export function createSidebar({ game }) {
   const { data } = game;
-  const key = (action) => el('span', { class: 'key' }, keyLabel(settings.bindings[action]));
-
-  // --- your job ---
-  const jobText = el('div', { class: 'job-text' });
-  const jobBar = progressBar('bar-job');
-
-  // --- actions ---
-  const actionBtn = (label, action, hint) => el('button', {
-    class: 'btn btn-action', title: hint, onClick: () => run(action),
-  }, el('span', {}, label), key(action));
 
   // --- zone & piles ---
   const zoneTitle = el('div', { class: 'row-title' });
@@ -64,17 +54,6 @@ export function createSidebar({ game, settings, run }) {
 
   const node = el('div', { class: 'sidebar' },
     el('section', { class: 'panel' },
-      el('h3', {}, 'You'),
-      jobText, jobBar.node),
-    el('section', { class: 'panel' },
-      el('h3', {}, 'Actions'),
-      el('div', { class: 'actions-grid' },
-        actionBtn('Dig', 'dig', 'Scoop rock onto the face pile (hold to repeat)'),
-        actionBtn('Haul', 'haul', 'Truck the face pile to the yard (hold to repeat)'),
-        actionBtn('Sell all', 'sell', 'Sell everything in the yard at market price'),
-        actionBtn('Service', 'repair', 'Repair broken machines, or service the selected one'),
-      )),
-    el('section', { class: 'panel' },
       el('h3', {}, 'Digging zone'),
       zoneTitle, zoneDepth, zoneMix, zoneHard,
       el('div', { class: 'spacer' }),
@@ -82,7 +61,7 @@ export function createSidebar({ game, settings, run }) {
       el('div', { class: 'spacer' }),
       yardText, yardBar.node, yardList),
     el('section', { class: 'panel panel-grow' },
-      el('h3', {}, 'Fleet ', el('span', { class: 'muted small' }, `(${keyLabel(settings.bindings.nextMachine)} to switch)`)),
+      el('h3', {}, 'Fleet'),
       fleetList),
   );
 
@@ -97,16 +76,6 @@ export function createSidebar({ game, settings, run }) {
       const siteId = game.state.currentSiteId;
       const site = game.state.sites[siteId];
       const siteData = getSiteData(data, siteId);
-
-      // You
-      const pj = playerJob(ctx);
-      if (pj) {
-        setText(jobText, `${JOBS[pj.job.type].label} — ${machineName(data, pj.machine)}`);
-        jobBar.set(jobProgress(pj.job), '#f2b632');
-      } else {
-        setText(jobText, `Idle. ${keyLabel(settings.bindings.dig)} to dig, ${keyLabel(settings.bindings.haul)} to haul.`);
-        jobBar.set(0);
-      }
 
       // Zone
       const info = getZoneInfo(ctx, siteId, site.selectedZoneId);

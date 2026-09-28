@@ -8,9 +8,9 @@ describe('key bindings', () => {
   });
 
   it('swaps keys when rebinding onto a used key', () => {
-    const next = rebind(DEFAULT_BINDINGS, 'dig', 'KeyH');
-    expect(next.dig).toBe('KeyH');
-    expect(next.haul).toBe('KeyD');
+    const next = rebind(DEFAULT_BINDINGS, 'tip', 'KeyE');
+    expect(next.tip).toBe('KeyE');
+    expect(next.interact).toBe('KeyT');
   });
 
   it('labels keys nicely', () => {

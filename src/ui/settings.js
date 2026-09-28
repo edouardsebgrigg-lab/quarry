@@ -1,15 +1,19 @@
 // Player settings (not part of save games).
-import { DEFAULT_BINDINGS } from '../input/index.js';
+import { DEFAULT_BINDINGS, BINDINGS_VERSION } from '../input/index.js';
 
 const KEY = 'quarry.settings';
 
 export function defaultSettings() {
   return {
     bindings: { ...DEFAULT_BINDINGS },
+    bindingsVersion: BINDINGS_VERSION,
     volume: 0.8,
     uiScale: 1,
     fullscreen: true,
     autosave: true,
+    mouseSensitivity: 1,
+    invertY: false,
+    graphics: 'high',
   };
 }
 
@@ -18,7 +22,14 @@ export function loadSettings(storage) {
   try {
     const saved = JSON.parse(storage.getItem(KEY) ?? 'null');
     if (!saved) return defaults;
-    return { ...defaults, ...saved, bindings: { ...defaults.bindings, ...saved.bindings } };
+    // Old key layouts clash with the current controls: start fresh.
+    const bindings = saved.bindingsVersion === BINDINGS_VERSION
+      ? { ...defaults.bindings, ...saved.bindings }
+      : defaults.bindings;
+    for (const action of Object.keys(bindings)) {
+      if (!(action in DEFAULT_BINDINGS)) delete bindings[action];
+    }
+    return { ...defaults, ...saved, bindings, bindingsVersion: BINDINGS_VERSION };
   } catch {
     return defaults;
   }

@@ -4,7 +4,7 @@ import { selectZone as quarrySelectZone } from '../quarry/index.js';
 import { sellAll as economySellAll, sellProduct as economySellProduct } from '../economy/index.js';
 import {
   getMachine, machinesAt, startJob, whyCannotStart, buyMachine as fleetBuyMachine,
-  sellMachine as fleetSellMachine, buyMod as fleetBuyMod,
+  sellMachine as fleetSellMachine, buyMod as fleetBuyMod, dumpBucket as fleetDumpBucket,
 } from '../machinery/index.js';
 
 export function createActions(ctx) {
@@ -66,6 +66,17 @@ export function createActions(ctx) {
       ctx.events.emit('machineSelected', { machineId: next.id });
       return { ok: true };
     },
+
+    // ---- hands-on actions (3D world) ----
+    // Scoop one bucket from a zone into the excavator's bucket.
+    scoop(excavatorId, zoneId) {
+      quarrySelectZone(ctx, site(), zoneId);
+      return startJob(ctx, excavatorId, 'dig', { params: { zoneId, toBucket: true } });
+    },
+    // Empty the bucket into a truck (truckId) or onto the face pile (null).
+    dumpBucket: (excavatorId, truckId = null) => fleetDumpBucket(ctx, excavatorId, truckId),
+    loadFromPile: (truckId) => startJob(ctx, truckId, 'loadFromPile'),
+    tip: (truckId) => startJob(ctx, truckId, 'tip'),
 
     buyMachine: (type, tier) => fleetBuyMachine(ctx, type, tier),
     sellMachine: (id) => fleetSellMachine(ctx, id),

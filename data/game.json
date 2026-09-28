@@ -4,7 +4,7 @@
   "startHour": 7,
   "speeds": [1, 2, 4],
   "devSpeed": 10,
-  "saveVersion": 1,
+  "saveVersion": 2,
   "startSite": "gravelPit",
   "startingMachines": [
     { "type": "excavator", "tier": "rusty" },
