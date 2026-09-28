@@ -27,6 +27,7 @@ The scripts:
 - `lib.py`: shape helpers (boxes, cylinders, extruded profiles, lathe), bevels, UVs, grime vertex colours, materials, export and preview rendering.
 - `textures.py`: generates the tileable textures (worn paint, rust, grimy steel, rubber, concrete, cladding).
 - `truck.py`, `excavator.py`, `props.py`: the models themselves.
+- `menu_background.py`: renders the main-menu picture (`assets/ui/menu.jpg`), with the excavator loading a truck at a quarry face. Add `--fast` for a quick low-res test.
 
 ## Making your own models in Blender
 

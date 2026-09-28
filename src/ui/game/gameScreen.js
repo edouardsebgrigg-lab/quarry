@@ -31,6 +31,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
   let feedback = null;
   let world = null;
   let destroyed = false;
+  let expectUnlock = false;
   const openOverlay = (fn) => {
     fn();
     world?.unlockMouse();
@@ -42,6 +43,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     settings,
     onShop: () => openOverlay(() => openShop(app.overlays, { game, feedback })),
     onMarket: () => openOverlay(() => openMarket(app.overlays, { game, feedback })),
+    onMap: () => openOverlay(() => toggleMap(app.overlays, { game, settings })),
     onMenu: () => app.openPauseMenu(),
   });
   feedback = createFeedback({ game, getMoneyNode: () => hud.moneyNode });
@@ -49,10 +51,10 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
   const devPanel = isDev ? createDevPanel({ game, runtime, feedback }) : null;
   const viewport = el('div', { class: 'world-view' });
 
-  const pausedBanner = el('div', { class: 'paused-banner' }, 'PAUSED');
+  const pausedBanner = el('div', { class: 'paused-banner glass' }, 'PAUSED');
   const node = el('div', { class: 'game-screen' },
-    hud.node,
     el('div', { class: 'game-main' }, viewport, hud3d.node),
+    hud.node,
     pausedBanner,
     feedback.node,
     devPanel?.node,
@@ -64,7 +66,13 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     settings,
     notify: (text, level) => feedback.message(text, level),
     // Esc (or alt-tab) released the mouse: show the pause menu, like any PC game.
-    onPointerLockLost: () => { if (app.overlays.count() === 0) app.openPauseMenu({ fromLockLoss: true }); },
+    onPointerLockLost: () => {
+      if (expectUnlock) {
+        expectUnlock = false; // we released the mouse ourselves (dev panel)
+        return;
+      }
+      if (app.overlays.count() === 0) app.openPauseMenu({ fromLockLoss: true });
+    },
   }).then((w) => {
     if (destroyed) {
       w.destroy();
@@ -88,8 +96,12 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
       case 'market': openOverlay(() => openMarket(app.overlays, { game, feedback })); break;
       case 'map': openOverlay(() => toggleMap(app.overlays, { game, settings })); break;
       case 'dev':
-        devPanel?.toggle();
-        world?.unlockMouse();
+        if (!devPanel) break;
+        devPanel.toggle();
+        if (world?.isMouseLocked()) {
+          expectUnlock = true;
+          world.unlockMouse();
+        }
         break;
       default: world?.handleAction(action);
     }
@@ -109,6 +121,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
 
   // --- main loop ---
   let raf = 0;
+  let started = false; // has the player clicked into the game yet?
   let last = 0;
   let acc = 0;
 
@@ -131,9 +144,11 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
       if (n >= MAX_TICKS_PER_FRAME) acc = 0;
     }
     world?.update(realDt, { paused: paused || overlayOpen, keyboard });
-    pausedBanner.style.display = paused ? '' : 'none';
+    pausedBanner.style.display = userPaused && !overlayOpen ? '' : 'none';
     hud.update(realDt);
-    hud3d.update(world?.hudInfo() ?? null, { overlayOpen });
+    const info = world?.hudInfo() ?? null;
+    if (info?.locked) started = true;
+    hud3d.update(info, { overlayOpen, started });
     devPanel?.update(realDt);
     app.overlays.update(realDt);
     raf = requestAnimationFrame(frame);

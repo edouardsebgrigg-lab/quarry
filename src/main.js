@@ -1,3 +1,6 @@
+import '@fontsource-variable/inter';
+import '@fontsource/barlow-condensed/600.css';
+import '@fontsource/barlow-condensed/700.css';
 import { loadData } from './core/index.js';
 import { startApp } from './ui/index.js';
 

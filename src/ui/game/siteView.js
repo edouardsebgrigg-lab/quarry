@@ -5,19 +5,20 @@ import { getZoneInfo, getSiteData, facePileTotal, yardTotal } from '../../quarry
 import { machinesAt, jobProgress, getStats } from '../../machinery/index.js';
 
 const COLORS = {
-  grass: '#34402a',
-  grassDark: '#2b3522',
-  surface: [201, 168, 106],
-  deep: [74, 53, 36],
-  road: '#6b5a44',
-  roadLine: '#8c7a60',
-  select: '#f2b632',
-  excavator: '#f2b632',
-  truck: '#e07b39',
-  brokenBody: '#777',
-  text: '#f4efe6',
-  textDim: 'rgba(244,239,230,0.7)',
+  grass: '#15181b',
+  grassDark: 'rgba(255,255,255,0.035)',
+  surface: [128, 112, 90],
+  deep: [48, 41, 34],
+  road: '#30353b',
+  roadLine: '#555c64',
+  select: '#f5b82e',
+  excavator: '#f5b82e',
+  truck: '#e8894a',
+  brokenBody: '#666',
+  text: '#eceef1',
+  textDim: 'rgba(236,238,241,0.6)',
 };
+const FONT = "'Inter Variable', system-ui, sans-serif";
 
 const mixColor = (a, b, t) => `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',')})`;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -137,14 +138,6 @@ export function createSiteView({ game, onSelectZone, onSelectMachine }) {
       g.fillRect(full.x, full.y + full.h * (1 - partial), full.w, full.h * partial);
       g.globalAlpha = 1;
     }
-    // Gravel speckles so the ground doesn't look flat.
-    const seed = info.zoneId.charCodeAt(0) * 97;
-    for (let i = 0; i < 160; i++) {
-      const px = rect.x + (((seed + i * 53) % 997) / 997) * (rect.w - 3);
-      const py = rect.y + (((seed * 3 + i * 131) % 991) / 991) * (rect.h - 3);
-      g.fillStyle = i % 3 === 0 ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.14)';
-      g.fillRect(px, py, 2 + (i % 2), 2);
-    }
     if (hoverZone === info.zoneId && !selected) {
       g.fillStyle = 'rgba(255,255,255,0.08)';
       g.fillRect(rect.x, rect.y, rect.w, rect.h);
@@ -156,11 +149,11 @@ export function createSiteView({ game, onSelectZone, onSelectMachine }) {
     }
 
     g.fillStyle = COLORS.text;
-    g.font = '600 15px system-ui, sans-serif';
+    g.font = `600 15px ${FONT}`;
     g.textAlign = 'left';
     g.textBaseline = 'top';
     g.fillText(`Zone ${info.zoneId} · ${info.name}`, rect.x + 10, rect.y + 10);
-    g.font = '13px system-ui, sans-serif';
+    g.font = `13px ${FONT}`;
     g.fillStyle = COLORS.textDim;
     g.fillText(info.exhausted ? 'Dug out' : `${info.depth.toFixed(1)} m deep · hardness ${info.layer.hardness}`, rect.x + 10, rect.y + 30);
     if (tooHard) {
@@ -182,7 +175,7 @@ export function createSiteView({ game, onSelectZone, onSelectMachine }) {
     }
     if (label) {
       g.fillStyle = COLORS.text;
-      g.font = '12px system-ui, sans-serif';
+      g.font = `12px ${FONT}`;
       g.textAlign = 'center';
       g.textBaseline = 'top';
       g.fillText(label, x, y + 4);
@@ -245,7 +238,7 @@ export function createSiteView({ game, onSelectZone, onSelectMachine }) {
     g.arc(x + 4, y - 6 - puff, 5 + puff, 0, Math.PI * 2);
     g.fill();
     g.fillStyle = '#d9534f';
-    g.font = 'bold 14px system-ui, sans-serif';
+    g.font = `bold 14px ${FONT}`;
     g.textAlign = 'center';
     g.textBaseline = 'middle';
     g.fillText('!', x, y);
@@ -275,26 +268,26 @@ export function createSiteView({ game, onSelectZone, onSelectMachine }) {
     zoneRects = L.zones;
     machineRects = [];
 
-    // Ground
+    // Ground: dark with a faint survey grid.
     g.fillStyle = COLORS.grass;
     g.fillRect(0, 0, width, height);
-    g.fillStyle = COLORS.grassDark;
-    for (let i = 0; i < 40; i++) {
-      const x = ((i * 137) % 100) / 100 * width;
-      const y = ((i * 71) % 100) / 100 * height;
-      g.fillRect(x, y, 3, 3);
-    }
+    g.strokeStyle = COLORS.grassDark;
+    g.lineWidth = 1;
+    g.beginPath();
+    for (let x = 0.5; x < width; x += 32) { g.moveTo(x, 0); g.lineTo(x, height); }
+    for (let y = 0.5; y < height; y += 32) { g.moveTo(0, y); g.lineTo(width, y); }
+    g.stroke();
 
     // Title
     g.fillStyle = COLORS.text;
-    g.font = '700 18px system-ui, sans-serif';
+    g.font = `600 16px ${FONT}`;
     g.textAlign = 'left';
     g.textBaseline = 'top';
     g.fillText(siteData.name, 24, 16);
     const titleWidth = g.measureText(siteData.name).width;
-    g.font = '13px system-ui, sans-serif';
+    g.font = `12px ${FONT}`;
     g.fillStyle = COLORS.textDim;
-    g.fillText('Click a zone to dig there · click a machine to select it', 24 + titleWidth + 16, 20);
+    g.fillText('Click a zone to dig there  ·  click a machine to select it', 24 + titleWidth + 16, 19);
 
     const bestHardness = Math.max(0, ...machinesAt(ctx, siteId)
       .filter((m) => m.type === 'excavator').map((m) => getStats(data, m).maxHardness));
@@ -329,16 +322,16 @@ export function createSiteView({ game, onSelectZone, onSelectMachine }) {
     g.lineCap = 'butt';
 
     // Yard
-    g.fillStyle = '#5a5046';
+    g.fillStyle = '#22262b';
     g.fillRect(L.yard.x, L.yard.y, L.yard.w, L.yard.h);
     g.strokeStyle = 'rgba(0,0,0,0.3)';
     g.strokeRect(L.yard.x + 0.5, L.yard.y + 0.5, L.yard.w - 1, L.yard.h - 1);
     g.fillStyle = COLORS.text;
-    g.font = '600 15px system-ui, sans-serif';
+    g.font = `600 15px ${FONT}`;
     g.textAlign = 'left';
     g.textBaseline = 'top';
     g.fillText('Yard', L.yard.x + 10, L.yard.y + 10);
-    g.font = '13px system-ui, sans-serif';
+    g.font = `13px ${FONT}`;
     g.fillStyle = COLORS.textDim;
     g.fillText(`${yardTotal(ctx, siteId).toFixed(1)} / ${siteData.yardCapacity} t`, L.yard.x + 10, L.yard.y + 30);
     const products = Object.entries(site.yard).filter(([, t]) => t > 0.01);

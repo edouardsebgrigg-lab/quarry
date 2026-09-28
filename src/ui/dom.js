@@ -41,3 +41,21 @@ export function progressBar(cls = '') {
     },
   };
 }
+
+// A keycap, e.g. kbd('E'). Mouse buttons get their own look.
+export function kbd(label) {
+  const mouse = /mouse|LMB|RMB/i.test(label);
+  return el('span', { class: `kbd${mouse ? ' mouse' : ''}` }, label);
+}
+
+const ICONS = {
+  pause: '<svg viewBox="0 0 12 12"><rect x="2" y="1.5" width="3" height="9" rx="0.8"/><rect x="7" y="1.5" width="3" height="9" rx="0.8"/></svg>',
+  play: '<svg viewBox="0 0 12 12"><path d="M3 1.5v9l7.5-4.5z"/></svg>',
+};
+
+export function icon(name) {
+  const span = document.createElement('span');
+  span.style.display = 'inline-flex';
+  span.innerHTML = ICONS[name];
+  return span;
+}

@@ -6,7 +6,7 @@ import {
 } from '../../economy/index.js';
 import { getSiteData, yardAmount } from '../../quarry/index.js';
 
-function drawSparkline(canvas, history) {
+function drawSparkline(canvas, history, color) {
   const g = canvas.getContext('2d');
   const w = canvas.width;
   const h = canvas.height;
@@ -15,15 +15,21 @@ function drawSparkline(canvas, history) {
   const min = Math.min(...history);
   const max = Math.max(...history);
   const span = max - min || 1;
-  g.strokeStyle = '#f2b632';
-  g.lineWidth = 2;
+  const pts = history.map((v, i) => [(i / (history.length - 1)) * (w - 4) + 2, h - 3 - ((v - min) / span) * (h - 6)]);
+  const grad = g.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, `${color}55`);
+  grad.addColorStop(1, `${color}00`);
   g.beginPath();
-  history.forEach((v, i) => {
-    const x = (i / (history.length - 1)) * (w - 4) + 2;
-    const y = h - 3 - ((v - min) / span) * (h - 6);
-    if (i === 0) g.moveTo(x, y);
-    else g.lineTo(x, y);
-  });
+  pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+  g.lineTo(pts[pts.length - 1][0], h);
+  g.lineTo(pts[0][0], h);
+  g.fillStyle = grad;
+  g.fill();
+  g.strokeStyle = color;
+  g.lineWidth = 2;
+  g.lineJoin = 'round';
+  g.beginPath();
+  pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
   g.stroke();
 }
 
@@ -40,22 +46,22 @@ export function openMarket(overlays, { game, feedback }) {
       const rows = Object.keys(game.state.market.products).map((id) => {
         const cells = {
           stock: el('td'),
-          price: el('td'),
+          price: el('td', { class: 'price-big' }),
           trend: el('td', { class: 'trend' }),
           net: el('td'),
           value: el('td'),
-          spark: el('canvas', { width: 140, height: 34, class: 'spark' }),
+          spark: el('canvas', { width: 160, height: 36, class: 'spark' }),
         };
         const sell = (t) => {
           const r = game.actions.sellProduct(id, t);
           if (!r.ok) feedback.message(r.reason, 'warn');
         };
         const tr = el('tr', {},
-          el('td', { class: 'product' }, data.materials[id].name),
+          el('td', { class: 'product' }, el('span', { class: 'dot', style: { background: data.materials[id].color } }), data.materials[id].name),
           cells.stock, cells.price, cells.trend, el('td', {}, cells.spark), cells.net, cells.value,
           el('td', { class: 'sell-cell' },
-            el('button', { class: 'btn', onClick: () => sell(10) }, 'Sell 10 t'),
-            el('button', { class: 'btn btn-primary', onClick: () => sell(Infinity) }, 'Sell all')));
+            el('button', { class: 'btn btn-small', onClick: () => sell(10) }, 'Sell 10 t'),
+            el('button', { class: 'btn btn-small btn-primary', onClick: () => sell(Infinity) }, 'Sell all')));
         return { id, tr, cells };
       });
 
@@ -72,11 +78,11 @@ export function openMarket(overlays, { game, feedback }) {
           setText(cells.stock, tonnes(stock));
           setText(cells.price, price(p));
           const dir = priceTrendDirection(ctx, id);
-          setText(cells.trend, dir > 0 ? '▲ rising' : dir < 0 ? '▼ falling' : '● steady');
+          setText(cells.trend, dir > 0 ? '▲ Rising' : dir < 0 ? '▼ Falling' : '— Steady');
           cells.trend.className = `trend trend-${dir > 0 ? 'up' : dir < 0 ? 'down' : 'flat'}`;
           setText(cells.net, price(p - delivery));
           setText(cells.value, stock > 0.01 ? money(quoteNet(ctx, siteId(), id, stock).net) : '—');
-          drawSparkline(cells.spark, game.state.market.products[id].history);
+          drawSparkline(cells.spark, game.state.market.products[id].history, dir > 0 ? '#6bd98a' : dir < 0 ? '#ff6b6b' : '#98a0ab');
         }
       }
 
@@ -92,8 +98,8 @@ export function openMarket(overlays, { game, feedback }) {
           el('thead', {}, el('tr', {},
             ['Product', 'In yard', 'Price/t', 'Trend', 'Last 3 days', 'After delivery', 'Sell all for', ''].map((h) => el('th', {}, h)))),
           el('tbody', {}, rows.map((r) => r.tr))),
-        el('div', { class: 'market-footer muted small' }, deliveryText, ' · ', fuelText),
-        el('p', { class: 'muted small' },
+        el('div', { class: 'market-footer' }, deliveryText, fuelText),
+        el('p', { class: 'foot-note' },
           'Selling a lot at once pushes the price down; it recovers over a couple of days. '
           + 'Prices also drift up and down — hold stock when they are low, if your yard has room.'),
       );

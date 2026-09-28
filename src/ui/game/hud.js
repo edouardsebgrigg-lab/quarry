@@ -1,39 +1,39 @@
-// Top bar: site, money, date, speed, and menu buttons.
-import { el, setText } from '../dom.js';
+// Top of the screen: status card (money, date, site, speed) and shortcut chips.
+import { el, setText, kbd, icon } from '../dom.js';
 import { money, clockTime } from '../format.js';
 import { getDate } from '../../core/index.js';
 import { getSiteData } from '../../quarry/index.js';
 import { keyLabel } from '../../input/index.js';
 
-export function createHud({ game, runtime, settings, onShop, onMarket, onMenu }) {
+export function createHud({ game, runtime, settings, onShop, onMarket, onMap, onMenu }) {
   const moneyText = el('div', { class: 'hud-money' });
   const debtTag = el('div', { class: 'hud-debt' }, 'IN DEBT');
-  const dateText = el('div', { class: 'hud-date' });
-  const siteText = el('div', { class: 'hud-site' });
+  const dateText = el('span', { class: 'hud-date' });
+  const siteText = el('span', { class: 'hud-site' });
 
   const speedButtons = [
-    { label: '❚❚', title: 'Pause', onClick: () => runtime.togglePause(), isActive: () => runtime.isUserPaused() },
+    { content: icon('pause'), title: 'Pause time', onClick: () => runtime.togglePause(), isActive: () => runtime.isUserPaused() },
     ...game.data.game.speeds.map((s, i) => ({
-      label: `${s}×`, title: `Speed ${s}×`,
+      content: `${s}×`,
+      title: `Speed ${s}×`,
       onClick: () => runtime.setSpeed(i),
       isActive: () => !runtime.isUserPaused() && !runtime.isDevFast() && runtime.speedIndex() === i,
     })),
-  ].map((b) => ({ ...b, node: el('button', { class: 'btn btn-speed', title: b.title, onClick: b.onClick }, b.label) }));
+  ].map((b) => ({ ...b, node: el('button', { title: b.title, onClick: b.onClick }, b.content) }));
 
-  const keyHint = (action) => el('span', { class: 'key' }, keyLabel(settings.bindings[action]));
+  const key = (action) => kbd(keyLabel(settings.bindings[action]));
+  const shortcut = (label, k, onClick) => el('button', { class: 'shortcut', onClick }, k, label);
 
   const node = el('div', { class: 'hud' },
-    el('div', { class: 'hud-left' }, el('div', { class: 'hud-logo' }, 'QUARRY'), siteText),
-    el('div', { class: 'hud-center' },
-      el('div', { class: 'hud-money-wrap' }, moneyText, debtTag),
-      dateText,
-      el('div', { class: 'hud-speed' }, speedButtons.map((b) => b.node)),
-    ),
-    el('div', { class: 'hud-right' },
-      el('button', { class: 'btn', onClick: onShop }, 'Shop ', keyHint('shop')),
-      el('button', { class: 'btn', onClick: onMarket }, 'Market ', keyHint('market')),
-      el('button', { class: 'btn', onClick: onMenu }, 'Menu ', el('span', { class: 'key' }, 'Esc')),
-    ),
+    el('div', { class: 'hud-status glass' },
+      el('div', { class: 'hud-money-row' }, moneyText, debtTag),
+      el('div', { class: 'hud-meta' }, dateText, el('span', { class: 'sep' }, '•'), siteText),
+      el('div', { class: 'hud-speed seg' }, speedButtons.map((b) => b.node))),
+    el('div', { class: 'hud-shortcuts' },
+      shortcut('Shop', key('shop'), onShop),
+      shortcut('Market', key('market'), onMarket),
+      shortcut('Map', key('map'), onMap),
+      shortcut('Menu', kbd('Esc'), onMenu)),
   );
 
   let shownMoney = game.state.money;

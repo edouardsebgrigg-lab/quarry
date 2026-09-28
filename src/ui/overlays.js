@@ -1,5 +1,5 @@
 // A stack of pop-up panels (menus, shop, market...). Pausing overlays stop the game clock.
-import { el } from './dom.js';
+import { el, kbd } from './dom.js';
 
 export function createOverlayStack(root, { onEmpty } = {}) {
   const layer = el('div', { class: 'overlay-layer' });
@@ -7,7 +7,7 @@ export function createOverlayStack(root, { onEmpty } = {}) {
   const stack = [];
 
   function focusFirst(panel) {
-    const target = panel.querySelector('[autofocus]') ?? panel.querySelector('button:not([disabled])');
+    const target = panel.querySelector('[autofocus]') ?? panel.querySelector('button:not([disabled]):not(.overlay-close)');
     target?.focus({ preventScroll: true });
   }
 
@@ -16,7 +16,11 @@ export function createOverlayStack(root, { onEmpty } = {}) {
     const panel = el('div', { class: `overlay-panel ${className}` });
     const backdrop = el('div', { class: `overlay ${pauses ? 'overlay-dim' : ''}` }, panel);
     const entry = { id, pauses, node: backdrop, panel, onClose, update: null };
-    if (title) panel.append(el('h2', { class: 'overlay-title' }, title));
+    if (title) {
+      panel.append(el('div', { class: 'overlay-head' },
+        el('h2', { class: 'overlay-title' }, title),
+        el('button', { class: 'btn btn-ghost btn-small overlay-close', onClick: () => close(id) }, kbd('Esc'), 'Close')));
+    }
     panel.append(build({ close: () => close(id), entry }));
     if (!pauses) {
       backdrop.addEventListener('mousedown', (e) => {

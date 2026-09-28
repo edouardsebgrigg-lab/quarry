@@ -1,29 +1,43 @@
-import { el } from '../dom.js';
+import { el, kbd } from '../dom.js';
+
+function background() {
+  const bg = el('div', { class: 'main-menu-bg' });
+  bg.style.backgroundImage = "url('ui/menu.jpg')"; // assets/ui/menu.jpg, rendered in Blender
+  return [bg, el('div', { class: 'main-menu-shade' })];
+}
+
+function title() {
+  return el('h1', { class: 'game-title' }, 'QUARR', el('span', {}, 'Y'));
+}
 
 export function buildMainMenu({ hasSave, onContinue, onNewGame, onLoad, onSettings, onQuit }) {
+  const item = (label, onClick, { disabled = false, primary = false } = {}) => el('button', {
+    class: `menu-item${primary ? ' primary' : ''}`, disabled, onClick,
+  }, label);
   return el('div', { class: 'main-menu' },
-    el('div', { class: 'main-menu-bg' }),
+    background(),
     el('div', { class: 'main-menu-inner' },
-      el('h1', { class: 'game-title' }, 'QUARRY'),
-      el('div', { class: 'game-subtitle' }, 'From a rusty digger to a mining empire'),
-      el('div', { class: 'menu-buttons' },
-        el('button', { class: 'btn btn-menu btn-primary', disabled: !hasSave, onClick: onContinue }, 'Continue'),
-        el('button', { class: 'btn btn-menu', onClick: onNewGame }, 'New Game'),
-        el('button', { class: 'btn btn-menu', disabled: !hasSave, onClick: onLoad }, 'Load Game'),
-        el('button', { class: 'btn btn-menu', onClick: onSettings }, 'Settings'),
-        el('button', { class: 'btn btn-menu', onClick: onQuit }, 'Quit'),
-      ),
-      el('div', { class: 'menu-hint' }, '↑ ↓ to choose · Enter to select'),
+      title(),
+      el('p', { class: 'game-subtitle' }, 'From a rusty digger to a mining empire.'),
+      el('nav', { class: 'menu-list' },
+        hasSave ? item('Continue', onContinue, { primary: true }) : null,
+        item('New Game', onNewGame, { primary: !hasSave }),
+        item('Load Game', onLoad, { disabled: !hasSave }),
+        item('Settings', onSettings),
+        item('Quit', onQuit)),
     ),
+    el('div', { class: 'menu-footer' },
+      el('span', {}, kbd('↑'), kbd('↓'), 'Choose', kbd('Enter'), 'Select'),
+      el('span', {}, 'v0.1')),
   );
 }
 
 export function buildQuitScreen() {
   return el('div', { class: 'main-menu' },
-    el('div', { class: 'main-menu-bg' }),
+    background(),
     el('div', { class: 'main-menu-inner' },
-      el('h1', { class: 'game-title' }, 'QUARRY'),
-      el('p', { class: 'overlay-text' }, 'Thanks for playing. You can close this window now.'),
+      title(),
+      el('p', { class: 'game-subtitle' }, 'Thanks for playing. You can close this window now.'),
     ),
   );
 }

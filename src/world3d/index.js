@@ -12,6 +12,7 @@ import { createExcavator } from './excavator.js';
 import { createMouse } from './mouse.js';
 import { preloadModels } from './glbModels.js';
 import { LAYOUTS, zoneAt, inRect } from './layouts.js';
+import { keyLabel } from '../input/index.js';
 import { getSiteData, getZoneInfo, pileTotal } from '../quarry/index.js';
 import {
   getStats, machinesAt, machineName, getMachine, JOBS, jobProgress,
@@ -380,35 +381,41 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
   }
 
   // What the HUD should show right now.
+  // What the HUD should show right now. `prompt` is { key, text } (key may be null),
+  // `job` is { label, progress } while the machine you're in is working.
   function hudInfo() {
     const v = current();
     const m = currentMachine();
-    let prompt = '';
+    const key = (action) => keyLabel(settings.bindings[action]);
+    let prompt = null;
+    let job = null;
     if (!v) {
       const near = nearestVehicle(ENTER_DISTANCE);
       if (near) {
         const nm = getMachine(game.ctx, near.machineId);
-        prompt = `E — Get in ${machineName(data, nm)}${nm.broken ? ' (broken down — R to repair)' : ''}`;
+        prompt = nm.broken
+          ? { key: key('repair'), text: `Repair ${machineName(data, nm)}` }
+          : { key: key('interact'), text: `Get in ${machineName(data, nm)}` };
       }
     } else if (m.broken) {
-      prompt = 'Broken down — press R to repair';
+      prompt = { key: key('repair'), text: 'Broken down — repair' };
     } else if (m.job) {
-      prompt = `${JOBS[m.job.type].label}… ${Math.round(jobProgress(m.job) * 100)}%`;
+      job = { label: JOBS[m.job.type].label, progress: jobProgress(m.job) };
     } else if (v.type === 'excavator') {
       const t = v.bucketTarget();
       const full = pileTotal(m.load) > 0.01;
       const truck = [...vehicles.values()].find((tr) => tr.type === 'truck' && tr.isOverBed(t));
       const zone = zoneAt(layout, t.x, t.z);
-      if (!full) prompt = zone ? `Hold Left Mouse — dig zone ${zone}` : 'Swing the bucket over the pit (mouse) to dig';
-      else if (truck) prompt = `Left Mouse — dump into ${machineName(data, getMachine(game.ctx, truck.machineId))}`;
-      else prompt = 'Left Mouse — dump on the face pile · or swing over a truck';
+      if (!full) prompt = zone ? { key: 'Hold LMB', text: `Dig zone ${zone}` } : { key: null, text: 'Swing the bucket over the pit to dig' };
+      else if (truck) prompt = { key: 'LMB', text: `Dump into ${machineName(data, getMachine(game.ctx, truck.machineId))}` };
+      else prompt = { key: 'LMB', text: 'Dump on the face pile' };
     } else if (v.type === 'truck') {
       const p = v.position();
       const loaded = pileTotal(m.load) > 0.05;
       const fp = facePilePos;
-      if (loaded && inRect(layout.tipBay, p.x, p.z, 1.5)) prompt = 'T — tip the load';
-      else if (Math.hypot(p.x - fp.x, p.z - fp.z) < 9) prompt = 'F — load from the face pile';
-      else if (loaded) prompt = 'Drive to the yellow tipping bay at the yard';
+      if (loaded && inRect(layout.tipBay, p.x, p.z, 1.5)) prompt = { key: key('tip'), text: 'Tip the load' };
+      else if (Math.hypot(p.x - fp.x, p.z - fp.z) < 9) prompt = { key: key('loadPile'), text: 'Load from the face pile' };
+      else if (loaded) prompt = { key: null, text: 'Drive to the yellow tipping bay at the yard' };
     }
 
     let machine = null;
@@ -416,6 +423,7 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
       const stats = getStats(data, m);
       machine = {
         name: machineName(data, m),
+        tier: m.tier,
         type: m.type,
         condition: m.condition,
         broken: m.broken,
@@ -425,7 +433,7 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
         camera: camMode,
       };
     }
-    return { prompt, machine, mode: mode.kind, locked: mouse.locked() };
+    return { prompt, job, machine, mode: mode.kind, locked: mouse.locked() };
   }
 
   // Remember where everything is, so saves put machines back in place.

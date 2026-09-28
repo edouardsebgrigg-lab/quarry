@@ -32,8 +32,8 @@ export function statValue(line) {
 }
 
 export function conditionColor(condition, broken) {
-  if (broken) return '#d9534f';
-  if (condition > 60) return '#5cb85c';
-  if (condition > 30) return '#f0ad4e';
-  return '#d9534f';
+  if (broken) return '#ff6b6b';
+  if (condition > 60) return '#6bd98a';
+  if (condition > 30) return '#f5b82e';
+  return '#ff6b6b';
 }

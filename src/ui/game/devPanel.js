@@ -9,8 +9,8 @@ export function createDevPanel({ game, runtime, feedback }) {
 
   const fastBtn = el('button', { class: 'btn btn-small', onClick: () => runtime.toggleDevFast() }, `Speed ×${game.data.game.devSpeed}`);
 
-  const node = el('div', { class: 'dev-panel' },
-    el('div', { class: 'dev-title' }, 'DEV PANEL (F1)'),
+  const node = el('div', { class: 'dev-panel glass' },
+    el('div', { class: 'dev-title' }, el('span', {}, 'DEV TOOLS'), el('span', {}, 'F1')),
     el('div', { class: 'dev-grid' },
       btn('+$100', () => game.dev.addMoney(100)),
       btn('+$1,000', () => game.dev.addMoney(1000)),
