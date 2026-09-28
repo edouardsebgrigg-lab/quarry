@@ -1,0 +1,22 @@
+{
+  "sharpTeeth": {
+    "name": "Sharpened bucket teeth", "machineType": "excavator", "price": 60,
+    "description": "+15% bucket size",
+    "effects": { "bucket": { "mul": 1.15 } }
+  },
+  "greasedPins": {
+    "name": "Greased pins", "machineType": "excavator", "price": 110,
+    "description": "10% faster dig cycle",
+    "effects": { "cycleTime": { "mul": 0.9 } }
+  },
+  "patchedTyres": {
+    "name": "Patched tyres", "machineType": "truck", "price": 50,
+    "description": "+10% driving speed",
+    "effects": { "speed": { "mul": 1.1 } }
+  },
+  "raisedTailgate": {
+    "name": "Raised tailgate", "machineType": "truck", "price": 90,
+    "description": "+1 t load",
+    "effects": { "capacity": { "add": 1 } }
+  }
+}

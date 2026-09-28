@@ -1,0 +1,39 @@
+# Module guide
+
+A short tour of the code. The logic modules never touch the screen. Each module has one public entry file (`index.js`), and other modules only import from that file.
+
+## data/ — all the numbers
+| File | What's in it |
+|---|---|
+| `game.json` | Tick rate, day length, speeds, starting machines and site, save version |
+| `economy.json` | Starting money, fuel price, debt interest, resale value |
+| `materials.json` | Rock types and base prices |
+| `market.json` | How prices swing (trend) and drop when you sell a lot (saturation) |
+| `machines.json` | Every machine tier's stats and price |
+| `mods.json` | Cheap upgrades you can fit to machines |
+| `sites.json` | Sites, zones, rock layers, pile and yard sizes |
+
+You can change any of these and reload the game. No code changes are needed.
+
+## Logic (no screen code)
+| Module | Job |
+|---|---|
+| `src/core` | Game clock (ticks, days, hours), event bus, seeded random numbers, save slots with version upgrades |
+| `src/economy` | Money and debt, market prices, fuel, selling |
+| `src/quarry` | Zones and rock layers, face pile, yard |
+| `src/machinery` | Machine stats and mods, buying and selling machines, timed jobs (dig, haul, service, repair), wear and breakdowns |
+| `src/game` | Wires everything together: `createGame()` builds a game, `game.tick()` advances time, `game.actions.*` are the player's actions |
+
+**Player actions** (`src/game/actions.js`) are the single way to make things happen. They're used by buttons and hotkeys now, and later by operators and 3D driving.
+
+**Events** are what the logic announces, e.g. `productSold`, `machineBought`, `machineBrokeDown`, `layerFinished`, `dayStarted`. The UI listens to them for pop-ups and messages.
+
+## Display and controls
+| Module | Job |
+|---|---|
+| `src/input` | Hotkeys and rebinding |
+| `src/ui` | Main menu, pause menu, settings, save/load screens, HUD, sidebar, 2D site view, shop, market, dev panel, feedback effects |
+| `src/world3d` | (Milestone 6) the 3D world |
+
+## Tests
+Unit tests sit next to the code (`*.test.js`). Run them with `npm test`.
