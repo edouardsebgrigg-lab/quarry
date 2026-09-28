@@ -32,8 +32,8 @@ You can change any of these and reload the game. No code changes are needed.
 | Module | Job |
 |---|---|
 | `src/input` | Hotkeys and rebinding |
-| `src/ui` | Main menu, pause menu, settings, save/load screens, HUD, sidebar, 2D site view, shop, market, dev panel, feedback effects |
-| `src/world3d` | (Milestone 6) the 3D world |
+| `src/ui` | Main menu, pause menu, settings, save/load screens, HUD, 3D overlay (prompts, machine panel), site map (2D view), shop, market, dev panel, feedback effects |
+| `src/world3d` | The 3D world: terrain and pits (`terrain.js`), sky and scenery (`environment.js`), physics (`physics.js`, `truckPhysics.js`), you on foot (`player.js`), machines (`truck.js`, `excavator.js`, placeholder models in `models.js`), piles, dust, and `index.js`, which ties it together and turns driving/digging into game actions. Site layouts (where zones, road and yard go) are in `layouts.js` |
 
 ## Tests
 Unit tests sit next to the code (`*.test.js`). Run them with `npm test`.

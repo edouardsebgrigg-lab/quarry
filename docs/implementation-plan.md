@@ -2,76 +2,57 @@
 
 Based on `docs/design-spec.md`. Every milestone ends with something you can run and play (`npm run dev`), a short "what to test" list, and a git commit at each working step.
 
----
-
-## Milestone 1 — Playable Gravel Pit (small and complete)
-
-**Goal:** start a new game, dig, haul and sell gravel by hand, buy your first upgrades, save and quit, then continue later.
-
-| Step | What gets built | Tests |
-|---|---|---|
-| 1.1 | Project setup: Vite, Vitest, folder structure, fullscreen game shell (no page scrolling, no browser look) | — |
-| 1.2 | `core`: game clock (10 ticks/sec, calendar, pause / 1× / 2× / 4×), event bus, seeded random numbers, game state, loading data from `data/` | ✅ |
-| 1.3 | `economy`: money, fuel costs, market prices (trend + saturation), selling, emergency loan when money goes below zero | ✅ |
-| 1.4 | `quarry`: Gravel Pit data (4 zones × layers of sand/gravel), face pile, yard with a stockpile limit | ✅ |
-| 1.5 | `machinery`: Rusty and Used excavator + truck, timed jobs (Dig, Haul, Service, Repair), wear and breakdowns, buying and selling machines, 3–4 cheap mods | ✅ |
-| 1.6 | Save/load: 3 slots, an autosave each game day, a version number in each save | ✅ |
-| 1.7 | `input`: hotkeys (D, H, S, R, Tab, Space, 1/2/3, B, M, Esc, F1), rebindable, remembered | — |
-| 1.8 | `ui`: main menu (New Game / Continue / Load / Settings / Quit), pause menu, settings screen, HUD, shop, market panel | — |
-| 1.9 | `ui`: 2D top-down site view (zones by depth, face pile, truck driving to the yard, yard pile) | — |
-| 1.10 | Feedback: floating +$ numbers, money counter that counts up, before → after upgrade card | — |
-| 1.11 | Dev panel (F1): add money, skip time, fix machines, unlock all | — |
-| 1.12 | First balance pass so the first mod comes at about 3 min and a Used machine at about 10–15 min | — |
-
-**What you'll test:** the menus all work; dig and haul feel OK; prices move; machines wear and break; buying a Used truck feels like a clear jump; saving, quitting and continuing work; the dev panel works.
+> **Change of plan:** after Milestone 1 we moved the 3D first-person world forward (it was Milestones 6–7). The game logic didn't change, only how you play it.
 
 ---
 
-## Milestone 2 — Operators and automation
+## ✅ Milestone 1: Playable Gravel Pit
+- Game logic: clock and calendar, money and debt, market (trends + saturation), fuel, zones and rock layers, Rusty and Used excavator + truck, cheap upgrades (mods), wear, breakdowns, service and repair, versioned save slots, autosave
+- Main menu, pause menu, settings (key rebinding, volume, interface size, full screen), shop, market, dev panel (F1)
+- Feedback: floating +$ numbers, rolling money counter, before → after upgrade cards
+- First balance pass (first upgrade ≈ 3.5 min, first Used machine ≈ 10–17 min)
+
+## ✅ Milestone 1b: 3D first person
+- 3D quarry: terraced pits that get deeper as you dig, yard with stockpiles, tipping bay, road, site office, sky, sun and shadows, hills, trees, dust
+- Walk around in first person, get in and out of machines
+- Excavator: swing with the mouse, scoop, dump into a truck or onto the face pile
+- Truck: Rapier vehicle physics (heavier when loaded), cab and chase cameras, tip at the yard, load from the face pile
+- Site map (Tab), control hints, prompts, machine panel; graphics, mouse sensitivity and invert-Y settings
+
+## Milestone 2: Operators and automation
 - Hiring board, operators with names, wages, skills and traits
-- Assigned operators run their machine's job on a loop (the same job functions you use)
-- Daily wages, bottleneck marker on the chain
+- Operators drive machines in 3D on their own: excavators dig and load trucks, trucks drive the haul road and tip
+- Daily wages, bottleneck marker
 - **Balance tester** (`npm run sim`) prints pacing times
 - Milestones/achievements with cash rewards, some switching on features
-- Sound effects (free CC0 packs)
+- Sound effects: engines, digging, tipping, UI (free CC0 packs)
 
-## Milestone 3 — Contracts, reputation and events
+## Milestone 3: Contracts, reputation and events
 - Contracts board, deliveries, deadlines, reputation levels 0–10
-- The six random events
+- The six random events (rain affects driving grip, and so on)
 - Bank screen with normal loans
 
-## Milestone 4 — Research and all machine types
+## Milestone 4: Research and all machine types
 - Research tree (pay and wait, one at a time)
 - Standard, Heavy and Mega tiers for everything
-- Crusher and graded products
-- Drill rig and blasting
+- Crusher (3D plant at the yard) and graded products
+- Drill rig and blasting (with a proper boom and dust cloud)
 - Conveyors
 
-## Milestone 5 — All sites and the manager view
-- Sites 2–5 with their rock, buying sites, delivery cost by distance
-- Moving between sites; other sites keep running
+## Milestone 5: All sites and the manager view
+- Sites 2–5, each with its own 3D layout, rock and scenery
+- Buying sites, delivery cost by distance, travelling between sites
 - Geology surveys and rich pockets
 - Manager overview screen, auto-sell rules, rail link
 - A balance pass over the whole ~10 h game using the balance tester
 
-## Milestone 6 — 3D world (looking good)
-- Three.js scene built from the game state: terraced pit, yard, haul road
-- Realistic lighting: HDRI sky, sun and soft shadows, haze, post-processing
-- Placeholder models, with a clear guide to naming and exporting your Blender `.glb` files
-- Camera controls, and switching between the 3D view and the 2D map
-- Graphics settings (Low → Ultra)
-- Machines move around in 3D, driven by the same logic (you watch, you don't drive yet)
+## Milestone 6: Your Blender models and more realism
+- Load your `.glb` models (with a short naming and export guide), falling back to the placeholders
+- More detailed terrain textures, post-processing (ambient occlusion, bloom), better lighting
+- Proper excavator arm reach toward the target, tyre tracks, loaded-truck sway
 
-## Milestone 7 — Driving with real physics
-- Rapier physics: truck suspension, grip, weight, load making it heavier
-- E to get in or out, WASD + mouse, chase camera and cab camera
-- Excavator: drive on tracks, control the arm directly, dig at the face
-- Driving triggers the real jobs (dig, load, unload)
-- Dust, tyre tracks, rocks tipping into the truck
-- Operators hand the machine back to you and take it over again smoothly
-
-## Milestone 8 — Desktop app
-- Electron wrapper: a real window, fullscreen, a working Quit button
+## Milestone 7: Desktop app
+- Electron wrapper: a real window, full screen, a working Quit button, Esc always goes to the menu
 - Saves as files on disk
 - Build a Mac app and a Windows installer
 

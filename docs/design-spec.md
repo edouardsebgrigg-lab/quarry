@@ -23,7 +23,7 @@ A PC quarry tycoon game. You start with a rusty excavator, a rusty truck and a r
 | Physics (later) | Rapier (a proper physics engine that runs in the browser), for driving and collisions |
 | Desktop app (last) | Electron |
 | Game logic | Runs separately from the screen at a fixed 10 ticks per second, with seeded randomness so tests and the balance tester give repeatable results |
-| Before 3D | HUD and panels, plus a **2D top-down site view** drawn on a canvas |
+| View | **3D first person** from the start (changed from the original "systems first, 3D later" plan). The 2D top-down view is kept as the site map (Tab) |
 
 We are **not** planning a Godot move. It would mean rewriting all the code.
 
@@ -39,11 +39,12 @@ We are **not** planning a Godot move. It would mean rewriting all the code.
 - **Crush (from site 2 onward):** turns raw rock in the yard into a graded product worth more.
 - **Sell:** sell yard stock on the open market, or deliver it to a contract. A **delivery cost per tonne** is taken off, based on how far the site is from market.
 
-### Manual work = timed jobs
-- Each action (Dig, Haul, Crush, Drill, Blast, Repair) is a **timed job with a progress bar**. Better machines mean faster jobs and bigger loads.
-- Holding the hotkey repeats the job.
-- **You are one person.** You can only run one job at a time. While you're hauling, nobody is digging. That pain is what makes hiring your first operator feel great.
-- Operators later run the **exact same job functions** on a loop. The future 3D driving will call them too.
+### Manual work = hands-on, first person
+- You walk around the site in first person and get into machines (**E**).
+- **Excavator:** the mouse swings the house; hold the left mouse button with the bucket over a zone to scoop (a timed dig cycle — better machines scoop more, faster); click to dump into a truck bed or onto the face pile. Skill = efficient swings.
+- **Truck:** real driving physics (heavier when loaded). Drive to the yard, stop in the tipping bay, press **T** to tip. Or park at the face pile and press **F** to load from it.
+- **You are one person.** You can only work one machine at a time. While you're driving the truck, nobody is digging. That pain is what makes hiring your first operator feel great.
+- Under the hood these are the same timed jobs (dig, tip, load, repair). Operators (later) run them automatically; a truck driven by an operator uses the timed "haul" job.
 
 ## 5. Time
 
@@ -191,23 +192,9 @@ About six simple events, one every few days:
 
 ## 15. Screens and controls
 
-**Screens:** Main menu (New Game / Continue / Load / Settings / Quit) · HUD (money, date, speed, current job) · 2D site view · Shop · Machines · Workforce · Market and Contracts · Research · Bank · Sites / Manager overview · Pause menu (Resume / Save / Load / Settings / Quit to menu) · Settings (volume, key bindings, fullscreen, UI scale, autosave) · Dev panel.
+**Screens:** Main menu (New Game / Continue / Load / Settings / Quit) · HUD (money, date, speed) · 3D view with prompts and a machine panel · Site map (2D) · Shop · Machines · Workforce · Market and Contracts · Research · Bank · Sites / Manager overview · Pause menu (Resume / Save / Load / Settings / Quit to menu) · Settings (volume, key bindings, fullscreen, UI scale, autosave) · Dev panel.
 
-**Default hotkeys** (all rebindable):
-
-| Key | Action |
-|---|---|
-| D | Dig |
-| H | Haul |
-| S | Sell (opens quick-sell) |
-| R | Service/repair current machine |
-| Tab | Switch to next machine |
-| Space | Pause / unpause |
-| 1 / 2 / 3 | Speed 1× / 2× / 4× |
-| B | Shop |
-| M | Market and contracts |
-| Esc | Pause menu |
-| F1 | Dev panel (dev builds only) |
+**Default controls** (all rebindable): WASD move/drive, mouse look/swing, Shift sprint, Space jump/handbrake, E get in/out, left mouse dig/dump, T tip, F load from pile, R service/repair, C camera, V recover vehicle, Tab site map, P pause time, 1/2/3 speed, B shop, M market, Esc menu, F1 dev panel. The full table is in the README.
 
 Game UI rules: full screen, no browser-looking bits, no page scrolling, and everything reachable by keyboard and mouse.
 
@@ -217,7 +204,7 @@ Game UI rules: full screen, no browser-looking bits, no page scrolling, and ever
 - Click a site to jump there. Click a machine to take it over yourself.
 - Research unlocks **auto-sell rules**, e.g. "sell granite when price > $30".
 
-## 17. 3D world (later milestones)
+## 17. 3D world
 
 - Three.js scene per site. The pit is drawn as **terraced steps** (benches) that drop as zones get deeper. No free-form terrain digging.
 - **E** to get into or out of a machine. **WASD + mouse** to drive, with a chase camera and a cab camera.
@@ -281,6 +268,7 @@ As in the original brief, plus a `tools/` folder for the balance tester:
   data/       all balance numbers (JSON)
   src/
     core/ economy/ machinery/ quarry/ workforce/ progression/   ← logic only, no screen code
+    game/                                                        ← wires the logic together, player actions
     input/ ui/ world3d/                                          ← display + controls
   tools/      balance tester
   assets/models/
