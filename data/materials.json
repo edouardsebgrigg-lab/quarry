@@ -1,4 +1,12 @@
 {
-  "sand": { "name": "Sand", "basePrice": 4, "color": "#e3c98f" },
-  "gravel": { "name": "Gravel", "basePrice": 6, "color": "#9a938a" }
+  "sand": {
+    "name": "Sand",
+    "basePrice": 5,
+    "color": "#e3c98f"
+  },
+  "gravel": {
+    "name": "Gravel",
+    "basePrice": 7,
+    "color": "#9a938a"
+  }
 }

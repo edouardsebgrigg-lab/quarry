@@ -1,25 +1,49 @@
 {
   "tiers": {
-    "rusty": { "name": "Rusty", "unlocked": true },
-    "used": { "name": "Used", "unlocked": true }
+    "rusty": {
+      "name": "Rusty",
+      "unlocked": true
+    },
+    "used": {
+      "name": "Used",
+      "unlocked": true
+    }
   },
   "types": {
     "excavator": {
       "name": "Excavator",
       "tiers": {
         "rusty": {
-          "price": 120, "bucket": 0.5, "cycleTime": 4, "maxHardness": 3,
-          "fuelPerJob": 0.1, "wearPerJob": 0.5,
-          "breakdownBase": 0.002, "breakdownWear": 0.06, "startCondition": 70,
-          "serviceCostPerPoint": 0.4, "serviceTime": 6,
-          "repairCost": 40, "repairTime": 12, "repairTo": 70
+          "price": 120,
+          "bucket": 0.6,
+          "cycleTime": 3.5,
+          "maxHardness": 3,
+          "fuelPerJob": 0.08,
+          "wearPerJob": 0.5,
+          "breakdownBase": 0.002,
+          "breakdownWear": 0.04,
+          "startCondition": 70,
+          "serviceCostPerPoint": 0.4,
+          "serviceTime": 6,
+          "repairCost": 25,
+          "repairTime": 12,
+          "repairTo": 70
         },
         "used": {
-          "price": 220, "bucket": 1.3, "cycleTime": 3.8, "maxHardness": 4,
-          "fuelPerJob": 0.2, "wearPerJob": 0.3,
-          "breakdownBase": 0.001, "breakdownWear": 0.03, "startCondition": 90,
-          "serviceCostPerPoint": 0.8, "serviceTime": 6,
-          "repairCost": 80, "repairTime": 12, "repairTo": 75
+          "price": 170,
+          "bucket": 1.6,
+          "cycleTime": 3.5,
+          "maxHardness": 4,
+          "fuelPerJob": 0.2,
+          "wearPerJob": 0.3,
+          "breakdownBase": 0.001,
+          "breakdownWear": 0.03,
+          "startCondition": 90,
+          "serviceCostPerPoint": 0.8,
+          "serviceTime": 6,
+          "repairCost": 80,
+          "repairTime": 12,
+          "repairTo": 75
         }
       }
     },
@@ -27,18 +51,36 @@
       "name": "Haul Truck",
       "tiers": {
         "rusty": {
-          "price": 100, "capacity": 3, "speed": 8, "loadTime": 5,
-          "fuelPerJob": 0.8, "wearPerJob": 1.2,
-          "breakdownBase": 0.003, "breakdownWear": 0.06, "startCondition": 70,
-          "serviceCostPerPoint": 0.4, "serviceTime": 6,
-          "repairCost": 35, "repairTime": 12, "repairTo": 70
+          "price": 100,
+          "capacity": 3,
+          "speed": 8,
+          "loadTime": 5,
+          "fuelPerJob": 0.8,
+          "wearPerJob": 1.2,
+          "breakdownBase": 0.003,
+          "breakdownWear": 0.04,
+          "startCondition": 70,
+          "serviceCostPerPoint": 0.4,
+          "serviceTime": 6,
+          "repairCost": 20,
+          "repairTime": 12,
+          "repairTo": 70
         },
         "used": {
-          "price": 200, "capacity": 8, "speed": 11, "loadTime": 5,
-          "fuelPerJob": 1.6, "wearPerJob": 0.7,
-          "breakdownBase": 0.0015, "breakdownWear": 0.03, "startCondition": 90,
-          "serviceCostPerPoint": 0.8, "serviceTime": 6,
-          "repairCost": 70, "repairTime": 12, "repairTo": 75
+          "price": 150,
+          "capacity": 8,
+          "speed": 11,
+          "loadTime": 5,
+          "fuelPerJob": 1.6,
+          "wearPerJob": 0.7,
+          "breakdownBase": 0.0015,
+          "breakdownWear": 0.03,
+          "startCondition": 90,
+          "serviceCostPerPoint": 0.8,
+          "serviceTime": 6,
+          "repairCost": 70,
+          "repairTime": 12,
+          "repairTo": 75
         }
       }
     }

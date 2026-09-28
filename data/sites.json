@@ -3,23 +3,59 @@
     "name": "Roadside Gravel Pit",
     "price": 0,
     "startOwned": true,
-    "haulDistance": 60,
+    "haulDistance": 50,
     "deliveryCostPerTonne": 0.3,
     "facePileCapacity": 20,
     "yardCapacity": 150,
     "layerThickness": 2,
     "tonnesPerLayer": 600,
     "layerProfile": [
-      { "hardness": 1, "mix": { "sand": 0.6, "gravel": 0.4 } },
-      { "hardness": 2, "mix": { "sand": 0.4, "gravel": 0.6 } },
-      { "hardness": 2, "mix": { "sand": 0.2, "gravel": 0.8 } },
-      { "hardness": 3, "mix": { "sand": 0.1, "gravel": 0.9 } }
+      {
+        "hardness": 1,
+        "mix": {
+          "sand": 0.6,
+          "gravel": 0.4
+        }
+      },
+      {
+        "hardness": 2,
+        "mix": {
+          "sand": 0.4,
+          "gravel": 0.6
+        }
+      },
+      {
+        "hardness": 2,
+        "mix": {
+          "sand": 0.2,
+          "gravel": 0.8
+        }
+      },
+      {
+        "hardness": 3,
+        "mix": {
+          "sand": 0.1,
+          "gravel": 0.9
+        }
+      }
     ],
     "zones": [
-      { "id": "A", "name": "North face" },
-      { "id": "B", "name": "East face" },
-      { "id": "C", "name": "West bank" },
-      { "id": "D", "name": "South bank" }
+      {
+        "id": "A",
+        "name": "North face"
+      },
+      {
+        "id": "B",
+        "name": "East face"
+      },
+      {
+        "id": "C",
+        "name": "West bank"
+      },
+      {
+        "id": "D",
+        "name": "South bank"
+      }
     ]
   }
 }
