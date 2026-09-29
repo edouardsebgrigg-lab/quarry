@@ -38,6 +38,24 @@ export function addProps({ scene, physics, layout, heightAt }) {
   place('fueltank', c.x + 7.5, c.z - 0.5, Math.PI / 2, 1, 0);
   collider(0.8, 1.0, 1.7, c.x + 7.5, 1.0, c.z - 0.5);
 
+  // ---- behind the office: the old container and the junk that collects round it ----
+  const cx = c.x - 13;
+  const cz = c.z - 3;
+  if (place('container', cx, cz, Math.PI, 1, 0)) collider(3.03, 1.3, 1.22, cx, 1.3, cz);
+  place('drum', cx + 4.2, cz + 2.2, 0.4, 1, 0);
+  place('drumrust', cx + 4.9, cz + 2.6, 1.3, 1, 0);
+  place('drum', cx + 4.4, cz + 3.3, 2.2, 1, 0);
+  const fallen = place('drumrust', cx + 6.2, cz + 1.2, 0.6, 1, 0.29);
+  if (fallen) fallen.rotation.set(Math.PI / 2, 0.6, 0, 'YXZ');
+  collider(0.6, 0.45, 0.8, cx + 4.6, 0.45, cz + 2.7);
+  if (place('tyres', cx - 4.4, cz + 2.2, 0, 1, 0)) collider(0.55, 0.7, 0.55, cx - 4.4, 0.7, cz + 2.2);
+  place('pallets', cx + 3.8, cz - 2.6, 0.3, 1, 0);
+  if (place('portaloo', cx + 6.2, cz + 0.4, -Math.PI / 2, 1, 0)) collider(0.6, 1.2, 0.6, cx + 6.2, 1.2, cz + 0.4);
+
+  // ---- your old pickup, parked where you left it ----
+  const pk = layout.pickup;
+  if (pk && place('pickup', pk.x, pk.z, pk.yaw, 1, 0)) collider(2.7, 0.9, 0.95, pk.x, 0.9, pk.z, pk.yaw);
+
   // ---- block walls behind the stockpiles (two blocks high) ----
   const wallX = layout.yard.x1 - 1.2;
   const z0 = layout.yard.z0 + 2;
@@ -70,7 +88,10 @@ export function addProps({ scene, physics, layout, heightAt }) {
   // ---- boulders around the edge of the site and on the pit rims ----
   const r = rng(99);
   const T = layout.terrain;
+  const gate = layout.entrance ?? { x0: 0, x1: 0 };
   const keepClear = (x, z) => inRect(layout.yard, x, z, 3) || inRect({ x0: -60, x1: 45, z0: -6, z1: 6 }, x, z)
+    || inRect({ x0: gate.x0 - 5, x1: gate.x1 + 5, z0: T.z0 - 2, z1: T.z0 + 16 }, x, z)
+    || inRect({ x0: c.x - 20, x1: c.x + 12, z0: c.z - 12, z1: c.z + 5 }, x, z)
     || Object.values(layout.zones).some((zr) => inRect(zr, x, z, 1.5)) || Math.hypot(x - c.x, z - c.z) < 9;
   let placed = 0;
   for (let tries = 0; tries < 400 && placed < 38; tries++) {

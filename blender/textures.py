@@ -119,3 +119,28 @@ def concrete(size=512, seed=41):
     v = 0.58 + 0.12 * n - 0.1 * smoothstep(0.7, 0.9, s)
     rgb = np.stack([v, v * 0.98, v * 0.94], axis=-1)
     return to_rgba(rgb)
+
+
+def wood(size=512, seed=61):
+    """Weathered, silvery timber: grain lines along U, warped a little, with dark splits."""
+    n = fractal_noise(size, 1.1, seed)
+    warp = fractal_noise(size, 2.6, seed + 1)
+    rows = (np.arange(size)[:, None] + (warp * 24).astype(int)) % size
+    grain = n[rows, 0]
+    grain = np.repeat(grain, 1, axis=1) if grain.shape[1] == size else np.tile(grain, (1, size))
+    v = 0.78 + 0.35 * (grain - 0.5)
+    splits = smoothstep(0.93, 0.99, grain) * 0.45
+    weather = fractal_noise(size, 2.0, seed + 2)
+    rgb = np.stack([v, v * 0.95, v * 0.86], axis=-1)
+    rgb = lerp(rgb, [0.62, 0.61, 0.58], weather * 0.55)  # sun-bleached grey
+    rgb = rgb * (1 - splits[..., None])
+    return to_rgba(rgb)
+
+
+def plastic(size=256, seed=71):
+    """Slightly mottled moulded plastic (to be tinted), with dirt streaks."""
+    n = fractal_noise(size, 1.8, seed)
+    d = smoothstep(0.6, 0.95, fractal_noise(size, 2.4, seed + 1))
+    v = 0.9 + 0.06 * (n - 0.5)
+    rgb = np.stack([v, v, v], axis=-1) * (1 - d[..., None] * 0.25)
+    return to_rgba(rgb)

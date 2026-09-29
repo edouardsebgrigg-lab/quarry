@@ -13,6 +13,7 @@ import { createMouse } from './mouse.js';
 import { preloadModels } from './glbModels.js';
 import { preloadGround } from './groundMaterial.js';
 import { preloadVegetation, createVegetation } from './vegetation.js';
+import { preloadEntrance, addEntrance } from './entrance.js';
 import { LAYOUTS, zoneAt, inRect } from './layouts.js';
 import { keyLabel } from '../input/index.js';
 import { getSiteData, getZoneInfo, pileTotal } from '../quarry/index.js';
@@ -33,7 +34,7 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
   canvas.className = 'world-canvas';
   container.append(canvas);
   const { renderer, q } = createRenderer(canvas, settings.graphics);
-  const [physics] = await Promise.all([createPhysics(), preloadModels(), preloadGround(renderer), preloadVegetation(renderer)]);
+  const [physics] = await Promise.all([createPhysics(), preloadModels(), preloadGround(renderer), preloadVegetation(renderer), preloadEntrance(renderer)]);
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 3000);
   camera.rotation.order = 'YXZ';
@@ -47,8 +48,14 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
   const facePilePos = { ...(game.state.positions?.facePile ?? layout.facePile) };
   const piles = createPiles({ scene, layout, game, facePilePos });
   const particles = createParticles(scene);
+  addEntrance({ scene, physics, layout });
   const cab = layout.cabin;
+  const gate = layout.entrance;
   const noGrowth = [
+    [{ x0: cab.x - 18, x1: cab.x - 5, z0: cab.z - 7, z1: cab.z + 2 }, 0], // container and junk
+    [{ x0: gate.x0, x1: gate.x1, z0: layout.terrain.z0 - 12, z1: layout.terrain.z0 }, 0], // driveway
+    [{ x0: -1e4, x1: 1e4, z0: layout.publicRoad.z - 4.5, z1: layout.publicRoad.z + 4.5 }, 0], // road
+    [{ x0: layout.pickup.x, x1: layout.pickup.x, z0: layout.pickup.z, z1: layout.pickup.z }, 3],
     ...Object.values(layout.zones).map((r) => [r, 0.8]),
     [{ x0: cab.x - 7, x1: cab.x + 3, z0: cab.z - 3, z1: cab.z + 3.5 }, 0],
     ...Object.values(layout.parking).flat().filter((p) => p.z !== undefined).map((p) => [{ x0: p.x, x1: p.x, z0: p.z, z1: p.z }, 4]),

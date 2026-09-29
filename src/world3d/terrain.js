@@ -40,7 +40,12 @@ export function createTerrain({ scene, physics, layout, siteData, materials, get
     const edge = Math.min(x - T.x0, T.x1 - x, z - T.z0, T.z1 - z);
     if (edge < 10) {
       const s = (10 - Math.max(0, edge)) / 10;
-      return 3 * Math.sin(Math.PI * s) - 0.3 * s;
+      const bank = 3 * Math.sin(Math.PI * s) - 0.3 * s;
+      const gate = layout.entrance;
+      if (!gate || z > T.z0 + 11) return bank;
+      // The entrance: the bank is cut away with sloped shoulders either side.
+      const open = 1 - smoothstep(0, 4, Math.max(gate.x0 - x, 0, x - gate.x1));
+      return bank * (1 - open) - 0.3 * s * open;
     }
     for (const [id, r] of Object.entries(layout.zones)) {
       if (!inRect(r, x, z)) continue;
@@ -196,6 +201,13 @@ export function createTerrain({ scene, physics, layout, siteData, materials, get
 
   rebuild();
   rebuildCollider();
+  // Flat ground beyond the site (at the level of the grass outside), so you can walk or
+  // drive out through the gate.
+  const R = 600;
+  for (const [x0, x1, z0, z1] of [[-R, R, -R, T.z0], [-R, R, T.z1, R], [-R, T.x0, T.z0, T.z1], [T.x1, R, T.z0, T.z1]]) {
+    world.createCollider(RAPIER.ColliderDesc.cuboid((x1 - x0) / 2, 1, (z1 - z0) / 2)
+      .setTranslation((x0 + x1) / 2, -1.3, (z0 + z1) / 2).setFriction(0.9));
+  }
   addSiteDressing(scene, layout);
   addProps({ scene, physics, layout, heightAt: (x, z) => heightAt(x, z) });
 

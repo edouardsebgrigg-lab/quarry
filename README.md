@@ -58,6 +58,16 @@ Use Chrome or Edge for the best experience (full screen and mouse capture work b
 
 All keys can be changed in Settings.
 
+## Getting started
+
+You take over an old, overgrown gravel pit with $250 and no machines. A goal card (top left) walks you through the first steps:
+
+1. Walk to the site office and use the laptop (**E** at the door, or **B** anywhere) to buy a rusty excavator, then a rusty truck. They're delivered to the pit.
+2. Dig, load, haul, tip and sell your first load (see below).
+3. Buy a first cheap upgrade, earn $500, then save up for your first Used machine.
+
+Each goal pays a small bonus. Everything starts slow and clapped-out on purpose.
+
 ## The loop
 
 1. Get in the excavator, swing it over the pit and hold the left mouse button to dig.

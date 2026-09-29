@@ -7,8 +7,18 @@
     "prop_boulder2",
     "prop_boulder3",
     "prop_cone",
+    "prop_container",
+    "prop_drum",
+    "prop_drumrust",
+    "prop_fence",
     "prop_fueltank",
+    "prop_gate",
     "prop_office",
+    "prop_pallets",
+    "prop_pickup",
+    "prop_pole",
+    "prop_portaloo",
+    "prop_tyres",
     "truck_rusty",
     "truck_used"
   ]

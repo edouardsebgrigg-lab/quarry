@@ -7,7 +7,7 @@ rendered image tiles seamlessly. Two renders per surface:
   <name>_normal.jpg  R,G = surface normal (x, y), B = height. Linear data, not colour.
 Plus macro.jpg: three large-scale noise fields the terrain shader uses to break up tiling.
 
-Run:  <python with bpy> blender/ground.py [gravel dirt grass rock macro] [--fast]
+Run:  <python with bpy> blender/ground.py [gravel dirt grass rock asphalt macro] [--fast]
 Output goes to assets/textures/ground/."""
 import math
 import os
@@ -534,6 +534,28 @@ def rock():
     render('rock', S)
 
 
+def asphalt():
+    """Old country-road tarmac: dark binder, worn so the stone chips show, a few cracks. Tile 2 m."""
+    S = 2.0
+    rng = np.random.default_rng(17)
+    n = 512
+    f1, f2, _ = voronoi(n, 7, 18)
+    crack = 1 - tex.smoothstep(0.0, 0.006, f2 - f1)
+    crack *= tex.smoothstep(0.4, 0.7, tex.fractal_noise(n, 2.0, 19))   # only some cell edges
+    h = tex.fractal_noise(n, 2.0, 20) * 0.004 - crack * 0.006
+    height = Field(h, S)
+    base = tex.lerp(srgb('#2f2e2c'), srgb('#44423e'), tex.fractal_noise(n, 1.4, 21))
+    base *= (0.85 + 0.3 * tex.fractal_noise(n, 2.4, 22))[..., None]
+    base *= (1 - 0.5 * crack)[..., None]
+    verts, tris = grid(height, S, 400)
+    mesh_from_arrays('Tar', verts, tris, mat=ground_material('TarMat', image_from_array('tar', base), S))
+    k = 0.15 if FAST else 1.0
+    v, f, c = stones(rng, S, height, int(9000 * k), 0.002, 0.007, ['#8a8781', '#9d9a93', '#6d6a65', '#7c776f', '#b0aba2'],
+                     flat=(0.4, 0.6), sink=0.65, rough=0.35)
+    mesh_from_arrays('Chips', v, f, c, attr_material('Chips', 0.15))
+    render('asphalt', S)
+
+
 def macro():
     """Large-scale variation: R, G, B are three unrelated soft noise fields (linear data)."""
     n = 512
@@ -549,7 +571,7 @@ def macro():
     print('saved macro')
 
 
-SURFACES = {'gravel': gravel, 'dirt': dirt, 'grass': grass, 'rock': rock, 'macro': macro}
+SURFACES = {'gravel': gravel, 'dirt': dirt, 'grass': grass, 'rock': rock, 'asphalt': asphalt, 'macro': macro}
 
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)

@@ -1,7 +1,7 @@
 """Builds every model, exports .glb files to assets/models/ and renders previews.
 
 Run:  <python with bpy> blender/build_models.py [model ...]
-(e.g. `blenv/bin/python blender/build_models.py truck`). See docs/models.md."""
+(e.g. `blenv/bin/python blender/build_models.py truck` or `... prop:cone,gate`). See docs/models.md."""
 import os
 import sys
 
@@ -32,8 +32,9 @@ def write_manifest():
 
 def main(names):
     for name in names or MODELS:
+        name, _, only = name.partition(':')
         module, tiers = MODELS[name]
-        for tier in tiers:
+        for tier in (only.split(',') if only else tiers):
             lib.reset_scene()
             lib._images.clear()
             root = module.build(tier)

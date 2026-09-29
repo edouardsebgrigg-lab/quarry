@@ -11,6 +11,26 @@ All models are made in **Blender** by Python scripts in `blender/`, exported as 
 | Concrete block | `prop_block.glb` | |
 | Boulders | `prop_boulder1..3.glb` | |
 | Traffic cone | `prop_cone.glb` | |
+| Shipping container (20 ft) | `prop_container.glb` | |
+| Oil drums | `prop_drum.glb`, `prop_drumrust.glb` | |
+| Tyre stack, pallets | `prop_tyres.glb`, `prop_pallets.glb` | |
+| Your old pickup | `prop_pickup.glb` | |
+| Fence bay (3 m), farm gate | `prop_fence.glb`, `prop_gate.glb` | |
+| Portaloo, power pole | `prop_portaloo.glb`, `prop_pole.glb` | |
+
+Previews for all of them are in `docs/images/models/`.
+
+## Ground and plant textures
+
+These are also made in Blender, from real geometry rather than painted by hand:
+
+- `blender/ground.py` models patches of gravel (thousands of pebbles in sand), trodden dirt with clods, rough grass (tens of thousands of blades), a sand-and-gravel pit face (layered beds with stones stuck in them) and old tarmac. Each patch wraps at its edges and is rendered from above, which gives a seamless colour image and a normal+height image in `assets/textures/ground/`. The terrain shader (`src/world3d/groundMaterial.js`) blends them.
+- `blender/vegetation.py` models grass tufts, dry grass, ragwort and thistles and renders them from the side into `assets/textures/vegetation.png`, which the game shows on crossed cards that sway in the wind.
+
+```bash
+python blender/ground.py            # all surfaces (about 2 minutes); or e.g. `ground.py rock`
+python blender/vegetation.py
+```
 
 ## Rebuilding the models
 
@@ -21,11 +41,11 @@ blender --background --python blender/build_models.py            # everything
 blender --background --python blender/build_models.py -- truck   # just one
 ```
 
-or Blender as a Python module (`pip install bpy` with Python 3.11) and run `python blender/build_models.py truck`. Add `--no-preview` to skip the preview renders (they take a few minutes).
+or Blender as a Python module (`pip install bpy` with Python 3.11) and run `python blender/build_models.py truck`. To rebuild only some props: `python blender/build_models.py prop:gate,fence`. Add `--no-preview` to skip the preview renders (they take a few minutes).
 
 The scripts:
 - `lib.py`: shape helpers (boxes, cylinders, extruded profiles, lathe), bevels, UVs, grime vertex colours, materials, export and preview rendering.
-- `textures.py`: generates the tileable textures (worn paint, rust, grimy steel, rubber, concrete, cladding).
+- `textures.py`: generates the tileable textures (worn paint, rust, grimy steel, rubber, concrete, cladding, weathered wood, plastic).
 - `truck.py`, `excavator.py`, `props.py`: the models themselves.
 - `menu_background.py`: renders the main-menu picture (`assets/ui/menu.jpg`), with the excavator loading a truck at a quarry face. Add `--fast` for a quick low-res test.
 

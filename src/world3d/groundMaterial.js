@@ -13,6 +13,20 @@ const TILE = { grass: 2, dirt: 3, gravel: 2, rock: 4 };
 
 const textures = {};
 
+// Dry soil, grass and old tarmac barely mirror the sky, even at low angles.
+const DAMP_SHEEN = `
+  material.specularColor *= 0.5;
+  material.specularF90 = 0.25;`;
+
+// For other rough outdoor materials (road, driveway): same low sheen as the ground.
+export function dampSheen(material) {
+  material.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>${DAMP_SHEEN}`);
+  };
+  material.customProgramCacheKey = () => 'damp-sheen';
+  return material;
+}
+
 function placeholder(color) {
   const t = new THREE.DataTexture(new Uint8Array(color), 1, 1);
   t.needsUpdate = true;
@@ -139,11 +153,7 @@ export function createGroundMaterial() {
         vec3 topWN = normalize(vec3(wn.x + topSlope.x, wn.y, wn.z + topSlope.y));
         vec3 groundWN = normalize(topWN * (1.0 - b.w) + rockWN * b.w);
       `)
-      .replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>
-        // Dry soil and grass barely mirror the sky, even at low angles.
-        material.specularColor *= 0.5;
-        material.specularF90 = 0.25;
-      `)
+      .replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>${DAMP_SHEEN}`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         normal = normalize((viewMatrix * vec4(groundWN, 0.0)).xyz);
       `);

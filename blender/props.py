@@ -21,14 +21,14 @@ def rock_texture(size=512, seed=51):
 
 def office():
     root = empty('Office')
-    clad = material('Cladding', (0.92, 0.93, 0.9), 'planks', tex.planks, 512, roughness=0.7)
+    clad = material('Cladding', (0.74, 0.74, 0.69), 'planks', tex.planks, 512, roughness=0.7)
     trim = material('Trim', (0.2, 0.28, 0.36), 'paint_worn', tex.paint_worn, roughness=0.5)
     steel = material('Steel', (1, 1, 1), 'metal_grime', tex.metal_grime, 512, roughness=0.55, metallic=0.7)
     glass = material('Glass', (0.02, 0.025, 0.03), roughness=0.04, metallic=0.6, vertex_color=False)
     concrete = material('Concrete', (1, 1, 1), 'concrete', tex.concrete, 512, roughness=0.9)
     L, W, H, lift = 7.8, 3.6, 2.7, 0.35
     body = mesh_object('Body', bm_box((L, W, H), (0, 0, lift + H / 2)), clad, root)
-    finish(body, 0.03, uv_scale=2.4, dirt_range=(0, 1.2))
+    finish(body, 0.03, uv_scale=2.4, dirt_range=(-0.4, 2.2))
     frame = [bm_box((L + 0.1, W + 0.1, 0.12), (0, 0, lift + 0.06)),  # base frame
              bm_box((L + 0.3, W + 0.3, 0.15), (0, 0, lift + H + 0.07))]  # roof
     for x in (-L / 2, L / 2):
@@ -151,11 +151,332 @@ PARTS = {
 }
 
 
+# ---------------------------------------------------------------- character props
+
+def _wood(name='Wood'):
+    return material(name, (0.4, 0.36, 0.3), 'wood', tex.wood, 512, roughness=0.9)
+
+
+def _corrugated(length, height, thickness=0.03, pitch=0.28, depth=0.04):
+    """Points (x, y) of a corrugated steel sheet running along X, centred on y=0."""
+    top, bot = [], []
+    x = -length / 2
+    k = 0
+    while x < length / 2 - 1e-6:
+        seg = [(x, 0.0), (x + pitch * 0.15, depth), (x + pitch * 0.5, depth), (x + pitch * 0.65, 0.0)]
+        for px, py in seg:
+            if px <= length / 2:
+                top.append((px, py))
+        x += pitch
+        k += 1
+    top.append((length / 2, 0.0))
+    bot = [(px, py - thickness) for px, py in reversed(top)]
+    return [(px, py - depth / 2) for px, py in top + bot]
+
+
+def container():
+    """A tired 20 ft shipping container: corrugated walls, doors at the -X end."""
+    root = empty('Container')
+    paint = material('ContainerPaint', (0.26, 0.07, 0.045), 'paint_worn', tex.paint_worn, roughness=0.6, metallic=0.3)
+    rust = material('ContainerRust', (1, 1, 1), 'rust', tex.rust, roughness=0.85, metallic=0.2)
+    steel = material('Steel', (1, 1, 1), 'metal_grime', tex.metal_grime, 512, roughness=0.55, metallic=0.7)
+    L, W, H = 6.06, 2.44, 2.59
+    walls = []
+    for side in (-1, 1):  # long sides
+        pts = _corrugated(L - 0.3, H - 0.3)
+        bm = bmesh.new()
+        prof = lib.bm_profile(pts, H - 0.3, 'Z', H / 2)
+        bmesh.ops.translate(prof, vec=(0, side * (W / 2 - 0.03), 0), verts=prof.verts)
+        walls.append(prof)
+        bm.free()
+    front = lib.bm_profile(_corrugated(W - 0.3, H - 0.3), H - 0.3, 'Z', H / 2)
+    bmesh.ops.rotate(front, cent=(0, 0, 0), matrix=Matrix.Rotation(math.pi / 2, 3, 'Z'), verts=front.verts)
+    bmesh.ops.translate(front, vec=(L / 2 - 0.05, 0, 0), verts=front.verts)
+    walls.append(front)
+    w = mesh_object('Walls', merge(*walls), paint, root)
+    finish(w, 0, uv_scale=2.0, dirt_range=(0, 1.8))
+    # Frame: corner posts, top and bottom rails, corner castings, roof, floor.
+    fr = []
+    for x in (-L / 2 + 0.08, L / 2 - 0.08):
+        for y in (-W / 2 + 0.08, W / 2 - 0.08):
+            fr.append(bm_box((0.16, 0.16, H), (x, y, H / 2)))
+            for z in (0.09, H - 0.09):
+                fr.append(bm_box((0.18, 0.18, 0.18), (x, y, z)))
+    for y in (-W / 2 + 0.08, W / 2 - 0.08):
+        fr += [bm_box((L, 0.14, 0.16), (0, y, 0.08)), bm_box((L, 0.12, 0.12), (0, y, H - 0.06))]
+    for x in (-L / 2 + 0.08, L / 2 - 0.08):
+        fr += [bm_box((0.14, W, 0.16), (x, 0, 0.08)), bm_box((0.12, W, 0.2), (x, 0, H - 0.1))]
+    fr.append(bm_box((L - 0.1, W - 0.1, 0.04), (0, 0, H - 0.04)))
+    f = mesh_object('Frame', merge(*fr), paint, root)
+    finish(f, 0.01, uv_scale=2.0, dirt_range=(0, 1.8))
+    # Doors: two leaves with vertical ribs, lock bars and handles.
+    doors = []
+    for y in (-W / 4, W / 4):
+        doors.append(bm_box((0.05, W / 2 - 0.08, H - 0.34), (-L / 2 + 0.05, y, H / 2)))
+        for k in range(-2, 3):
+            doors.append(bm_box((0.04, 0.05, H - 0.4), (-L / 2 + 0.01, y + k * 0.2, H / 2)))
+    d = mesh_object('Doors', merge(*doors), paint, root)
+    finish(d, 0.005, uv_scale=2.0, dirt_range=(0, 1.8))
+    bars = []
+    for y in (-W / 2 + 0.3, -0.25, 0.25, W / 2 - 0.3):
+        bars.append(bm_cylinder(0.022, H - 0.25, 'Z', 8, (-L / 2 - 0.04, y, H / 2)))
+        bars.append(bm_box((0.05, 0.08, 0.1), (-L / 2 - 0.04, y, 0.3)))
+        bars.append(bm_box((0.05, 0.08, 0.1), (-L / 2 - 0.04, y, H - 0.3)))
+        bars.append(bm_box((0.06, 0.2, 0.04), (-L / 2 - 0.07, y + 0.1, 1.2)))
+    b = mesh_object('LockBars', merge(*bars), steel, root)
+    finish(b, 0, dirt_range=(0, 1.8))
+    # Rust streaks down from the roof edge.
+    streaks = [bm_box((rng_x, 0.004, 0.9), (x, -W / 2 - 0.005, H - 0.6))
+               for x, rng_x in ((-1.8, 0.35), (0.3, 0.5), (2.1, 0.25))]
+    streaks += [bm_box((0.4, 0.004, 0.6), (-0.9, W / 2 + 0.005, H - 0.45))]
+    r = mesh_object('Rust', merge(*streaks), rust, root)
+    finish(r, 0, uv_scale=0.8, dirt_range=(0, 1.8))
+    return root
+
+
+def drum(rusty=False):
+    """A 200 litre oil drum with rolling hoops."""
+    root = empty('Drum')
+    if rusty:
+        paint = material('DrumRust', (0.9, 0.9, 0.9), 'rust', tex.rust, roughness=0.8, metallic=0.3)
+    else:
+        paint = material('DrumPaint', (0.06, 0.18, 0.45), 'paint_worn', tex.paint_worn, roughness=0.45, metallic=0.4)
+    prof = [(0.0, 0.0), (0.285, 0.0), (0.295, 0.02), (0.285, 0.04), (0.285, 0.27), (0.3, 0.29), (0.285, 0.31),
+            (0.285, 0.57), (0.3, 0.59), (0.285, 0.61), (0.285, 0.84), (0.295, 0.86), (0.285, 0.88), (0.0, 0.875)]
+    body = lib.bm_lathe(prof, 32, 'Z')
+    o = mesh_object('DrumBody', body, paint, root)
+    finish(o, 0, uv_scale=0.9, smooth_angle=50, dirt_range=(-0.1, 0.9))
+    caps = merge(bm_cylinder(0.03, 0.02, 'Z', 10, (0.17, 0.0, 0.885)), bm_cylinder(0.02, 0.02, 'Z', 8, (-0.17, 0.05, 0.885)))
+    c = mesh_object('Bungs', caps, paint, root)
+    finish(c, 0, dirt_range=(-0.1, 0.9))
+    return root
+
+
+def tyres():
+    """A stack of old truck tyres, not quite straight."""
+    root = empty('Tyres')
+    rubber = material('Rubber', (1, 1, 1), 'rubber', tex.rubber, 512, roughness=0.9)
+    rng = np.random.default_rng(4)
+    parts = []
+    for k in range(4):
+        t = lib.bm_torus(0.4, 0.17, 'Z', 28, 10, (rng.uniform(-0.06, 0.06), rng.uniform(-0.06, 0.06), 0.17 + k * 0.33))
+        bmesh.ops.scale(t, vec=(1, 1, 0.95), verts=t.verts)
+        parts.append(t)
+    o = mesh_object('TyreStack', merge(*parts), rubber, root)
+    finish(o, 0, uv_scale=0.6, smooth_angle=60, dirt_range=(-0.2, 1.4))
+    return root
+
+
+def pallets():
+    """Three wooden pallets stacked a little askew."""
+    root = empty('Pallets')
+    wood = _wood()
+    rng = np.random.default_rng(8)
+    parts = []
+    for k in range(3):
+        z0 = k * 0.145
+        dx, dy, rot = rng.uniform(-0.05, 0.05), rng.uniform(-0.05, 0.05), rng.uniform(-0.08, 0.08)
+        p = [bm_box((1.2, 0.1, 0.1), (0, y, z0 + 0.072)) for y in (-0.45, 0, 0.45)]
+        p += [bm_box((1.2, 0.1, 0.02), (0, y, z0 + 0.01)) for y in (-0.45, 0, 0.45)]
+        p += [bm_box((0.1, 1.0, 0.022), (x, 0, z0 + 0.133)) for x in np.linspace(-0.55, 0.55, 7)]
+        pm = merge(*p)
+        bmesh.ops.rotate(pm, cent=(0, 0, 0), matrix=Matrix.Rotation(rot, 3, 'Z'), verts=pm.verts)
+        bmesh.ops.translate(pm, vec=(dx, dy, 0), verts=pm.verts)
+        parts.append(pm)
+    o = mesh_object('PalletStack', merge(*parts), wood, root)
+    finish(o, 0.004, uv_scale=0.8, dirt_range=(-0.1, 0.6))
+    return root
+
+
+def pickup():
+    """The owner's old pickup: faded paint, rust, a dented tailgate. X forward."""
+    root = empty('Pickup')
+    paint = material('PickupPaint', (0.52, 0.62, 0.66), 'paint_worn', tex.paint_worn, roughness=0.5, metallic=0.2)
+    rust = material('PickupRust', (1, 1, 1), 'rust', tex.rust, roughness=0.85, metallic=0.2)
+    steel = material('Steel', (1, 1, 1), 'metal_grime', tex.metal_grime, 512, roughness=0.55, metallic=0.7)
+    chrome = material('Chrome', (0.75, 0.75, 0.75), roughness=0.25, metallic=1.0, vertex_color=False)
+    rubber = material('Rubber', (1, 1, 1), 'rubber', tex.rubber, 512, roughness=0.9)
+    glass = material('Glass', (0.02, 0.025, 0.03), roughness=0.04, metallic=0.6, vertex_color=False)
+    black = material('Black', (0.015, 0.015, 0.016), roughness=0.8, vertex_color=False)
+    lamp = material('Lamp', (0.9, 0.88, 0.8), roughness=0.1, vertex_color=False)
+    tail = material('Tail', (0.6, 0.03, 0.02), roughness=0.2, vertex_color=False)
+    W = 1.84
+    wb = 1.6  # wheel centres at x = +/- wb
+    R = 0.37
+
+    def arch(cx, n=9, r=0.47, z=0.4):
+        return [(cx + r * math.cos(a), z + r * math.sin(a)) for a in np.linspace(math.pi, 0, n)]
+
+    # Lower body side silhouette with wheel arches, extruded across the width.
+    lower = [(-2.62, 0.52)] + arch(-wb) + arch(wb) + [(2.6, 0.5), (2.66, 0.62), (2.62, 0.95), (1.3, 1.02),
+                                                      (-0.25, 0.9), (-2.62, 0.9)]
+    lower = [(-2.62, 0.52)] + [p for p in arch(-wb)] + [p for p in arch(wb)] + [(2.6, 0.5), (2.66, 0.62), (2.6, 0.97),
+                                                                                (1.3, 1.05), (-2.62, 0.95)]
+    body = lib.bm_profile(lower, W, 'Y')
+    cab = lib.bm_profile([(-0.3, 0.9), (1.3, 0.9), (1.3, 1.1), (0.78, 1.74), (-0.2, 1.78), (-0.3, 1.72)], W - 0.08, 'Y')
+    bed = [bm_box((2.3, 0.06, 0.42), (-1.46, s * (W / 2 - 0.03), 1.16)) for s in (-1, 1)]
+    bed.append(bm_box((0.06, W, 0.42), (-0.33, 0, 1.16)))  # bed front wall
+    b = mesh_object('Body', merge(body, cab, *bed), paint, root)
+    finish(b, 0.02, uv_scale=1.4, dirt_range=(0.2, 1.3))
+    # Tailgate hanging a little skew, rusty.
+    tg = bm_box((0.06, W - 0.04, 0.42), (-2.6, 0, 1.15))
+    bmesh.ops.rotate(tg, cent=(-2.6, 0, 0.95), matrix=Matrix.Rotation(math.radians(-6), 3, 'Y'), verts=tg.verts)
+    t = mesh_object('Tailgate', tg, rust, root)
+    finish(t, 0.01, dirt_range=(0.2, 1.3))
+    # Rust along the sills and arches.
+    sills = [bm_box((1.9, 0.02, 0.12), (0, s * (W / 2 + 0.001), 0.58)) for s in (-1, 1)]
+    sills += [bm_box((0.5, 0.02, 0.18), (-2.2, s * (W / 2 + 0.001), 0.7)) for s in (-1, 1)]
+    r = mesh_object('Rust', merge(*sills), rust, root)
+    finish(r, 0, uv_scale=0.6, dirt_range=(0.2, 1.3))
+    # Glass: slabs a touch wider than the cab so they show on each side.
+    side_glass = lib.bm_profile([(0.0, 1.18), (1.1, 1.18), (0.78, 1.66), (-0.05, 1.68)], W - 0.06, 'Y')
+    wind = lib.bm_profile([(1.28, 1.12), (1.32, 1.14), (0.8, 1.76), (0.76, 1.73)], W - 0.3, 'Y')
+    rear = bm_box((0.02, W - 0.5, 0.4), (-0.31, 0, 1.42))
+    g = mesh_object('Glass', merge(side_glass, wind, rear), glass, root)
+    lib.box_uv(g)
+    # Grille, bumpers, lamps, mirrors, door seams.
+    trim = [bm_box((0.04, 1.2, 0.3), (2.67, 0, 0.8))]
+    for s in (-1, 1):
+        trim.append(bm_box((0.14, 0.03, 0.12), (1.15, s * (W / 2 + 0.12), 1.3)))  # mirror
+        trim.append(bm_box((0.02, 0.04, 0.02), (1.15, s * (W / 2 + 0.05), 1.3)))
+        trim.append(bm_box((0.01, 0.005, 0.7), (0.3, s * (W / 2 + 0.001), 1.2)))  # door seam
+        trim.append(bm_box((0.12, 0.02, 0.03), (0.1, s * (W / 2 + 0.01), 1.08)))  # handle
+    tr = mesh_object('Trim', merge(*trim), black, root)
+    lib.box_uv(tr)
+    bumpers = merge(bm_box((0.12, W + 0.04, 0.16), (2.7, 0, 0.5)), bm_box((0.1, W, 0.14), (-2.66, 0, 0.5)))
+    bp = mesh_object('Bumpers', bumpers, chrome, root)
+    lib.box_uv(bp)
+    lights = merge(*[bm_box((0.04, 0.26, 0.14), (2.65, s * 0.72, 0.85)) for s in (-1, 1)])
+    mesh_object('Headlights', lights, lamp, root)
+    tl = merge(*[bm_box((0.04, 0.1, 0.22), (-2.64, s * 0.85, 1.05)) for s in (-1, 1)])
+    mesh_object('TailLights', tl, tail, root)
+    # Wheels and underside.
+    tyres_, rims = [], []
+    for x in (-wb, wb):
+        for s in (-1, 1):
+            y = s * (W / 2 - 0.1)
+            tyres_.append(bm_cylinder(R, 0.25, 'Y', 24, (x, y, R)))
+            rims.append(bm_cylinder(0.2, 0.26, 'Y', 16, (x, y, R)))
+    ty = mesh_object('Tyres', merge(*tyres_), rubber, root)
+    finish(ty, 0.04, 2, uv_scale=0.6, smooth_angle=40, dirt_range=(0, 0.8))
+    rm = mesh_object('Rims', merge(*rims), steel, root)
+    finish(rm, 0.01, dirt_range=(0, 0.8))
+    under = mesh_object('Chassis', merge(bm_box((4.8, 1.0, 0.2), (0, 0, 0.42)), bm_box((0.8, 0.06, 0.06), (-2.3, 0.4, 0.3))), steel, root)
+    finish(under, 0.01, dirt_range=(0, 0.8))
+    return root
+
+
+def fence():
+    """One 3 m bay of post-and-rail fence: a post at x=0 and three rails along +X."""
+    root = empty('Fence')
+    wood = _wood()
+    parts = [bm_box((0.13, 0.13, 1.35), (0, 0, 0.55))]
+    for z in (0.35, 0.7, 1.05):
+        parts.append(bm_box((3.08, 0.04, 0.11), (1.5, 0.08, z)))
+    o = mesh_object('Bay', merge(*parts), wood, root)
+    finish(o, 0.008, uv_scale=0.9, dirt_range=(-0.2, 0.8))
+    return root
+
+
+def gate():
+    """A galvanised five-bar farm gate (3.6 m, along +X) on its timber hanging post."""
+    root = empty('Gate')
+    galv = material('Galvanised', (0.7, 0.72, 0.72), 'metal_grime', tex.metal_grime, 512, roughness=0.45, metallic=0.9)
+    wood = _wood()
+    post = mesh_object('Post', bm_box((0.2, 0.2, 1.8), (0, 0, 0.7)), wood, root)
+    finish(post, 0.01, uv_scale=0.9, dirt_range=(-0.2, 0.8))
+    L, H, z0 = 3.6, 1.1, 0.12
+    bars = []
+    for k in range(5):
+        z = z0 + H * k / 4
+        bars.append(bm_cylinder(0.022, L, 'X', 8, (0.12 + L / 2, 0, z)))
+    for x in (0.14, 0.12 + L):
+        bars.append(bm_cylinder(0.028, H + 0.04, 'Z', 8, (x, 0, z0 + H / 2)))
+    diag = bm_cylinder(0.02, math.hypot(L * 0.55, H), 'X', 8, (0, 0, 0))
+    bmesh.ops.rotate(diag, cent=(0, 0, 0), matrix=Matrix.Rotation(-math.atan2(H, L * 0.55), 3, 'Y'), verts=diag.verts)
+    bmesh.ops.translate(diag, vec=(0.14 + L * 0.275, 0, z0 + H / 2), verts=diag.verts)
+    bars.append(diag)
+    bars += [bm_box((0.1, 0.05, 0.05), (0.1, 0, z)) for z in (z0 + 0.1, z0 + H - 0.1)]  # hinges
+    g = mesh_object('Bars', merge(*bars), galv, root)
+    finish(g, 0, smooth_angle=50, dirt_range=(-0.2, 1.0))
+    return root
+
+
+def portaloo():
+    """Portable site toilet: moulded plastic cabin with a pale roof."""
+    root = empty('Portaloo')
+    body = material('LooBlue', (0.12, 0.3, 0.58), 'plastic', tex.plastic, 256, roughness=0.5)
+    roof = material('LooRoof', (0.85, 0.85, 0.8), 'plastic', tex.plastic, 256, roughness=0.5)
+    dark = material('Black', (0.02, 0.02, 0.02), roughness=0.8, vertex_color=False)
+    shell = [bm_box((1.1, 1.1, 2.1), (0, 0, 1.1)), bm_box((1.2, 1.2, 0.1), (0, 0, 0.05))]
+    for y in (-0.45, -0.15, 0.15, 0.45):  # moulded ribs on the sides
+        shell += [bm_box((1.14, 0.06, 1.9), (0, y, 1.1))]
+    s = mesh_object('Shell', merge(*shell), body, root)
+    finish(s, 0.02, uv_scale=1.0, dirt_range=(0, 1.2))
+    dome = lib.bm_lathe([(0.62, 0.0), (0.55, 0.12), (0.3, 0.2), (0.0, 0.22)], 24, 'Z', (0, 0, 2.15))
+    r = mesh_object('Roof', dome, roof, root)
+    finish(r, 0, smooth_angle=60, dirt_range=(0, 1.2))
+    bits = [bm_box((0.02, 0.8, 1.9), (0.56, 0, 1.08)),  # door
+            bm_box((0.04, 0.12, 0.06), (0.58, 0.3, 1.1)),  # latch
+            bm_cylinder(0.05, 0.6, 'Z', 10, (-0.4, 0.4, 2.3))]  # vent pipe
+    d = mesh_object('Bits', merge(*bits), body, root)
+    finish(d, 0.005, dirt_range=(0, 1.2))
+    mesh_object('Vent', bm_box((0.03, 0.4, 0.08), (0.58, 0, 1.95)), dark, root)
+    return root
+
+
+def pole():
+    """Wooden power pole with a crossarm (along Y) and three insulators on top."""
+    root = empty('Pole')
+    wood = material('PoleWood', (0.38, 0.3, 0.22), 'wood', tex.wood, 512, roughness=0.9)
+    steel = material('Steel', (1, 1, 1), 'metal_grime', tex.metal_grime, 512, roughness=0.55, metallic=0.7)
+    ceramic = material('Insulator', (0.35, 0.22, 0.14), roughness=0.3, vertex_color=False)
+    p = mesh_object('Pole', bm_cylinder(0.14, 9.2, 'Z', 12, (0, 0, 4.4), radius2=0.11), wood, root)
+    finish(p, 0, uv_scale=0.8, smooth_angle=50, dirt_range=(-0.5, 1.5))
+    arm = mesh_object('Arm', bm_box((0.12, 2.0, 0.1), (0, 0, 8.4)), wood, root)
+    finish(arm, 0.01, dirt_range=(-0.5, 1.5))
+    br = [bm_box((0.04, 0.9, 0.04), (0.08, s * 0.4, 8.1)) for s in (-1, 1)]
+    for s in (-1, 1):
+        mesh = br[(s + 1) // 2]
+        bmesh.ops.rotate(mesh, cent=(0.08, 0, 8.1), matrix=Matrix.Rotation(s * 0.6, 3, 'X'), verts=mesh.verts)
+    b = mesh_object('Braces', merge(*br), steel, root)
+    finish(b, 0, dirt_range=(-0.5, 1.5))
+    ins = merge(*[lib.bm_lathe([(0.05, 0.0), (0.07, 0.03), (0.045, 0.06), (0.065, 0.09), (0.03, 0.14), (0.0, 0.15)], 12, 'Z',
+                              (0, y, 8.45)) for y in (-0.8, 0.0, 0.8)])
+    mesh_object('Insulators', ins, ceramic, root).data.shade_smooth()
+    return root
+
+
+PARTS.update({
+    'container': container,
+    'drum': lambda: drum(False),
+    'drumrust': lambda: drum(True),
+    'tyres': tyres,
+    'pallets': pallets,
+    'pickup': pickup,
+    'fence': fence,
+    'gate': gate,
+    'portaloo': portaloo,
+    'pole': pole,
+})
+
+_PREVIEWS = {
+    'container': dict(target=(0, 0, 1.3), distance=11, angle=-130, elevation=15),
+    'pickup': dict(target=(0, 0, 0.9), distance=8, angle=-40, elevation=14),
+    'gate': dict(target=(1.8, 0, 0.7), distance=6, angle=-60, elevation=15, samples=24),
+    'fence': dict(target=(1.5, 0, 0.6), distance=5, angle=-60, elevation=15, samples=24),
+    'portaloo': dict(target=(0, 0, 1.2), distance=5, angle=-35, elevation=15, samples=24),
+    'pole': dict(target=(0, 0, 5.0), distance=14, angle=-50, elevation=10, samples=24),
+}
+
+
 def build(part):
     return PARTS[part]()
 
 
 def PREVIEW(part):
+    if part in _PREVIEWS:
+        return _PREVIEWS[part]
     if part == 'office':
         return dict(target=(0, 0, 1.4), distance=13, angle=-60, elevation=16)
     if part == 'fueltank':
