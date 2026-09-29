@@ -11,6 +11,8 @@ import { createTruck } from './truck.js';
 import { createExcavator } from './excavator.js';
 import { createMouse } from './mouse.js';
 import { preloadModels } from './glbModels.js';
+import { preloadGround } from './groundMaterial.js';
+import { preloadVegetation, createVegetation } from './vegetation.js';
 import { LAYOUTS, zoneAt, inRect } from './layouts.js';
 import { keyLabel } from '../input/index.js';
 import { getSiteData, getZoneInfo, pileTotal } from '../quarry/index.js';
@@ -27,11 +29,11 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
   const layout = LAYOUTS[siteId];
   const siteData = getSiteData(data, siteId);
 
-  const [physics] = await Promise.all([createPhysics(), preloadModels()]);
   const canvas = document.createElement('canvas');
   canvas.className = 'world-canvas';
   container.append(canvas);
   const { renderer, q } = createRenderer(canvas, settings.graphics);
+  const [physics] = await Promise.all([createPhysics(), preloadModels(), preloadGround(renderer), preloadVegetation(renderer)]);
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 3000);
   camera.rotation.order = 'YXZ';
@@ -45,6 +47,19 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
   const facePilePos = { ...(game.state.positions?.facePile ?? layout.facePile) };
   const piles = createPiles({ scene, layout, game, facePilePos });
   const particles = createParticles(scene);
+  const cab = layout.cabin;
+  const noGrowth = [
+    ...Object.values(layout.zones).map((r) => [r, 0.8]),
+    [{ x0: cab.x - 7, x1: cab.x + 3, z0: cab.z - 3, z1: cab.z + 3.5 }, 0],
+    ...Object.values(layout.parking).flat().filter((p) => p.z !== undefined).map((p) => [{ x0: p.x, x1: p.x, z0: p.z, z1: p.z }, 4]),
+  ];
+  const vegetation = createVegetation({
+    scene,
+    quality: settings.graphics,
+    area: { x0: layout.terrain.x0 - 40, x1: layout.terrain.x1 + 40, z0: layout.terrain.z0 - 40, z1: layout.terrain.z1 + 40 },
+    surfaceAt: (x, z) => terrain.surfaceAt(x, z),
+    blocked: (x, z) => noGrowth.some(([r, m]) => inRect(r, x, z, m)),
+  });
 
   // Target marker on the ground where the excavator bucket will dig/dump.
   const marker = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.95, 32),
@@ -383,6 +398,7 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
     } else marker.visible = false;
 
     particles.update(dt);
+    vegetation.update(dt);
     placeCamera(dt);
     env.follow(v ? v.position() : player.feet());
     renderer.render(scene, camera);

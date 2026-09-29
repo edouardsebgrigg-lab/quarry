@@ -1,7 +1,7 @@
 // Renderer, sky, sunlight, fog, and scenery outside the quarry (grass, hills, trees).
 import * as THREE from 'three';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
-import { grass } from './textures.js';
+import { createGroundMaterial, paintGround } from './groundMaterial.js';
 
 const QUALITY = {
   low: { pixelRatio: 0.75, shadows: false, shadowMap: 1024, trees: 150 },
@@ -60,25 +60,19 @@ export function createEnvironment(scene, renderer, q, site) {
   scene.add(sun, sun.target);
 
   // Grass beyond the quarry: four strips around the site, so it never covers the pits.
-  const grassTex = grass();
-  grassTex.repeat.set(10, 10);
+  const ground = createGroundMaterial();
   const R = 1500;
   const s0 = site;
   for (const [x0, x1, z0, z1] of [
     [-R, R, -R, s0.z0], [-R, R, s0.z1, R], [-R, s0.x0, s0.z0, s0.z1], [s0.x1, R, s0.z0, s0.z1],
   ]) {
-    const w = x1 - x0;
-    const d = z1 - z0;
-    const tex = grassTex.clone();
-    tex.repeat.set(w / 10, d / 10);
-    const strip = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tex, roughness: 1 }));
-    strip.rotation.x = -Math.PI / 2;
+    const strip = new THREE.Mesh(paintGround(new THREE.PlaneGeometry(x1 - x0, z1 - z0).rotateX(-Math.PI / 2)), ground);
     strip.position.set((x0 + x1) / 2, -0.3, (z0 + z1) / 2);
     strip.receiveShadow = true;
     scene.add(strip);
   }
 
-  addHills(scene);
+  addHills(scene, ground);
   addTrees(scene, q.trees);
 
   return {
@@ -90,16 +84,27 @@ export function createEnvironment(scene, renderer, q, site) {
   };
 }
 
-function addHills(scene) {
-  const mat = new THREE.MeshStandardMaterial({ color: 0x5f7040, roughness: 1, flatShading: true });
+// Rolling farmland hills on the horizon: smooth lumps with the same grass as the ground.
+function addHills(scene, material) {
   const rnd = mulberry(7);
-  for (let i = 0; i < 26; i++) {
-    const angle = (i / 26) * Math.PI * 2 + rnd() * 0.2;
-    const dist = 520 + rnd() * 280;
-    const geo = new THREE.IcosahedronGeometry(1, 2);
-    const hill = new THREE.Mesh(geo, mat);
-    hill.scale.set(120 + rnd() * 160, 40 + rnd() * 70, 120 + rnd() * 160);
-    hill.position.set(Math.cos(angle) * dist, -10, Math.sin(angle) * dist);
+  for (let i = 0; i < 40; i++) {
+    const angle = (i / 40) * Math.PI * 2 + rnd() * 0.3;
+    const dist = 480 + rnd() * 420;
+    const geo = new THREE.SphereGeometry(1, 48, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+    const p = geo.attributes.position;
+    const seed = rnd() * 10;
+    for (let v = 0; v < p.count; v++) {
+      const x = p.getX(v);
+      const z = p.getZ(v);
+      const bump = 1 + 0.18 * Math.sin(x * 3 + seed) * Math.cos(z * 2.5 - seed)
+        + 0.08 * Math.sin(x * 7.3 - seed * 2) * Math.sin(z * 6.1 + seed);
+      p.setY(v, p.getY(v) * bump);
+    }
+    geo.computeVertexNormals();
+    paintGround(geo, [0.85, 0.15, 0, 0], [0.92, 0.95, 0.88]);
+    const hill = new THREE.Mesh(geo, material);
+    hill.scale.set(180 + rnd() * 260, 14 + rnd() * 36, 160 + rnd() * 240);
+    hill.position.set(Math.cos(angle) * dist, -2, Math.sin(angle) * dist);
     scene.add(hill);
   }
 }

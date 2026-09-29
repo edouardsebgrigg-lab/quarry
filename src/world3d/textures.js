@@ -56,52 +56,6 @@ export function gravelDetail() {
   });
 }
 
-export function grass() {
-  return makeTexture(256, (g, n) => {
-    const r = rand(2);
-    g.fillStyle = '#4c6b2f';
-    g.fillRect(0, 0, n, n);
-    for (let i = 0; i < 9000; i++) {
-      const h = 70 + r() * 40;
-      g.fillStyle = `hsl(${h}, ${35 + r() * 25}%, ${20 + r() * 22}%)`;
-      g.fillRect(r() * n, r() * n, 1, 2 + r() * 4);
-    }
-  });
-}
-
-export function concrete() {
-  return makeTexture(256, (g, n) => {
-    const r = rand(3);
-    g.fillStyle = '#9d988f';
-    g.fillRect(0, 0, n, n);
-    for (let i = 0; i < 6000; i++) {
-      const v = 130 + Math.floor(r() * 50);
-      g.fillStyle = `rgba(${v},${v - 4},${v - 10},0.5)`;
-      g.fillRect(r() * n, r() * n, 2, 2);
-    }
-    g.strokeStyle = 'rgba(60,55,50,0.35)';
-    g.lineWidth = 2;
-    g.strokeRect(0, 0, n, n);
-  });
-}
-
-export function roadGravel() {
-  return makeTexture(256, (g, n) => {
-    const r = rand(4);
-    g.fillStyle = '#7d6d58';
-    g.fillRect(0, 0, n, n);
-    for (let i = 0; i < 7000; i++) {
-      const v = 90 + Math.floor(r() * 90);
-      g.fillStyle = `rgb(${v},${v - 10},${v - 25})`;
-      g.fillRect(r() * n, r() * n, 1 + r() * 2, 1 + r() * 2);
-    }
-    // tyre ruts
-    g.fillStyle = 'rgba(40,32,24,0.25)';
-    g.fillRect(n * 0.2, 0, n * 0.12, n);
-    g.fillRect(n * 0.68, 0, n * 0.12, n);
-  });
-}
-
 export function rustyMetal(base = '#a8562b') {
   return makeTexture(128, (g, n) => {
     const r = rand(5);
