@@ -59,6 +59,7 @@ export function planEarthworks(ctx, input) {
   const bad = (reason, extra = {}) => ({ ok: false, valid: false, affordable: false, cost: 0, reason, mode: input.mode, ...extra });
   if (!ground) return bad('There is no ground of yours to build on here');
   if (!cfg) return bad('Unknown kind of works');
+  if (input.width !== undefined && !Number.isFinite(input.width)) return bad('Pick a finite width');
   if ([input.ax, input.az, input.bx, input.bz].some((v) => !Number.isFinite(v))) return bad('Pick where it starts and ends');
   const length = Math.hypot(input.bx - input.ax, input.bz - input.az);
   if (length < data.works.minLength) return bad(`Too short: at least ${data.works.minLength} m`, { length });

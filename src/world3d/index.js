@@ -190,7 +190,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   // ---- earthworks planner (on foot): plan a haul road, ramp or level area on your land
   const machineObstacles = () => {
-    const list = [];
+    const feet = player.feet();
+    const list = [{ x: feet.x, z: feet.z, r: 0.35, label: 'You' }];
     for (const veh of vehicles.values()) {
       const p = veh.position();
       list.push({ x: p.x, z: p.z, r: veh.radius, label: machineName(data, getMachine(game.ctx, veh.machineId)) });

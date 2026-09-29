@@ -93,6 +93,33 @@ describe('earthworks: what it costs and what it needs', () => {
     expect(game.state.money).toBe(500);
   });
 
+  it('blocks the player and machinery beside the side batters without mutation', () => {
+    const { game, g, a } = setup();
+    heap(g, 50, 82);
+    const before = JSON.stringify(game.snapshot());
+    for (const label of ['You', 'The pickup']) {
+      const r = a.buildWorks(road({ obstacles: [{ x: 50, z: 66, r: 0.35, label }] }));
+      expect(r.ok).toBe(false);
+      expect(r.reason).toMatch(/in the way/);
+    }
+    expect(JSON.stringify(game.snapshot())).toBe(before);
+  });
+
+  it('rejects nonfinite widths without mutation', () => {
+    const { game, a } = setup();
+    const before = JSON.stringify(game.snapshot());
+    for (const width of [NaN, Infinity]) expect(a.buildWorks(road({ width })).ok).toBe(false);
+    expect(JSON.stringify(game.snapshot())).toBe(before);
+  });
+
+  it('does not borrow gravel farther than the configured reach from the strip', () => {
+    const { g, a } = setup();
+    heap(g, 50, 100); // in the old midpoint circle, over 30 m from the strip
+    const before = g.totals();
+    expect(a.buildWorks(road()).ok).toBe(false);
+    expect(g.totals()).toEqual(before);
+  });
+
   it('a built road is still there after saving and loading, and unpaid plans leave no trace', () => {
     const { game, g, a } = setup();
     heap(g, 50, 82);

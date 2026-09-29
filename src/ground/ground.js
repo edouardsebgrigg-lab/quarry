@@ -379,7 +379,12 @@ export function createGround(groundData, plotId, opts = {}) {
     const fillFromHeaps = Math.max(0, fillBank - poolBank);
     // (heaps inside the works are already part of the cut, so they can't be used twice)
     const inWorks = new Set(cells.map((c) => c.k));
-    const src = gatherLoose(centre, radius, { gravel: sm >= 0 ? { m: sm, vol: gravelFromHeaps } : null, bank: fillFromHeaps, exclude: inWorks }, commit);
+    const src = gatherLoose(centre, radius, { gravel: sm >= 0 ? { m: sm, vol: gravelFromHeaps } : null, bank: fillFromHeaps, exclude: inWorks, eligible(k) {
+      const x = x0 + (k % nx + 0.5) * cell;
+      const z = z0 + (Math.floor(k / nx) + 0.5) * cell;
+      const along = Math.max(0, Math.min(L, (x - ax) * ux + (z - az) * uz));
+      return Math.hypot(x - ax - ux * along, z - az - uz * along) <= sourceRadius;
+    } }, commit);
     // What there will be to build with, and what's left over: the cut (less the surface's gravel)
     // plus the heaps' fill, of which the fill takes what it needs.
     const availPlan = pool.slice();
@@ -472,7 +477,7 @@ export function createGround(groundData, plotId, opts = {}) {
     const found = { gravelFound: 0, bankFound: 0, tonnes: new Float64Array(M), gravelTonnes: 0, take() {} };
     const list = [];
     cellsInRadius(centre.x, centre.z, radius, (k, d) => {
-      if (loose[k] > 1e-4 && !(disturbed[k] & 2) && !need.exclude?.has(k)) list.push([k, d]);
+      if (loose[k] > 1e-4 && !(disturbed[k] & 2) && !need.exclude?.has(k) && (!need.eligible || need.eligible(k))) list.push([k, d]);
     });
     list.sort((p, q) => p[1] - q[1]);
     const takes = [];
