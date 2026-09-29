@@ -13,6 +13,20 @@ export function createFeedback({ game, getMoneyNode }) {
   const phone = el('div', { class: 'mentor' });
   const node = el('div', { class: 'feedback' }, fxLayer, toasts, log, phone);
 
+  // Timers that only count down while you're actually playing (not while waiting for the click
+  // to play, paused, or with the window in the background), so a message can't expire unread.
+  let timers = [];
+  const later = (ms, fn) => timers.push({ left: ms / 1000, fn });
+  function update(dt, active = true) {
+    if (!active || !timers.length) return;
+    for (const t of timers) t.left -= dt;
+    const due = timers.filter((t) => t.left <= 0);
+    if (due.length) {
+      timers = timers.filter((t) => t.left > 0);
+      for (const t of due) t.fn();
+    }
+  }
+
   // A text from your mentor: slides in under the money, stays a while, newest on top.
   function mentorText({ from, text, kind }) {
     const card = el('div', { class: `mentor-card mentor-${kind}` },
@@ -22,8 +36,8 @@ export function createFeedback({ game, getMoneyNode }) {
     phone.prepend(card);
     while (phone.children.length > 2) phone.lastChild.remove();
     const stay = Math.min(22000, 7000 + text.length * 60);
-    setTimeout(() => card.classList.add('mentor-out'), stay);
-    setTimeout(() => card.remove(), stay + 700);
+    later(stay, () => card.classList.add('mentor-out'));
+    later(stay + 700, () => card.remove());
   }
 
   function floatText(text, cls, anchor) {
@@ -38,15 +52,15 @@ export function createFeedback({ game, getMoneyNode }) {
   function toast(text, level = 'info') {
     const t = el('div', { class: `toast toast-${level}` }, text);
     toasts.append(t);
-    setTimeout(() => t.classList.add('toast-out'), 3200);
-    setTimeout(() => t.remove(), 3700);
+    later(3200, () => t.classList.add('toast-out'));
+    later(3700, () => t.remove());
   }
 
   function message(text, level = 'info') {
     const line = el('div', { class: `log-line log-${level}` }, text);
     log.append(line);
     while (log.children.length > LOG_MAX) log.firstChild.remove();
-    setTimeout(() => line.classList.add('log-old'), 8000);
+    later(8000, () => line.classList.add('log-old'));
   }
 
   // before/after: stat lines from describeStats (before may be null for a first machine).
@@ -73,8 +87,8 @@ export function createFeedback({ game, getMoneyNode }) {
       subtitle ? el('div', { class: 'card-sub' }, subtitle) : null,
       rows);
     fxLayer.append(card);
-    setTimeout(() => card.classList.add('card-out'), 4500);
-    setTimeout(() => card.remove(), 5000);
+    later(4500, () => card.classList.add('card-out'));
+    later(5000, () => card.remove());
   }
 
   const name = (id) => {
@@ -117,6 +131,7 @@ export function createFeedback({ game, getMoneyNode }) {
     toast,
     message,
     upgradeCard,
+    update,
     destroy: () => offs.forEach((off) => off()),
   };
 }

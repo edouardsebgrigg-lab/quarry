@@ -79,7 +79,7 @@ In Direct mode the teeth cut the ground where they really are (as much as fits i
 | Tab | Map |
 | J | Goal details |
 | H | Show / hide the key hints |
-| P | Pause time · 1 / 2 / 3 game speed |
+| P | Pause time · 1 / 2 / 3 game speed (time only runs while you're playing: it waits for your first click, and stops when you press Esc, alt-tab or the window is hidden) |
 | Esc | Menu |
 | F1 | Dev panel (in `npm run dev` only) |
 

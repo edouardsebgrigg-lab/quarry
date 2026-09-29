@@ -986,6 +986,11 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     setFootPitch(pitch) {
       player.look.pitch = pitch;
     },
+    setFootYaw(yaw) {
+      player.look.yaw = yaw;
+    },
+    feet: () => player.feet().toArray(),
+    eye: () => camera.position.toArray(),
     setHouseYaw(yaw) {
       const veh = current();
       if (veh?.digger) Object.assign(veh.state, { houseYaw: yaw, targetHouseYaw: yaw });

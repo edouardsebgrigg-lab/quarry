@@ -150,24 +150,48 @@ export function createMapView({ world }) {
     const wb = map.depot.weighbridge;
     g.fillRect(sx(wb.x0), sy(wb.z0), Math.max(2, (wb.x1 - wb.x0) * scale), (wb.z1 - wb.z0) * scale);
 
-    // Labels.
-    const label = (text, x, z, { size = 13, weight = 650, color = COLORS.text, align = 'center' } = {}) => {
-      g.font = `${weight} ${size}px ${FONT}`;
-      g.textAlign = align;
-      g.textBaseline = 'middle';
-      g.lineWidth = 3;
-      g.strokeStyle = 'rgba(0,0,0,0.65)';
-      g.strokeText(text, sx(x), sy(z));
-      g.fillStyle = color;
-      g.fillText(text, sx(x), sy(z));
+    // Labels: queued, then placed most important first, each nudged to a free spot so none
+    // sit on top of another (a label with no free spot is left off until you zoom in).
+    const queue = [];
+    const label = (text, x, z, { size = 13, weight = 650, color = COLORS.text, align = 'center', prio = 1, dy = 0 } = {}) => {
+      queue.push({ text, x, z, size, weight, color, align, prio, dy });
     };
-    label('Your field', (map.home.plot.x0 + map.home.plot.x1) / 2, (map.home.plot.z0 + map.home.plot.z1) / 2, { color: '#f5b82e' });
-    label(map.village.name, 700, -470, { size: 17, weight: 750 });
-    label(map.dealer.name, (map.dealer.yard.x0 + map.dealer.yard.x1) / 2, map.dealer.yard.z1 + 12 / scale + 4, { size: 12 });
-    label(map.depot.name, (map.depot.yard.x0 + map.depot.yard.x1) / 2, map.depot.yard.z0 - 18, { size: 14, weight: 750, color: '#9fe3a7' });
+    const placed = [];
+    const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+    function flushLabels() {
+      queue.sort((p, q) => q.prio - p.prio);
+      for (const l of queue) {
+        g.font = `${l.weight} ${l.size}px ${FONT}`;
+        const w = g.measureText(l.text).width;
+        const h = l.size + 5;
+        const px = sx(l.x);
+        const py = sy(l.z) + l.dy;
+        const box = (ox, oy) => ({
+          x: (l.align === 'left' ? px + ox : l.align === 'right' ? px + ox - w : px + ox - w / 2) - 2, y: py + oy - h / 2, w: w + 4, h,
+        });
+        const tries = [[0, 0], [0, -h], [0, h], [0, -2 * h], [0, 2 * h], [w / 2 + 10, 0], [-(w / 2 + 10), 0], [w / 2 + 10, -h], [-(w / 2 + 10), -h]];
+        const spot = tries.map(([ox, oy]) => ({ ox, oy, b: box(ox, oy) }))
+          .find(({ b }) => b.x > 2 && b.y > 2 && b.x + b.w < width - 2 && b.y + b.h < height - 2 && !placed.some((q) => overlaps(q, b)));
+        if (!spot) continue;
+        placed.push(spot.b);
+        g.textAlign = l.align;
+        g.textBaseline = 'middle';
+        g.lineWidth = 3;
+        g.strokeStyle = 'rgba(0,0,0,0.65)';
+        g.strokeText(l.text, px + spot.ox, py + spot.oy);
+        g.fillStyle = l.color;
+        g.fillText(l.text, px + spot.ox, py + spot.oy);
+      }
+    }
+    const guideName = info.guide?.label?.toLowerCase();
+    const place = (text, x, z, o) => label(text, x, z, { prio: 2, ...o });
+    place('Your field', (map.home.plot.x0 + map.home.plot.x1) / 2, (map.home.plot.z0 + map.home.plot.z1) / 2, { color: '#f5b82e' });
+    place(map.village.name, 690, -470, { size: 17, weight: 750, prio: 3 });
+    place(map.dealer.name, (map.dealer.yard.x0 + map.dealer.yard.x1) / 2, map.dealer.yard.z1, { size: 12, dy: 12 });
+    place(map.depot.name, (map.depot.yard.x0 + map.depot.yard.x1) / 2, map.depot.yard.z0, { size: 14, weight: 750, color: '#9fe3a7', dy: -16 });
     for (const road of plan.roads) {
       const p = road.samples[Math.floor(road.samples.length * (road.id === 'millLane' ? 0.18 : 0.62))];
-      label(road.name, p.x, p.z - 14, { size: 11, weight: 500, color: COLORS.textDim });
+      label(road.name, p.x, p.z, { size: 11, weight: 500, color: COLORS.textDim, dy: -12 });
     }
 
     // Your machines, the barrow and you.
@@ -195,8 +219,11 @@ export function createMapView({ world }) {
       g.beginPath();
       g.arc(sx(info.guide.x), sy(info.guide.z), 4, 0, Math.PI * 2);
       g.fill();
-      label(info.guide.label, info.guide.x, info.guide.z - 14 / scale - 6, { size: 12, color: COLORS.you });
+      // Its name goes next to the ring, unless a place label already says the same thing.
+      const samePlace = queue.some((l) => l.text.toLowerCase() === guideName);
+      if (!samePlace) label(info.guide.label, info.guide.x, info.guide.z, { size: 12, color: COLORS.you, prio: 4, dy: -20 });
     }
+    flushLabels();
     g.save();
     g.translate(sx(info.you.x), sy(info.you.z));
     g.rotate(-info.you.yaw);

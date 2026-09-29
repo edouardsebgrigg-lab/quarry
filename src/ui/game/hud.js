@@ -55,7 +55,7 @@ export function createHud({ game, runtime, settings }) {
       pinned = !pinned;
       detailT = 0;
     },
-    update(dt) {
+    update(dt, { active = true } = {}) {
       const target = game.state.money;
       // Count toward the real value so gains feel like they "roll in".
       shownMoney += (target - shownMoney) * Math.min(1, dt * 6);
@@ -82,7 +82,7 @@ export function createHud({ game, runtime, settings }) {
         goal.classList.add('goal-new');
       }
       setText(goalKey, `${keyLabel(settings.bindings.goal)} · ${pinned ? 'hide details' : 'keep details open'}`);
-      detailT = Math.max(0, detailT - dt);
+      if (active) detailT = Math.max(0, detailT - dt); // the details stay up until you're playing
       goal.classList.toggle('open', pinned || detailT > 0);
       goal.classList.toggle('has-progress', o.progress !== null);
       if (o.progress !== null) goalFill.style.width = `${Math.round(o.progress * 100)}%`;

@@ -40,7 +40,7 @@ You can change any of these and reload the game. No code changes are needed.
 |---|---|
 | `src/input` | Hotkeys and rebinding |
 | `src/audio` | Sound: `synth.js` builds every sound from maths (diesel engines, gravel, rocks, hydraulics, birds…), `index.js` plays them through a mixer with 3D positioning, engine voices driven by rpm and load, loops and one-shots |
-| `src/ui` | Main menu, pause menu, settings, save/load screens, HUD, 3D overlay (prompts, machine dash), the map (`mapView.js` draws the countryside from above, `mapOverlay.js` adds the places and your machines), shop, depot price board (`market.js`), dev panel, feedback effects |
+| `src/ui` | Main menu, pause menu, settings, save/load screens, HUD, 3D overlay (prompts, machine dash), the map (`mapView.js` draws the countryside from above, `mapOverlay.js` adds the places and your machines), shop, depot price board (`market.js`), dev panel, feedback effects. `game/timeGate.js` decides when the game clock may run (only while you're playing: not before the first click, not with the pointer released, the window hidden, or paused) and turns frame time into ticks without catch-up |
 | `src/world3d` | The 3D world, described below |
 
 ### The 3D world (`src/world3d`)

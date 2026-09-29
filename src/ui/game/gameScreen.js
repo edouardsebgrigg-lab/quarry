@@ -11,6 +11,7 @@ import { openMarket } from './market.js';
 import { toggleMap } from './mapOverlay.js';
 import { openIntro } from '../screens/intro.js';
 import { markIntroSeen, mentorForStep } from '../../progression/index.js';
+import { timeRunning, createTicker, windowActive } from './timeGate.js';
 
 const MAX_TICKS_PER_FRAME = 400;
 
@@ -28,6 +29,13 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     togglePause: () => { userPaused = !userPaused; },
     setSpeed: (i) => { speedIndex = i; userPaused = false; devFast = false; },
     toggleDevFast: () => { devFast = !devFast; userPaused = false; },
+  };
+
+  // For automated play tests (dev only): stand in for the first click, or force the clock on.
+  const gate = {
+    start: () => { started = true; },
+    force: (on = true) => { forced = on; },
+    running: () => running,
   };
 
   let feedback = null;
@@ -80,7 +88,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     }
     world = w;
     hud3d.setLoading(false);
-    if (isDev) window.__quarry = { game, world, audio: app.audio, settings, saveTo: (slot) => app.saveTo(slot) }; // handy in the browser console and for automated play tests
+    if (isDev) window.__quarry = { game, world, audio: app.audio, settings, saveTo: (slot) => app.saveTo(slot), gate }; // handy in the browser console and for automated play tests
   }).catch((err) => {
     console.error(err);
     hud3d.showError(`Could not start 3D: ${err.message ?? err}`);
@@ -138,33 +146,32 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
   // --- main loop ---
   let raf = 0;
   let started = false; // has the player clicked into the game yet?
+  let forced = false; // automated play tests can force the clock on
+  let running = false; // is game time running this frame?
   let last = 0;
-  let acc = 0;
+  const ticker = createTicker({ step: 1 / data.game.ticksPerSecond, maxTicksPerFrame: MAX_TICKS_PER_FRAME });
 
   function frame(now) {
+    // Real frame time, capped so a stalled or hidden tab can't jump ahead when it wakes up.
     const realDt = last ? Math.min(0.1, (now - last) / 1000) : 0;
     last = now;
     const overlayOpen = app.overlays.count() > 0;
-    const paused = userPaused || app.overlays.anyPausing();
+    const overlayPausing = app.overlays.anyPausing();
+    const paused = userPaused || overlayPausing;
     if (overlayOpen && world?.isMouseLocked()) world.unlockMouse();
-    if (!paused) {
-      const speed = devFast ? data.game.devSpeed : data.game.speeds[speedIndex];
-      acc += realDt * speed;
-      const step = 1 / data.game.ticksPerSecond;
-      let n = 0;
-      while (acc >= step && n < MAX_TICKS_PER_FRAME) {
-        game.tick();
-        acc -= step;
-        n += 1;
-      }
-      if (n >= MAX_TICKS_PER_FRAME) acc = 0;
-    }
-    world?.update(realDt, { paused: paused || overlayOpen, keyboard });
-    pausedBanner.style.display = userPaused && !overlayOpen ? '' : 'none';
-    hud.update(realDt);
     const info = world?.hudInfo() ?? null;
     if (info?.locked) started = true;
-    hud3d.update(info, { overlayOpen, started, dt: realDt });
+    running = timeRunning({
+      userPaused, overlayPausing, overlayOpen, locked: !!info?.locked, started, windowActive: windowActive(), forced,
+    });
+    const speed = devFast ? data.game.devSpeed : data.game.speeds[speedIndex];
+    for (let i = ticker.frame(realDt, speed, running); i > 0; i--) game.tick();
+    world?.update(realDt, { paused: paused || overlayOpen, keyboard });
+    pausedBanner.style.display = userPaused && !overlayOpen ? '' : 'none';
+    hud.update(realDt, { active: running });
+    // (hints, the goal card and messages only count down while you can see and act on them)
+    hud3d.update(info, { overlayOpen, started, dt: running ? realDt : 0 });
+    feedback.update(realDt, running);
     devPanel?.update(realDt);
     app.overlays.update(realDt);
     raf = requestAnimationFrame(frame);
