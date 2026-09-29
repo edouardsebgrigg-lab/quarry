@@ -155,7 +155,7 @@ export function bucketCut(ctx, diggerId, { x, z, bottomY, radius }) {
   if (r.total <= 0) return { ok: true, tonnes: 0, full: false };
   addToPile(m.load, r.tonnes);
   const share = r.volume / stats.bucketVolume;
-  chargeFuel(ctx, stats.fuelPerJob * share);
+  chargeFuel(ctx, stats.fuelPerJob * share, m.siteId);
   ctx.state.stats.tonnesDug += r.total;
   ctx.events.emit('rockDug', { machineId: m.id, tonnes: r.total, materials: { ...r.tonnes }, x, z, direct: true });
   applyWear(ctx, m, stats, share);

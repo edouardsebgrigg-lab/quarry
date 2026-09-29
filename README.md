@@ -146,6 +146,15 @@ Press **F** on foot to plan works on your field: a **haul road**, a **ramp** (st
 
 Nothing is made from nothing. The strip is cut or filled to the planned grade, gravel for the surface and any fill still needed are taken from **loose heaps within 30 m** of it (tip gravel there first: off the truck, the dumper, the barrow or a bucket), and whatever the cut left over is heaped beside the road, never lost. Roads and ramps are topped with a loose gravel surface (vehicles use the game's gravel driving behaviour: it rolls easier than dirt or grass); a built strip is firm, so it doesn't slump, but digging into it breaks it up again. Roads can be up to 10% slope, ramps 18%. You can't build under a machine, on rock, or at the edge of your land. Built ground is saved with the game.
 
+## Yard facilities
+
+Open the shop (**B**) and choose **Yard buildings**. The first facilities commission structures
+already in your yard: a **Container workshop** ($450) cuts service/repair prices by 25% and
+times by 30%; **Bulk fuel supply** ($300) cuts machine-job fuel charges by 15%. Benefits apply
+to machines at this site, including Direct digging. Existing maintenance jobs keep their quoted
+price and duration. Ownership is saved, and signs appear on commissioned structures. Prices
+are an initial balance pass. These are fixed upgrades; they do not place new buildings.
+
 ## The loop with machines
 
 1. Get in the mini digger (or excavator), drive it onto your field, swing the bucket over the ground and hold the left mouse button to dig. It digs where the ring is, as deep as the bucket bites.

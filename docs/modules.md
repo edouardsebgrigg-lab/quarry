@@ -71,3 +71,13 @@ You can change any of these and reload the game. No code changes are needed.
 
 ## Tests
 Unit tests sit next to the code (`*.test.js`). Run them with `npm test`.
+
+## Yard facilities (Step 8, first batch)
+
+`src/buildings/index.js` owns commissioning and per-site benefits; `data/buildings.json` owns
+prices and multipliers. `state.buildings[siteId][buildingId]` stores ownership. Missing state
+from older saves means no facilities; the first purchase initialises it. Actions reject unknown,
+duplicate and unaffordable purchases. `buildingBought` refreshes the shop and the fixed yard signs.
+The workshop modifies service/repair quotes when jobs begin. Bulk fuel modifies fuel charges
+for timed jobs and Direct bucket cuts; other sites retain their original prices. Neither feature
+places a new footprint, creates free material or changes existing collision shapes.

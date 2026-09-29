@@ -6,6 +6,7 @@ import {
   sellMachine as fleetSellMachine, buyMod as fleetBuyMod, dumpBucket as fleetDumpBucket, bucketCut as fleetBucketCut,
 } from '../machinery/index.js';
 import { shovelDig, shovelDump, tipBarrow } from '../handtools/index.js';
+import { buyBuilding } from '../buildings/index.js';
 import { planEarthworks, buildEarthworks } from '../earthworks/index.js';
 
 export function createActions(ctx) {
@@ -68,6 +69,8 @@ export function createActions(ctx) {
     // planWorks only says what would happen and what it costs; buildWorks does it and charges.
     planWorks: (input) => planEarthworks(ctx, input),
     buildWorks: (input) => buildEarthworks(ctx, input),
+
+    buyBuilding: (id) => buyBuilding(ctx, id),
 
     buyMachine: (type, tier) => fleetBuyMachine(ctx, type, tier),
     sellMachine: (id) => fleetSellMachine(ctx, id),

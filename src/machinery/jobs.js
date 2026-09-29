@@ -2,6 +2,7 @@
 // through startJob(). Digging and tipping work on the real ground (src/ground); tipping in
 // a depot bay sells the load. Which machines can do a job goes by what they are (a digger
 // has a bucket, a carrier has a bed), not by their exact type.
+import { buildingMultiplier } from '../buildings/index.js';
 import { pileTotal } from '../quarry/index.js';
 import { chargeFuel, spendMoney, hasTicket, sellLoad } from '../economy/index.js';
 import { getStats, typeName, isDigger, isRoadLegal, unloadSeconds } from './stats.js';
@@ -30,7 +31,7 @@ export const JOBS = {
       return null;
     },
     begin(ctx, m, stats) {
-      chargeFuel(ctx, stats.fuelPerJob);
+      chargeFuel(ctx, stats.fuelPerJob, m.siteId);
       return stats.cycleTime;
     },
     finish(ctx, m, stats, job) {
@@ -62,7 +63,7 @@ export const JOBS = {
       return null;
     },
     begin(ctx, m, stats) {
-      chargeFuel(ctx, stats.fuelPerJob);
+      chargeFuel(ctx, stats.fuelPerJob, m.siteId);
       return unloadSeconds(stats, pileTotal(m.load));
     },
     finish(ctx, m, stats, job) {
@@ -87,9 +88,9 @@ export const JOBS = {
       return null;
     },
     begin(ctx, m, stats, job) {
-      job.cost = serviceCost(stats, m);
+      job.cost = serviceCost(stats, m) * buildingMultiplier(ctx, 'workshop', 'maintenanceCostMultiplier', m.siteId);
       spendMoney(ctx, job.cost, 'service');
-      return stats.serviceTime;
+      return stats.serviceTime * buildingMultiplier(ctx, 'workshop', 'maintenanceTimeMultiplier', m.siteId);
     },
     finish(ctx, m) {
       m.condition = 100;
@@ -105,9 +106,9 @@ export const JOBS = {
       return null;
     },
     begin(ctx, m, stats, job) {
-      job.cost = stats.repairCost;
+      job.cost = stats.repairCost * buildingMultiplier(ctx, 'workshop', 'maintenanceCostMultiplier', m.siteId);
       spendMoney(ctx, job.cost, 'repair');
-      return stats.repairTime;
+      return stats.repairTime * buildingMultiplier(ctx, 'workshop', 'maintenanceTimeMultiplier', m.siteId);
     },
     finish(ctx, m, stats) {
       m.broken = false;

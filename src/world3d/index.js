@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { createPhysics } from './physics.js';
 import { createRenderer, createEnvironment } from './environment.js';
 import { createCountryside, planWorld, preloadCountryside } from './countryside.js';
+import { ownsBuilding } from '../buildings/index.js';
 import { buildPlaces } from './places.js';
 import { createParticles } from './particles.js';
 import { createPlayer } from './player.js';
@@ -84,6 +85,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   const bayNames = Object.fromEntries(Object.entries(data.depot.bays).map(([id, b]) => [id, b.name]));
   const places = buildPlaces({ scene, physics, plan, heightAt, materials: data.materials, bayNames });
+  for (const id of Object.keys(data.buildings)) places.setBuilding(id, ownsBuilding(game.ctx, id, siteId));
   const particles = createParticles(scene);
 
   // ---- plants: grass around you, trees along hedges, roads and in copses
@@ -539,6 +541,9 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   // ---- game events -> effects ----
   const offs = [
+    game.events.on('buildingBought', e => {
+      if (e.siteId === siteId) places.setBuilding(e.buildingId, true);
+    }),
     game.events.on('rockDug', (e) => {
       const v = vehicles.get(e.machineId);
       if (v?.digger && !e.direct) {
