@@ -8,12 +8,19 @@ import { tickJobs, fixAllMachines } from '../machinery/index.js';
 import { createNewState } from './state.js';
 import { createActions } from './actions.js';
 import { objectivesOnEvent } from '../progression/index.js';
+import { createGround } from '../ground/index.js';
 
 export function createGame({ data = loadData(), seed = Math.floor(Math.random() * 2 ** 31), state } = {}) {
   const events = createEventBus();
   const ctx = { data, events, state: null, rng: null };
   ctx.rng = createRng(() => ctx.state);
   ctx.state = state ?? createNewState(data, seed);
+
+  // The diggable ground of the current site (if it has one), rebuilt from its seed plus
+  // the saved changes.
+  const plotId = data.sites[ctx.state.currentSiteId]?.groundPlot;
+  ctx.ground = plotId ? createGround(data.ground, plotId, { seed: ctx.state.seed ?? 1 }) : null;
+  if (ctx.ground && ctx.state.ground) ctx.ground.load(ctx.state.ground);
 
   events.on('hourPassed', () => marketHourly(ctx));
   events.on('*', (type, payload) => objectivesOnEvent(ctx, type, payload));
@@ -24,6 +31,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
 
   function tick() {
     tickJobs(ctx, tickSeconds(data));
+    ctx.ground?.settle(4000);
     advanceClock(ctx);
   }
 
@@ -49,6 +57,11 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
     get state() { return ctx.state; },
     tick,
     advance,
+    // The state to save: the plain game state plus the ground's changes.
+    snapshot() {
+      if (ctx.ground) ctx.state.ground = ctx.ground.serialize();
+      return ctx.state;
+    },
     actions: createActions(ctx),
     dev,
   };

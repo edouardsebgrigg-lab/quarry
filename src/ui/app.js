@@ -122,7 +122,7 @@ export function startApp(root, { data, storage, isDev }) {
     if (!session) return;
     try {
       session.beforeSave();
-      saves.save(slotId, session.game.state, session.summary());
+      saves.save(slotId, session.game.snapshot(), session.summary());
       if (!silent) session.feedback.toast('Game saved', 'good');
     } catch (err) {
       session.feedback.toast(`Save failed: ${err.message ?? err}`, 'bad');

@@ -76,6 +76,19 @@ export function createActions(ctx) {
     // Empty the bucket into a truck (truckId) or onto the face pile (null).
     dumpBucket: (excavatorId, truckId = null) => fleetDumpBucket(ctx, excavatorId, truckId),
     loadFromPile: (truckId) => startJob(ctx, truckId, 'loadFromPile'),
+
+    // Real ground: carve a bowl (returns { tonnes: { material: t }, total }) or drop material.
+    digGround(opts) {
+      if (!ctx.ground) return { tonnes: {}, total: 0 };
+      const r = ctx.ground.dig(opts);
+      if (r.total > 0) ctx.events.emit('groundDug', { ...r, x: opts.x, z: opts.z });
+      return r;
+    },
+    dumpGround(opts) {
+      if (!ctx.ground) return;
+      ctx.ground.deposit(opts);
+      ctx.events.emit('groundDumped', { x: opts.x, z: opts.z, tonnes: opts.tonnes });
+    },
     tip: (truckId) => startJob(ctx, truckId, 'tip'),
 
     buyMachine: (type, tier) => fleetBuyMachine(ctx, type, tier),

@@ -1,0 +1,130 @@
+{
+  "cellSize": 0.5,
+  "chunkCells": 32,
+  "materials": {
+    "topsoil": {
+      "name": "Topsoil",
+      "color": "#5e4a36",
+      "density": 1.35,
+      "swell": 1.3,
+      "repose": 38,
+      "standing": 55
+    },
+    "clay": {
+      "name": "Clay",
+      "color": "#8a6a4c",
+      "density": 1.85,
+      "swell": 1.3,
+      "repose": 40,
+      "standing": 70
+    },
+    "sand": {
+      "name": "Sand",
+      "color": "#d2b98a",
+      "density": 1.6,
+      "swell": 1.15,
+      "repose": 33,
+      "standing": 50
+    },
+    "gravel": {
+      "name": "Gravel",
+      "color": "#9a938a",
+      "density": 1.75,
+      "swell": 1.2,
+      "repose": 35,
+      "standing": 55
+    },
+    "rock": {
+      "name": "Rock",
+      "color": "#7d776d",
+      "density": 2.6,
+      "swell": 1.5,
+      "repose": 40,
+      "standing": 88
+    }
+  },
+  "plots": {
+    "home": {
+      "name": "Home field",
+      "origin": [
+        0,
+        0
+      ],
+      "width": 150,
+      "depth": 150,
+      "surfaceRoll": 0.35,
+      "bedrock": "rock",
+      "strata": [
+        {
+          "material": "gravel",
+          "thickness": [
+            1.5,
+            4.0
+          ]
+        },
+        {
+          "material": "sand",
+          "thickness": [
+            0.8,
+            2.2
+          ]
+        },
+        {
+          "material": "clay",
+          "thickness": [
+            0.2,
+            0.9
+          ]
+        },
+        {
+          "material": "topsoil",
+          "thickness": [
+            0.25,
+            0.4
+          ]
+        }
+      ]
+    },
+    "testPad": {
+      "name": "Test pad",
+      "origin": [
+        4,
+        14
+      ],
+      "width": 36,
+      "depth": 36,
+      "surfaceRoll": 0.04,
+      "bedrock": "rock",
+      "strata": [
+        {
+          "material": "gravel",
+          "thickness": [
+            1.5,
+            3.0
+          ]
+        },
+        {
+          "material": "sand",
+          "thickness": [
+            0.8,
+            1.8
+          ]
+        },
+        {
+          "material": "clay",
+          "thickness": [
+            0.2,
+            0.7
+          ]
+        },
+        {
+          "material": "topsoil",
+          "thickness": [
+            0.25,
+            0.4
+          ]
+        }
+      ]
+    }
+  }
+}

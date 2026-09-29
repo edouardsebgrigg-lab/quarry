@@ -7,12 +7,21 @@ import { inRect } from './layouts.js';
 
 const RIM = 0.75; // flat lip at the top of each pit wall
 
+// What each plot material counts as, for grip and plants.
+const PLOT_SURFACE = {
+  topsoil: { grass: 0, dirt: 1, gravel: 0, rock: 0 },
+  clay: { grass: 0, dirt: 1, gravel: 0, rock: 0 },
+  sand: { grass: 0, dirt: 0.6, gravel: 0.4, rock: 0 },
+  gravel: { grass: 0, dirt: 0, gravel: 1, rock: 0 },
+  rock: { grass: 0, dirt: 0, gravel: 0, rock: 1 },
+};
+
 function hexToRgb(hex) {
   const c = new THREE.Color(hex);
   return [c.r, c.g, c.b];
 }
 
-export function createTerrain({ scene, physics, layout, siteData, materials, getDepths }) {
+export function createTerrain({ scene, physics, layout, siteData, materials, getDepths, ground = null }) {
   const { RAPIER, world } = physics;
   const T = layout.terrain;
   const ncols = T.x1 - T.x0; // cells along x
@@ -35,7 +44,15 @@ export function createTerrain({ scene, physics, layout, siteData, materials, get
 
   let depths = { ...getDepths() };
 
+  // The diggable plot (drawn and collided by groundChunks.js): this terrain leaves a hole.
+  const plot = ground
+    ? { x0: ground.x0, z0: ground.z0, x1: ground.x0 + ground.nx * ground.cellSize, z1: ground.z0 + ground.nz * ground.cellSize }
+    : null;
+  const inPlot = (x, z) => plot && x >= plot.x0 && x <= plot.x1 && z >= plot.z0 && z <= plot.z1;
+  const deepInPlot = (x, z) => plot && x > plot.x0 + 1.01 && x < plot.x1 - 1.01 && z > plot.z0 + 1.01 && z < plot.z1 - 1.01;
+
   function heightAt(x, z, d = depths) {
+    if (inPlot(x, z)) return ground.heightAt(x, z);
     // Earth bank around the edge of the site.
     const edge = Math.min(x - T.x0, T.x1 - x, z - T.z0, T.z1 - z);
     if (edge < 10) {
@@ -89,6 +106,10 @@ export function createTerrain({ scene, physics, layout, siteData, materials, get
   const index = [];
   for (let r = 0; r < nrows; r++) {
     for (let c = 0; c < ncols; c++) {
+      // Leave a hole where the plot is (its own chunks draw it).
+      const cx = T.x0 + c;
+      const cz = T.z0 + r;
+      if (plot && cx >= plot.x0 && cx + 1 <= plot.x1 && cz >= plot.z0 && cz + 1 <= plot.z1) continue;
       const a = r * vx + c;
       const b = a + 1;
       const d = a + vx;
@@ -171,7 +192,8 @@ export function createTerrain({ scene, physics, layout, siteData, materials, get
         const i = r * vx + c;
         const h = heightAt(x, z);
         positions[i * 3 + 1] = h;
-        heights[c * vz + r] = h;
+        // Inside the plot the chunks collide; this heightfield drops away so you can dig down.
+        heights[c * vz + r] = deepInPlot(x, z) ? -40 : h;
       }
     }
     for (let r = 0; r < vz; r++) {
@@ -209,13 +231,15 @@ export function createTerrain({ scene, physics, layout, siteData, materials, get
       .setTranslation((x0 + x1) / 2, -1.3, (z0 + z1) / 2).setFriction(0.9));
   }
   addSiteDressing(scene, layout);
-  addProps({ scene, physics, layout, heightAt: (x, z) => heightAt(x, z) });
+  addProps({ scene, physics, layout, heightAt: (x, z) => heightAt(x, z), plot });
 
   let sinceCheck = 0;
   return {
     heightAt: (x, z) => heightAt(x, z),
+    plot, // the diggable plot's rectangle (or null)
     // Height and surface mix at the nearest terrain point (outside the site: grass).
     surfaceAt(x, z) {
+      if (inPlot(x, z)) return { height: ground.heightAt(x, z), ...PLOT_SURFACE[ground.surfaceAt(x, z)], plot: true };
       const c = Math.round(x - T.x0);
       const r = Math.round(z - T.z0);
       if (c < 0 || r < 0 || c >= vx || r >= vz) return { height: -0.3, grass: 1, dirt: 0, gravel: 0, rock: 0, outside: true };

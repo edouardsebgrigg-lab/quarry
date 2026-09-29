@@ -1,6 +1,7 @@
 {
   "gravelPit": {
     "name": "Roadside Gravel Pit",
+    "groundPlot": "testPad",
     "price": 0,
     "startOwned": true,
     "haulDistance": 50,

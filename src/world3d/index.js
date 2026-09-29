@@ -15,6 +15,7 @@ import { preloadGround } from './groundMaterial.js';
 import { preloadVegetation, createVegetation, createTrees } from './vegetation.js';
 import { preloadEntrance, addEntrance } from './entrance.js';
 import { createWorldSounds } from './sounds.js';
+import { createGroundView } from './groundChunks.js';
 import { LAYOUTS, zoneAt, inRect } from './layouts.js';
 import { keyLabel } from '../input/index.js';
 import { getSiteData, getZoneInfo, pileTotal } from '../quarry/index.js';
@@ -102,8 +103,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   const zoneDepths = () => Object.fromEntries(siteData.zones.map((z) => [z.id, getZoneInfo(game.ctx, siteId, z.id).depth]));
   const terrain = createTerrain({
-    scene, physics, layout, siteData, materials: data.materials, getDepths: zoneDepths,
+    scene, physics, layout, siteData, materials: data.materials, getDepths: zoneDepths, ground: game.ctx.ground,
   });
+  // The diggable plot: its own chunked mesh and colliders, following the ground as it changes.
+  const groundView = game.ctx.ground ? createGroundView({ scene, physics, ground: game.ctx.ground }) : null;
   // The face pile sits where rock was first dumped (saved with the game).
   const facePilePos = { ...(game.state.positions?.facePile ?? layout.facePile) };
   const piles = createPiles({ scene, layout, game, facePilePos });
@@ -112,6 +115,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const cab = layout.cabin;
   const gate = layout.entrance;
   const noGrowth = [
+    ...(terrain.plot ? [[terrain.plot, 0.5]] : []), // plants would float once you dig
     [{ x0: cab.x - 18, x1: cab.x - 5, z0: cab.z - 7, z1: cab.z + 2 }, 0], // container and junk
     [{ x0: gate.x0, x1: gate.x1, z0: layout.terrain.z0 - 12, z1: layout.terrain.z0 }, 0], // driveway
     [{ x0: -1e4, x1: 1e4, z0: layout.publicRoad.z - 4.5, z1: layout.publicRoad.z + 4.5 }, 0], // road
@@ -525,6 +529,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
     if (!paused) physics.step(dt);
     terrain.update(dt);
+    groundView?.update();
     piles.update();
 
     // Sync machines with their game state.
@@ -677,6 +682,9 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     scene,
     look: () => ({ ...look, foot: { ...player.look } }),
     vehicle: (id) => vehicles.get(id),
+    // Ground testing: dig a bowl or drop material at a spot.
+    digAt: (x, z, depth = 0.5, radius = 1) => game.actions.digGround({ x, z, radius, bottomY: terrain.heightAt(x, z) - depth }),
+    dumpAt: (x, z, tonnes = { gravel: 2 }, radius = 0.8) => game.actions.dumpGround({ x, z, tonnes, radius }),
     // Machine camera angle (for screenshots): yaw offset and pitch.
     setLook(yaw, pitch = look.pitch) {
       look.yaw = yaw;
@@ -698,6 +706,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       resizeObserver.disconnect();
       mouse.destroy();
       sounds?.destroy();
+      groundView?.dispose();
       for (const v of vehicles.values()) v.destroy();
       player.destroy();
       terrain.dispose();

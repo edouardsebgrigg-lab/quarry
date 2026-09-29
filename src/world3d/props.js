@@ -15,7 +15,7 @@ function rng(seed) {
   };
 }
 
-export function addProps({ scene, physics, layout, heightAt }) {
+export function addProps({ scene, physics, layout, heightAt, plot = null }) {
   const { RAPIER, world } = physics;
   const collider = (hx, hy, hz, x, y, z, yaw = 0) => world.createCollider(
     RAPIER.ColliderDesc.cuboid(hx, hy, hz).setTranslation(x, y, z)
@@ -90,6 +90,7 @@ export function addProps({ scene, physics, layout, heightAt }) {
   const T = layout.terrain;
   const gate = layout.entrance ?? { x0: 0, x1: 0 };
   const keepClear = (x, z) => inRect(layout.yard, x, z, 3) || inRect({ x0: -60, x1: 45, z0: -6, z1: 6 }, x, z)
+    || (plot && inRect(plot, x, z, 3))
     || inRect({ x0: gate.x0 - 5, x1: gate.x1 + 5, z0: T.z0 - 2, z1: T.z0 + 16 }, x, z)
     || inRect({ x0: c.x - 20, x1: c.x + 12, z0: c.z - 12, z1: c.z + 5 }, x, z)
     || Object.values(layout.zones).some((zr) => inRect(zr, x, z, 1.5)) || Math.hypot(x - c.x, z - c.z) < 9;

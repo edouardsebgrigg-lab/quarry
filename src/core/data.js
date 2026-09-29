@@ -7,8 +7,9 @@ import machines from '../../data/machines.json';
 import mods from '../../data/mods.json';
 import sites from '../../data/sites.json';
 import objectives from '../../data/objectives.json';
+import ground from '../../data/ground.json';
 
 export function loadData() {
   // Deep copy so tests can tweak numbers without affecting each other.
-  return structuredClone({ game, economy, materials, market, machines, mods, sites, objectives });
+  return structuredClone({ game, economy, materials, market, machines, mods, sites, objectives, ground });
 }
