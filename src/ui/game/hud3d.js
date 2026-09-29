@@ -47,9 +47,9 @@ export function createHud3d({ settings }) {
   // Control hints per mode: [keys, label]. The last rows are the same everywhere.
   function hints(mode) {
     let rows;
-    if (mode === 'truck') {
+    if (mode === 'truck' || mode === 'pickup') {
       rows = [[[k('forward'), k('back')], 'Drive / brake'], [[k('left'), k('right')], 'Steer'], [[k('jump')], 'Handbrake'],
-        [[k('tip')], 'Tip load'], [[k('loadPile')], 'Load from pile'], [[k('camera')], 'Camera'], [[k('recover')], 'Recover'],
+        [[k('tip')], mode === 'pickup' ? 'Unload' : 'Tip load'], [[k('camera')], 'Camera'], [[k('recover')], 'Recover'],
         [[k('interact')], 'Get out']];
     } else if (mode === 'barrow') {
       rows = [[[k('forward'), k('back')], 'Push / pull'], [['Mouse', k('left'), k('right')], 'Steer'],
@@ -61,7 +61,7 @@ export function createHud3d({ settings }) {
       rows = [[[k('forward'), k('left'), k('back'), k('right')], 'Move'], [[k('sprint')], 'Sprint'], [[k('jump')], 'Jump'],
         [['LMB'], 'Dig / tip the shovel'], [[k('interact')], 'Use / get in / take barrow'], [[k('repair')], 'Service / repair']];
     }
-    return [...rows, null, [[k('shop')], 'Shop'], [[k('market')], 'Market'], [[k('map')], 'Map'], [[k('goal')], 'Goal']];
+    return [...rows, null, [[k('shop')], 'Shop'], [[k('market')], 'Prices'], [[k('map')], 'Map'], [[k('goal')], 'Goal']];
   }
 
   let helpKey = '';
@@ -154,20 +154,20 @@ export function createHud3d({ settings }) {
       }
       cond.node.style.display = '';
       const engineStatus = { off: 'Engine off', cranking: 'Starting', stopping: 'Engine off', stall: 'Stalled' }[m.engine];
-      const status = m.broken ? 'Broken' : j ? j.label : engineStatus ?? 'Ready';
+      const status = m.broken ? 'Broken' : j ? j.label : engineStatus ?? (m.ticket ? 'Weighed in' : 'Ready');
       setText(mStatus, status);
       mStatus.className = `md-status ${m.broken ? 'bad' : j ? 'busy' : engineStatus ? 'off' : ''}`;
       cond.fill.style.width = `${Math.round(m.condition)}%`;
       cond.fill.style.background = conditionColor(m.condition, m.broken);
       setText(cond.val, `${Math.round(m.condition)}%`);
-      setText(load.lab, m.type === 'truck' ? 'Load' : 'Bucket');
+      setText(load.lab, m.road ? 'Load' : 'Bucket');
       load.fill.style.width = `${Math.round(Math.min(1, m.load / m.capacity) * 100)}%`;
       setText(load.val, `${m.load.toFixed(1)}/${m.capacity.toFixed(1)} t`);
-      drive.style.display = m.type === 'truck' ? '' : 'none';
-      if (m.type === 'truck') {
+      drive.style.display = m.road ? '' : 'none';
+      if (m.road) {
         setText(speedValue, String(Math.round(m.speedKmh)).padStart(2, '0'));
         setText(gearValue, m.engine === 'running' ? m.gear : 'N');
-        const r = Math.min(1, (m.rpm ?? 0) / 2600);
+        const r = Math.min(1, (m.rpm ?? 0) / (m.maxRpm ?? 2600));
         rpmFill.style.width = `${Math.round(r * 100)}%`;
         rpmFill.classList.toggle('high', r > 0.88);
       }

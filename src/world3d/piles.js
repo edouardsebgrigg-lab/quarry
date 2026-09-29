@@ -1,5 +1,5 @@
-// Rock heaps: the face pile in the pit, one stockpile per product in the yard,
-// and small heaps used inside truck beds and buckets.
+// Heaps of material: stockpiles at the depot, and the small heaps shown in beds, buckets,
+// barrows and on the shovel.
 import * as THREE from 'three';
 import { gravelDetail } from './textures.js';
 import { pileTotal } from '../quarry/index.js';
@@ -63,29 +63,4 @@ export function setHeap(mesh, tonnes, mix = null, materials = null) {
   mesh.visible = r > 0.05;
   mesh.scale.set(r, r, r);
   if (mix && materials) mesh.material.color.copy(mixColor(materials, mix));
-}
-
-export function createPiles({ scene, layout, game, facePilePos }) {
-  const { data } = game;
-  const face = createHeap(3);
-  face.position.set(layout.facePile.x, 0, layout.facePile.z);
-  scene.add(face);
-
-  const products = Object.keys(data.materials);
-  const stock = products.map((id, i) => {
-    const m = createHeap(10 + i);
-    m.material.color.set(data.materials[id].color);
-    m.position.set(layout.stockpiles.x, 0, layout.stockpiles.z0 + i * layout.stockpiles.spacing);
-    scene.add(m);
-    return { id, m };
-  });
-
-  return {
-    update() {
-      const site = game.state.sites[game.state.currentSiteId];
-      face.position.set(facePilePos.x, 0, facePilePos.z);
-      setHeap(face, pileTotal(site.facePile), site.facePile, data.materials);
-      for (const { id, m } of stock) setHeap(m, site.yard[id] ?? 0);
-    },
-  };
 }

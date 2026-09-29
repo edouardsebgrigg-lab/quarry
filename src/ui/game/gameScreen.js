@@ -94,7 +94,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
       case 'speed3': runtime.setSpeed(2); break;
       case 'shop': openOverlay(() => openShop(app.overlays, { game, feedback })); break;
       case 'market': openOverlay(() => openMarket(app.overlays, { game, feedback })); break;
-      case 'map': openOverlay(() => toggleMap(app.overlays, { game, settings })); break;
+      case 'map': openOverlay(() => toggleMap(app.overlays, { game, world })); break;
       case 'hints': hud3d.toggleHints(); break;
       case 'goal': hud.toggleGoal(); break;
       case 'dev':

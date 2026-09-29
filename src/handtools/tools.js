@@ -3,10 +3,10 @@
 // holds more tonnes of heavy gravel than of light topsoil.
 //
 // - shovelDig() takes one shovelful out of the real ground (loose piles first).
-// - shovelDump() tips the shovel into the barrow, a truck bed, or onto the ground as a heap.
-// - tipBarrow() empties the barrow onto the ground (a real pile) or into the yard to sell.
+// - shovelDump() tips the shovel into the barrow, a vehicle's bed, or onto the ground as a heap.
+// - tipBarrow() empties the barrow onto the ground (a real pile) or into a low bed (the pickup).
 // Tonnes are always conserved: whatever doesn't fit stays where it was.
-import { pileTotal, addToPile, takeProportional, yardRoom, addToYard } from '../quarry/index.js';
+import { pileTotal, addToPile, takeProportional } from '../quarry/index.js';
 import { getMachine, getStats } from '../machinery/index.js';
 
 const EPS = 1e-6;
@@ -47,7 +47,7 @@ export const barrowFill = (ctx) => barrowVolume(ctx) / ctx.data.tools.wheelbarro
 
 // Can you dig at (x, z)? Returns a reason, or null.
 export function whyCannotDig(ctx, x, z) {
-  if (!ctx.ground || !ctx.ground.inside(x, z)) return 'You can only dig on the bare field by the yard';
+  if (!ctx.ground || !ctx.ground.workable(x, z)) return 'You can only dig on your own field';
   if (shovelFull(ctx)) return 'Tip the shovel first';
   return null;
 }
@@ -67,7 +67,7 @@ export function shovelDig(ctx, { x, z }) {
   return { ok: true, tonnes: r.total, materials: { ...r.tonnes } };
 }
 
-// Tip the shovel: target is { into: 'barrow' }, { into: 'truck', machineId } or
+// Tip the shovel: target is { into: 'barrow' }, { into: 'machine', machineId } (a bed) or
 // { into: 'ground', x, z }. Returns { ok, tonnes } (what went in); the rest stays on the shovel.
 export function shovelDump(ctx, target) {
   const load = shovelLoad(ctx);
@@ -81,18 +81,13 @@ export function shovelDump(ctx, target) {
     const part = takeShare(load, room / looseVolume(ctx.data, load));
     moved = pileTotal(part);
     addToPile(barrowLoad(ctx), part);
-  } else if (target.into === 'truck') {
-    const m = getMachine(ctx, target.machineId);
-    if (!m || m.type !== 'truck') return { ok: false, reason: 'Not a truck' };
-    if (m.job) return { ok: false, reason: 'Wait for the truck to finish' };
-    const room = getStats(ctx.data, m).capacity - pileTotal(m.load);
-    if (room < 0.005) return { ok: false, reason: 'The truck is full' };
-    moved = Math.min(room, total);
-    addToPile(m.load, takeProportional(load, moved));
-    ctx.events.emit('truckLoaded', { machineId: m.id, tonnes: pileTotal(m.load) });
+  } else if (target.into === 'machine') {
+    const r = intoBed(ctx, target.machineId, load);
+    if (!r.ok) return r;
+    moved = r.tonnes;
   } else {
     const { x, z } = target;
-    if (!ctx.ground || !ctx.ground.inside(x, z)) return { ok: false, reason: 'You can only tip it on the field (or into the barrow)' };
+    if (!ctx.ground || !ctx.ground.workable(x, z)) return { ok: false, reason: 'You can only tip it on your field (or into the barrow)' };
     moved = ctx.ground.deposit({ ...cellCentre(ctx.ground, x, z), tonnes: load, radius: 0.25 });
     tools(ctx).shovel.load = {};
   }
@@ -101,25 +96,37 @@ export function shovelDump(ctx, target) {
   return { ok: true, tonnes: moved };
 }
 
-// Tip the wheelbarrow at (x, z): onto the ground as a pile, or into the yard's tipping bay
-// (then it's yard stock you can sell). Anything the yard has no room for stays in the barrow.
-export function tipBarrow(ctx, { x, z, intoYard = false }) {
+// Put as much of a load as fits into a vehicle's bed. Returns { ok, tonnes }.
+function intoBed(ctx, machineId, load) {
+  const m = getMachine(ctx, machineId);
+  const cap = m ? getStats(ctx.data, m).capacity ?? 0 : 0;
+  if (!cap) return { ok: false, reason: 'That has nowhere to put it' };
+  if (m.job) return { ok: false, reason: 'Wait for it to finish' };
+  const room = cap - pileTotal(m.load);
+  if (room < 0.005) return { ok: false, reason: 'It\'s full' };
+  const moved = Math.min(room, pileTotal(load));
+  addToPile(m.load, takeProportional(load, moved));
+  ctx.events.emit('truckLoaded', { machineId: m.id, tonnes: pileTotal(m.load) });
+  return { ok: true, tonnes: moved };
+}
+
+// Tip the wheelbarrow: onto your ground at (x, z) as a pile, or into a vehicle's bed
+// ({ machineId }; anything that doesn't fit stays in the barrow).
+export function tipBarrow(ctx, { x, z, machineId = null }) {
   const load = barrowLoad(ctx);
   const total = pileTotal(load);
   if (total <= EPS) return { ok: false, reason: 'The wheelbarrow is empty' };
   let moved;
-  if (intoYard) {
-    const siteId = ctx.state.currentSiteId;
-    const room = yardRoom(ctx, siteId);
-    if (room < 0.005) return { ok: false, reason: 'The yard is full. Sell some stock.' };
-    moved = Math.min(room, total);
-    addToYard(ctx, siteId, takeProportional(load, moved));
+  if (machineId) {
+    const r = intoBed(ctx, machineId, load);
+    if (!r.ok) return r;
+    moved = r.tonnes;
   } else {
-    if (!ctx.ground || !ctx.ground.inside(x, z)) return { ok: false, reason: 'Tip it on the field, or in the yellow bay in the yard' };
+    if (!ctx.ground || !ctx.ground.workable(x, z)) return { ok: false, reason: 'Tip it on your field, or into the pickup' };
     moved = ctx.ground.deposit({ ...cellCentre(ctx.ground, x, z), tonnes: load, radius: 0.35 }); // it slumps from there
     tools(ctx).barrow.load = {};
   }
   if (pileTotal(load) <= EPS) tools(ctx).barrow.load = {};
-  ctx.events.emit('barrowTipped', { intoYard, tonnes: moved, x, z });
+  ctx.events.emit('barrowTipped', { machineId, tonnes: moved, x, z });
   return { ok: true, tonnes: moved };
 }

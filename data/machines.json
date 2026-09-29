@@ -10,14 +10,39 @@
     }
   },
   "types": {
+    "pickup": {
+      "name": "Pickup",
+      "roadLegal": true,
+      "shop": false,
+      "tiers": {
+        "rusty": {
+          "price": 400,
+          "capacity": 0.8,
+          "speed": 13,
+          "mass": 1650,
+          "enginePower": 55,
+          "unloadTime": 3,
+          "unloadPerTonne": 15,
+          "fuelPerJob": 0.3,
+          "wearPerJob": 0.4,
+          "breakdownBase": 0.001,
+          "breakdownWear": 0.02,
+          "startCondition": 65,
+          "serviceCostPerPoint": 0.2,
+          "serviceTime": 6,
+          "repairCost": 15,
+          "repairTime": 12,
+          "repairTo": 70
+        }
+      }
+    },
     "excavator": {
       "name": "Excavator",
       "tiers": {
         "rusty": {
           "price": 120,
-          "bucket": 0.6,
+          "bucketVolume": 0.4,
           "cycleTime": 3.5,
-          "maxHardness": 3,
           "fuelPerJob": 0.08,
           "wearPerJob": 0.5,
           "breakdownBase": 0.002,
@@ -35,9 +60,8 @@
         },
         "used": {
           "price": 170,
-          "bucket": 1.6,
+          "bucketVolume": 1.1,
           "cycleTime": 3.5,
-          "maxHardness": 4,
           "fuelPerJob": 0.2,
           "wearPerJob": 0.3,
           "breakdownBase": 0.001,
@@ -53,10 +77,11 @@
           "mass": 9200,
           "enginePower": 60
         }
-      }
+      },
+      "roadLegal": false
     },
     "truck": {
-      "name": "Haul Truck",
+      "name": "Tipper Truck",
       "tiers": {
         "rusty": {
           "price": 100,
@@ -94,7 +119,8 @@
           "repairTime": 12,
           "repairTo": 75
         }
-      }
+      },
+      "roadLegal": true
     }
   }
 }

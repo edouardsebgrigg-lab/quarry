@@ -1,10 +1,11 @@
-// The 3D world. Reads the game state, draws it, and turns walking/driving/digging into
-// calls to the same game actions the rest of the game uses.
+// The 3D world: the countryside map with your field, the village and the depot. Reads the
+// game state, draws it, and turns walking, driving and digging into calls to the same game
+// actions the rest of the game uses.
 import * as THREE from 'three';
 import { createPhysics } from './physics.js';
 import { createRenderer, createEnvironment } from './environment.js';
-import { createTerrain } from './terrain.js';
-import { createPiles } from './piles.js';
+import { createCountryside, planWorld, preloadCountryside } from './countryside.js';
+import { buildPlaces } from './places.js';
 import { createParticles } from './particles.js';
 import { createPlayer } from './player.js';
 import { createTruck } from './truck.js';
@@ -13,156 +14,109 @@ import { createMouse } from './mouse.js';
 import { preloadModels } from './glbModels.js';
 import { preloadGround } from './groundMaterial.js';
 import { preloadVegetation, createVegetation, createTrees } from './vegetation.js';
-import { preloadEntrance, addEntrance } from './entrance.js';
 import { createWorldSounds } from './sounds.js';
 import { createGroundView } from './groundChunks.js';
 import { createHandTools } from './handTools.js';
-import { LAYOUTS, zoneAt, inRect } from './layouts.js';
+import { createHeadSway } from './headSway.js';
+import { MAP, inRect } from './map.js';
 import { keyLabel } from '../input/index.js';
-import { getSiteData, getZoneInfo, pileTotal } from '../quarry/index.js';
+import { pileTotal } from '../quarry/index.js';
 import {
   getStats, machinesAt, machineName, getMachine, JOBS, jobProgress,
 } from '../machinery/index.js';
+import { hasTicket, quoteDelivery } from '../economy/index.js';
 
 const MOUSE_SCALE = 0.0022;
 const ENTER_DISTANCE = 2.8;
 const BARROW_GRAB = 1.5; // how close to the wheelbarrow's handles you must be to take it
+const WEIGH_TIME = 1.2; // seconds a loaded vehicle must stand on the weighbridge
 
-// Driver's head in the cab: springs against acceleration (pushed back when pulling away,
-// forward when braking, sideways in corners) plus vibration from the engine and the ground.
-function createHeadSway() {
-  const off = new THREE.Vector3();
-  const vel = new THREE.Vector3();
-  const lastPos = new THREE.Vector3();
-  const lastVel = new THREE.Vector3();
-  const accel = new THREE.Vector3();
-  const inv = new THREE.Quaternion();
-  const out = { offset: new THREE.Vector3(), pitch: 0, roll: 0 };
-  let primed = false;
-  let t = 0;
-  return {
-    reset() {
-      primed = false;
-    },
-    update(dt, v, cabQ) {
-      t += dt;
-      const p = v.seatWorld();
-      if (!primed || dt <= 0) {
-        lastPos.copy(p);
-        lastVel.set(0, 0, 0);
-        off.set(0, 0, 0);
-        vel.set(0, 0, 0);
-        primed = true;
-      }
-      const velNow = p.clone().sub(lastPos).divideScalar(Math.max(dt, 1e-3));
-      accel.copy(velNow).sub(lastVel).divideScalar(Math.max(dt, 1e-3));
-      lastPos.copy(p);
-      lastVel.lerp(velNow, 0.5);
-      // Into the cab's own frame (x forward, y up, z right), gravity-free, clamped.
-      inv.copy(cabQ).invert();
-      const a = accel.applyQuaternion(inv).clampLength(0, 12);
-      const target = a.multiplyScalar(-0.009);
-      const k = 60;
-      const c = 2 * Math.sqrt(k) * 0.55;
-      vel.addScaledVector(target.sub(off).multiplyScalar(k), dt).addScaledVector(vel, -c * dt);
-      off.addScaledVector(vel, dt).clampLength(0, 0.14);
-      const f = v.feel?.() ?? {};
-      const running = f.engine === 'running' || f.engine === 'idleOut' || f.running;
-      const rpm = f.rpm ?? (running ? 1400 + (f.work ?? 0) * 500 : 0);
-      const rough = { gravel: 1, dirt: 0.8, grass: 0.9, rock: 1.2, asphalt: 0.15 }[f.surface] ?? 0.6;
-      const engineShake = running ? 0.0012 + (f.load ?? f.work ?? 0) * 0.0018 : 0;
-      const roadShake = Math.min(1, Math.abs(v.speed()) / 10) * rough * 0.005 + Math.min(0.02, (f.bump ?? 0) * 0.004);
-      const digShake = f.digging ? 0.006 : 0;
-      const w = (rpm / 60) * 2 * Math.PI * 0.5;
-      const n = (a1, a2) => Math.sin(t * a1 + a2) * 0.6 + Math.sin(t * a1 * 1.73 + a2 * 2.1) * 0.4;
-      out.offset.set(
-        n(w * 0.9, 0.3) * engineShake + n(23, 1.1) * roadShake,
-        n(w, 0) * engineShake * 1.4 + n(17, 0.5) * (roadShake + digShake) * 1.5,
-        n(w * 1.1, 2.1) * engineShake + n(29, 2.7) * roadShake,
-      ).add(off).applyQuaternion(cabQ);
-      out.pitch = -off.x * 0.35 + n(19, 3.3) * (roadShake + digShake) * 0.25;
-      out.roll = -off.z * 0.4 + n(13, 0.9) * roadShake * 0.25;
-      return out;
-    },
-  };
-}
+// What each plot material counts as, for grip and plants.
+const PLOT_SURFACE = {
+  topsoil: { grass: 0, dirt: 1, gravel: 0, rock: 0 },
+  clay: { grass: 0, dirt: 1, gravel: 0, rock: 0 },
+  sand: { grass: 0, dirt: 0.6, gravel: 0.4, rock: 0 },
+  gravel: { grass: 0, dirt: 0, gravel: 1, rock: 0 },
+  rock: { grass: 0, dirt: 0, gravel: 0, rock: 1 },
+};
 
 export async function createWorld3D({ container, game, settings, audio = null, notify, onPointerLockLost, onUseOffice }) {
   const { data } = game;
   const siteId = game.state.currentSiteId;
-  const layout = LAYOUTS[siteId];
-  const siteData = getSiteData(data, siteId);
+  const home = MAP.home;
+  const ground = game.ctx.ground;
 
   const canvas = document.createElement('canvas');
   canvas.className = 'world-canvas';
   container.append(canvas);
   const { renderer, q } = createRenderer(canvas, settings.graphics);
-  const [physics] = await Promise.all([createPhysics(), preloadModels(), preloadGround(renderer), preloadVegetation(renderer), preloadEntrance(renderer)]);
+  const [physics] = await Promise.all([createPhysics(), preloadModels(), preloadGround(renderer), preloadVegetation(renderer), preloadCountryside(renderer)]);
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 3000);
+  const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 5000);
   camera.rotation.order = 'YXZ';
-  const env = createEnvironment(scene, renderer, q, layout.terrain);
 
-  const zoneDepths = () => Object.fromEntries(siteData.zones.map((z) => [z.id, getZoneInfo(game.ctx, siteId, z.id).depth]));
-  const terrain = createTerrain({
-    scene, physics, layout, siteData, materials: data.materials, getDepths: zoneDepths, ground: game.ctx.ground,
-  });
-  // The diggable plot: its own chunked mesh and colliders, following the ground as it changes.
-  const groundView = game.ctx.ground ? createGroundView({ scene, physics, ground: game.ctx.ground }) : null;
-  // The face pile sits where rock was first dumped (saved with the game).
-  const facePilePos = { ...(game.state.positions?.facePile ?? layout.facePile) };
-  const piles = createPiles({ scene, layout, game, facePilePos });
+  // ---- the land
+  const plan = planWorld(MAP);
+  const land = createCountryside({ scene, physics, ground, plan });
+  const half = MAP.half;
+  const env = createEnvironment(scene, renderer, q, { x0: -half, x1: half, z0: -half, z1: half }, { outsideY: 28, hillDistance: [1300, 2200] });
+  // Your field: its own chunked mesh and colliders, following the ground as it changes.
+  const groundView = ground ? createGroundView({ scene, physics, ground }) : null;
+  const heightAt = (x, z) => land.heightAt(x, z);
+  const onPlot = (x, z) => ground && ground.inside(x, z);
+  // Height and surface mix anywhere (your field uses the real ground's top material).
+  function surfaceAt(x, z) {
+    if (onPlot(x, z)) {
+      const mat = ground.surfaceAt(x, z);
+      const i = Math.floor((x - ground.x0) / ground.cellSize);
+      const j = Math.floor((z - ground.z0) / ground.cellSize);
+      const grass = mat === 'topsoil' && !ground.cellDisturbed(i, j) ? 1 : 0;
+      return { height: ground.heightAt(x, z), ...(grass ? { grass: 1, dirt: 0, gravel: 0, rock: 0 } : PLOT_SURFACE[mat]), plot: true };
+    }
+    return land.surfaceAt(x, z);
+  }
+  const terrain = { heightAt, surfaceAt };
+
+  const bayNames = Object.fromEntries(Object.entries(data.depot.bays).map(([id, b]) => [id, b.name]));
+  const places = buildPlaces({ scene, physics, plan, heightAt, materials: data.materials, bayNames });
   const particles = createParticles(scene);
-  addEntrance({ scene, physics, layout });
-  const cab = layout.cabin;
-  const gate = layout.entrance;
+
+  // ---- plants: grass around you, trees along hedges, roads and in copses
+  const houseRects = [...plan.houses, plan.pub].map((h) => ({ x0: h.x - 8, x1: h.x + 8, z0: h.z - 8, z1: h.z + 8 }));
   const noGrowth = [
-    ...(terrain.plot ? [[terrain.plot, 0.5]] : []), // plants would float once you dig
-    [{ x0: cab.x - 18, x1: cab.x - 5, z0: cab.z - 7, z1: cab.z + 2 }, 0], // container and junk
-    [{ x0: gate.x0, x1: gate.x1, z0: layout.terrain.z0 - 12, z1: layout.terrain.z0 }, 0], // driveway
-    [{ x0: -1e4, x1: 1e4, z0: layout.publicRoad.z - 4.5, z1: layout.publicRoad.z + 4.5 }, 0], // road
-    [{ x0: layout.pickup.x, x1: layout.pickup.x, z0: layout.pickup.z, z1: layout.pickup.z }, 3],
-    ...Object.values(layout.zones).map((r) => [r, 0.8]),
-    [{ x0: cab.x - 7, x1: cab.x + 3, z0: cab.z - 3, z1: cab.z + 3.5 }, 0],
-    ...Object.values(layout.parking).flat().filter((p) => p.z !== undefined).map((p) => [{ x0: p.x, x1: p.x, z0: p.z, z1: p.z }, 4]),
+    [home.plot, 0.5], [home.yard, 1], [MAP.depot.yard, 1], [MAP.dealer.yard, 1],
+    [{ x0: home.driveway.x0, x1: home.driveway.x1, z0: home.yard.z0 - 14, z1: home.yard.z0 }, 1],
+    [{ x0: MAP.depot.driveway.x0, x1: MAP.depot.driveway.x1, z0: MAP.depot.yard.z1, z1: MAP.depot.yard.z1 + 10 }, 1],
+    ...houseRects.map((r) => [r, 0]),
   ];
   const vegetation = createVegetation({
     scene,
     quality: settings.graphics,
-    area: { x0: layout.terrain.x0 - 40, x1: layout.terrain.x1 + 40, z0: layout.terrain.z0 - 40, z1: layout.terrain.z1 + 40 },
-    surfaceAt: (x, z) => terrain.surfaceAt(x, z),
+    surfaceAt,
     blocked: (x, z) => noGrowth.some(([r, m]) => inRect(r, x, z, m)),
   });
-  const T = layout.terrain;
   const trees = createTrees({
     scene,
     quality: settings.graphics,
-    keepClear: (x, z) => inRect(T, x, z, 12) || Math.abs(z - layout.publicRoad.z) < 9,
-    groundHeight: (x, z) => env.groundHeight(x, z),
+    plan: treePlan(plan),
+    keepClear: (x, z) => land.onRoad(x, z, 2.5) || noGrowth.some(([r, m]) => inRect(r, x, z, m + 3)),
+    groundHeight: heightAt,
   });
 
-  // Target marker on the ground where the excavator bucket will dig/dump.
-  const marker = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.95, 32),
-    new THREE.MeshBasicMaterial({ color: 0xf2b632, transparent: true, opacity: 0.8, depthTest: false }));
-  marker.rotation.x = -Math.PI / 2;
-  marker.renderOrder = 10;
-  marker.visible = false;
-  scene.add(marker);
-
   const saved = game.state.positions ?? {};
-  const spawn = saved.player ?? layout.playerSpawn;
-  const player = createPlayer({ physics, spawn: { ...spawn, y: terrain.heightAt(spawn.x, spawn.z) } });
+  const spawn = saved.player ?? home.playerSpawn;
+  const player = createPlayer({ physics, spawn: { ...spawn, y: heightAt(spawn.x, spawn.z) } });
   player.look.yaw = spawn.yaw ?? 0;
 
   // ---- machines ----
   const vehicles = new Map();
   const parkingUsed = { excavator: 0, truck: 0, spare: 0 };
-
   function parkingSpot(type) {
-    const list = layout.parking[type];
-    if (parkingUsed[type] < list.length) return list[parkingUsed[type]++];
-    const s = layout.parking.spare;
-    return { x: s.x + s.stepX * parkingUsed.spare++, z: s.z, yaw: Math.PI / 2 };
+    if (type === 'pickup') return home.pickup;
+    const list = home.parking[type] ?? [];
+    if ((parkingUsed[type] ?? 0) < list.length) return list[parkingUsed[type]++];
+    const s = home.parking.spare;
+    return { x: s.x + s.stepX * parkingUsed.spare++, z: s.z, yaw: -Math.PI / 2 };
   }
 
   // What the ground is like under a wheel or track: grip (friction) and rolling resistance.
@@ -174,15 +128,14 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   };
   const ASPHALT = { grip: 1.0, roll: 0.012, name: 'asphalt' };
   function groundSurface(x, z) {
-    const road = layout.publicRoad;
-    if (road && Math.abs(z - road.z) < road.width / 2 && !inRect(layout.terrain, x, z)) return ASPHALT;
-    const s = terrain.surfaceAt(x, z);
-    const w = { grass: s.grass, dirt: s.dirt, gravel: s.gravel, rock: s.rock };
+    if (!onPlot(x, z) && land.onRoad(x, z)) return ASPHALT;
+    const s = surfaceAt(x, z);
     let grip = 0;
     let roll = 0;
     let name = 'dirt';
     let best = 0;
-    for (const [k, share] of Object.entries(w)) {
+    for (const k of ['grass', 'dirt', 'gravel', 'rock']) {
+      const share = s[k] ?? 0;
       grip += SURFACES[k].grip * share;
       roll += SURFACES[k].roll * share;
       if (share > best) {
@@ -190,26 +143,38 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         name = k;
       }
     }
-    return { grip, roll, name };
+    return { grip: grip || 0.7, roll: roll || 0.035, name };
   }
 
-  const sounds = audio ? createWorldSounds({ audio, layout, groundSurface }) : null;
+  const sounds = audio ? createWorldSounds({ audio, carRoute: laneRoute(plan, heightAt), groundSurface }) : null;
 
+  // Site machines (not road-legal) stay on your land.
+  let blockedNoteT = 0;
+  const onYourLand = (x, z) => inRect(home.boundary, x, z);
   function addVehicle(machine) {
     const spot = saved.machines?.[machine.id] ?? parkingSpot(machine.type);
     const stats = () => getStats(data, getMachine(game.ctx, machine.id) ?? machine);
     const live = () => getMachine(game.ctx, machine.id);
     const args = { physics, scene, terrain, machine, spawn: spot, stats, live, surfaceAt: groundSurface };
-    const v = machine.type === 'truck' ? createTruck(args) : createExcavator(args);
+    const v = machine.type === 'excavator'
+      ? createExcavator({
+        ...args,
+        allowedAt: onYourLand,
+        onBlocked: () => {
+          if (blockedNoteT > 0) return;
+          blockedNoteT = 4;
+          notify('Site machines aren\'t road-legal: the excavator stays on your land', 'warn');
+        },
+      })
+      : createTruck(args);
     vehicles.set(machine.id, v);
   }
-
   for (const m of machinesAt(game.ctx, siteId)) addVehicle(m);
 
   // Your shovel and wheelbarrow (the shovel is drawn in front of the camera).
   scene.add(camera);
   const hands = createHandTools({
-    scene, camera, physics, terrain, game, layout, player, particles, vehicles, audio, notify, saved: saved.barrow ?? null,
+    scene, camera, physics, terrain, game, home, player, particles, vehicles, audio, notify, saved: saved.barrow ?? null,
   });
 
   // ---- modes: on foot, or in a machine ----
@@ -224,15 +189,13 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   const current = () => (mode.kind === 'foot' ? null : mode.v);
   const currentMachine = () => (current() ? getMachine(game.ctx, current().machineId) : null);
-
   const vehicleDistance = (veh) => veh.position().setY(player.feet().y).distanceTo(player.feet()) - veh.radius;
 
   function nearestVehicle(maxDist) {
-    const feet = player.feet();
     let best = null;
     let bestD = Infinity;
     for (const v of vehicles.values()) {
-      const d = v.position().setY(feet.y).distanceTo(feet) - v.radius;
+      const d = vehicleDistance(v);
       if (d < maxDist && d < bestD) {
         best = v;
         bestD = d;
@@ -241,11 +204,13 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     return best;
   }
 
-  // The office laptop (opens the shop) is by the office door.
-  const officeDoor = { x: layout.cabin.x + 0.5, z: layout.cabin.z + 2.6 };
-  function nearOffice() {
+  // Doors that open the shop: the laptop in your office, and Ashby Plant's front desk.
+  function nearDoor() {
     const f = player.feet();
-    return Math.hypot(f.x - officeDoor.x, f.z - officeDoor.z) < 3;
+    for (const [door, what] of [[places.officeDoor, 'office'], [places.dealerDoor, 'dealer']]) {
+      if (Math.hypot(f.x - door.x, f.z - door.z) < 3) return what;
+    }
+    return null;
   }
 
   function enter(v) {
@@ -265,7 +230,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       notify('Slow down before getting out');
       return;
     }
-    if (v.type === 'truck') {
+    if (v.road) {
       v.control.throttle = 0;
       v.control.steer = 0;
       v.control.handbrake = true;
@@ -276,7 +241,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const out = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw)).multiplyScalar(-(v.radius * 0.7 + 1));
     const x = p.x + out.x;
     const z = p.z + out.z;
-    player.teleport(x, Math.max(terrain.heightAt(x, z), 0) + 0.1, z);
+    player.teleport(x, heightAt(x, z) + 0.1, z);
     player.setEnabled(true);
     player.look.yaw = yaw - Math.PI / 2;
     player.look.pitch = 0;
@@ -287,8 +252,23 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     if (pileTotal(load) <= 0) return null;
     const c = new THREE.Color(0, 0, 0);
     const total = pileTotal(load);
-    for (const [id, t] of Object.entries(load)) c.add(new THREE.Color(data.materials[id]?.color ?? '#999').multiplyScalar(t / total));
+    for (const [id, t] of Object.entries(load)) {
+      c.add(new THREE.Color(data.ground.materials[id]?.color ?? data.materials[id]?.color ?? '#999').multiplyScalar(t / total));
+    }
     return c;
+  }
+
+  // Where a road vehicle would unload: a depot bay (if its tail is in one) or the ground just
+  // behind it. Returns { bay } or { x, z } (or { reason }).
+  function unloadSpot(v) {
+    const tail = v.tailgateWorld();
+    const bay = places.bayAt(tail.x, tail.z);
+    if (bay) return { bay: bay.id, name: bay.name };
+    const back = new THREE.Vector3(-Math.cos(v.yaw()), 0, Math.sin(v.yaw()));
+    const x = tail.x + back.x * 1.2;
+    const z = tail.z + back.z * 1.2;
+    if (ground?.workable(x, z)) return { x, z };
+    return { reason: 'Unload on your field, or in a bay at Ashby Aggregates' };
   }
 
   // ---- single-press actions (from hotkeys) ----
@@ -305,29 +285,26 @@ export async function createWorld3D({ container, game, settings, audio = null, n
           const barrowD = hands.grabDistance();
           if (barrowD < BARROW_GRAB && (!near || barrowD < vehicleDistance(near))) hands.grab();
           else if (near) enter(near);
-          else if (nearOffice()) onUseOffice?.();
+          else if (nearDoor()) onUseOffice?.();
         }
         return true;
       }
       case 'camera':
         if (v) camMode = camMode === 'cab' ? 'chase' : 'cab';
         return true;
-      case 'tip':
+      case 'tip': {
         if (!v && hands.holding()) {
           hands.tip();
           return true;
         }
-        if (v?.type !== 'truck') return true;
-        if (!inRect(layout.tipBay, v.position().x, v.position().z, 1.5)) notify('Drive into the yellow tipping bay at the yard first', 'warn');
-        else if (Math.abs(v.speed()) > 1.5) notify('Stop the truck before tipping', 'warn');
-        else report(game.actions.tip(m.id));
-        return true;
-      case 'loadPile': {
-        if (v?.type !== 'truck') return true;
-        const fp = facePilePos;
-        if (Math.hypot(v.position().x - fp.x, v.position().z - fp.z) > 9) notify('Park next to the face pile to load from it', 'warn');
-        else if (Math.abs(v.speed()) > 1) notify('Stop the truck first', 'warn');
-        else report(game.actions.loadFromPile(m.id));
+        if (!v?.road) return true;
+        if (Math.abs(v.speed()) > 1.5) {
+          notify('Stop before unloading', 'warn');
+          return true;
+        }
+        const spot = unloadSpot(v);
+        if (spot.reason) notify(spot.reason, 'warn');
+        else report(game.actions.tip(m.id, spot.bay ? { bay: spot.bay } : { x: spot.x, z: spot.z }));
         return true;
       }
       case 'repair': {
@@ -343,7 +320,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         return true;
       }
       case 'recover':
-        if (v?.type === 'truck') v.recover();
+        if (v?.road) v.recover();
         return true;
       default:
         return false;
@@ -369,6 +346,9 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     v.control.handbrake = keys('jump') || m.broken || busy;
   }
 
+  // What the excavator's bucket is over: a vehicle's bed, or the ground.
+  const bedUnder = (t) => [...vehicles.values()].find((tr) => tr.road && tr.isOverBed(t)) ?? null;
+
   let digHintShown = false;
   function controlExcavator(v, m, keys, d, sens, clicked, dt) {
     look.pitch = THREE.MathUtils.clamp(look.pitch - d.y * sens, -1.2, 0.6);
@@ -384,27 +364,54 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const target = v.bucketTarget();
     const full = pileTotal(m.load) > 0.01;
     if (!full && mouse.isDown()) {
-      const zoneId = zoneAt(layout, target.x, target.z);
-      if (zoneId) {
-        const r = game.actions.scoop(m.id, zoneId);
+      if (ground?.workable(target.x, target.z)) {
+        const r = game.actions.scoop(m.id, { x: target.x, z: target.z });
         if (!r.ok && clicked) notify(r.reason, 'warn');
       } else if (clicked && !digHintShown) {
-        notify('Swing the bucket over a digging zone (the pit) to dig', 'warn');
+        notify('Swing the bucket over your field to dig', 'warn');
         digHintShown = true;
       }
     } else if (full && clicked) {
-      const truck = [...vehicles.values()].find((t) => t.type === 'truck' && t.isOverBed(target));      const site = game.state.sites[siteId];
-      if (!truck && pileTotal(site.facePile) < 0.05 && !zoneAt(layout, target.x, target.z)) {
-        facePilePos.x = target.x;
-        facePilePos.z = target.z;
-      }
-      const r = game.actions.dumpBucket(m.id, truck?.machineId ?? null);
+      const bed = bedUnder(target);
+      const r = bed
+        ? game.actions.dumpBucket(m.id, { machineId: bed.machineId })
+        : game.actions.dumpBucket(m.id, { x: target.x, z: target.z });
       if (r.ok) {
-        v.startDump(truck ? truck.bedWorld().y : null);
-        const at = truck ? truck.bedWorld() : target.setY(terrain.heightAt(target.x, target.z));
+        v.startDump(bed ? bed.bedWorld().y : null);
+        const at = bed ? bed.bedWorld() : target.setY(heightAt(target.x, target.z));
         particles.spawn(at, { count: 12, spread: 1.5, life: 1.8 });
       } else notify(r.reason, 'warn');
     }
+  }
+
+  // ---- the weighbridge: a loaded road vehicle standing on it is weighed in
+  const weigh = new Map(); // machineId -> seconds on the bridge
+  function updateWeighbridge(dt) {
+    let busy = false;
+    for (const v of vehicles.values()) {
+      if (!v.road) continue;
+      const m = getMachine(game.ctx, v.machineId);
+      const p = v.position();
+      const on = places.onWeighbridge(p.x, p.z);
+      if (!on || !m || pileTotal(m.load) < data.depot.minLoad || hasTicket(game.ctx, m.id) || Math.abs(v.speed()) > 0.4) {
+        weigh.delete(v.machineId);
+        continue;
+      }
+      busy = true;
+      const t = (weigh.get(v.machineId) ?? 0) + dt;
+      weigh.set(v.machineId, t);
+      if (t >= WEIGH_TIME) {
+        weigh.delete(v.machineId);
+        const r = game.actions.weighIn(m.id);
+        if (r.ok) {
+          const mix = Object.entries(m.load).sort((a, b) => b[1] - a[1])
+            .map(([id, tt]) => `${data.materials[id]?.name.toLowerCase() ?? id} ${Math.round((tt / r.tonnes) * 100)}%`).join(', ');
+          notify(`Weighed in: ${r.tonnes.toFixed(2)} t (${mix}). Unload in the right bay (T).`, 'good');
+          sounds?.play('chime', { gain: 0.4 });
+        }
+      }
+    }
+    places.setLight(!busy);
   }
 
   // ---- game events -> effects ----
@@ -413,14 +420,15 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const v = vehicles.get(e.machineId);
       if (v?.type === 'excavator') {
         const t = v.bucketTarget();
-        t.y = terrain.heightAt(t.x, t.z);
+        t.y = heightAt(t.x, t.z);
         particles.spawn(t, { count: 8, spread: 1.2, life: 1.5, up: 0.6 });
       }
     }),
     game.events.on('rockHauled', (e) => {
       const v = vehicles.get(e.machineId);
-      if (v?.type === 'truck') particles.spawn(v.position().setY(0.5), { count: 25, spread: 4, life: 3, size: 2 });
+      if (v?.road) particles.spawn(v.tailgateWorld(), { count: 20, spread: 2.5, life: 2.6, size: 1.6 });
     }),
+    game.events.on('productSold', (e) => places.delivered(e.bayId, e.tonnes)),
     game.events.on('machineBought', (e) => {
       const m = getMachine(game.ctx, e.machineId);
       if (m && m.siteId === siteId) addVehicle(m);
@@ -433,6 +441,14 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       vehicles.delete(e.machineId);
     }),
   ];
+
+  // Target marker on the ground where the excavator bucket will dig/dump.
+  const marker = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.95, 32),
+    new THREE.MeshBasicMaterial({ color: 0xf2b632, transparent: true, opacity: 0.8, depthTest: false }));
+  marker.rotation.x = -Math.PI / 2;
+  marker.renderOrder = 10;
+  marker.visible = false;
+  scene.add(marker);
 
   // ---- camera ----
   const tmpQ = new THREE.Quaternion();
@@ -463,7 +479,9 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     // Chase camera behind the machine, orbiting with the mouse.
     const yaw = baseYaw + look.yaw;
     const p = v.position();
-    const desired = new THREE.Vector3(p.x - Math.cos(yaw) * 12, p.y + 5.5 - look.pitch * 6, p.z + Math.sin(yaw) * 12);
+    const dist = v.type === 'pickup' ? 8.5 : 12;
+    const desired = new THREE.Vector3(p.x - Math.cos(yaw) * dist, p.y + dist * 0.45 - look.pitch * 6, p.z + Math.sin(yaw) * dist);
+    desired.y = Math.max(desired.y, heightAt(desired.x, desired.z) + 1.2);
     chasePos = chasePos ? chasePos.lerp(desired, Math.min(1, dt * 5)) : desired;
     camera.position.copy(chasePos);
     camera.lookAt(p.x, p.y + 1.8, p.z);
@@ -490,31 +508,32 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     if (!st) fx.set(veh.machineId, st = { smoke: 0, dust: 0, prev: f.engine, side: 1 });
     const running = f.engine === 'running' || f.engine === 'idleOut';
     const worn = mm?.tier === 'rusty' ? 1 : 0.45;
+    const petrol = veh.type === 'pickup' ? 0.35 : 1; // a petrol engine smokes far less
     // A thick black cough when a cold diesel catches.
     if (f.engine === 'running' && st.prev === 'cranking') {
-      particles.spawn(veh.exhaustWorld(), { count: 7, spread: 0.3, up: 1.8, life: 2.6, size: 0.9, color: 0x1c1b1a, opacity: 0.55 * worn + 0.15 });
+      particles.spawn(veh.exhaustWorld(), { count: 7, spread: 0.3, up: 1.8, life: 2.6, size: 0.9, color: 0x1c1b1a, opacity: (0.55 * worn + 0.15) * petrol });
     }
     st.prev = f.engine;
     if (running) {
       const load = f.load ?? f.work ?? 0;
-      st.smoke += dt * (2.5 + (f.rpm ?? 1500) / 500 + load * 7);
-      smokeCol.copy(smokeClean).lerp(smokeDirty, Math.min(1, load * worn * 1.3 + (f.misfire ? 0.6 : 0)));
+      st.smoke += dt * (2.5 + (f.rpm ?? 1500) / 500 + load * 7) * petrol;
+      smokeCol.copy(smokeClean).lerp(smokeDirty, Math.min(1, load * worn * 1.3 * petrol + (f.misfire ? 0.6 : 0)));
       while (st.smoke > 1) {
         st.smoke -= 1;
         particles.spawn(veh.exhaustWorld(), {
           count: 1, spread: 0.12, up: 1.5 + load, life: 1.4 + load * 1.2, size: 0.3 + load * 0.45,
-          color: smokeCol.getHex(), opacity: 0.1 + load * (0.18 + 0.3 * worn),
+          color: smokeCol.getHex(), opacity: (0.1 + load * (0.18 + 0.3 * worn)) * petrol,
         });
       }
     }
-    if (veh.type === 'truck') {
+    if (veh.road) {
       const speed = Math.abs(f.speed);
       const dusty = DUSTY[f.surface] ?? 0.8;
       st.dust += dt * dusty * (Math.max(0, speed - 1.5) * 1.3 + f.slip * 10);
       while (st.dust > 1) {
         st.dust -= 1;
         st.side = -st.side;
-        const at = veh.model.root.localToWorld(new THREE.Vector3(-2.0 - Math.random() * 0.6, -1.2, st.side * 1.05));
+        const at = veh.tailgateWorld().add(new THREE.Vector3(0, -0.5, st.side * 0.8));
         particles.spawn(at, {
           count: 1, spread: 0.5, up: 0.45, life: 2.4, size: 1.1 + speed * 0.09,
           color: 0xb7a07c, opacity: Math.min(0.4, 0.14 + speed * 0.012) * Math.min(1, dusty),
@@ -537,25 +556,25 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const sens = MOUSE_SCALE * (settings.mouseSensitivity ?? 1);
     const dy = settings.invertY ? -d.y : d.y;
     const delta = paused ? { x: 0, y: 0 } : { x: d.x, y: dy };
+    blockedNoteT = Math.max(0, blockedNoteT - dt);
 
     const v = current();
     const m = currentMachine();
     if (!v && hands.holding()) hands.controlHeld(paused ? 0 : dt, keys, delta, sens);
     else if (!v) controlFoot(keys, delta, sens);
-    else if (v.type === 'truck') controlTruck(v, m, keys, delta, sens);
+    else if (v.road) controlTruck(v, m, keys, delta, sens);
     else controlExcavator(v, m, keys, delta, sens, clicked && !paused, paused ? 0 : dt);
 
     if (!paused) physics.step(dt);
-    terrain.update(dt);
     groundView?.update();
-    piles.update();
     hands.update(paused ? 0 : dt, { onFoot: !v, clicked: clicked && !paused, paused });
+    if (!paused) updateWeighbridge(dt);
 
     // Sync machines with their game state.
     for (const veh of vehicles.values()) {
       const mm = getMachine(game.ctx, veh.machineId);
       if (!mm) continue;
-      if (veh.type === 'truck') {
+      if (veh.road) {
         const cap = getStats(data, mm).capacity;
         const tonnes = pileTotal(mm.load);
         veh.setCargo(tonnes);
@@ -575,16 +594,17 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     // Bucket target marker.
     if (v?.type === 'excavator' && !m.job) {
       const t = v.bucketTarget();
-      const truck = [...vehicles.values()].find((tr) => tr.type === 'truck' && tr.isOverBed(t));
+      const bed = bedUnder(t);
       const full = pileTotal(m.load) > 0.01;
-      const zone = zoneAt(layout, t.x, t.z);
+      const diggable = ground?.workable(t.x, t.z);
       marker.visible = true;
-      marker.position.set(t.x, (truck ? truck.bedWorld().y : terrain.heightAt(t.x, t.z)) + 0.08, t.z);
-      marker.material.color.set(full ? (truck ? 0x4fc3f7 : 0xf2b632) : (zone ? 0x7ee07e : 0x888888));
+      marker.position.set(t.x, (bed ? bed.bedWorld().y : heightAt(t.x, t.z)) + 0.08, t.z);
+      marker.material.color.set(full ? (bed ? 0x4fc3f7 : (diggable ? 0xf2b632 : 0x888888)) : (diggable ? 0x7ee07e : 0x888888));
     } else marker.visible = false;
 
     particles.update(dt);
-    vegetation.update(dt);
+    const here = v ? v.position() : player.feet();
+    vegetation.update(dt, here);
     trees.update(dt);
     placeCamera(dt);
     sounds?.update(dt, {
@@ -595,13 +615,12 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       jobOf: (id) => getMachine(game.ctx, id)?.job ?? null,
       tierOf: (id) => getMachine(game.ctx, id)?.tier ?? 'rusty',
     });
-    env.follow(v ? v.position() : player.feet());
+    env.follow(here);
     renderer.render(scene, camera);
   }
 
-  // What the HUD should show right now.
-  // What the HUD should show right now. `prompt` is { key, text } (key may be null),
-  // `job` is { label, progress } while the machine you're in is working.
+  // What the HUD should show right now. `prompt` is { key, text } (key may be null) or a list
+  // of them; `job` is { label, progress } while the machine you're in is working.
   function hudInfo() {
     const v = current();
     const m = currentMachine();
@@ -616,6 +635,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       if (!hands.holding()) {
         const near = nearestVehicle(ENTER_DISTANCE);
         const barrowD = hands.grabDistance();
+        const door = nearDoor();
         if (barrowD < BARROW_GRAB && (!near || barrowD < vehicleDistance(near))) {
           use = { key: key('interact'), text: 'Take the wheelbarrow' };
         } else if (near) {
@@ -623,8 +643,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
           use = nm.broken
             ? { key: key('repair'), text: `Repair ${machineName(data, nm)}` }
             : { key: key('interact'), text: `Get in ${machineName(data, nm)}` };
-        } else if (nearOffice()) {
+        } else if (door === 'office') {
           use = { key: key('interact'), text: 'Use the office laptop (buy machines)' };
+        } else if (door === 'dealer') {
+          use = { key: key('interact'), text: 'Ashby Plant: buy machines and upgrades' };
         }
       }
       const list = [...h.prompts, use].filter(Boolean);
@@ -632,22 +654,41 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     } else if (m.broken) {
       prompt = { key: key('repair'), text: 'Broken down — repair' };
     } else if (m.job) {
-      job = { label: JOBS[m.job.type].label, progress: jobProgress(m.job) };
+      const label = m.job.type === 'tip' && v.type === 'pickup' ? 'Shovelling off' : JOBS[m.job.type].label;
+      job = { label, progress: jobProgress(m.job) };
     } else if (v.type === 'excavator') {
       const t = v.bucketTarget();
       const full = pileTotal(m.load) > 0.01;
-      const truck = [...vehicles.values()].find((tr) => tr.type === 'truck' && tr.isOverBed(t));
-      const zone = zoneAt(layout, t.x, t.z);
-      if (!full) prompt = zone ? { key: 'Hold LMB', text: `Dig zone ${zone}` } : { key: null, text: 'Swing the bucket over the pit to dig' };
-      else if (truck) prompt = { key: 'LMB', text: `Dump into ${machineName(data, getMachine(game.ctx, truck.machineId))}` };
-      else prompt = { key: 'LMB', text: 'Dump on the face pile' };
-    } else if (v.type === 'truck') {
+      const bed = bedUnder(t);
+      const diggable = ground?.workable(t.x, t.z);
+      if (!full) {
+        prompt = diggable
+          ? { key: 'Hold LMB', text: `Dig ${(data.ground.materials[ground.surfaceAt(t.x, t.z)]?.name ?? '').toLowerCase()}` }
+          : { key: null, text: 'Swing the bucket over your field to dig' };
+      } else if (bed) prompt = { key: 'LMB', text: `Dump into ${machineName(data, getMachine(game.ctx, bed.machineId))}` };
+      else if (diggable) prompt = { key: 'LMB', text: 'Dump here' };
+      else prompt = { key: null, text: 'Swing over your field or a truck to dump' };
+    } else if (v.road) {
+      const loaded = pileTotal(m.load) >= data.depot.minLoad;
       const p = v.position();
-      const loaded = pileTotal(m.load) > 0.05;
-      const fp = facePilePos;
-      if (loaded && inRect(layout.tipBay, p.x, p.z, 1.5)) prompt = { key: key('tip'), text: 'Tip the load' };
-      else if (Math.hypot(p.x - fp.x, p.z - fp.z) < 9) prompt = { key: key('loadPile'), text: 'Load from the face pile' };
-      else if (loaded) prompt = { key: null, text: 'Drive to the yellow tipping bay at the yard' };
+      if (loaded) {
+        const spot = unloadSpot(v);
+        if (spot.bay) {
+          if (!hasTicket(game.ctx, m.id)) prompt = { key: null, text: 'Weigh in on the weighbridge first' };
+          else {
+            const qd = quoteDelivery(game.ctx, spot.bay, m.load);
+            prompt = { key: key('tip'), text: `Unload in the ${spot.name} bay: ${qd.grade}, $${qd.perTonne.toFixed(2)}/t` };
+          }
+        } else if (places.onWeighbridge(p.x, p.z)) {
+          prompt = { key: null, text: hasTicket(game.ctx, m.id) ? 'Weighed in: drive on to the bays' : 'Stop here to weigh in…' };
+        } else if (spot.x !== undefined) {
+          prompt = { key: key('tip'), text: v.type === 'pickup' ? 'Shovel it off here' : 'Tip here' };
+        } else if (inRect(MAP.depot.yard, p.x, p.z, 10)) {
+          prompt = { key: null, text: hasTicket(game.ctx, m.id) ? 'Back up into the right bay to unload' : 'Weigh in on the weighbridge at the gate' };
+        } else {
+          prompt = { key: null, text: `Take it to ${MAP.depot.name} to sell (Tab: map)` };
+        }
+      }
     }
 
     let machine = null;
@@ -657,17 +698,20 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         name: machineName(data, m),
         tier: m.tier,
         type: m.type,
+        road: !!v.road,
         condition: m.condition,
         broken: m.broken,
         load: pileTotal(m.load),
-        capacity: m.type === 'truck' ? stats.capacity : stats.bucket,
+        capacity: m.type === 'excavator' ? stats.bucketVolume * 1.6 : stats.capacity,
         speedKmh: Math.abs(v.speed()) * 3.6,
         camera: camMode,
+        ticket: hasTicket(game.ctx, m.id),
       };
       const f = v.feel();
       machine.engine = f.engine; // off / cranking / running / idleOut / stopping / stall
-      if (v.type === 'truck') {
+      if (v.road) {
         machine.rpm = f.rpm;
+        machine.maxRpm = v.type === 'pickup' ? 4600 : 2600;
         machine.gear = f.shifting ? '–' : f.gear < 0 ? 'R' : String(f.gear);
       }
     }
@@ -677,57 +721,80 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   // Remember where everything is, so saves put machines back in place.
   function writePositions(state) {
     const machines = {};
-    for (const [id, v] of vehicles) machines[id] = v.placement();
+    for (const [id, veh] of vehicles) machines[id] = veh.placement();
     const feet = current() ? current().position() : player.feet();
     state.positions = {
-      facePile: { ...facePilePos },
       barrow: hands.placement(),
       machines,
       player: { x: feet.x + 3, z: feet.z, yaw: current() ? 0 : player.look.yaw },
     };
   }
 
+  // Where things are, for the map screen.
+  function mapInfo() {
+    const v = current();
+    const p = v ? v.position() : player.feet();
+    const yaw = v ? (v.type === 'excavator' ? v.houseWorldYaw() : v.yaw()) : player.look.yaw + Math.PI / 2;
+    return {
+      you: { x: p.x, z: p.z, yaw },
+      vehicles: [...vehicles.values()].map((veh) => {
+        const q2 = veh.position();
+        return { id: veh.machineId, type: veh.type, x: q2.x, z: q2.z, yaw: veh.yaw(), current: veh === v };
+      }),
+      barrow: hands.placement(),
+    };
+  }
+
   // For automated play tests and the dev console.
   const debug = {
     hands,
+    places,
+    land,
     teleportPlayer(x, z, yaw = player.look.yaw) {
       if (current()) exit();
       hands.letGo();
-      player.teleport(x, terrain.heightAt(x, z) + 0.1, z);
+      player.teleport(x, heightAt(x, z) + 0.1, z);
       player.look.yaw = yaw;
     },
     placeVehicle(id, x, z, yaw = 0) {
-      const v = vehicles.get(id);
-      if (v?.type === 'truck') v.phys.reset(x, terrain.heightAt(x, z), z, yaw);
-      if (v?.type === 'excavator') Object.assign(v.state, { x, z, yaw });
+      const veh = vehicles.get(id);
+      if (veh?.road) veh.phys.reset(x, heightAt(x, z), z, yaw);
+      if (veh?.type === 'excavator') Object.assign(veh.state, { x, z, yaw });
     },
-    swing(delta) {
-      if (current()?.type === 'excavator') current().swingBy(delta);
+    enterVehicle(id) {
+      const veh = vehicles.get(id);
+      if (veh) enter(veh);
+    },
+    exitVehicle: () => exit(),
+    swing(dl) {
+      if (current()?.type === 'excavator') current().swingBy(dl);
     },
     setFootPitch(pitch) {
       player.look.pitch = pitch;
+    },
+    setHouseYaw(yaw) {
+      const veh = current();
+      if (veh?.type === 'excavator') Object.assign(veh.state, { houseYaw: yaw, targetHouseYaw: yaw });
     },
     // Hand tools: press the mouse button (dig / tip the shovel), or E / T with the barrow.
     useShovel: () => hands.useShovel(),
     takeBarrow: () => hands.grab(),
     letGoBarrow: () => hands.letGo(),
     tipBarrow: () => hands.tip(),
-    setHouseYaw(yaw) {
-      const v = current();
-      if (v?.type === 'excavator') Object.assign(v.state, { houseYaw: yaw, targetHouseYaw: yaw });
-    },
     mode: () => mode.kind,
     scene,
+    camera,
     look: () => ({ ...look, foot: { ...player.look } }),
     vehicle: (id) => vehicles.get(id),
     // Ground testing: dig a bowl or drop material at a spot.
-    digAt: (x, z, depth = 0.5, radius = 1) => game.actions.digGround({ x, z, radius, bottomY: terrain.heightAt(x, z) - depth }),
+    digAt: (x, z, depth = 0.5, radius = 1) => game.actions.digGround({ x, z, radius, bottomY: heightAt(x, z) - depth }),
     dumpAt: (x, z, tonnes = { gravel: 2 }, radius = 0.8) => game.actions.dumpGround({ x, z, tonnes, radius }),
     // Machine camera angle (for screenshots): yaw offset and pitch.
     setLook(yaw, pitch = look.pitch) {
       look.yaw = yaw;
       look.pitch = pitch;
     },
+    setCamMode: (c) => { camMode = c; },
   };
 
   return {
@@ -735,7 +802,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     update,
     handleAction,
     hudInfo,
+    mapInfo,
     writePositions,
+    plan,
+    heightGrid: () => land.heightGrid(),
     lockMouse: () => mouse.lock(),
     unlockMouse: () => mouse.unlock(),
     isMouseLocked: () => mouse.locked(),
@@ -746,12 +816,60 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       sounds?.destroy();
       groundView?.dispose();
       hands.destroy();
-      for (const v of vehicles.values()) v.destroy();
+      for (const veh of vehicles.values()) veh.destroy();
       player.destroy();
-      terrain.dispose();
+      land.dispose();
       renderer.dispose();
       physics.destroy();
       canvas.remove();
     },
   };
+}
+
+// Hedges, copses and rows of trees for the map: the map's own hedges, plus hedgerows along both
+// sides of the roads (with gaps at gateways, junctions and through the village).
+function treePlan(plan) {
+  const { map } = plan;
+  const gaps = [
+    ...plan.roads.flatMap((r) => [r.samples[0], r.samples[r.samples.length - 1]]).map((p) => [p.x, p.z, 26]),
+    [(map.home.driveway.x0 + map.home.driveway.x1) / 2, map.home.yard.z0 - 10, 14],
+    [(map.depot.driveway.x0 + map.depot.driveway.x1) / 2, map.depot.yard.z1 + 4, 16],
+    [map.dealer.yard.x0 - 6, (map.dealer.driveway.z0 + map.dealer.driveway.z1) / 2, 14],
+  ];
+  const village = { x0: 520, x1: 720, z0: -620, z1: -370 };
+  const hedges = [...map.hedges];
+  for (const road of plan.roads) {
+    for (const side of [-1, 1]) {
+      let line = [];
+      const flush = () => {
+        if (line.length > 1) hedges.push(line);
+        line = [];
+      };
+      for (let i = 0; i < road.samples.length; i += 3) {
+        const p = road.samples[i];
+        const off = road.hw + 3.2;
+        const x = p.x - p.dz * off * side;
+        const z = p.z + p.dx * off * side;
+        const inGap = gaps.some(([gx, gz, r]) => Math.hypot(gx - x, gz - z) < r) || inRect(village, x, z)
+          || Math.abs(x) > map.half - 30 || Math.abs(z) > map.half - 30;
+        if (inGap) flush();
+        else line.push([x, z]);
+      }
+      flush();
+    }
+  }
+  // Trees in the village gardens: one behind most houses.
+  const singles = [...plan.houses, plan.pub].filter((h, i) => i % 3 !== 1).map((h) => [h.x - Math.sin(h.yaw) * 12, h.z - Math.cos(h.yaw) * 12, 0]);
+  return {
+    hedges,
+    copses: map.copses,
+    rows: map.poplars.length === 2 ? [[map.poplars[0], map.poplars[1]]] : [],
+    singles,
+    lone: { count: 60, half: map.half - 60 },
+  };
+}
+
+// Points along Mill Lane (2 m apart, with heights) for passing cars to follow.
+function laneRoute(plan, heightAt) {
+  return plan.byId.millLane.samples.map((p) => ({ ...p, y: heightAt(p.x, p.z) }));
 }

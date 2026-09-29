@@ -97,6 +97,48 @@ export function glbTruck(tier) {
   };
 }
 
+// Your pickup (vehicle_pickup.glb): origin on the ground, so it's lowered to sit under the
+// physics body's centre (`rideHeight` above the ground).
+export function glbPickup(rideHeight) {
+  const inner = instance('vehicle_pickup');
+  if (!inner) return null;
+  inner.position.y = -rideHeight;
+  const root = new THREE.Group();
+  root.add(inner);
+  const wheels = [0, 1, 2, 3].map((i) => {
+    const w = node(inner, `Wheel${i}`);
+    w.rotation.order = 'YXZ';
+    return { steerGroup: w, spin: w };
+  });
+  const tailgate = node(inner, 'TailgatePivot');
+  const floorY = 0.86 - rideHeight;
+  const heap = createHeap(23);
+  heap.position.set(-1.5, floorY, 0);
+  heap.visible = false;
+  root.add(heap);
+  return {
+    root,
+    wheels,
+    bedPivot: null,
+    tailgate,
+    wheelOffsetY: rideHeight, // the wheels sit inside the lowered model
+    // Show the load as a heap in the bed; fill 0..1.
+    setLoad(fill, color) {
+      heap.visible = fill > 0.02;
+      const f = Math.min(1, fill);
+      heap.scale.set(1.0 * Math.sqrt(f) + 0.1, 0.75 * f + 0.05, 0.72);
+      if (color) heap.material.color.copy(color);
+    },
+    bedCenter: new THREE.Vector3(-1.5, floorY + 0.2, 0),
+    bedHalf: { x: 1.1, z: 0.8 },
+    bedFloorY: floorY,
+    tailgateLocal: new THREE.Vector3(-2.7, floorY, 0), // the middle of the open tailgate
+    cabSeat: new THREE.Vector3(0.18, 1.45 - rideHeight, -0.45), // driver's eyes (left-hand drive)
+    exhaustLocal: new THREE.Vector3(-2.75, 0.3 - rideHeight, 0.35),
+    setFirstPerson() {},
+  };
+}
+
 export function glbExcavator(tier) {
   const root = instance(`excavator_${tier}`);
   if (!root) return null;

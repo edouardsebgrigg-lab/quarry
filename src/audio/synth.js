@@ -156,6 +156,7 @@ export const ENGINES = {
   truckTurbo: { cylinders: 6, bore: 1.15, clatter: 0.7, rough: 0.04, seed: 23 },
   excavator: { cylinders: 4, bore: 0.9, clatter: 1.0, rough: 0.06, seed: 37 },
   car: { cylinders: 4, bore: 0.6, clatter: 0.15, rough: 0.02, seed: 51 },
+  pickupOld: { cylinders: 6, bore: 0.72, clatter: 0.3, rough: 0.07, seed: 63 },
 };
 
 // One seamless loop of a running diesel at `rpm`, under `load` (0 = coasting, 1 = flat out).

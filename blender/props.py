@@ -8,6 +8,7 @@ from mathutils import Matrix, Vector
 import lib
 import pickup as pickup_model
 import handtools
+import buildings
 import textures as tex
 from lib import bm_box, bm_cylinder, bm_profile, merge, mesh_object, empty, finish, material
 
@@ -421,6 +422,7 @@ PARTS.update({
     'portaloo': portaloo,
     'pole': pole,
     **handtools.PARTS,
+    **buildings.PARTS,
 })
 
 _PREVIEWS = {
@@ -431,6 +433,7 @@ _PREVIEWS = {
     'portaloo': dict(target=(0, 0, 1.2), distance=5, angle=-35, elevation=15, samples=24),
     'pole': dict(target=(0, 0, 5.0), distance=14, angle=-50, elevation=10, samples=24),
     **handtools.PREVIEWS,
+    **buildings.PREVIEWS,
 }
 
 

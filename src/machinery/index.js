@@ -1,5 +1,5 @@
 export {
-  tierData, typeName, tierName, applyMods, getStats, haulTiming, describeStats,
+  tierData, typeName, tierName, applyMods, getStats, describeStats, isRoadLegal, hasBed,
 } from './stats.js';
 export { breakdownChance, serviceCost } from './wear.js';
 export {

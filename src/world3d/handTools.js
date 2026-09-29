@@ -1,19 +1,18 @@
 // Your hands: the shovel you carry and the wheelbarrow you push.
 //
 // Shovel: held in front of you (first person). Look at the ground on the field and click to
-// dig a shovelful out of the real ground; click again to tip it into the barrow, into a truck
+// dig a shovelful out of the real ground; click again to tip it into the barrow, into a vehicle's
 // bed, or onto the ground as a heap. The digging happens halfway through each swing.
 // Wheelbarrow: E at the handles to take it, then it goes where you look (it turns at a
 // walking pace, and won't push through walls or machines). T tips it: onto the field as a
-// real pile, or into the yard's tipping bay to sell. E lets go; it stands on its wheel and legs
-// and follows the ground under it.
+// real pile, or into the pickup's bed (push the wheel up to its tailgate). E lets go; it stands
+// on its wheel and legs and follows the ground under it.
 //
 // All the real work (how much you dig, where material goes) is done by game actions
 // (src/handtools); this file only draws, animates, aims and asks.
 import * as THREE from 'three';
 import { glbProp } from './glbModels.js';
 import { createHeap } from './piles.js';
-import { inRect } from './layouts.js';
 import { pileTotal } from '../quarry/index.js';
 import {
   shovelLoad, barrowLoad, barrowFill, looseVolume, whyCannotDig,
@@ -138,7 +137,7 @@ function createClods(scene) {
 // ---------------------------------------------------------------- the hands
 
 export function createHandTools({
-  scene, camera, physics, terrain, game, layout, player, particles, vehicles, audio = null, notify, saved = null,
+  scene, camera, physics, terrain, game, home, player, particles, vehicles, audio = null, notify, saved = null,
 }) {
   const { data } = game;
   const ctx = game.ctx;
@@ -185,7 +184,7 @@ export function createHandTools({
     tilt.add(ridingShovel);
   }
 
-  const start = saved ?? layout.barrow ?? { x: 0, z: 0, yaw: 0 };
+  const start = saved ?? home.barrow ?? { x: 0, z: 0, yaw: 0 };
   const b = {
     x: start.x,
     z: start.z,
@@ -386,10 +385,10 @@ export function createHandTools({
     return { t, point: eye.clone().addScaledVector(look, t) };
   }
 
-  // A truck bed you're looking at (its sides are above your head, so you throw it up and in).
+  // A vehicle's bed you're looking at (a truck's sides are above your head: you throw it up and in).
   function rayTruck(reach) {
     for (const v of vehicles.values()) {
-      if (v.type !== 'truck' || Math.abs(v.speed()) > 0.5) continue;
+      if (!v.road || Math.abs(v.speed()) > 0.5) continue;
       const floorY = v.bedWorld().y - 0.3;
       for (let t = 0.3; t <= reach + 0.8; t += 0.1) {
         const p = eye.clone().addScaledVector(look, t);
@@ -414,12 +413,12 @@ export function createHandTools({
       const truck = rayTruck(reach);
       if (truck && (!g || truck.t < g.t + 0.3)) return { kind: 'truck', point: truck.point, v: truck.v };
       if (!g) return null;
-      return { kind: ground?.inside(g.point.x, g.point.z) ? 'ground' : 'noTip', point: g.point };
+      return { kind: ground?.workable(g.point.x, g.point.z) ? 'ground' : 'noTip', point: g.point };
     }
     if (!g) return null;
     const tray = rayTray(reach);
     if (tray && tray.t < g.t) return null; // looking into the barrow, not at the ground
-    return { kind: ground?.inside(g.point.x, g.point.z) ? 'dig' : 'noDig', point: g.point };
+    return { kind: ground?.workable(g.point.x, g.point.z) ? 'dig' : 'noDig', point: g.point };
   }
 
   // A small ring on the ground where the shovel goes.
@@ -455,7 +454,7 @@ export function createHandTools({
     const color = colorOf(shovelLoad(ctx));
     let r;
     if (tg.kind === 'barrow') r = game.actions.shovelDump({ into: 'barrow' });
-    else if (tg.kind === 'truck') r = game.actions.shovelDump({ into: 'truck', machineId: tg.v.machineId });
+    else if (tg.kind === 'truck') r = game.actions.shovelDump({ into: 'machine', machineId: tg.v.machineId });
     else r = game.actions.shovelDump({ into: 'ground', x: tg.point.x, z: tg.point.z });
     if (!r.ok) {
       notify(r.reason, 'warn');
@@ -529,7 +528,21 @@ export function createHandTools({
     const f = heading(b.yaw);
     return { x: b.x + f.x * 0.45, z: b.z + f.z * 0.45 };
   }
-  const inBay = (p) => !!layout.tipBay && inRect(layout.tipBay, p.x, p.z, 0.8);
+  // A low bed (the pickup's) whose tailgate the barrow's wheel is up against: you can tip into it.
+  // A truck's bed is too high to tip a barrow into.
+  function bedAtTailgate() {
+    const p = dumpPoint();
+    let best = null;
+    for (const v of vehicles.values()) {
+      if (!v.road || !v.tailgateWorld || Math.abs(v.speed()) > 0.5) continue;
+      const tg = v.tailgateWorld();
+      if (v.bedFloorWorldY() - heightAt(tg.x, tg.z) > 1.2) continue;
+      const d = Math.hypot(tg.x - p.x, tg.z - p.z);
+      if (d < 1.3 && (!best || d < best.d)) best = { v, d };
+    }
+    return best?.v ?? null;
+  }
+  const bedName = (v) => machineName(data, getMachine(ctx, v.machineId)).replace(/ #\d+$/, '').toLowerCase();
 
   function tip() {
     if (!b.held || b.tipT >= 0) return;
@@ -538,29 +551,29 @@ export function createHandTools({
       return;
     }
     const p = dumpPoint();
-    const intoYard = inBay(p);
-    if (!intoYard && !ground?.inside(p.x, p.z)) {
-      notify('Tip it on the field, or in the yellow bay in the yard', 'warn');
+    const bed = bedAtTailgate();
+    if (!bed && !ground?.workable(p.x, p.z)) {
+      notify('Tip it on your field, or push it up to the pickup\'s tailgate', 'warn');
       return;
     }
     b.tipT = 0;
     b.tipDone = false;
-    b.tipAt = { ...p, intoYard };
+    b.tipAt = { ...p, machineId: bed?.machineId ?? null, bedY: bed ? bed.bedFloorWorldY() : null };
   }
 
   function finishTip() {
-    const { x, z, intoYard } = b.tipAt;
+    const { x, z, machineId, bedY } = b.tipAt;
     const color = colorOf(barrowLoad(ctx));
-    const r = game.actions.tipBarrow({ x, z, intoYard });
+    const r = game.actions.tipBarrow(machineId ? { machineId } : { x, z });
     if (!r.ok) {
       notify(r.reason, 'warn');
       return;
     }
-    const at = new THREE.Vector3(x, heightAt(x, z) + 0.35, z);
+    const at = new THREE.Vector3(x, (bedY ?? heightAt(x, z)) + 0.35, z);
     sfx('soilLong', at, { gain: 1 });
+    if (machineId) sfx('boom', at, { gain: 0.12, rate: 1.9 });
     clods.spawn(at, color, { count: 14, up: 0.5, spread: 0.4, dir: heading(b.yaw).multiplyScalar(0.8) });
     particles.spawn(at, { count: 6, spread: 0.6, up: 0.4, life: 1.8, size: 0.8, color: 0xa08a6a, opacity: 0.3 });
-    if (intoYard) notify(`Tipped ${(r.tonnes * 1000).toFixed(0)} kg in the yard. Sell it at the market (M).`);
   }
 
   // ---- per frame
@@ -698,10 +711,11 @@ export function createHandTools({
       if (b.held) {
         const p = dumpPoint();
         const empty = pileTotal(barrowLoad(ctx)) < 1e-6;
+        const bed = empty ? null : bedAtTailgate();
         if (b.tipT >= 0) prompts.push({ key: null, text: 'Tipping…' });
-        else if (!empty && inBay(p)) prompts.push({ key: key('tip'), text: 'Tip it in the yard (then sell at the market)' });
-        else if (!empty && ground?.inside(p.x, p.z)) prompts.push({ key: key('tip'), text: 'Tip it here' });
-        else if (!empty) prompts.push({ key: null, text: 'Push it to the yellow bay in the yard to sell it' });
+        else if (bed) prompts.push({ key: key('tip'), text: `Tip it into the ${bedName(bed)}` });
+        else if (!empty && ground?.workable(p.x, p.z)) prompts.push({ key: key('tip'), text: 'Tip it here' });
+        else if (!empty) prompts.push({ key: null, text: 'Push it up to the pickup\'s tailgate to load it' });
         prompts.push({ key: key('interact'), text: 'Let go' });
         const load = barrowLoad(ctx);
         dash = {

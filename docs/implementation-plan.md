@@ -28,8 +28,8 @@ Based on `docs/design-spec.md`. Every milestone ends with something you can run 
 Each step is playable and committed.
 1. ✅ HUD redesign: small sim-style corner widgets, fading key hints (H)
 2. ✅ Deformable layered ground: chunked high-resolution heightfield, soil layers, dig/deposit, slumping piles, physics colliders that follow; tests
-3. ✅ Hand-dig start: shovel, wheelbarrow, ground piles, picking material back up. New games start with $200, a shovel and a barrow; topsoil and clay are on the market. Until the depot exists (step 4), barrow loads are sold by tipping them in the yard's bay
-4. The bigger map: your plot, public roads, village, selling depot with weighbridge and material bays, pricing by material and purity
+3. ✅ Hand-dig start: shovel, wheelbarrow, ground piles, picking material back up. New games start with $200, a shovel and a barrow; topsoil and clay are on the market
+4. ✅ The bigger map: a 2 km countryside with Mill Lane and Quarry Road, your field and yard, the village of Ashby (houses, pub, the Ashby Plant dealer) and the Ashby Aggregates depot with a weighbridge and a bay per material. Loads are weighed in, then paid per tonne by material and purity (clean, slightly mixed, or mixed fill). Your old pickup is the first road vehicle (loaded by barrow, shovel or excavator, shovelled off by hand); the excavator and tipper truck now dig and tip on the real ground, and the excavator can't leave your land. New map screen (Tab). Old saves can't be loaded
 5. Machines on the new ground: mini digger (Assisted + Direct controls), site dumper, tractor + trailer, the existing excavator and truck; road-legal rules
 6. Mentor guidance with map markers; balance pass
 7. Building with material: haul roads, ramps, levelling

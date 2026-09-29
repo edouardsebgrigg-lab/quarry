@@ -29,35 +29,29 @@ export function getStats(data, machine) {
   return applyMods(data, tierData(data, machine.type, machine.tier), machine.mods);
 }
 
-// Haul timing for a truck on a site. All in seconds.
-export function haulTiming(stats, siteData) {
-  const drive = siteData.haulDistance / stats.speed;
-  const total = stats.loadTime + 2 * drive;
-  return {
-    total,
-    loadEnd: (0.6 * stats.loadTime) / total,
-    arriveYard: (0.6 * stats.loadTime + drive) / total,
-    unloadEnd: (stats.loadTime + drive) / total,
-  };
+// Is this kind of machine allowed on public roads?
+export function isRoadLegal(data, type) {
+  return !!data.machines.types[type]?.roadLegal;
 }
 
+// Does it carry material in a bed (and tip or unload it)?
+export const hasBed = (data, machine) => getStats(data, machine).capacity > 0;
+
 // Player-facing stat lines, used by the shop and the upgrade card.
-export function describeStats(type, stats, siteData) {
+export function describeStats(type, stats) {
   if (type === 'excavator') {
     return [
-      { key: 'digRate', label: 'Dig rate', value: (stats.bucket / stats.cycleTime) * 60, unit: 't/min', better: 'higher' },
-      { key: 'bucket', label: 'Bucket', value: stats.bucket, unit: 't', better: 'higher' },
-      { key: 'maxHardness', label: 'Max rock hardness', value: stats.maxHardness, unit: '', better: 'higher' },
-      { key: 'fuelPerJob', label: 'Fuel per scoop', value: stats.fuelPerJob, unit: 'L', better: 'lower' },
+      { key: 'digRate', label: 'Dig rate', value: (stats.bucketVolume / stats.cycleTime) * 60, unit: 'm³/min', better: 'higher' },
+      { key: 'bucketVolume', label: 'Bucket', value: stats.bucketVolume, unit: 'm³', better: 'higher' },
+      { key: 'reach', label: 'Reach', value: stats.reach, unit: 'm', better: 'higher' },
+      { key: 'fuelPerJob', label: 'Fuel per bucket', value: stats.fuelPerJob, unit: 'L', better: 'lower' },
     ];
   }
-  if (type === 'truck') {
-    const trip = haulTiming(stats, siteData).total;
+  if (type === 'truck' || type === 'pickup') {
     return [
-      { key: 'haulRate', label: 'Haul rate', value: (stats.capacity / trip) * 60, unit: 't/min', better: 'higher' },
       { key: 'capacity', label: 'Load', value: stats.capacity, unit: 't', better: 'higher' },
-      { key: 'tripTime', label: 'Round trip', value: trip, unit: 's', better: 'lower' },
-      { key: 'fuelPerJob', label: 'Fuel per trip', value: stats.fuelPerJob, unit: 'L', better: 'lower' },
+      { key: 'topSpeed', label: 'Top speed', value: stats.speed * 1.4 * 3.6, unit: 'km/h', better: 'higher' },
+      { key: 'fuelPerJob', label: 'Fuel per load', value: stats.fuelPerJob, unit: 'L', better: 'lower' },
     ];
   }
   return [];

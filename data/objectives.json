@@ -1,23 +1,23 @@
 {
   "intro": {
-    "title": "Roadside Gravel Pit",
+    "title": "Home Field",
     "text": [
-      "The old gravel pit off the county road has sat idle for years. The office leaks, the weeds are winning, and the last machines were sold for scrap. Now it's yours.",
-      "There's $200 in the bank, an old shovel and a wheelbarrow. That's not quite enough for a machine yet, so you start by hand: strip the topsoil off the field next to the yard and sell it by the barrow load."
+      "You've bought a field off Mill Lane, outside the village of Ashby. Under the grass there's topsoil, then clay, sand and gravel, and people pay good money for all of it.",
+      "There's $200 in the bank, an old shovel, a wheelbarrow and your tired pickup. Nowhere near enough for a machine yet, so you start by hand: dig it, barrow it to the pickup and sell it at Ashby Aggregates, the depot on the other side of the village."
     ]
   },
   "steps": [
-    { "id": "firstShovel", "title": "Dig with the shovel", "text": "Walk onto the bare field next to the yard. Look at the ground and click to dig a shovelful.", "reward": 0 },
-    { "id": "fillBarrow", "title": "Fill the wheelbarrow", "text": "The wheelbarrow is at the corner of the field. Look into it and click to tip each shovelful in, until it's full.", "reward": 0 },
-    { "id": "tipBarrow", "title": "Tip it in the yard", "text": "Grab the handles (E), push the barrow into the yellow tipping bay in the yard and tip it (T).", "reward": 0 },
-    { "id": "firstSale", "title": "Sell your topsoil", "text": "Open the market (M) and sell what you tipped in the yard.", "reward": 10 },
-    { "id": "buyExcavator", "title": "Buy an excavator", "text": "Keep digging and selling by hand until you can buy the Rusty Excavator on the office laptop (or press B). Tip anything you can't sell in a heap on the field; you can shovel it back up later.", "reward": 0 },
-    { "id": "buyTruck", "title": "Buy a haul truck", "text": "You need something to carry the gravel. Save up for the Rusty Haul Truck. The barrow still earns while you wait.", "reward": 0 },
-    { "id": "firstScoop", "title": "Dig your first bucket", "text": "Your machines are waiting by the pit. Get in the excavator (E), swing the bucket over the pit and hold the left mouse button.", "reward": 0 },
-    { "id": "loadTruck", "title": "Fill the truck", "text": "Swing round to the truck and click to dump each bucket into its bed until it's full.", "reward": 0 },
-    { "id": "tip", "title": "Tip the load at the yard", "text": "Get out, climb into the truck, drive to the yellow tipping bay in the yard and press T.", "reward": 0 },
-    { "id": "sell", "title": "Sell the gravel", "text": "Open the market (M) and sell what's in the yard.", "reward": 50 },
-    { "id": "firstMod", "title": "Fix something up", "text": "Cheap upgrades make your old machines a bit quicker. Buy one in the shop.", "reward": 0 },
+    { "id": "firstShovel", "title": "Dig with the shovel", "text": "Walk onto your field (through the gap from the yard), look at the ground and click to dig a shovelful.", "reward": 0 },
+    { "id": "fillBarrow", "title": "Fill the wheelbarrow", "text": "The wheelbarrow is just inside the field. Look into it and click to tip each shovelful in, until it's full.", "reward": 0 },
+    { "id": "loadPickup", "title": "Load the pickup", "text": "Your pickup is parked in the yard. Take the barrow (E), push it up to the pickup's tailgate and tip it in (T). Keep going until there's at least 300 kg on board.", "reward": 0, "target": 0.3 },
+    { "id": "weighIn", "title": "Weigh in at the depot", "text": "Get in the pickup (E) and drive to Ashby Aggregates: out of the gate, east along Mill Lane, north into Ashby and left at The Plough onto Quarry Road (Tab shows the map). Stop on the weighbridge at the depot gate.", "reward": 0 },
+    { "id": "firstSale", "title": "Unload in the topsoil bay", "text": "Back up to the TOPSOIL bay and unload (T). Clean loads pay the most: mixed ones are graded down.", "reward": 15 },
+    { "id": "buyExcavator", "title": "Buy an excavator", "text": "Keep going by hand until you can buy the Rusty Excavator, on the office laptop (or B) or at Ashby Plant in the village. It's delivered to your yard.", "reward": 0 },
+    { "id": "buyTruck", "title": "Buy a tipper truck", "text": "A proper road truck carries far more than the pickup. Save up for the Rusty Tipper Truck.", "reward": 0 },
+    { "id": "firstScoop", "title": "Dig your first bucket", "text": "Get in the excavator (E), drive it onto your field, swing the bucket over the ground and hold the left mouse button.", "reward": 0 },
+    { "id": "loadTruck", "title": "Fill the truck", "text": "Park the truck by the excavator. Swing round to it and click to dump each bucket into its bed until it's full.", "reward": 0 },
+    { "id": "sell", "title": "Sell a truck load", "text": "Drive the truck to the depot, weigh in and tip in the right bay (T).", "reward": 50 },
+    { "id": "firstMod", "title": "Fix something up", "text": "Cheap upgrades make your old machines a bit better. Buy one in the shop.", "reward": 0 },
     { "id": "earn", "title": "Earn $500", "text": "Keep digging, hauling and selling. Service your machines (R) before they break down.", "reward": 100, "target": 500 },
     { "id": "usedMachine", "title": "Get a better machine", "text": "Save up for a Used excavator or truck. It's a huge step up from the rusty ones.", "reward": 0 }
   ]

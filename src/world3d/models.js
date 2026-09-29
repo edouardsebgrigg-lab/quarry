@@ -1,7 +1,7 @@
 // Machine models. Uses the Blender models (assets/models/*.glb) when they exist,
 // otherwise placeholders built from simple shapes. Each faces +X locally.
 import * as THREE from 'three';
-import { glbTruck, glbExcavator } from './glbModels.js';
+import { glbTruck, glbExcavator, glbPickup } from './glbModels.js';
 import { rustyMetal } from './textures.js';
 import { createHeap } from './piles.js';
 import { TRUCK_SHAPE } from './truckPhysics.js';
@@ -124,6 +124,57 @@ export function buildTruckModel(tier) {
       cab.visible = !on;
       interior.visible = on;
     },
+  };
+}
+
+// ---------- pickup ----------
+export function buildPickupModel(rideHeight) {
+  const fromFile = glbPickup(rideHeight);
+  if (fromFile) return fromFile;
+  const root = new THREE.Group();
+  const paint = new THREE.MeshStandardMaterial({ color: 0x4a6b80, roughness: 0.6, metalness: 0.2 });
+  const y = (h) => h - rideHeight; // heights above the ground, in body space
+  root.add(box(5.4, 0.5, 1.8, paint, 0, y(0.75), 0)); // body
+  root.add(box(1.7, 0.7, 1.72, paint, 0.5, y(1.4), 0)); // cab
+  root.add(box(0.05, 0.5, 1.5, GLASS, 1.36, y(1.4), 0));
+  const heap = createHeap(23);
+  heap.position.set(-1.5, y(0.86), 0);
+  heap.visible = false;
+  root.add(heap);
+  const tailgate = new THREE.Group();
+  tailgate.position.set(-2.7, y(0.6), 0);
+  tailgate.add(box(0.05, 0.5, 1.76, paint, 0, 0.25, 0));
+  root.add(tailgate);
+  const wheels = [];
+  const tyreGeo = new THREE.CylinderGeometry(0.36, 0.36, 0.23, 18);
+  tyreGeo.rotateX(Math.PI / 2);
+  for (const [x, z] of [[1.55, -0.76], [1.55, 0.76], [-1.55, -0.76], [-1.55, 0.76]]) {
+    const g = new THREE.Group();
+    g.position.set(x, y(0.36), z);
+    const t = new THREE.Mesh(tyreGeo, TYRE);
+    t.castShadow = true;
+    g.add(t);
+    root.add(g);
+    wheels.push({ steerGroup: g, spin: g });
+  }
+  return {
+    root,
+    wheels,
+    bedPivot: null,
+    tailgate,
+    setLoad(fill, color) {
+      heap.visible = fill > 0.02;
+      const f = Math.min(1, fill);
+      heap.scale.set(1.0 * Math.sqrt(f) + 0.1, 0.75 * f + 0.05, 0.72);
+      if (color) heap.material.color.copy(color);
+    },
+    bedCenter: new THREE.Vector3(-1.5, y(1.06), 0),
+    bedHalf: { x: 1.1, z: 0.8 },
+    bedFloorY: y(0.86),
+    tailgateLocal: new THREE.Vector3(-2.7, y(0.86), 0),
+    cabSeat: new THREE.Vector3(0.18, y(1.45), -0.45),
+    exhaustLocal: new THREE.Vector3(-2.75, y(0.3), 0.35),
+    setFirstPerson() {},
   };
 }
 

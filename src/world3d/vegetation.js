@@ -100,47 +100,66 @@ function rng(seed) {
 
 // `surfaceAt(x, z)` -> { height, grass, dirt, gravel, rock }; `blocked(x, z)` -> true where
 // nothing should grow (pits, buildings, parking).
-export function createVegetation({ scene, quality, area, surfaceAt, blocked }) {
+// Grass tufts, dry grass, ragwort and thistles, in 16 m patches generated around you as you
+// move (the same patch always grows the same plants). `surfaceAt(x, z)` gives the ground mix;
+// `blocked(x, z)` is true where nothing may grow.
+export function createVegetation({ scene, quality, surfaceAt, blocked }) {
   if (!atlas) return { update() {} };
   const time = { value: 0 };
   const material = swayingCardMaterial(atlas, time, 1);
+  const CELL = 16;
+  const R = { low: 55, medium: 75, high: 95, ultra: 120 }[quality] ?? 75;
+  const tries = Math.round(CELL * CELL * ({ low: 0.35, medium: 0.5, high: 0.6, ultra: 0.7 }[quality] ?? 0.5));
+  const span = Math.ceil(R / CELL);
+  const capacity = Math.ceil((2 * span + 1) ** 2 * tries * 1.6);
+  const meshes = KINDS.map((kind) => {
+    const mesh = new THREE.InstancedMesh(cardGeometry(kind.cell), material, capacity);
+    mesh.count = 0;
+    mesh.receiveShadow = true;
+    mesh.frustumCulled = false; // it's all around you anyway
+    scene.add(mesh);
+    return mesh;
+  });
 
-  const random = rng(97);
-  const n = COUNT[quality] ?? COUNT.medium;
-  const placed = KINDS.map(() => []);
-  const w = area.x1 - area.x0;
-  const d = area.z1 - area.z0;
-  let tries = 0;
-  let count = 0;
-  while (count < n && tries < n * 30) {
-    tries++;
-    const x = area.x0 + random() * w;
-    const z = area.z0 + random() * d;
-    if (blocked(x, z)) continue;
-    const s = surfaceAt(x, z);
-    if (s.rock > 0.2 || s.gravel > 0.45) continue;
-    // Most likely in grass, and along the ragged edge where grass meets dirt.
-    const edge = 1 - Math.abs(s.grass - 0.5) * 2;
-    const p = (s.grass * 0.55 + edge * 0.5 + s.dirt * 0.03) * (s.outside ? 0.25 : 1);
-    if (random() > p) continue;
-    const r = random();
-    let kind;
-    if (r < 0.04) kind = 2;
-    else if (r < 0.08 && s.dirt > 0.2) kind = 3;
-    else kind = random() < (s.grass > 0.6 ? 0.8 : 0.55) ? 0 : 1;
-    placed[kind].push([x, s.height, z]);
-    count++;
-    // Tufts grow in little clumps.
-    if (kind < 2 && random() < 0.5) {
-      for (let k = 0; k < 2; k++) {
-        const cx = x + (random() - 0.5) * 0.9;
-        const cz = z + (random() - 0.5) * 0.9;
-        if (!blocked(cx, cz)) {
-          placed[kind].push([cx, surfaceAt(cx, cz).height, cz]);
-          count++;
+  // One patch: a list of plants [kind, x, y, z, size, stretch, turn, shade].
+  const cache = new Map();
+  function patch(cx, cz) {
+    const key = `${cx},${cz}`;
+    if (cache.has(key)) return cache.get(key);
+    const random = rng((Math.imul(cx, 73856093) ^ Math.imul(cz, 19349663) ^ 97) >>> 0);
+    const out = [];
+    const add = (kind, x, z) => {
+      const k = KINDS[kind];
+      const size = k.size[0] + random() * (k.size[1] - k.size[0]);
+      const shade = (k.name === 'dry' ? 0.72 : 0.85) + random() * 0.2;
+      out.push([kind, x, surfaceAt(x, z).height, z, size, 0.85 + random() * 0.3, random() * Math.PI, shade]);
+    };
+    for (let t = 0; t < tries; t++) {
+      const x = (cx + random()) * CELL;
+      const z = (cz + random()) * CELL;
+      if (blocked(x, z)) continue;
+      const s = surfaceAt(x, z);
+      if (s.road || s.rock > 0.2 || s.gravel > 0.45) continue;
+      const edge = 1 - Math.abs(s.grass - 0.5) * 2;
+      const p = s.grass * 0.55 + edge * 0.5 + s.dirt * 0.03;
+      if (random() > p) continue;
+      const r = random();
+      let kind;
+      if (r < 0.04) kind = 2;
+      else if (r < 0.08 && s.dirt > 0.2) kind = 3;
+      else kind = random() < (s.grass > 0.6 ? 0.8 : 0.55) ? 0 : 1;
+      add(kind, x, z);
+      if (kind < 2 && random() < 0.5) {
+        for (let k = 0; k < 2; k++) {
+          const px = x + (random() - 0.5) * 0.9;
+          const pz = z + (random() - 0.5) * 0.9;
+          if (!blocked(px, pz)) add(kind, px, pz);
         }
       }
     }
+    cache.set(key, out);
+    if (cache.size > 600) cache.delete(cache.keys().next().value);
+    return out;
   }
 
   const m = new THREE.Matrix4();
@@ -149,30 +168,49 @@ export function createVegetation({ scene, quality, area, surfaceAt, blocked }) {
   const sc = new THREE.Vector3();
   const pos = new THREE.Vector3();
   const tint = new THREE.Color();
-  const meshes = KINDS.map((kind, i) => {
-    const list = placed[i];
-    const mesh = new THREE.InstancedMesh(cardGeometry(kind.cell), material, Math.max(1, list.length));
-    mesh.count = list.length;
-    list.forEach(([x, y, z], j) => {
-      const s = kind.size[0] + random() * (kind.size[1] - kind.size[0]);
-      sc.set(s, s * (0.85 + random() * 0.3), s);
-      q.setFromAxisAngle(up, random() * Math.PI);
-      pos.set(x, y - 0.03, z);
-      m.compose(pos, q, sc);
-      mesh.setMatrixAt(j, m);
-      const shade = (kind.name === 'dry' ? 0.72 : 0.85) + random() * 0.2;
-      mesh.setColorAt(j, tint.setRGB(shade, shade, shade * 0.95));
+  let centre = null;
+
+  function rebuild(ccx, ccz) {
+    const counts = KINDS.map(() => 0);
+    for (let dz = -span; dz <= span; dz++) {
+      for (let dx = -span; dx <= span; dx++) {
+        if (dx * dx + dz * dz > (span + 0.5) ** 2) continue;
+        for (const [kind, x, y, z, size, stretch, turn, shade] of patch(ccx + dx, ccz + dz)) {
+          const mesh = meshes[kind];
+          const j = counts[kind]++;
+          if (j >= capacity) continue;
+          sc.set(size, size * stretch, size);
+          q.setFromAxisAngle(up, turn);
+          pos.set(x, y - 0.03, z);
+          m.compose(pos, q, sc);
+          mesh.setMatrixAt(j, m);
+          mesh.setColorAt(j, tint.setRGB(shade, shade, shade * 0.95));
+        }
+      }
+    }
+    meshes.forEach((mesh, i) => {
+      mesh.count = Math.min(capacity, counts[i]);
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     });
-    mesh.receiveShadow = true;
-    mesh.computeBoundingSphere();
-    scene.add(mesh);
-    return mesh;
-  });
+  }
 
   return {
     meshes,
-    update(dt) {
+    // `at` is where you are: the patches around it are (re)built when you move to a new one.
+    update(dt, at) {
       time.value += dt;
+      if (!at) return;
+      const ccx = Math.floor(at.x / CELL);
+      const ccz = Math.floor(at.z / CELL);
+      if (centre && centre[0] === ccx && centre[1] === ccz) return;
+      centre = [ccx, ccz];
+      rebuild(ccx, ccz);
+    },
+    // Forget the plants near (x, z) (after the ground there has changed).
+    refresh(x, z) {
+      cache.delete(`${Math.floor(x / CELL)},${Math.floor(z / CELL)}`);
+      centre = null;
     },
   };
 }
@@ -186,10 +224,11 @@ const TREES = [
   { name: 'hawthorn', size: 7.5 },
 ];
 
-// Farmland around the site: hedgerows along field edges (hawthorn with the odd oak),
-// copses, a row of poplars along the road and single trees in the fields.
-// `keepClear(x, z)` -> true where no tree may stand (the site, the road).
-export function createTrees({ scene, quality, keepClear, groundHeight }) {
+// Farmland: hedgerows (hawthorn with the odd oak) along the given lines, copses, rows of
+// poplars and single trees in the fields. `plan` = { hedges: [[[x, z], ...], ...],
+// copses: [[x, z, radius], ...], rows: [[[x0, z0], [x1, z1]], ...], lone: { count, half } };
+// `keepClear(x, z)` -> true where no tree may stand (roads, yards, buildings).
+export function createTrees({ scene, quality, plan, keepClear, groundHeight }) {
   if (!treeAtlas) return { update() {} };
   const time = { value: 0 };
   const material = swayingCardMaterial(treeAtlas, time, 0.06);
@@ -202,7 +241,6 @@ export function createTrees({ scene, quality, keepClear, groundHeight }) {
   };
 
   // Hedgerows.
-  const R = 650;
   const hedge = (x0, z0, x1, z1) => {
     const len = Math.hypot(x1 - x0, z1 - z0);
     const step = 3.2 / density;
@@ -217,29 +255,33 @@ export function createTrees({ scene, quality, keepClear, groundHeight }) {
       add(random() < 0.08 ? 0 : 2, x, z);
     }
   };
-  for (const x of [-440, -300, -150, 145, 290, 430]) hedge(x, -R, x, R);
-  for (const z of [-400, -250, -112, 96, 235, 380]) hedge(-R, z, R, z);
+  for (const line of plan.hedges ?? []) {
+    for (let i = 0; i + 1 < line.length; i++) hedge(line[i][0], line[i][1], line[i + 1][0], line[i + 1][1]);
+  }
 
   // Copses.
-  for (let i = 0; i < Math.round(10 * density); i++) {
-    const a = random() * Math.PI * 2;
-    const dist = 200 + random() * 420;
-    const cx = Math.cos(a) * dist;
-    const cz = Math.sin(a) * dist;
-    const n = 12 + Math.floor(random() * 22);
+  for (const [cx, cz, radius] of plan.copses ?? []) {
+    const n = Math.round((10 + random() * 16) * density * (radius / 30) ** 2 + 6);
     for (let k = 0; k < n; k++) {
-      const r = Math.sqrt(random()) * 28;
+      const r = Math.sqrt(random()) * radius;
       const b = random() * Math.PI * 2;
       add(random() < 0.75 ? 0 : 1, cx + Math.cos(b) * r, cz + Math.sin(b) * r);
     }
   }
 
-  // Poplars along the far side of the road, east of the site.
-  for (let x = 150; x < 420; x += 11 + random() * 3) add(1, x, -84 + random());
+  // Rows of poplars.
+  for (const [[x0, z0], [x1, z1]] of plan.rows ?? []) {
+    const len = Math.hypot(x1 - x0, z1 - z0);
+    for (let d = 0; d < len; d += 11 + random() * 3) add(1, x0 + (x1 - x0) * (d / len), z0 + (z1 - z0) * (d / len) + random());
+  }
+
+  // Trees in gardens and odd corners.
+  for (const [x, z, kind] of plan.singles ?? []) add(kind ?? 0, x, z, 1);
 
   // Lone field trees.
-  for (let i = 0; i < 40 * density; i++) {
-    add(0, (random() - 0.5) * 2 * R, (random() - 0.5) * 2 * R, 1.1);
+  const lone = plan.lone ?? { count: 40, half: 650 };
+  for (let i = 0; i < lone.count * density; i++) {
+    add(0, (random() - 0.5) * 2 * lone.half, (random() - 0.5) * 2 * lone.half, 1.1);
   }
 
   const m = new THREE.Matrix4();

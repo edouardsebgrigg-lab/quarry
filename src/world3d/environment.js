@@ -22,8 +22,9 @@ export function createRenderer(canvas, quality) {
   return { renderer, q };
 }
 
-// `site` is the rectangle covered by the quarry terrain ({ x0, x1, z0, z1 }).
-export function createEnvironment(scene, renderer, q, site) {
+// `site` is the rectangle covered by the map's own terrain ({ x0, x1, z0, z1 }); beyond it
+// there's flat farmland (at `outsideY`) running out to hills on the horizon.
+export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, hillDistance = [480, 900] } = {}) {
   const sunDir = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(55), THREE.MathUtils.degToRad(210));
 
   // Physically-based sky dome.
@@ -44,7 +45,7 @@ export function createEnvironment(scene, renderer, q, site) {
   scene.environment = pmrem.fromScene(envScene, 0, 1, 20000).texture;
   scene.environmentIntensity = 0.55;
 
-  scene.fog = new THREE.Fog(0xc9d6df, 120, 900);
+  scene.fog = new THREE.Fog(0xc9d6df, 160, Math.max(900, hillDistance[1] * 0.75));
 
   const hemi = new THREE.HemisphereLight(0xdfeaff, 0x6b5a40, 0.5);
   scene.add(hemi);
@@ -59,20 +60,20 @@ export function createEnvironment(scene, renderer, q, site) {
   sun.shadow.normalBias = 0.03;
   scene.add(sun, sun.target);
 
-  // Grass beyond the quarry: four strips around the site, so it never covers the pits.
+  // Grass beyond the map: four strips around it.
   const ground = createGroundMaterial();
-  const R = 1500;
+  const R = Math.max(1500, hillDistance[1] * 1.6);
   const s0 = site;
   for (const [x0, x1, z0, z1] of [
     [-R, R, -R, s0.z0], [-R, R, s0.z1, R], [-R, s0.x0, s0.z0, s0.z1], [s0.x1, R, s0.z0, s0.z1],
   ]) {
     const strip = new THREE.Mesh(paintGround(new THREE.PlaneGeometry(x1 - x0, z1 - z0).rotateX(-Math.PI / 2)), ground);
-    strip.position.set((x0 + x1) / 2, -0.3, (z0 + z1) / 2);
+    strip.position.set((x0 + x1) / 2, outsideY, (z0 + z1) / 2);
     strip.receiveShadow = true;
     scene.add(strip);
   }
 
-  const hills = addHills(scene, ground);
+  const hills = addHills(scene, ground, hillDistance, outsideY, Math.max(Math.abs(s0.x0), s0.x1, Math.abs(s0.z0), s0.z1) + 60);
 
   return {
     // Height of the countryside outside the site (grass level, or up a hill).
@@ -94,13 +95,15 @@ export function createEnvironment(scene, renderer, q, site) {
   };
 }
 
-// Rolling farmland hills on the horizon: smooth lumps with the same grass as the ground.
-function addHills(scene, material) {
+// Rolling farmland hills on the horizon: smooth lumps with the same grass as the ground. Each
+// one is pushed out until it's clear of the square `keepOut` (the map and a margin), so none
+// pokes up through the countryside you can walk on.
+function addHills(scene, material, [near, far], baseY, keepOut) {
   const rnd = mulberry(7);
   const hills = [];
   for (let i = 0; i < 40; i++) {
     const angle = (i / 40) * Math.PI * 2 + rnd() * 0.3;
-    const dist = 480 + rnd() * 420;
+    const want = near + rnd() * (far - near);
     const geo = new THREE.SphereGeometry(1, 48, 16, 0, Math.PI * 2, 0, Math.PI / 2);
     const p = geo.attributes.position;
     const seed = rnd() * 10;
@@ -114,10 +117,17 @@ function addHills(scene, material) {
     geo.computeVertexNormals();
     paintGround(geo, [0.85, 0.15, 0, 0], [0.92, 0.95, 0.88]);
     const hill = new THREE.Mesh(geo, material);
-    hill.scale.set(180 + rnd() * 260, 14 + rnd() * 36, 160 + rnd() * 240);
-    hill.position.set(Math.cos(angle) * dist, -2, Math.sin(angle) * dist);
+    const k = Math.max(1, want / 700); // further hills are bigger, so they still show
+    hill.scale.set((180 + rnd() * 260) * k, (14 + rnd() * 36) * k, (160 + rnd() * 240) * k);
+    const c = Math.cos(angle);
+    const sn = Math.sin(angle);
+    // Far enough out along its bearing that its footprint clears the square on one axis.
+    const clearX = Math.abs(c) > 1e-3 ? (keepOut + hill.scale.x) / Math.abs(c) : Infinity;
+    const clearZ = Math.abs(sn) > 1e-3 ? (keepOut + hill.scale.z) / Math.abs(sn) : Infinity;
+    const dist = Math.max(want, Math.min(clearX, clearZ));
+    hill.position.set(c * dist, baseY - 2, sn * dist);
     scene.add(hill);
-    hills.push({ x: hill.position.x, z: hill.position.z, y: -2, sx: hill.scale.x, sy: hill.scale.y, sz: hill.scale.z });
+    hills.push({ x: hill.position.x, z: hill.position.z, y: baseY - 2, sx: hill.scale.x, sy: hill.scale.y, sz: hill.scale.z });
   }
   return hills;
 }

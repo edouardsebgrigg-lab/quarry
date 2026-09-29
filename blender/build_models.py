@@ -10,6 +10,7 @@ import lib  # noqa: E402
 import truck  # noqa: E402
 import excavator  # noqa: E402
 import props  # noqa: E402
+import vehicles  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'assets', 'models')
@@ -19,6 +20,7 @@ MODELS = {
     'truck': (truck, ['rusty', 'used']),
     'excavator': (excavator, ['rusty', 'used']),
     'prop': (props, list(props.PARTS)),
+    'vehicle': (vehicles, ['pickup']),
 }
 
 

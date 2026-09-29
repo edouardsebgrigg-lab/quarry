@@ -50,7 +50,9 @@ function stadium(s) {
 }
 const LOOP = 4 * TRACK_HALF + 2 * Math.PI * TRACK_R;
 
-export function createExcavator({ physics, scene, terrain, machine, spawn, stats, live }) {
+// `allowedAt(x, z)` (optional): false where the machine may not go (site machines aren't
+// road-legal, so they stay on your land); `onBlocked()` is called when it tries.
+export function createExcavator({ physics, scene, terrain, machine, spawn, stats, live, allowedAt = null, onBlocked = null }) {
   const { RAPIER, world } = physics;
   const model = buildExcavatorModel(machine.tier);
   scene.add(model.root);
@@ -129,9 +131,10 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
   }
 
   function canStandAt(x, z, yaw) {
-    // All four track corners must be on solid, fairly level ground (not over a pit edge).
+    // All four track corners on fairly level ground, and no big step up or down from where it
+    // is now (so it won't drive off the edge of a hole or up a wall).
     const h = cornerHeights(x, z, yaw);
-    return h.every((v) => v > -0.35 && v < 0.8) && Math.max(...h) - Math.min(...h) < 0.6;
+    return h.every((v) => Math.abs(v - s.y) < 0.75) && Math.max(...h) - Math.min(...h) < 0.9;
   }
 
   // Tracks: each side accelerates toward its own target speed; turning = one side slower.
@@ -157,13 +160,15 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
     const f = forward(nyaw);
     const nx = s.x + f.x * v * dt;
     const nz = s.z + f.z * v * dt;
-    if (canStandAt(nx, nz, nyaw)) {
+    const allowed = !allowedAt || allowedAt(nx, nz);
+    if (allowed && canStandAt(nx, nz, nyaw)) {
       s.x = nx;
       s.z = nz;
       s.yaw = nyaw;
       s.sL += s.vL * dt;
       s.sR += s.vR * dt;
     } else {
+      if (!allowed && Math.abs(v) > 0.05) onBlocked?.();
       s.vL = 0;
       s.vR = 0;
     }

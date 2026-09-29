@@ -1,7 +1,7 @@
 // Checks the truck's driving feel stays sensible when physics numbers change.
 import { describe, it, expect, beforeAll } from 'vitest';
 import RAPIER from '@dimforge/rapier3d-compat';
-import { createTruckPhysics } from './truckPhysics.js';
+import { createTruckPhysics, PICKUP } from './truckPhysics.js';
 
 beforeAll(async () => {
   await RAPIER.init();
@@ -107,5 +107,33 @@ describe('truck driving', () => {
     const r = truck.body.rotation();
     const upright = 1 - 2 * (r.x * r.x + r.z * r.z); // local up · world up
     expect(upright).toBeGreaterThan(0.9);
+  });
+});
+
+describe('pickup driving', () => {
+  it('rides at its own height, pulls away briskly and tops out at its speed', () => {
+    const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
+    world.timestep = 1 / 60;
+    world.createCollider(RAPIER.ColliderDesc.cuboid(800, 1, 800).setTranslation(0, -1, 0).setFriction(1));
+    const pickup = createTruckPhysics({ RAPIER, world }, {
+      x: 0, y: 0, z: 0, yaw: 0, speedStat: 13, mass: 1650, power: 55, profile: PICKUP,
+    });
+    const run = (seconds) => {
+      for (let i = 0; i < seconds * 60; i++) {
+        pickup.update(1 / 60);
+        world.step();
+      }
+    };
+    run(1.5);
+    const y = pickup.body.translation().y;
+    expect(y).toBeGreaterThan(PICKUP.tuning.rideHeight - 0.15);
+    expect(y).toBeLessThan(PICKUP.tuning.rideHeight + 0.15);
+    pickup.control.throttle = 1;
+    run(4);
+    expect(pickup.speed()).toBeGreaterThan(10); // quicker off the mark than the truck
+    run(16);
+    expect(pickup.speed()).toBeGreaterThan(13 * 1.4 * 0.9);
+    expect(pickup.speed()).toBeLessThan(13 * 1.4 * 1.1);
+    expect(pickup.telemetry().rpm).toBeGreaterThan(2500); // it revs like a petrol engine
   });
 });

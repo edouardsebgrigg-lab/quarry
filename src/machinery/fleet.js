@@ -1,8 +1,6 @@
 // Owning machines: create, buy, sell, fit mods.
 import { canAfford, spendMoney, addMoney, isInDebt } from '../economy/index.js';
-import {
-  pileTotal, addToPile, takeProportional, facePileRoom, addToFacePile,
-} from '../quarry/index.js';
+import { pileTotal, addToPile, takeProportional } from '../quarry/index.js';
 import { tierData, typeName, tierName, getStats } from './stats.js';
 
 export function createMachine(state, data, type, tier, siteId) {
@@ -53,6 +51,7 @@ function notAffordable(ctx) {
 export function buyMachine(ctx, type, tier) {
   const td = tierData(ctx.data, type, tier);
   if (!td) return { ok: false, reason: 'Unknown machine' };
+  if (ctx.data.machines.types[type].shop === false) return { ok: false, reason: 'Not for sale' };
   if (!isTierUnlocked(ctx, type, tier)) return { ok: false, reason: 'Not unlocked yet' };
   if (!canAfford(ctx, td.price)) return { ok: false, reason: notAffordable(ctx) };
   spendMoney(ctx, td.price, 'machine');
@@ -72,9 +71,10 @@ export function sellMachine(ctx, id) {
   const m = getMachine(ctx, id);
   if (!m) return { ok: false, reason: 'No such machine' };
   if (m.job) return { ok: false, reason: 'Machine is busy' };
-  const sameType = machinesAt(ctx, m.siteId).filter((x) => x.type === m.type);
-  if (sameType.length <= 1) {
-    return { ok: false, reason: `You need at least one ${typeName(ctx.data, m.type).toLowerCase()}` };
+  // Keep one road vehicle, or you'd have no way to get anything to the depot.
+  const roadLegal = (x) => !!ctx.data.machines.types[x.type]?.roadLegal;
+  if (roadLegal(m) && ctx.state.machines.filter(roadLegal).length <= 1) {
+    return { ok: false, reason: 'You need at least one road vehicle to get loads to the depot' };
   }
   const value = resaleValue(ctx, m);
   const name = machineName(ctx.data, m);
@@ -106,31 +106,33 @@ export function buyMod(ctx, machineId, modId) {
   return { ok: true };
 }
 
-// Empties an excavator's bucket into a truck (if given and it has room),
-// otherwise onto the site's face pile. Returns where it went.
-export function dumpBucket(ctx, excavatorId, truckId = null) {
+// Empties an excavator's bucket into a machine's bed (target { machineId }) or onto the
+// ground as a heap (target { x, z }, on your own land). What doesn't fit in a bed stays in
+// the bucket. Returns { ok, tonnes } (what came out).
+export function dumpBucket(ctx, excavatorId, target = {}) {
   const ex = getMachine(ctx, excavatorId);
   if (!ex || ex.type !== 'excavator') return { ok: false, reason: 'Not an excavator' };
   const amount = pileTotal(ex.load);
   if (amount < 0.01) return { ok: false, reason: 'The bucket is empty' };
-  const truck = truckId ? getMachine(ctx, truckId) : null;
-  let intoTruck = 0;
-  if (truck && truck.type === 'truck') {
-    const room = Math.max(0, getStats(ctx.data, truck).capacity - pileTotal(truck.load));
-    intoTruck = Math.min(room, amount);
-    addToPile(truck.load, takeProportional(ex.load, intoTruck));
-  }
-  const rest = pileTotal(ex.load);
-  let spilled = 0;
-  if (rest > 0.001) {
-    const fit = Math.min(rest, facePileRoom(ctx, ex.siteId));
-    addToFacePile(ctx, ex.siteId, takeProportional(ex.load, fit));
-    spilled = rest - fit;
+  let moved = 0;
+  if (target.machineId) {
+    const bed = getMachine(ctx, target.machineId);
+    const cap = bed ? getStats(ctx.data, bed).capacity ?? 0 : 0;
+    if (!cap) return { ok: false, reason: 'That has nowhere to put it' };
+    if (bed.job) return { ok: false, reason: 'Wait for it to finish' };
+    const room = Math.max(0, cap - pileTotal(bed.load));
+    if (room < 0.01) return { ok: false, reason: `The ${typeName(ctx.data, bed.type).toLowerCase()} is full` };
+    moved = Math.min(room, amount);
+    if (amount - moved < 0.01) moved = amount; // the last few crumbs go in too
+    addToPile(bed.load, takeProportional(ex.load, moved));
+  } else {
+    if (!ctx.ground || !ctx.ground.workable(target.x, target.z)) return { ok: false, reason: 'You can only dump on your own land' };
+    moved = ctx.ground.deposit({ x: target.x, z: target.z, tonnes: ex.load, radius: 0.7 });
     ex.load = {};
   }
-  ctx.events.emit('bucketDumped', { machineId: excavatorId, truckId: intoTruck > 0 ? truckId : null, intoTruck, spilled });
-  if (spilled > 0.01) ctx.events.emit('message', { level: 'warn', text: `Face pile full: ${spilled.toFixed(1)} t spilled` });
-  return { ok: true, intoTruck, toPile: rest - spilled };
+  if (pileTotal(ex.load) < 1e-6) ex.load = {};
+  ctx.events.emit('bucketDumped', { machineId: excavatorId, truckId: target.machineId ?? null, tonnes: moved });
+  return { ok: true, tonnes: moved };
 }
 
 // Dev helper: every machine back to perfect condition.

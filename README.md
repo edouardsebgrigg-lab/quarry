@@ -1,6 +1,6 @@
 # Quarry
 
-A first-person quarry mining game for PC. Start with a shovel and a wheelbarrow at a roadside gravel pit. Dig by hand, save up for a rusty excavator and truck, and work your way up to better machines, more sites and a mining empire.
+A first-person quarry mining game for PC. Start with a shovel, a wheelbarrow and a tired old pickup on a field outside a village. Dig by hand, sell what you dig at the depot, save up for a rusty excavator and a tipper truck, and work your way up to better machines, more sites and a mining empire.
 
 Built with plain JavaScript, [Three.js](https://threejs.org) (3D) and [Rapier](https://rapier.rs) (physics). The game logic is separate from the 3D, so balancing and rules live in `data/` and `src/` modules that know nothing about graphics.
 
@@ -24,42 +24,43 @@ Use Chrome or Edge for the best experience (full screen and mouse capture work b
 | Mouse | Look |
 | Shift | Sprint |
 | Space | Jump |
-| Left Mouse | Shovel: dig a shovelful (aim at the ground on the field), click again to tip it (into the wheelbarrow, a truck bed, or on the ground) |
-| E | Take the wheelbarrow (at its handles) / get into the machine in front of you |
+| Left Mouse | Shovel: dig a shovelful (aim at the ground on your field), click again to tip it (into the wheelbarrow, the pickup's or a truck's bed, or on the ground) |
+| E | Take the wheelbarrow (at its handles) / get into the machine in front of you / use the office laptop or the dealer's door |
 | R | Service / repair the nearest machine |
 
 | Wheelbarrow | |
 |---|---|
 | W / S | Push / pull |
 | Mouse, A / D | Steer (it goes where you look) |
-| T | Tip it: on the field it makes a pile, in the yellow bay in the yard it goes into stock to sell |
+| T | Tip it: pushed up to the pickup's tailgate it goes into the bed, anywhere else on your field it makes a pile |
 | E | Let go |
 
-| Excavator | |
-|---|---|
-| Mouse left/right | Swing the arm (the house turns) |
-| Hold Left Mouse | Dig a bucket from the pit (aim the ring at a zone) |
-| Left Mouse | Dump the bucket into a truck (ring turns blue) or onto the face pile |
-| W A S D | Drive on tracks |
-| C | Cab / outside camera |
-| E | Get out |
-
-| Haul truck | |
+| Pickup and tipper truck | |
 |---|---|
 | W / S | Accelerate / brake. Stopped, hold S to reverse |
 | A / D | Steer |
 | Space | Handbrake |
-| T | Tip the load (in the yellow tipping bay at the yard) |
-| F | Load from the face pile (park next to it) |
+| T | Unload: in a depot bay (after weighing in) you get paid; on your field it makes a heap. The truck tips its bed, you shovel the pickup off by hand |
 | C | Cab / outside camera |
-| V | Recover a stuck truck |
+| V | Recover (if it's stuck or on its side) |
+| E | Get out |
+
+| Excavator | |
+|---|---|
+| Mouse left/right | Swing the arm (the house turns) |
+| Hold Left Mouse | Dig a bucket out of your field where the ring is |
+| Left Mouse | Dump the bucket into a truck or the pickup (ring turns blue) or on the ground |
+| W A S D | Drive on tracks (it's not road-legal: it stays on your land) |
+| C | Cab / outside camera |
 | E | Get out |
 
 | Anywhere | |
 |---|---|
 | B | Shop (machines and upgrades) |
-| M | Market (sell stock from the yard) |
-| Tab | Site map |
+| M | Depot prices |
+| Tab | Map |
+| J | Goal details |
+| H | Show / hide the key hints |
 | P | Pause time · 1 / 2 / 3 game speed |
 | Esc | Menu |
 | F1 | Dev panel (in `npm run dev` only) |
@@ -69,7 +70,8 @@ All keys can be changed in Settings.
 ## Machines and sound
 
 The machines behave like the real thing:
-- **Haul truck:** a diesel engine with a torque curve and a 4-speed automatic gearbox, engine braking, air brakes and grip that depends on the ground (tarmac, gravel, dirt, grass). A loaded truck is heavier at the back, slower to pull away, slower up hills and longer to stop. Worn trucks misfire.
+- **Pickup:** an old petrol six with a 4-speed automatic. It carries 0.8 t in the bed; you load it by barrow, shovel or excavator and shovel it off by hand at the other end.
+- **Tipper truck:** a diesel engine with a torque curve and a 4-speed automatic gearbox, engine braking, air brakes and grip that depends on the ground (tarmac, gravel, dirt, grass). A loaded truck is heavier at the back, slower to pull away, slower up hills and longer to stop. Worn trucks misfire.
 - **Excavator:** the arm is solved so the bucket really reaches the ground or the truck bed: it reaches out, bites, drags back along the ground and curls. Every joint moves like a hydraulic ram, the rams slide in and out, the house swings with inertia, and the tracks roll round their sprockets. The machine tilts with the ground and rocks as the bucket bites.
 - Engines start when you get in (starter motor, a puff of black smoke) and stop a few seconds after you leave. From the cab you feel acceleration, braking, bumps and engine vibration.
 
@@ -77,26 +79,40 @@ All sound is generated in code (no recordings): engines by rpm and load, gear ch
 
 ## Getting started
 
-You take over an old, overgrown gravel pit with $200, a shovel and a wheelbarrow. That's not quite enough for a machine, so you start by hand. A goal card (top left) walks you through the first steps:
+You've bought a field off Mill Lane, outside the village of Ashby, with $200, a shovel, a wheelbarrow and your old pickup. A goal card (top left) walks you through the first steps:
 
-1. Walk to the bare field next to the yard, look at the ground and click to dig a shovelful of topsoil.
-2. Look into the wheelbarrow (it's at the corner of the field) and click to tip each shovelful in until it's full.
-3. Take the handles (**E**), push it into the yellow tipping bay in the yard and tip it (**T**). Sell it at the market (**M**).
-4. Keep going until you can buy a rusty excavator, then a rusty truck, on the office laptop (**E** at the door, or **B** anywhere).
-5. Dig, load, haul, tip and sell your first truck load (see below), buy a cheap upgrade, earn $500, then save up for your first Used machine.
+1. Walk from the yard through the gap in the hedge onto your field, look at the ground and click to dig a shovelful of topsoil.
+2. Look into the wheelbarrow (just inside the field) and click to tip each shovelful in until it's full.
+3. Take the handles (**E**), push the barrow up to the pickup's tailgate in the yard and tip it in (**T**). Do it again until there's at least 300 kg on board.
+4. Get in the pickup and drive to **Ashby Aggregates**: out of the gate, east along Mill Lane, north into Ashby, left at The Plough onto Quarry Road, and the depot is on the right. **Tab** shows the map.
+5. Stop on the weighbridge at the depot gate to weigh in, then back up to the **topsoil** bay and unload (**T**).
+6. Keep going until you can buy a rusty excavator and a tipper truck (on the office laptop, **E** at the door, **B** anywhere, or at Ashby Plant in the village). Bought machines are delivered to your yard.
+7. Dig, load, haul, weigh in, tip and sell your first truck load, buy a cheap upgrade, earn $500, then save up for your first Used machine.
 
 Each goal pays a small bonus. Everything starts slow and clapped-out on purpose.
 
+## The map
+
+The map is 2 km across. Your land is the 150 m field and the yard next to it, on Mill Lane. The lane runs east and then north through **Ashby** (a village with a pub and the machine dealer, **Ashby Plant**). In the middle of the village **Quarry Road** turns off west to **Ashby Aggregates**, the depot where you sell. It's about 1.2 km from your gate by road, a couple of minutes in the pickup. Site machines (the excavator) aren't road-legal and stay on your land; the pickup and the tipper truck can go anywhere.
+
+## Selling at the depot
+
+1. Drive onto the weighbridge at the gate and stop. After a moment the light turns green and you get a ticket for the load.
+2. Back up to the bay for your material (TOPSOIL, CLAY, SAND, GRAVEL or MIXED FILL; the prompt tells you when you're in one and what you'll get) and unload (**T**).
+3. You're paid per tonne. A **clean** load (95% or more of that material) gets the full price, a **slightly mixed** one (80–95%) gets 75%, and anything more mixed is paid as mixed fill. Tipping in the mixed fill bay always pays the fill price.
+
+Prices drift up and down, and flooding the market with one material lowers its price for a while. **M** shows the depot's price board.
+
 ## Digging by hand
 
-The field is real ground you can dig anywhere: topsoil on top, then clay, sand and gravel, with rock at the bottom. Each shovelful comes out of the ground where you aim, so holes get deeper and walls that are too steep cave in. Whatever you tip on the ground (off the shovel or out of the barrow) makes a real heap that slumps to its natural slope; you can walk on it and shovel it back up. A barrow holds about 0.11 m³: around 115 kg of topsoil, more of heavier gravel. Topsoil sells best by hand; clay is worth little.
+The field is real ground you can dig anywhere: topsoil on top, then clay, sand and gravel, with rock at the bottom. Each shovelful comes out of the ground where you aim, so holes get deeper and walls that are too steep cave in. Whatever you tip on the ground (off the shovel, out of the barrow or off a truck) makes a real heap that slumps to its natural slope; you can walk on it and shovel it back up. A barrow holds about 0.11 m³: around 115 kg of topsoil, more of heavier gravel. Topsoil sells best; clay is worth little. Keep the layers apart if you want clean loads.
 
 ## The loop with machines
 
-1. Get in the excavator, swing it over the pit and hold the left mouse button to dig.
-2. Swing round to the truck and click to dump each bucket into it.
-3. Drive the truck to the yard, stop in the yellow bay and press **T** to tip.
-4. Open the market (**M**) and sell. Buy upgrades in the shop (**B**).
+1. Get in the excavator, drive it onto your field, swing the bucket over the ground and hold the left mouse button to dig. It digs where the ring is, as deep as the bucket bites.
+2. Park the truck (or the pickup) next to it, swing round and click to dump each bucket into the bed.
+3. Drive to the depot, weigh in, back into the right bay and press **T** to tip.
+4. Buy upgrades in the shop (**B**). Service your machines (**R**) before they break down.
 
 ## Docs
 

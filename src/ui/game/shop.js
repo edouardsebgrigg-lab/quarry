@@ -2,7 +2,6 @@
 import { el, clear } from '../dom.js';
 import { money, statValue } from '../format.js';
 import { canAfford } from '../../economy/index.js';
-import { getSiteData } from '../../quarry/index.js';
 import {
   describeStats, getStats, tierName, machinesAt, machineName, isTierUnlocked,
   modsFor, resaleValue,
@@ -30,13 +29,12 @@ export function openShop(overlays, { game, feedback }) {
     build: ({ entry }) => {
       const tabBar = el('div', { class: 'tabs seg' });
       const body = el('div', { class: 'shop-body' });
-      const siteData = () => getSiteData(data, game.state.currentSiteId);
 
       const bestOfType = (type) => {
         const owned = machinesAt(ctx, game.state.currentSiteId).filter((m) => m.type === type);
         let best = null;
         for (const m of owned) {
-          const lines = describeStats(type, getStats(data, m), siteData());
+          const lines = describeStats(type, getStats(data, m));
           if (!best || lines[0].value > best[0].value) best = lines;
         }
         return best;
@@ -52,13 +50,14 @@ export function openShop(overlays, { game, feedback }) {
 
       function renderMachines() {
         for (const [type, t] of Object.entries(data.machines.types)) {
+          if (t.shop === false) continue; // (your pickup)
           const best = bestOfType(type);
           const owned = machinesAt(ctx, game.state.currentSiteId).filter((m) => m.type === type).length;
           const row = el('div', { class: 'cards' });
           body.append(el('div', { class: 'shop-group' },
             el('div', { class: 'row-between' }, el('h3', {}, `${t.name}s`), el('span', { class: 'muted small' }, `You own ${owned}`)), row));
           for (const [tier, td] of Object.entries(t.tiers)) {
-            const lines = describeStats(type, td, siteData());
+            const lines = describeStats(type, td);
             const unlocked = isTierUnlocked(ctx, type, tier);
             const ratio = best ? lines[0].value / best[0].value : null;
             row.append(el('div', { class: `card ${unlocked ? '' : 'locked'}` },
@@ -97,14 +96,14 @@ export function openShop(overlays, { game, feedback }) {
               mod.fitted
                 ? el('div', { class: 'card-foot' }, el('span', { class: 'card-badge' }, '✓ Fitted'))
                 : buyFoot(mod.price, () => {
-                  const before = describeStats(m.type, getStats(data, m), siteData());
+                  const before = describeStats(m.type, getStats(data, m));
                   const r = game.actions.buyMod(m.id, mod.id);
                   if (!r.ok) return feedback.message(r.reason, 'warn');
                   feedback.upgradeCard({
                     title: mod.name,
                     subtitle: machineName(data, m),
                     before,
-                    after: describeStats(m.type, getStats(data, m), siteData()),
+                    after: describeStats(m.type, getStats(data, m)),
                   });
                 })));
           }

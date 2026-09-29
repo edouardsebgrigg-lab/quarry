@@ -122,7 +122,9 @@ def glass_parts():
     return lib.orient_outward(merge(*glass), centre), lib.orient_outward(merge(*seals), centre)
 
 
-def wheel(x, y, mats, root):
+def wheel(x, y, mats, root, hub=None):
+    """One wheel. With `hub` (an empty at the axle centre) the parts are children of it, so the
+    game can steer and spin it; otherwise they're placed on the body."""
     s = 1 if y > 0 else -1
     w = 0.23
     prof = [(0.22, -w / 2), (0.3, -w / 2 - 0.012), (0.345, -w / 2 + 0.005), (0.36, -w / 2 + 0.03),
@@ -136,8 +138,9 @@ def wheel(x, y, mats, root):
             blk = bm_box((0.045, 0.085, 0.014), (0, yy, R_TYRE + 0.004))
             bmesh.ops.rotate(blk, cent=(0, 0, 0), matrix=Matrix.Rotation(a + k * math.pi / 36, 3, 'Y'), verts=blk.verts)
             tyre.append(blk)
-    t = mesh_object('Tyre', merge(*tyre), mats['rubber'], root)
-    bmesh_to_place(t, x, y)
+    t = mesh_object('Tyre', merge(*tyre), mats['rubber'], hub or root)
+    if not hub:
+        bmesh_to_place(t, x, y)
     finish(t, 0, uv_scale=0.5, smooth_angle=50, dirt_range=(0.0, 0.7))
     # Pressed-steel wheel: dished disc, rim lips, five nuts and a chrome hub cap.
     rim_prof = [(0.23, s * 0.105), (0.24, s * 0.1), (0.225, s * 0.08), (0.215, s * 0.0), (0.18, s * 0.02),
@@ -146,12 +149,14 @@ def wheel(x, y, mats, root):
     for k in range(5):
         a = 2 * math.pi * k / 5
         rim.append(bm_cylinder(0.014, 0.03, 'Y', 6, (math.cos(a) * 0.075, s * 0.08, math.sin(a) * 0.075)))
-    r = mesh_object('Rim', merge(*rim), mats['rim'], root)
-    bmesh_to_place(r, x, y)
+    r = mesh_object('Rim', merge(*rim), mats['rim'], hub or root)
+    if not hub:
+        bmesh_to_place(r, x, y)
     finish(r, 0.004, uv_scale=0.5, smooth_angle=40, dirt_range=(0.0, 0.7))
     cap = bm_lathe([(0.06, s * 0.08), (0.055, s * 0.1), (0.035, s * 0.115), (0.0, s * 0.12)], 24)
-    c = mesh_object('HubCap', cap, mats['chrome'], root)
-    bmesh_to_place(c, x, y)
+    c = mesh_object('HubCap', cap, mats['chrome'], hub or root)
+    if not hub:
+        bmesh_to_place(c, x, y)
     c.data.shade_smooth()
 
 
@@ -159,7 +164,11 @@ def bmesh_to_place(obj, x, y):
     obj.location = (x, y, ARCH_Z - 0.04)
 
 
-def build():
+def build(drivable=False):
+    """The pickup. `drivable` makes the version the game drives: wheels on their own nodes
+    (Wheel0..3: front-left, front-right, rear-left, rear-right), the tailgate on a hinge
+    (TailgatePivot, turns about Y), a dashboard and steering wheel inside, and the bed left
+    empty for loads."""
     root = empty('Pickup')
     mats = {
         'paint': material('PickupPaint', (0.2, 0.34, 0.44), 'paint_worn', tex.paint_worn, roughness=0.55, metallic=0.15),
@@ -226,7 +235,13 @@ def build():
     tg = merge(bm_box((0.05, 2 * W - 0.02, 0.5), (-2.64, 0, 0.84)),
                bm_box((0.02, 0.3, 0.06), (-2.67, 0, 1.0)))  # handle recess
     bmesh.ops.rotate(tg, cent=(-2.64, 0, 0.6), matrix=Matrix.Rotation(math.radians(-5), 3, 'Y'), verts=tg.verts)
-    t = mesh_object('Tailgate', tg, mats['paint'], root)
+    if drivable:
+        hinge = (-2.665, 0.0, 0.6)
+        bmesh.ops.translate(tg, vec=(-hinge[0], 0, -hinge[2]), verts=tg.verts)
+        pivot = empty('TailgatePivot', hinge, root)
+        t = mesh_object('Tailgate', tg, mats['paint'], pivot)
+    else:
+        t = mesh_object('Tailgate', tg, mats['paint'], root)
     finish(t, 0.012, 2, uv_scale=1.2, dirt_range=(0.5, 1.2), dirt_color=RUST)
 
     # ---- glass and seals
@@ -307,16 +322,48 @@ def build():
     finish(tb, 0.01, 2, uv_scale=0.8, dirt_range=(0.8, 1.2))
     jc = bm_box((0.34, 0.16, 0.46), (-2.2, 0.55, 1.08))
     bmesh.ops.rotate(jc, cent=(-2.2, 0.55, 0.85), matrix=Matrix.Rotation(0.3, 3, 'Z'), verts=jc.verts)
-    j = mesh_object('Jerrycan', merge(jc, bm_box((0.06, 0.12, 0.04), (-2.1, 0.55, 1.33))), mats['can'], root)
-    finish(j, 0.02, 2, uv_scale=0.6, dirt_range=(0.8, 1.3))
+    if not drivable:  # the drivable one keeps its bed clear for loads
+        j = mesh_object('Jerrycan', merge(jc, bm_box((0.06, 0.12, 0.04), (-2.1, 0.55, 1.33))), mats['can'], root)
+        finish(j, 0.02, 2, uv_scale=0.6, dirt_range=(0.8, 1.3))
+    else:
+        jc.free()
+        interior(mats, root)
     ant = mesh_object('Aerial', bm_cylinder(0.005, 0.9, 'Z', 6, (2.1, W - 0.12, 1.45)), mats['chrome'], root)
     ant.data.shade_smooth()
 
     # ---- wheels
-    for x in (-WB, WB):
-        for y in (-(W - 0.14), W - 0.14):
-            wheel(x, y, mats, root)
+    if drivable:
+        for i, (x, y) in enumerate([(WB, W - 0.14), (WB, -(W - 0.14)), (-WB, W - 0.14), (-WB, -(W - 0.14))]):
+            wheel(x, y, mats, root, empty(f'Wheel{i}', (x, y, ARCH_Z - 0.04), root))
+    else:
+        for x in (-WB, WB):
+            for y in (-(W - 0.14), W - 0.14):
+                wheel(x, y, mats, root)
     return root
+
+
+def interior(mats, root):
+    """What you see from the driver's seat (left-hand drive, like the truck): a painted-metal
+    dashboard with dials, a thin-rimmed steering wheel and a bench seat."""
+    group = empty('Interior', (0, 0, 0), root)
+    dash = [bm_box((0.3, 1.5, 0.25), (1.18, 0, 0.97)), bm_box((0.08, 1.5, 0.05), (1.1, 0, 1.11))]
+    d = mesh_object('Dash', merge(*dash), mats['paint'], group)
+    finish(d, 0.02, 2, uv_scale=1.0, dirt=False)
+    dials = [bm_cylinder(0.06, 0.02, 'X', 20, (1.025, 0.45 + dy, 1.0)) for dy in (-0.08, 0.08)]
+    di = mesh_object('Dials', merge(*dials), mats['black'], group)
+    finish(di, 0, dirt=False)
+    col = bm_cylinder(0.03, 0.42, 'X', 10, (1.05, 0.45, 0.98))
+    bmesh.ops.rotate(col, cent=(1.2, 0.45, 1.0), matrix=Matrix.Rotation(math.radians(-28), 3, 'Y'), verts=col.verts)
+    rim = bm_torus(0.19, 0.014, 'X', 32, 8, (0.9, 0.45, 1.12))
+    bmesh.ops.rotate(rim, cent=(0.9, 0.45, 1.12), matrix=Matrix.Rotation(math.radians(-28), 3, 'Y'), verts=rim.verts)
+    spokes = [bm_box((0.02, 0.36, 0.025), (0.9, 0.45, 1.12)), bm_box((0.02, 0.025, 0.2), (0.9, 0.45, 1.05))]
+    for sp in spokes:
+        bmesh.ops.rotate(sp, cent=(0.9, 0.45, 1.12), matrix=Matrix.Rotation(math.radians(-28), 3, 'Y'), verts=sp.verts)
+    sw = mesh_object('SteeringWheel', merge(col, rim, *spokes), mats['black'], group)
+    finish(sw, 0, smooth_angle=50, dirt=False)
+    seat = [lib.rounded_box((0.5, 1.5, 0.18), (0.15, 0, 0.72), 0.06), lib.rounded_box((0.16, 1.5, 0.55), (-0.13, 0, 1.0), 0.06)]
+    st = mesh_object('Seat', merge(*seat), mats['black'], group)
+    finish(st, 0, smooth_angle=50, dirt=False)
 
 
 PREVIEW = dict(target=(0, 0, 0.8), distance=7.5, angle=-35, elevation=14)

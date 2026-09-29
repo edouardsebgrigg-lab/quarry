@@ -4,4 +4,4 @@ export {
   integrateMultiplier, priceTrendDirection, recordPriceHistory, marketHourly,
 } from './market.js';
 export { fuelPrice, chargeFuel, fuelDaily } from './fuel.js';
-export { sellProduct, sellAll, quoteNet } from './selling.js';
+export { weighIn, hasTicket, quoteDelivery, sellLoad } from './depot.js';

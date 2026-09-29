@@ -1,10 +1,7 @@
-// Market panel: prices, trends, price history and selling.
+// The depot's price board (M): prices, trends and price history.
 import { el, setText } from '../dom.js';
-import { money, price, tonnes } from '../format.js';
-import {
-  currentPrice, priceTrendDirection, fuelPrice, quoteNet,
-} from '../../economy/index.js';
-import { getSiteData, yardAmount } from '../../quarry/index.js';
+import { price } from '../format.js';
+import { currentPrice, priceTrendDirection, fuelPrice } from '../../economy/index.js';
 
 function drawSparkline(canvas, history, color) {
   const g = canvas.getContext('2d');
@@ -33,55 +30,43 @@ function drawSparkline(canvas, history, color) {
   g.stroke();
 }
 
-export function openMarket(overlays, { game, feedback }) {
+// Ashby Aggregates' price board: what each bay pays per tonne today, how prices are moving,
+// and how mixed loads are graded. You sell by delivering: weigh in, then unload in the bay.
+export function openMarket(overlays, { game }) {
   const { data } = game;
   const ctx = game.ctx;
   overlays.toggle({
     id: 'market',
-    title: 'Market',
+    title: `${data.depot.name}: prices`,
     pauses: false,
     className: 'overlay-wide',
     build: ({ entry }) => {
-      const siteId = () => game.state.currentSiteId;
-      const rows = Object.keys(game.state.market.products).map((id) => {
+      const grades = data.depot.grades;
+      const slight = grades[1];
+      const rows = Object.keys(data.depot.bays).map((id) => {
         const cells = {
-          stock: el('td'),
           price: el('td', { class: 'price-big' }),
+          slight: el('td'),
           trend: el('td', { class: 'trend' }),
-          net: el('td'),
-          value: el('td'),
           spark: el('canvas', { width: 160, height: 36, class: 'spark' }),
         };
-        const sell = (t) => {
-          const r = game.actions.sellProduct(id, t);
-          if (!r.ok) feedback.message(r.reason, 'warn');
-        };
+        const product = data.materials[id];
         const tr = el('tr', {},
-          el('td', { class: 'product' }, el('span', { class: 'dot', style: { background: data.materials[id].color } }), data.materials[id].name),
-          cells.stock, cells.price, cells.trend, el('td', {}, cells.spark), cells.net, cells.value,
-          el('td', { class: 'sell-cell' },
-            el('button', { class: 'btn btn-small', onClick: () => sell(10) }, 'Sell 10 t'),
-            el('button', { class: 'btn btn-small btn-primary', onClick: () => sell(Infinity) }, 'Sell all')));
+          el('td', { class: 'product' }, el('span', { class: 'dot', style: { background: product.color } }), data.depot.bays[id].name),
+          cells.price, cells.slight, cells.trend, el('td', {}, cells.spark));
         return { id, tr, cells };
       });
-
       const fuelText = el('span');
-      const deliveryText = el('span');
 
       function refresh() {
-        const delivery = getSiteData(data, siteId()).deliveryCostPerTonne;
-        setText(deliveryText, `Delivery from this site: ${price(delivery)}/t`);
         setText(fuelText, `Diesel: ${price(fuelPrice(ctx))}/L`);
         for (const { id, cells } of rows) {
-          const stock = yardAmount(ctx, siteId(), id);
           const p = currentPrice(ctx, id);
-          setText(cells.stock, tonnes(stock));
           setText(cells.price, price(p));
+          setText(cells.slight, id === data.depot.mixedProduct ? '—' : price(p * slight.factor));
           const dir = priceTrendDirection(ctx, id);
           setText(cells.trend, dir > 0 ? '▲ Rising' : dir < 0 ? '▼ Falling' : '— Steady');
           cells.trend.className = `trend trend-${dir > 0 ? 'up' : dir < 0 ? 'down' : 'flat'}`;
-          setText(cells.net, price(p - delivery));
-          setText(cells.value, stock > 0.01 ? money(quoteNet(ctx, siteId(), id, stock).net) : '—');
           drawSparkline(cells.spark, game.state.market.products[id].history, dir > 0 ? '#6bd98a' : dir < 0 ? '#ff6b6b' : '#98a0ab');
         }
       }
@@ -93,15 +78,17 @@ export function openMarket(overlays, { game, feedback }) {
       };
       refresh();
 
+      const pctOf = (x) => `${Math.round(x * 100)}%`;
       return el('div', { class: 'market' },
         el('table', { class: 'market-table' },
           el('thead', {}, el('tr', {},
-            ['Product', 'In yard', 'Price/t', 'Trend', 'Last 3 days', 'After delivery', 'Sell all for', ''].map((h) => el('th', {}, h)))),
+            ['Bay', 'Clean, per tonne', `Slightly mixed (×${slight.factor})`, 'Trend', 'Last 3 days'].map((h) => el('th', {}, h)))),
           el('tbody', {}, rows.map((r) => r.tr))),
-        el('div', { class: 'market-footer' }, deliveryText, fuelText),
+        el('div', { class: 'market-footer' }, fuelText),
         el('p', { class: 'foot-note' },
-          'Selling a lot at once pushes the price down; it recovers over a couple of days. '
-          + 'Prices also drift up and down — hold stock when they are low, if your yard has room.'),
+          `Stop on the weighbridge at the gate to weigh in, then back into the bay for what you're carrying and unload. `
+          + `A load that's at least ${pctOf(grades[0].minPurity)} one material is clean; ${pctOf(slight.minPurity)} or more is slightly mixed and paid less; `
+          + 'anything more mixed is paid as mixed fill. Selling a lot of one thing pushes its price down for a while.'),
       );
     },
   });

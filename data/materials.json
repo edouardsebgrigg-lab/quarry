@@ -18,5 +18,10 @@
     "name": "Clay",
     "basePrice": 4,
     "color": "#8a6a4c"
+  },
+  "mixed": {
+    "name": "Mixed fill",
+    "basePrice": 3,
+    "color": "#7a6a58"
   }
 }

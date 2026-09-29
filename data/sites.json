@@ -1,66 +1,8 @@
 {
-  "gravelPit": {
-    "name": "Roadside Gravel Pit",
-    "groundPlot": "testPad",
+  "home": {
+    "name": "Home Field",
+    "groundPlot": "home",
     "price": 0,
-    "startOwned": true,
-    "haulDistance": 50,
-    "deliveryCostPerTonne": 0.3,
-    "facePileCapacity": 20,
-    "yardCapacity": 150,
-    "layerThickness": 2,
-    "tonnesPerLayer": 600,
-    "layerProfile": [
-      {
-        "hardness": 1,
-        "mix": {
-          "sand": 0.6,
-          "gravel": 0.4
-        }
-      },
-      {
-        "hardness": 2,
-        "mix": {
-          "sand": 0.4,
-          "gravel": 0.6
-        }
-      },
-      {
-        "hardness": 2,
-        "mix": {
-          "sand": 0.2,
-          "gravel": 0.8
-        }
-      },
-      {
-        "hardness": 3,
-        "mix": {
-          "sand": 0.1,
-          "gravel": 0.9
-        }
-      }
-    ],
-    "zones": [
-      {
-        "id": "A",
-        "name": "North face",
-        "startDug": 900
-      },
-      {
-        "id": "B",
-        "name": "East face",
-        "startDug": 450
-      },
-      {
-        "id": "C",
-        "name": "West bank",
-        "startDug": 1350
-      },
-      {
-        "id": "D",
-        "name": "South bank",
-        "startDug": 250
-      }
-    ]
+    "startOwned": true
   }
 }

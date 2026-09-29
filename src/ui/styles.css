@@ -514,8 +514,15 @@ h3 {
 
 .overlay-map { width: min(92rem, 96vw); }
 .map-layout { display: flex; gap: 1rem; height: 70vh; min-height: 28rem; }
-.site-view { flex: 1; position: relative; min-width: 0; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); }
-.site-canvas { display: block; }
+.map-view { flex: 1; position: relative; min-width: 0; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); }
+.map-canvas { display: block; }
+.map-places { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.86rem; }
+.map-key { display: flex; flex-wrap: wrap; gap: 0.35rem 0.8rem; }
+.key-you { color: #f5b82e; }
+.key-pickup { color: #6fb7ff; }
+.key-truck { color: #ff9a4a; }
+.key-excavator { color: #ffd24a; }
+.key-barrow { color: #7fe08a; }
 .sidebar { width: 21rem; display: flex; flex-direction: column; gap: 0.8rem; overflow-y: auto; }
 .panel { background: rgba(255, 255, 255, 0.035); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.85rem 0.95rem; }
 .panel-grow { flex: 1; }

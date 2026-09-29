@@ -75,11 +75,12 @@ export function createFeedback({ game, getMoneyNode }) {
     }),
     game.events.on('machineBought', (e) => {
       const m = getMachine(game.ctx, e.machineId);
-      if (m) toast(`${machineName(data, m)} delivered to the pit`, 'good');
+      if (m) toast(`${machineName(data, m)} delivered to your yard`, 'good');
     }),
     game.events.on('productSold', (e) => {
       floatText(signedMoney(e.revenue), 'gain', getMoneyNode());
-      message(`Sold ${tonnes(e.tonnes)} ${data.materials[e.productId].name.toLowerCase()} for ${money(e.revenue)}`);
+      const what = data.materials[e.productId].name.toLowerCase();
+      message(`Sold ${e.tonnes < 1 ? `${Math.round(e.tonnes * 1000)} kg` : tonnes(e.tonnes)} of ${what} (${e.grade.toLowerCase()}) for ${money(e.revenue)}`, 'good');
     }),
     game.events.on('machineBrokeDown', (e) => {
       toast(`${name(e.machineId)} broke down! Press R to repair.`, 'bad');
@@ -92,9 +93,6 @@ export function createFeedback({ game, getMoneyNode }) {
       message(`Sold ${e.name} for ${money(e.value)}`);
     }),
     game.events.on('interestCharged', (e) => message(`Debt interest charged: ${money(e.amount)}`, 'warn')),
-    game.events.on('layerFinished', (e) => {
-      toast(e.exhausted ? `Zone ${e.zoneId} is dug out!` : `Zone ${e.zoneId}: reached ${e.depth.toFixed(0)} m — new layer`, 'good');
-    }),
     game.events.on('message', (e) => message(e.text, e.level)),
   ];
 

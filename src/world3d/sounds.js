@@ -4,10 +4,15 @@
 // Reads machine `feel()` data each frame and drives voices in src/audio.
 import * as THREE from 'three';
 
-const ENGINE_KIND = { truck: { rusty: 'truckOld', used: 'truckTurbo' }, excavator: { rusty: 'excavator', used: 'excavator' } };
+const ENGINE_KIND = {
+  truck: { rusty: 'truckOld', used: 'truckTurbo' },
+  pickup: { rusty: 'pickupOld' },
+  excavator: { rusty: 'excavator', used: 'excavator' },
+};
 const v3 = (p) => ({ x: p.x, y: p.y, z: p.z });
 
-export function createWorldSounds({ audio, layout, groundSurface }) {
+// `carRoute` (optional) is a list of points ({ x, z }) along a public road that passing cars follow.
+export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
   const machines = new Map(); // machineId -> voices and memory
   const fwd = new THREE.Vector3();
   const up = new THREE.Vector3();
@@ -23,12 +28,18 @@ export function createWorldSounds({ audio, layout, groundSurface }) {
     let m = machines.get(v.machineId);
     if (m) return m;
     const kind = ENGINE_KIND[v.type][tier] ?? 'truckOld';
+    const road = v.type !== 'excavator';
     m = {
       engine: audio.engineVoice(kind),
       level: 0, // engine loudness envelope 0..1 (start/stop)
       rpmScale: 1, // run-down when stopping
-      extra: v.type === 'truck'
-        ? { gravel: audio.loopVoice('gravel'), road: audio.loopVoice('road'), beeper: audio.loopVoice('beeper'), ram: audio.whineVoice() }
+      extra: road
+        ? {
+          gravel: audio.loopVoice('gravel'),
+          road: audio.loopVoice('road'),
+          beeper: v.type === 'truck' ? audio.loopVoice('beeper') : null,
+          ram: v.type === 'truck' ? audio.whineVoice() : null,
+        }
         : { tracks: audio.loopVoice('tracks'), hyd: audio.loopVoice('hydraulic'), scrape: audio.loopVoice('scrape'), pump: audio.whineVoice() },
       shifted: 0,
       braking: false,
@@ -37,6 +48,7 @@ export function createWorldSounds({ audio, layout, groundSurface }) {
       bedWasUp: false,
       phase: '',
       job: null,
+      shovelT: 0,
     };
     machines.set(v.machineId, m);
     return m;
@@ -104,10 +116,20 @@ export function createWorldSounds({ audio, layout, groundSurface }) {
       m.tipPoured = false;
     }
     m.bedWasUp = bedUp;
-    // Loading from the face pile: rock pouring into the steel bed.
-    if (job?.type === 'loadFromPile' && m.job !== 'loadFromPile') {
-      audio.play('pour', { pos: v3(v.bedWorld()), gain: 0.9 });
-      audio.play('boom', { pos: v3(v.bedWorld()), gain: 0.5, delay: 0.1 });
+    // A pickup's load is shovelled off by hand: a bite and a thrown shovelful now and then.
+    if (v.type === 'pickup' && job?.type === 'tip' && f.tailgate > 1.2) {
+      m.shovelT -= dt;
+      if (m.shovelT <= 0) {
+        m.shovelT = 0.9 + Math.random() * 0.4;
+        const at = v3(v.tailgateWorld());
+        audio.play('shovel', { pos: at, gain: 0.7, rate: 0.95 + Math.random() * 0.1 });
+        audio.play('soil', { pos: at, gain: 0.55, rate: 1.05 + Math.random() * 0.15, delay: 0.45 });
+      }
+    }
+    // The tailgate dropping and slamming shut.
+    if (v.type === 'pickup' && (m.gateWasOpen ?? false) !== f.tailgate > 0.7) {
+      audio.play('clunk', { pos: v3(v.tailgateWorld()), gain: 0.5, rate: f.tailgate > 0.7 ? 0.8 : 1.1 });
+      m.gateWasOpen = f.tailgate > 0.7;
     }
     m.job = job?.type ?? null;
   }
@@ -155,29 +177,45 @@ export function createWorldSounds({ audio, layout, groundSurface }) {
         gain: inCab ? 0.12 : 0.35, rate: 0.9 + Math.random() * 0.25, bus: 'ambient',
       });
     }
-    // Now and then a car goes past on the road outside.
-    const road = layout.publicRoad;
-    if (!road) return;
+    // Now and then a car goes along the lane: it follows the road (keeping to its side) and is
+    // only heard while it's within a few hundred metres of you.
+    if (!carRoute || carRoute.length < 2) return;
     carT -= dt;
     if (!car && carT <= 0) {
       const dir = Math.random() < 0.5 ? 1 : -1;
-      car = { x: -dir * 450, dir, speed: 16 + Math.random() * 10, engine: audio.engineVoice('car', 'ambient'), tyres: audio.loopVoice('road', 'ambient'), lane: road.z + dir * 1.8 };
+      // Start about 450 m along the road from the nearest point to you.
+      let near = 0;
+      carRoute.forEach((p, i) => {
+        if (Math.hypot(p.x - listener.x, p.z - listener.z) < Math.hypot(carRoute[near].x - listener.x, carRoute[near].z - listener.z)) near = i;
+      });
+      const i0 = Math.max(0, Math.min(carRoute.length - 1, near - dir * 225));
+      car = {
+        s: i0, dir, speed: 16 + Math.random() * 10, engine: audio.engineVoice('car', 'ambient'), tyres: audio.loopVoice('road', 'ambient'),
+      };
     }
     if (car) {
-      car.x += car.dir * car.speed * dt;
-      const pos = { x: car.x, y: 0.6, z: car.lane };
+      car.s += (car.dir * car.speed * dt) / 2; // route points are 2 m apart
+      const i = Math.max(0, Math.min(carRoute.length - 2, Math.floor(car.s)));
+      const t = Math.min(1, Math.max(0, car.s - i));
+      const a = carRoute[i];
+      const b = carRoute[i + 1];
+      const side = car.dir * 1.8;
+      const pos = { x: a.x + (b.x - a.x) * t - a.dz * side, y: (a.y ?? 0) + 0.6, z: a.z + (b.z - a.z) * t + a.dx * side };
       // Doppler: higher pitch coming toward you, lower going away.
+      const vel = new THREE.Vector3(a.dx * car.dir * car.speed, 0, a.dz * car.dir * car.speed);
       const toL = new THREE.Vector3(listener.x - pos.x, 0, listener.z - pos.z);
-      const radial = (car.dir * car.speed * toL.x) / Math.max(1, toL.length());
+      const radial = vel.dot(toL) / Math.max(1, toL.length());
       const doppler = 343 / (343 - radial);
       car.engine?.set({ rpm: 2300 * doppler, load: 0.4, level: 0.7, pos });
       car.tyres?.set({ gain: 0.5, rate: 1.1 * doppler, pos });
-      if (Math.abs(car.x) > 460) {
+      const far = Math.hypot(pos.x - listener.x, pos.z - listener.z) > 520;
+      // Gone once it's driven past you and out of earshot (or off the end of the road).
+      if (car.s <= 0 || car.s >= carRoute.length - 1 || (far && car.passed)) {
         car.engine?.stop();
         car.tyres?.stop();
         car = null;
         carT = 35 + Math.random() * 80;
-      }
+      } else if (!far) car.passed = true;
     }
   }
 
@@ -212,11 +250,11 @@ export function createWorldSounds({ audio, layout, groundSurface }) {
       const L = v3(camera.position);
       audio.setListener(L, fwd, up);
       const list = [...vehicles.values()];
-      const trucks = list.filter((x) => x.type === 'truck');
+      const trucks = list.filter((x) => x.road);
       for (const v of list) {
         v.tier = tierOf(v.machineId);
         const inside = v === current;
-        if (v.type === 'truck') truck(v, dt, inside, jobOf(v.machineId));
+        if (v.road) truck(v, dt, inside, jobOf(v.machineId));
         else excavator(v, dt, inside, trucks);
       }
       // Machines that were sold or removed.

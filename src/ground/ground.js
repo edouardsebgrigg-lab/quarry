@@ -80,6 +80,12 @@ export function createGround(groundData, plotId, opts = {}) {
   const loose = new Float32Array(N); // loose material thickness
   const mix = new Float32Array(N * M); // loose material: volume share of each material
   const disturbed = new Uint8Array(N); // dug, dumped on or scraped (no more grass)
+  // The outermost ring of cells never changes: the plot's edge meets the countryside around it
+  // there, so it has to stay put (dig right up to it and it stands like the edge of a cutting).
+  const fixed = new Uint8Array(N);
+  for (let j = 0; j < nz; j++) {
+    for (let i = 0; i < nx; i++) if (i === 0 || j === 0 || i === nx - 1 || j === nz - 1) fixed[j * nx + i] = 1;
+  }
   const active = new Uint8Array(N); // queued to settle
   let queue = [];
   const dirty = new Set(); // chunks whose shape changed (for the 3D view)
@@ -269,6 +275,8 @@ export function createGround(groundData, plotId, opts = {}) {
     chunksZ: cnz,
 
     inside: (x, z) => x >= x0 && z >= z0 && x < x0 + nx * cell && z < z0 + nz * cell,
+    // Inside and not on the edge ring (so digging or tipping here can change the ground).
+    workable: (x, z) => x >= x0 + cell && z >= z0 + cell && x < x0 + (nx - 1) * cell && z < z0 + (nz - 1) * cell,
 
     // Height of the ground at a point (smooth between cell centres).
     heightAt(x, z) {
@@ -302,7 +310,7 @@ export function createGround(groundData, plotId, opts = {}) {
     // Returns { tonnes: { material: t }, total, volume } (volume: loose m³).
     dig({ x, z, radius, bottomY, maxTonnes = Infinity, maxVolume = Infinity }) {
       const cells = [];
-      cellsInRadius(x, z, radius, (k, d) => cells.push([k, d]));
+      cellsInRadius(x, z, radius, (k, d) => { if (!fixed[k]) cells.push([k, d]); });
       if (!cells.length) return { tonnes: {}, total: 0, volume: 0 };
       const cutAt = (b, d) => b + (d / radius) ** 2 * radius * 0.7;
       const sumFor = (b, fn) => cells.reduce((s, [k, d]) => s + fn(k, Math.max(cutAt(b, d), bed[k])), 0);
@@ -356,6 +364,7 @@ export function createGround(groundData, plotId, opts = {}) {
       const cells = [];
       let wsum = 0;
       cellsInRadius(x, z, radius, (k, d) => {
+        if (fixed[k]) return;
         const w = Math.max(0.05, 1 - d / Math.max(radius, cell));
         cells.push([k, w]);
         wsum += w;
@@ -379,6 +388,7 @@ export function createGround(groundData, plotId, opts = {}) {
         const k = queue.pop();
         active[k] = 0;
         n += 1;
+        if (fixed[k]) continue;
         const i = k % nx;
         const j = (k - i) / nx;
         let h = height(k);
@@ -389,6 +399,7 @@ export function createGround(groundData, plotId, opts = {}) {
             const b = j + dj;
             if (a < 0 || b < 0 || a >= nx || b >= nz) continue;
             const o = idx(a, b);
+            if (fixed[o]) continue; // nothing slides onto the edge ring
             const dist = di && dj ? cell * Math.SQRT2 : cell;
             const dh = h - height(o);
             if (dh <= 0) continue;

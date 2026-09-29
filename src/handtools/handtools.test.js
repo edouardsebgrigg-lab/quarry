@@ -1,15 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { createGame } from '../game/index.js';
 import { createTestGame } from '../game/testing.js';
-import { createSaveSystem, createMemoryStorage, migrations } from '../core/index.js';
-import { pileTotal, yardAmount } from '../quarry/index.js';
+import { pileTotal } from '../quarry/index.js';
 import { getStats } from '../machinery/index.js';
 import { looseVolume, barrowFill, shovelLoad, barrowLoad } from './index.js';
 
 const sum = (rec) => Object.values(rec).reduce((a, b) => a + b, 0);
-// Everything there is: the ground, the tools, the yard and every machine's load.
+// Everything there is: the ground, the tools and every machine's load.
 const everything = (game) => sum(game.ctx.ground.totals()) + pileTotal(shovelLoad(game.ctx)) + pileTotal(barrowLoad(game.ctx))
-  + pileTotal(game.state.sites.gravelPit.yard) + game.state.machines.reduce((a, m) => a + pileTotal(m.load), 0);
+  + game.state.machines.reduce((a, m) => a + pileTotal(m.load), 0);
 const settle = (game) => {
   for (let i = 0; i < 400 && game.ctx.ground.busy(); i++) game.ctx.ground.settle(20000);
 };
@@ -30,7 +29,7 @@ describe('shovel', () => {
 
   it('only digs on the field', () => {
     const game = createGame({ seed: 3 });
-    const r = game.actions.shovelDig({ x: -40, z: -10 }); // the old pits
+    const r = game.actions.shovelDig({ x: -40, z: -10 }); // over the hedge, in the lane
     expect(r.ok).toBe(false);
     expect(r.reason).toMatch(/field/);
   });
@@ -80,11 +79,11 @@ describe('shovel', () => {
     const truck = game.state.machines.find((m) => m.type === 'truck');
     game.actions.shovelDig({ x: 20, z: 20 });
     const dug = pileTotal(shovelLoad(ctx));
-    expect(game.actions.shovelDump({ into: 'truck', machineId: truck.id }).ok).toBe(true);
+    expect(game.actions.shovelDump({ into: 'machine', machineId: truck.id }).ok).toBe(true);
     expect(pileTotal(truck.load)).toBeCloseTo(dug, 6);
     truck.load = { gravel: getStats(ctx.data, truck).capacity };
     game.actions.shovelDig({ x: 21, z: 20 });
-    expect(game.actions.shovelDump({ into: 'truck', machineId: truck.id }).reason).toMatch(/full/);
+    expect(game.actions.shovelDump({ into: 'machine', machineId: truck.id }).reason).toMatch(/full/);
   });
 });
 
@@ -108,45 +107,34 @@ describe('wheelbarrow', () => {
     expect(game.actions.tipBarrow({ x: 15, z: 35 }).ok).toBe(false); // empty now
   });
 
-  it('will not tip off the field (except in the yard bay)', () => {
+  it('will not tip off your land', () => {
     const game = createGame({ seed: 5 });
     game.actions.shovelDig({ x: 10, z: 20 });
     game.actions.shovelDump({ into: 'barrow' });
-    expect(game.actions.tipBarrow({ x: 60, z: -10 }).ok).toBe(false);
+    expect(game.actions.tipBarrow({ x: 170, z: -10 }).ok).toBe(false);
     expect(pileTotal(barrowLoad(game.ctx))).toBeGreaterThan(0);
   });
 
-  it('tipped in the yard it becomes stock you can sell', () => {
+  it('tips into the pickup, up to what it can carry', () => {
     const game = createGame({ seed: 5 });
     const { ctx } = game;
+    const pickup = game.state.machines.find((m) => m.type === 'pickup');
     for (let i = 0; i < 8; i++) {
       game.actions.shovelDig({ x: 30, z: 18 + i * 0.5 });
       game.actions.shovelDump({ into: 'barrow' });
     }
     const t = pileTotal(barrowLoad(ctx));
-    expect(game.actions.tipBarrow({ x: 50, z: 8, intoYard: true }).ok).toBe(true);
-    expect(yardAmount(ctx, 'gravelPit', 'topsoil')).toBeCloseTo(t, 6);
-    const before = game.state.money;
-    const sale = game.actions.sellProduct('topsoil');
-    expect(sale.ok).toBe(true);
-    expect(game.state.money).toBeGreaterThan(before);
-  });
-});
-
-describe('save migration v3 -> v4', () => {
-  it('gives old saves the tools, the new products and keeps their place in the goals', () => {
-    const game = createTestGame(1);
-    const old = structuredClone(game.state);
-    delete old.tools;
-    delete old.market.products.topsoil;
-    delete old.market.products.clay;
-    old.objectives = { index: 1, introSeen: true }; // was on "buy a truck"
-    const storage = createMemoryStorage();
-    storage.setItem('quarry.save.slot1', JSON.stringify({ version: 3, savedAt: 1, summary: {}, state: old }));
-    const state = createSaveSystem({ storage, version: 4, migrations }).load('slot1');
-    expect(state.tools).toEqual({ shovel: { load: {} }, barrow: { load: {} } });
-    expect(state.market.products.topsoil).toBeDefined();
-    const loaded = createGame({ state });
-    expect(loaded.data.objectives.steps[state.objectives.index].id).toBe('buyTruck');
+    expect(game.actions.tipBarrow({ machineId: pickup.id }).ok).toBe(true);
+    expect(pileTotal(pickup.load)).toBeCloseTo(t, 6);
+    const cap = getStats(ctx.data, pickup).capacity;
+    pickup.load = { topsoil: cap - 0.05 };
+    for (let i = 0; i < 8; i++) {
+      game.actions.shovelDig({ x: 31, z: 18 + i * 0.5 });
+      game.actions.shovelDump({ into: 'barrow' });
+    }
+    const before = pileTotal(barrowLoad(ctx));
+    expect(game.actions.tipBarrow({ machineId: pickup.id }).ok).toBe(true);
+    expect(pileTotal(pickup.load)).toBeCloseTo(cap, 6);
+    expect(pileTotal(barrowLoad(ctx))).toBeCloseTo(before - 0.05, 6); // the rest stays in the barrow
   });
 });

@@ -8,7 +8,12 @@
     4
   ],
   "devSpeed": 10,
-  "saveVersion": 4,
-  "startSite": "gravelPit",
-  "startingMachines": []
+  "saveVersion": 5,
+  "startSite": "home",
+  "startingMachines": [
+    {
+      "type": "pickup",
+      "tier": "rusty"
+    }
+  ]
 }

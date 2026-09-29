@@ -22,6 +22,7 @@ export function createNewState(data, seed) {
     counters: {},
     player: { selectedMachineId: null },
     tools: createToolsState(), // your shovel and wheelbarrow
+    depot: { tickets: {} }, // weighbridge tickets: vehicles weighed in and not yet unloaded
     unlocks: {},
     flags: {},
     objectives: createObjectivesState(),

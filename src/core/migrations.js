@@ -26,4 +26,9 @@ export const migrations = {
       objectives: { ...o, index },
     };
   },
+  // v5: the countryside map, with the field, the village and the depot. Everything about the old
+  // gravel pit (its pits, face pile and yard) is gone, so older saves can't carry on.
+  4: () => {
+    throw new Error('This save is from before the new map (the old gravel pit) and can\'t be loaded any more. Please start a new game.');
+  },
 };

@@ -50,8 +50,8 @@
         0,
         0
       ],
-      "width": 150,
-      "depth": 150,
+      "width": 152,
+      "depth": 152,
       "surfaceRoll": 0.35,
       "bedrock": "rock",
       "strata": [
@@ -74,47 +74,6 @@
           "thickness": [
             0.2,
             0.9
-          ]
-        },
-        {
-          "material": "topsoil",
-          "thickness": [
-            0.25,
-            0.4
-          ]
-        }
-      ]
-    },
-    "testPad": {
-      "name": "Test pad",
-      "origin": [
-        4,
-        14
-      ],
-      "width": 36,
-      "depth": 36,
-      "surfaceRoll": 0.04,
-      "bedrock": "rock",
-      "strata": [
-        {
-          "material": "gravel",
-          "thickness": [
-            1.5,
-            3.0
-          ]
-        },
-        {
-          "material": "sand",
-          "thickness": [
-            0.8,
-            1.8
-          ]
-        },
-        {
-          "material": "clay",
-          "thickness": [
-            0.2,
-            0.7
           ]
         },
         {

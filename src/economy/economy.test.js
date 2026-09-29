@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { createTestGame } from '../game/testing.js';
 import {
-  integrateMultiplier, currentPrice, quoteSale, sellProduct, sellAll, canAfford,
-  chargeDailyInterest, marketHourly, chargeFuel, fuelPrice, spendMoney,
+  integrateMultiplier, currentPrice, quoteSale, canAfford, chargeDailyInterest, marketHourly,
+  chargeFuel, fuelPrice, spendMoney, quoteDelivery, sellLoad, hasTicket,
 } from './index.js';
+import { tickJobs } from '../machinery/index.js';
 
 function setup(seed = 1) {
   const game = createTestGame(seed);
@@ -23,25 +24,47 @@ describe('saturation maths', () => {
   });
 });
 
-describe('selling', () => {
-  it('pays market price minus delivery and empties the yard', () => {
+describe('selling at the depot', () => {
+  const truckWith = (ctx, load) => {
+    const truck = ctx.state.machines.find((m) => m.type === 'truck');
+    truck.load = { ...load };
+    return truck;
+  };
+
+  it('needs a weighbridge ticket, then pays the market price for a clean load', () => {
+    const { game, ctx } = setup();
+    const truck = truckWith(ctx, { gravel: 3 });
+    expect(game.actions.tip(truck.id, { bay: 'gravel' }).reason).toMatch(/Weigh in/);
+    expect(game.actions.weighIn(truck.id).ok).toBe(true);
+    const expected = quoteSale(ctx, 'gravel', 3);
+    const before = ctx.state.money;
+    expect(game.actions.tip(truck.id, { bay: 'gravel' }).ok).toBe(true);
+    for (let i = 0; i < 200 && truck.job; i++) tickJobs(ctx, 0.1);
+    const fuel = ctx.state.stats.fuelSpent;
+    expect(ctx.state.money).toBeCloseTo(before + expected - fuel, 1);
+    expect(truck.load).toEqual({});
+    expect(ctx.state.stats.tonnesSold).toBeCloseTo(3);
+    expect(hasTicket(ctx, truck.id)).toBe(false); // one ticket, one load
+  });
+
+  it('grades a slightly mixed load down, and pays a very mixed one as fill', () => {
     const { ctx } = setup();
-    ctx.state.sites.gravelPit.yard.gravel = 10;
-    const expectedGross = quoteSale(ctx, 'gravel', 10);
-    const moneyBefore = ctx.state.money;
-    const r = sellProduct(ctx, 'gravelPit', 'gravel');
-    expect(r.ok).toBe(true);
-    const delivery = 10 * ctx.data.sites.gravelPit.deliveryCostPerTonne;
-    expect(ctx.state.money).toBeCloseTo(moneyBefore + expectedGross - delivery, 1);
-    expect(ctx.state.sites.gravelPit.yard.gravel).toBeUndefined();
-    expect(ctx.state.stats.tonnesSold).toBeCloseTo(10);
+    const clean = quoteDelivery(ctx, 'gravel', { gravel: 10 });
+    const slight = quoteDelivery(ctx, 'gravel', { gravel: 9, topsoil: 1 });
+    const mixed = quoteDelivery(ctx, 'gravel', { gravel: 6, topsoil: 4 });
+    expect(clean.grade).toBe('Clean');
+    expect(slight.grade).toBe('Slightly mixed');
+    expect(slight.perTonne).toBeCloseTo(clean.perTonne * 0.75, 1);
+    expect(mixed.product).toBe('mixed');
+    expect(mixed.perTonne).toBeLessThan(slight.perTonne);
+    // The mixed-fill bay takes anything at the fill price.
+    expect(quoteDelivery(ctx, 'mixed', { gravel: 6, topsoil: 4 }).perTonne).toBeCloseTo(mixed.perTonne, 3);
   });
 
   it('lowers the price the more you sell, then recovers', () => {
     const { ctx } = setup();
     const before = currentPrice(ctx, 'gravel');
-    ctx.state.sites.gravelPit.yard.gravel = 100;
-    sellProduct(ctx, 'gravelPit', 'gravel');
+    sellLoad(ctx, 'm0', 'gravel', { gravel: 100 });
     const after = currentPrice(ctx, 'gravel');
     expect(after).toBeLessThan(before * 0.7);
     for (let i = 0; i < 72; i++) marketHourly(ctx);
@@ -55,9 +78,10 @@ describe('selling', () => {
     expect(big).toBeLessThan(small);
   });
 
-  it('sellAll reports an empty yard', () => {
-    const { ctx } = setup();
-    expect(sellAll(ctx, 'gravelPit').ok).toBe(false);
+  it('will not weigh an empty vehicle', () => {
+    const { game, ctx } = setup();
+    const pickup = ctx.state.machines.find((m) => m.type === 'pickup');
+    expect(game.actions.weighIn(pickup.id).ok).toBe(false);
   });
 });
 

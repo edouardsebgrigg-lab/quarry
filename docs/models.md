@@ -14,10 +14,13 @@ All models are made in **Blender** by Python scripts in `blender/`, exported as 
 | Shipping container (20 ft) | `prop_container.glb` | |
 | Oil drums | `prop_drum.glb`, `prop_drumrust.glb` | |
 | Tyre stack, pallets | `prop_tyres.glb`, `prop_pallets.glb` | |
-| Your old pickup | `prop_pickup.glb` | |
+| Your old pickup (drivable) | `vehicle_pickup.glb` (and `prop_pickup.glb`, a parked one with a jerrycan in the bed) | `docs/images/models/vehicle_pickup.jpg` |
 | Fence bay (3 m), farm gate | `prop_fence.glb`, `prop_gate.glb` | |
 | Portaloo, power pole | `prop_portaloo.glb`, `prop_pole.glb` | |
 | Wheelbarrow, shovel | `prop_wheelbarrow.glb`, `prop_shovel.glb` | |
+| Village houses: cottage, semi, bungalow, pub | `prop_house_cottage.glb`, `prop_house_semi.glb`, `prop_house_bungalow.glb`, `prop_house_pub.glb` | `docs/images/models/prop_house_*.jpg` |
+| Steel shed (the dealer, 24 × 16 m) | `prop_shed.glb` | |
+| Weighbridge (3.4 × 16 m deck with a traffic light) | `prop_weighbridge.glb` | |
 
 Previews for all of them are in `docs/images/models/`.
 
@@ -49,8 +52,8 @@ or Blender as a Python module (`pip install bpy` with Python 3.11) and run `pyth
 
 The scripts:
 - `lib.py`: shape helpers (boxes, rounded boxes, cylinders, extruded profiles, lathe, lofted bodies from cross-sections, flat panels for glass), bevels with weighted normals, subdivision, UVs, grime vertex colours, materials, export and preview rendering.
-- `textures.py`: generates the tileable textures (worn paint, rust, grimy steel, rubber, concrete, cladding, weathered wood, plastic).
-- `truck.py`, `excavator.py`, `pickup.py`, `props.py`, `handtools.py`: the models themselves.
+- `textures.py`: generates the tileable textures (worn paint, rust, grimy steel, rubber, concrete, cladding, weathered wood, plastic, brick, slate, roof tiles, render, checker plate).
+- `truck.py`, `excavator.py`, `pickup.py`, `props.py`, `handtools.py`, `buildings.py` (houses, the shed, the weighbridge), `vehicles.py` (the drivable pickup): the models themselves.
 
 **How the shapes are made (so they don't look blocky):** bodies such as the pickup, the truck cab and the excavator's boom and cab are *lofted*: a series of rounded cross-sections is skinned into one smooth surface, so panels have rolled edges and curves instead of flat boxes. Glass is set into those surfaces with a black rubber seal. Chunky parts (bumpers, mirrors, tool boxes, the portaloo) use `rounded_box`. Every part is finished with a real bevel plus *weighted normals*, which keeps big panels flat and lets their edges catch the light. Boulders start as a random lump, get smoothed, roughened with layered noise and then cut by a few flat fracture planes.
 - `menu_background.py`: renders the main-menu picture (`assets/ui/menu.jpg`), with the excavator loading a truck at a quarry face. Add `--fast` for a quick low-res test.
@@ -78,6 +81,17 @@ You can replace any model with your own. Keep the file name, keep the named part
 - `Interior`: what you see from the seat. The eye is at about (0.4, 0.72, 1.42) in House space.
 - Hydraulic rams (optional; the game animates them if present): `BoomRam`, `StickRam`, `BucketRam` are the barrels, `BoomRamRod`, `StickRamRod`, `BucketRamRod` the rods. Each has its origin on its pin with the part pointing along +X; the barrel sits on one part (House, Boom, Stick) and the rod on the other (Boom, Stick, `BucketLink`). The game points each barrel at its rod's pin and each rod back at its barrel every frame, so they slide in and out. `BucketLink` is an empty at the stick tip that the game turns at 0.55 × the bucket angle + 1.9 rad.
 - Tracks (optional): `TrackShoe` is one loose shoe; the game copies it round the track path and moves the copies as you drive (and hides the static `Tracks` mesh). `TrackWheelL0/L1`, `TrackWheelR0/R1` are the sprockets and idlers, turned by the game.
+
+### Pickup (`vehicle_pickup.glb`)
+- Origin: on the ground under the middle of the body; it faces +X like the other machines. The game lifts it by its ride height.
+- `Wheel0` to `Wheel3`: each wheel's origin is its axle centre (tyre radius 0.36 m). Wheel0 is front-left, 1 front-right, 2 rear-left, 3 rear-right, at X = ±1.55, Y = ±0.76, Z = 0.36.
+- `TailgatePivot`: an empty at the tailgate hinge (X −2.665, Z 0.6) with the tailgate as its child. The game swings it open about Y when you unload.
+- The bed floor is at Z 0.85 between X −2.6 and −0.4; keep it empty (the game puts the load's heap there).
+- `Interior`: dashboard, steering wheel and seat. The driver's eye is at about (0.18, 0.45, 1.45).
+
+### Houses, shed, weighbridge (`prop_house_*.glb`, `prop_shed.glb`, `prop_weighbridge.glb`)
+- Origin on the ground at the centre. House and shed fronts (front door, roller doors) face −Y; the game turns each house to face its road.
+- The weighbridge deck runs along Y (vehicles drive along it); its traffic light has two lamps named `Red…` and `Green…`, which the game lights up.
 
 ### Wheelbarrow (`prop_wheelbarrow.glb`)
 - Origin on the ground between the wheel and the legs; the wheel end points along +X.

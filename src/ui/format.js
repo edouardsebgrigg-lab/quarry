@@ -1,6 +1,8 @@
 const moneyFmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 
 export function money(n) {
+  // Small amounts (a barrow load) show the cents.
+  if (Math.abs(n) < 100 && Math.round(n) !== n) return `${n < 0 ? '-' : ''}$${Math.abs(n).toFixed(2)}`;
   const r = Math.round(n);
   return `${r < 0 ? '-' : ''}$${moneyFmt.format(Math.abs(r))}`;
 }

@@ -1,31 +1,33 @@
-// The step-by-step goals that take a new player from an empty pit to a working business.
+// The step-by-step goals that take a new player from a shovel to a working business.
 // Texts and rewards are in data/objectives.json; the checks for each step are here.
 import { addMoney } from '../economy/index.js';
 import { getStats, tierData } from '../machinery/index.js';
 import { pileTotal } from '../quarry/index.js';
 import { barrowFill } from '../handtools/index.js';
 
-function fullestTruck(ctx) {
+function fullest(ctx, type) {
   let best = 0;
   for (const m of ctx.state.machines) {
-    if (m.type !== 'truck') continue;
+    if (m.type !== type) continue;
     best = Math.max(best, pileTotal(m.load) / getStats(ctx.data, m).capacity);
   }
   return best;
 }
+const pickupLoad = (ctx) => Math.max(0, ...ctx.state.machines.filter((m) => m.type === 'pickup').map((m) => pileTotal(m.load)));
+const machineOf = (ctx, id) => ctx.state.machines.find((m) => m.id === id);
 
 // Each check gets (ctx, eventType, payload, step) and returns true when the step is done.
 const CHECKS = {
   firstShovel: (ctx, type) => type === 'shovelDug',
   fillBarrow: (ctx) => barrowFill(ctx) >= 0.9,
-  tipBarrow: (ctx, type, p) => type === 'barrowTipped' && p.intoYard,
+  loadPickup: (ctx, type, p, step) => pickupLoad(ctx) >= step.target,
+  weighIn: (ctx, type) => type === 'weighedIn',
   firstSale: (ctx, type) => type === 'productSold',
   buyExcavator: (ctx) => ctx.state.machines.some((m) => m.type === 'excavator'),
   buyTruck: (ctx) => ctx.state.machines.some((m) => m.type === 'truck'),
   firstScoop: (ctx, type, p) => type === 'rockDug' && p.tonnes > 0,
-  loadTruck: (ctx, type) => (type === 'bucketDumped' || type === 'truckLoaded') && fullestTruck(ctx) >= 0.9,
-  tip: (ctx, type) => type === 'rockHauled',
-  sell: (ctx, type) => type === 'productSold',
+  loadTruck: (ctx, type) => (type === 'bucketDumped' || type === 'truckLoaded') && fullest(ctx, 'truck') >= 0.9,
+  sell: (ctx, type, p) => type === 'productSold' && machineOf(ctx, p.machineId)?.type === 'truck',
   firstMod: (ctx, type) => type === 'modBought',
   earn: (ctx, type, p, step) => ctx.state.stats.totalEarned >= step.target,
   usedMachine: (ctx, type, p) => type === 'machineBought' && p.tier !== 'rusty',
@@ -35,9 +37,10 @@ const CHECKS = {
 const saving = (ctx, type) => Math.min(1, Math.max(0, ctx.state.money) / tierData(ctx.data, type, 'rusty').price);
 const PROGRESS = {
   fillBarrow: (ctx) => Math.min(1, barrowFill(ctx)),
+  loadPickup: (ctx, step) => Math.min(1, pickupLoad(ctx) / step.target),
   buyExcavator: (ctx) => saving(ctx, 'excavator'),
   buyTruck: (ctx) => saving(ctx, 'truck'),
-  loadTruck: (ctx) => Math.min(1, fullestTruck(ctx)),
+  loadTruck: (ctx) => Math.min(1, fullest(ctx, 'truck')),
   earn: (ctx, step) => Math.min(1, ctx.state.stats.totalEarned / step.target),
 };
 

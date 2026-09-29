@@ -144,3 +144,102 @@ def plastic(size=256, seed=71):
     v = 0.9 + 0.06 * (n - 0.5)
     rgb = np.stack([v, v, v], axis=-1) * (1 - d[..., None] * 0.25)
     return to_rgba(rgb)
+
+
+def brick(size=1024, seed=81):
+    """Old red brick in stretcher bond with pale lime mortar; every brick a little different."""
+    rng = np.random.default_rng(seed)
+    rows, cols = 16, 4  # courses and bricks per course in one tile
+    y = np.arange(size)[:, None] / size * rows
+    course = np.floor(y).astype(int) % rows
+    x = np.arange(size)[None, :] / size * cols + (course % 2) * 0.5
+    col = np.floor(x).astype(int) % cols
+    fx = x % 1.0
+    fy = y % 1.0
+    mortar = ((fx < 0.035) | (fx > 0.965) | (fy < 0.09) | (fy > 0.91)).astype(float)
+    shade = rng.uniform(0.75, 1.1, (rows, cols))
+    hue = rng.uniform(-0.06, 0.06, (rows, cols))
+    s = shade[course, col]
+    h = hue[course, col]
+    n = fractal_noise(size, 2.3, seed + 1)
+    base = np.stack([0.56 + h, 0.27 + h * 0.5, 0.2 + np.zeros_like(h)], axis=-1) * (s * (0.9 + 0.2 * n))[..., None]
+    burnt = smoothstep(0.7, 0.9, fractal_noise(size, 2.6, seed + 2))[..., None] * 0.35
+    base = base * (1 - burnt)
+    mort = np.stack([0.72, 0.69, 0.62])[None, None, :] * (0.9 + 0.1 * n)[..., None]
+    rgb = lerp(base, mort, mortar)
+    grime = smoothstep(0.55, 0.95, fractal_noise(size, 1.6, seed + 3))[..., None] * 0.15
+    return to_rgba(rgb * (1 - grime))
+
+
+def slate(size=512, seed=91):
+    """Grey-blue roof slates in staggered rows."""
+    rng = np.random.default_rng(seed)
+    rows, cols = 10, 6
+    y = np.arange(size)[:, None] / size * rows
+    row = np.floor(y).astype(int) % rows
+    x = np.arange(size)[None, :] / size * cols + (row % 2) * 0.5
+    col = np.floor(x).astype(int) % cols
+    fx = x % 1.0
+    fy = y % 1.0
+    gap = ((fx < 0.03) | (fx > 0.97)).astype(float) * 0.6 + (fy > 0.92).astype(float) * 0.8
+    shade = rng.uniform(0.8, 1.1, (rows, cols))[row, col]
+    n = fractal_noise(size, 2.0, seed + 1)
+    v = (0.27 + 0.06 * n) * shade
+    rgb = np.stack([v, v * 1.02, v * 1.1], axis=-1) * (1 - 0.5 * np.clip(gap, 0, 1))[..., None]
+    moss = smoothstep(0.68, 0.9, fractal_noise(size, 2.2, seed + 2))[..., None] * np.array([0.05, 0.08, 0.0])
+    return to_rgba(rgb + moss)
+
+
+def rooftile(size=512, seed=95):
+    """Red clay pantiles: rounded rows that catch the light, weathered darker in patches."""
+    rng = np.random.default_rng(seed)
+    rows, cols = 10, 8
+    y = np.arange(size)[:, None] / size * rows
+    row = np.floor(y).astype(int) % rows
+    x = np.arange(size)[None, :] / size * cols
+    col = np.floor(x).astype(int) % cols
+    fx = x % 1.0
+    fy = y % 1.0
+    roll = 0.75 + 0.25 * np.sin(fx * np.pi)
+    lip = (fy > 0.88).astype(float)
+    shade = rng.uniform(0.82, 1.08, (rows, cols))[row, col]
+    n = fractal_noise(size, 2.0, seed + 1)
+    rgb = np.stack([0.55, 0.25, 0.15])[None, None, :] * (roll * shade * (0.9 + 0.2 * n))[..., None]
+    rgb = rgb * (1 - 0.45 * lip)[..., None]
+    lichen = smoothstep(0.7, 0.92, fractal_noise(size, 2.4, seed + 2))[..., None] * np.array([0.1, 0.1, 0.04])
+    return to_rgba(rgb + lichen)
+
+
+def render(size=512, seed=97):
+    """Painted render (pebbledash-ish): off-white with speckle and a few damp streaks."""
+    n = fractal_noise(size, 2.5, seed)
+    speck = (np.random.default_rng(seed).random((size, size)) > 0.9).astype(float) * 0.04
+    v = 0.86 + 0.06 * (n - 0.5) - speck
+    streak = smoothstep(0.62, 0.9, fractal_noise(size, 2.0, seed + 1)) * 0.12
+    rgb = np.stack([v, v * 0.98, v * 0.93], axis=-1) * (1 - streak[..., None])
+    return to_rgba(rgb)
+
+
+def checker_plate(size=512, seed=99):
+    """Galvanised steel checker plate (weighbridge deck, steps)."""
+    n = fractal_noise(size, 2.0, seed)
+    y, x = np.mgrid[0:size, 0:size] / size * 24
+    u = (x + y) % 2.0
+    w = (x - y) % 2.0
+    bump = ((np.abs(u - 1.0) < 0.12) & ((np.floor(x) + np.floor(y)) % 2 == 0)) | \
+           ((np.abs(w - 1.0) < 0.12) & ((np.floor(x) + np.floor(y)) % 2 == 1))
+    v = 0.5 + 0.1 * n + bump * 0.12
+    rgb = np.stack([v, v, v * 0.97], axis=-1)
+    grime = smoothstep(0.5, 0.9, fractal_noise(size, 1.6, seed + 1))[..., None] * 0.3
+    return to_rgba(rgb * (1 - grime))
+
+
+def cladding(size=512, seed=101):
+    """Profiled steel sheet (vertical ribs) in faded paint, for sheds (tint with the material)."""
+    n = fractal_noise(size, 2.0, seed)
+    x = np.arange(size)[None, :] / size * 8
+    rib = 0.8 + 0.2 * np.cos(x * 2 * np.pi) ** 8
+    v = (0.86 + 0.06 * (n - 0.5)) * rib
+    rgb = np.stack([v, v, v], axis=-1) * np.ones((size, 1, 1))
+    streak = smoothstep(0.6, 0.9, fractal_noise(size, 2.2, seed + 1))[..., None] * 0.18
+    return to_rgba(rgb * (1 - streak))

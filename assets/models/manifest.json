@@ -13,15 +13,22 @@
     "prop_fence",
     "prop_fueltank",
     "prop_gate",
+    "prop_house_bungalow",
+    "prop_house_cottage",
+    "prop_house_pub",
+    "prop_house_semi",
     "prop_office",
     "prop_pallets",
     "prop_pickup",
     "prop_pole",
     "prop_portaloo",
+    "prop_shed",
     "prop_shovel",
     "prop_tyres",
+    "prop_weighbridge",
     "prop_wheelbarrow",
     "truck_rusty",
-    "truck_used"
+    "truck_used",
+    "vehicle_pickup"
   ]
 }
