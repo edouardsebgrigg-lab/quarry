@@ -108,7 +108,11 @@ You've bought a field off Mill Lane, outside the village of Ashby, with $200, a 
 5. Stop on the weighbridge at the depot gate to weigh in, then back up to the **topsoil** bay and unload (**T**).
 6. Buy a cheap upgrade for the pickup, then keep going by hand until you can afford the **mini digger** (on the office laptop, **E** at the door, **B** anywhere, or at Ashby Plant in the village). Bought machines are delivered to your yard. It digs far faster than you can and loads the pickup.
 7. Save up for the **tractor and trailer** (4 t a trip instead of 0.8), and sell a trailer load.
-8. Earn $2,000, then the 8 t **excavator** and the **tipper truck**, and finally a Used machine.
+8. Then the 8 t **excavator** and the **tipper truck**, earn $3,000, and finally a Used machine.
+
+**Ray**, who sold you the field, texts you the plan as each goal comes up (top right), plus the odd tip when something goes wrong. A **guide marker** shows where to go next: a column of light in the world, an arrow with the distance at the top of the screen, and a ring on the map (**Tab**). It follows what you're doing, so it points at the barrow, then the pickup, then the weighbridge, then the right bay.
+
+Roughly how long each machine takes to save for, playing the obvious way (from `src/progression/pacing.test.js`): the mini digger a few minutes after your first sale, the tractor about half an hour after that, then the excavator and the truck about half an hour each.
 
 Each goal pays a small bonus. Everything starts slow and clapped-out on purpose. Every machine tier is roughly 2.5 to 3 times better than the one before, so each purchase is a big step.
 

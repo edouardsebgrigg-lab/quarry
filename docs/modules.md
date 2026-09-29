@@ -28,7 +28,7 @@ You can change any of these and reload the game. No code changes are needed.
 | `src/ground` | The real, diggable ground: a grid of soil columns with layers; digging carves bowls and returns tonnes by material, dumped material piles up and slumps to its natural slope, undercut walls cave in; saves only the chunks that changed |
 | `src/handtools` | Your shovel and wheelbarrow: digging a shovelful out of the real ground, tipping it into the barrow, the pickup's or a truck's bed or onto the ground, and tipping the barrow as a pile or into a bed. Loads are dug material measured by loose volume |
 | `src/machinery` | Machine stats and mods (a machine's `kind` decides which jobs it can do), buying and selling machines, Direct-mode bucket cutting and pouring, timed jobs (dig a bucket out of the real ground, tip or unload a road vehicle at the depot or on your land, service, repair), wear and breakdowns |
-| `src/progression` | The step-by-step goals for a new game: which one is current, checking them against game events, paying rewards |
+| `src/progression` | The step-by-step goals for a new game (which one is current, checking them against game events, paying rewards), the mentor's texts and tips (`mentor.js`), and a pacing check of the machine ladder (`pacing.test.js`) |
 | `src/game` | Wires everything together: `createGame()` builds a game, `game.tick()` advances time, `game.actions.*` are the player's actions |
 
 **Player actions** (`src/game/actions.js`) are the single way to make things happen. They're used by buttons and hotkeys now, and later by operators and 3D driving.
@@ -58,6 +58,8 @@ You can change any of these and reload the game. No code changes are needed.
 | `excavator.js`, `excavatorArm.js` | The two diggers (excavator and mini digger, from a spec each) with their arm solver and hydraulic joints; Assisted (the arm plans the dig) and Direct (boom, stick, bucket and swing on their own controls) |
 | `trackDrive.js`, `dumper.js` | The rubber or steel track undercarriage shared by the diggers and the site dumper (track speeds, rolling shoes, sitting on the ground), and the dumper with its tipping skip. Site machines can't leave your land |
 | `glbModels.js`, `models.js` | Blender models (loaded from `.glb`) and placeholder shapes if a model is missing |
+| `weathering.js` | Weathers the machines' paint in the game, by tier: rust on edges and low down spreading in patches, chipped edges, sun-faded tops, dried mud. A small shader addition (value noise, and edge detection from screen-space normal derivatives) on each model's rest-pose positions, baked into a vertex attribute when it loads |
+| `guideBeacon.js` | The guide marker's column of light; `index.js` works out where the current goal wants you (`guideTarget`) |
 | `sounds.js`, `engineLife.js` | What the machines sound like, engines starting and stopping, passing cars on the lane |
 | `index.js` | Ties it together and turns driving, digging, weighing in and unloading into game actions |
 

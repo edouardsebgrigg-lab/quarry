@@ -42,7 +42,13 @@ export function createHud3d({ settings }) {
       el('div', { class: 'ctp-sub' }, 'Mouse to look', el('span', { class: 'sep' }, '·'), kbd('Esc'), 'menu')));
   const loading = el('div', { class: 'click-to-play' }, el('div', { class: 'ctp-card' }, el('div', { class: 'ctp-title' }, 'Loading…')));
 
-  const node = el('div', { class: 'hud3d' }, crosshair, prompt, help, helpTag, machinePanel, clickToPlay, loading);
+  // Where the goal wants you: an arrow, what's there and how far.
+  const guideArrow = el('div', { class: 'guide-arrow' });
+  const guideLabel = el('span', { class: 'guide-label' });
+  const guideDist = el('span', { class: 'guide-dist' });
+  const guidePill = el('div', { class: 'guide-pill' }, guideArrow, guideLabel, guideDist);
+
+  const node = el('div', { class: 'hud3d' }, crosshair, guidePill, prompt, help, helpTag, machinePanel, clickToPlay, loading);
 
   // Control hints per mode: [keys, label]. The last rows are the same everywhere.
   function hints(mode) {
@@ -143,6 +149,14 @@ export function createHud3d({ settings }) {
       helpTag.classList.toggle('hidden', showHelp);
       clear(helpTag);
       helpTag.append(kbd(k('hints')), el('span', {}, 'Controls'));
+
+      const g = info.guide;
+      guidePill.style.display = g && !overlayOpen ? '' : 'none';
+      if (g) {
+        setText(guideLabel, g.label);
+        setText(guideDist, g.dist < 1000 ? `${Math.round(g.dist)} m` : `${(g.dist / 1000).toFixed(1)} km`);
+        guideArrow.style.transform = `rotate(${(g.bearing * 180) / Math.PI}deg)`;
+      }
 
       const m = info.machine;
       machinePanel.style.display = m ? '' : 'none';

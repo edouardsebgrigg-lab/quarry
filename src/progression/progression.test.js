@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createGame } from '../game/index.js';
-import { currentObjective } from './index.js';
+import { currentObjective, markIntroSeen } from './index.js';
 import { tickJobs } from '../machinery/index.js';
 import { pileTotal } from '../quarry/index.js';
 
@@ -81,13 +81,10 @@ describe('getting-started goals', () => {
     actions.weighIn(tractor.id);
     expect(actions.tip(tractor.id, { bay: 'topsoil' }).ok).toBe(true);
     finish(ctx, tractor);
-    expect(step()).toBe('earn');
-
-    // Earn, then the big machines: buying the truck first still works.
-    ctx.state.stats.totalEarned = 2000;
-    ctx.state.money = 5000;
-    actions.selectMachine(pickup.id); // any event re-checks the goal
     expect(step()).toBe('buyExcavator');
+
+    // The big machines: buying the truck first still works.
+    ctx.state.money = 5000;
     const truck = actions.buyMachine('truck', 'rusty').machine;
     expect(step()).toBe('buyExcavator');
     const ex = actions.buyMachine('excavator', 'rusty').machine;
@@ -100,6 +97,9 @@ describe('getting-started goals', () => {
     actions.weighIn(truck.id);
     actions.tip(truck.id, { bay: 'mixed' });
     finish(ctx, truck);
+    expect(step()).toBe('earn');
+    ctx.state.stats.totalEarned = 3000;
+    actions.selectMachine(pickup.id); // any event re-checks the goal
     expect(step()).toBe('usedMachine');
   });
 
@@ -113,7 +113,33 @@ describe('getting-started goals', () => {
   it('reports progress for measurable goals', () => {
     const game = createGame({ seed: 1 });
     game.state.objectives.index = game.data.objectives.steps.findIndex((s) => s.id === 'earn');
-    game.state.stats.totalEarned = 1000;
+    game.state.stats.totalEarned = 1500;
     expect(currentObjective(game.ctx).progress).toBeCloseTo(0.5);
+  });
+});
+
+describe('the mentor', () => {
+  it('texts the plan for each goal as it comes up, and one-off tips only once', () => {
+    const game = createGame({ seed: 2 });
+    const got = [];
+    game.events.on('mentorMessage', (e) => got.push(e));
+    game.ctx.state.objectives.introSeen = false;
+    // Intro closed: the first goal's message.
+    markIntroSeen(game.ctx);
+    expect(got.at(-1)).toMatchObject({ from: 'Ray', kind: 'goal' });
+    expect(got.at(-1).text).toMatch(/shovel/);
+    // A goal done: the next goal's message.
+    game.actions.shovelDig({ x: 30, z: 20 });
+    expect(got.at(-1).text).toBe(game.data.objectives.steps[1].mentor);
+    // A breakdown tip, once.
+    game.events.emit('machineBrokeDown', { machineId: game.state.machines[0].id });
+    game.events.emit('machineBrokeDown', { machineId: game.state.machines[0].id });
+    expect(got.filter((m) => m.kind === 'tip')).toHaveLength(1);
+    expect(game.state.mentor.seen.breakdown).toBe(true);
+  });
+
+  it('every goal has a message from the mentor', () => {
+    const game = createGame({ seed: 2 });
+    for (const s of game.data.objectives.steps) expect(s.mentor, s.id).toBeTruthy();
   });
 });

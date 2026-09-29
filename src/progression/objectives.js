@@ -4,6 +4,7 @@ import { addMoney } from '../economy/index.js';
 import { tierData } from '../machinery/index.js';
 import { pileTotal } from '../quarry/index.js';
 import { barrowFill } from '../handtools/index.js';
+import { mentorForStep } from './mentor.js';
 
 const pickupLoad = (ctx) => Math.max(0, ...ctx.state.machines.filter((m) => m.type === 'pickup').map((m) => pileTotal(m.load)));
 const machineOf = (ctx, id) => ctx.state.machines.find((m) => m.id === id);
@@ -83,4 +84,5 @@ export function objectivesOnEvent(ctx, type, payload) {
 
 export function markIntroSeen(ctx) {
   ctx.state.objectives.introSeen = true;
+  mentorForStep(ctx, ctx.data.objectives.steps[ctx.state.objectives.index]);
 }

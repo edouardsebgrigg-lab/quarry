@@ -23,7 +23,7 @@ DIRT = (0.0, 1.2)
 def paints(tier):
     m = lib.standard_materials(tier)
     if tier == 'rusty':  # faded red, gone to rust in places
-        m['paint'] = lib.material('TractorPaint', (0.3, 0.03, 0.018), 'paint_worn', lib.tex.paint_worn, roughness=0.7, metallic=0.1)
+        m['paint'] = lib.material('TractorPaint', (0.45, 0.07, 0.04), 'paint_worn', lib.tex.paint_worn, roughness=0.7, metallic=0.1)
         m['rust'] = lib.material('Rust', (1, 1, 1), 'rust', lib.tex.rust, roughness=0.85, metallic=0.2)
         m['metal'] = lib.material('Castings', (0.2, 0.2, 0.2), 'metal_grime', lib.tex.metal_grime, 512, roughness=0.7, metallic=0.5)
     else:  # a tidier blue one

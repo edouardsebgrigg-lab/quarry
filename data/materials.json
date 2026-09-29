@@ -1,27 +1,27 @@
 {
   "topsoil": {
     "name": "Topsoil",
-    "basePrice": 36,
+    "basePrice": 50,
     "color": "#5e4a36"
   },
   "clay": {
     "name": "Clay",
-    "basePrice": 9,
+    "basePrice": 12,
     "color": "#8a6a4c"
   },
   "sand": {
     "name": "Sand",
-    "basePrice": 14,
+    "basePrice": 18,
     "color": "#e3c98f"
   },
   "gravel": {
     "name": "Gravel",
-    "basePrice": 20,
+    "basePrice": 26,
     "color": "#9a938a"
   },
   "mixed": {
     "name": "Mixed fill",
-    "basePrice": 6,
+    "basePrice": 8,
     "color": "#7a6a58"
   }
 }

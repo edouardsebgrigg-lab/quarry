@@ -122,5 +122,8 @@ You can replace any model with your own. Keep the file name, keep the named part
 ### Props (`prop_<name>.glb`)
 The origin sits on the ground at the centre. The office's door faces −Y (south in the game).
 
+## Paint and weathering
+Machines are exported with clean, readable base paint (faded on Rusty models, fresh on Used ones). The game weathers them itself (`src/world3d/weathering.js`): materials named `Paint`, `TractorPaint`, `PickupPaint`, `PickupFaded` or `Toolbox` get rust, chipped edges, sun fade and mud; `PaintDark`, `Canopy`, `Frame`, `Chassis`, `Castings`, `Rims`/`RimPaint` get a lighter version; `Steel`, `Rubber` and `RubberTrack` just get mud low down. How much depends on the tier (Rusty heavily, Used lightly). Keep those material names if you make your own machine, and keep the model's ground at the origin (the truck's is 1.3 m below it).
+
 ## Tiers
 Each machine has a model per tier (`rusty`, `used`, and later `standard`, `heavy`, `mega`). Only the materials differ at the moment. The scripts pick paint by tier in `lib.standard_materials()`.

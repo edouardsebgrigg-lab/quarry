@@ -183,6 +183,20 @@ export function createMapView({ world }) {
     }
     g.fillStyle = COLORS.barrow;
     g.fillRect(sx(info.barrow.x) - 2.5, sy(info.barrow.z) - 2.5, 5, 5);
+    // Where the current goal wants you: a pulsing ring and its name.
+    if (info.guide) {
+      const pulse = (performance.now() / 900) % 1;
+      g.strokeStyle = `rgba(245, 184, 46, ${1 - pulse})`;
+      g.lineWidth = 2;
+      g.beginPath();
+      g.arc(sx(info.guide.x), sy(info.guide.z), 6 + pulse * 14, 0, Math.PI * 2);
+      g.stroke();
+      g.fillStyle = COLORS.you;
+      g.beginPath();
+      g.arc(sx(info.guide.x), sy(info.guide.z), 4, 0, Math.PI * 2);
+      g.fill();
+      label(info.guide.label, info.guide.x, info.guide.z - 14 / scale - 6, { size: 12, color: COLORS.you });
+    }
     g.save();
     g.translate(sx(info.you.x), sy(info.you.z));
     g.rotate(-info.you.yaw);

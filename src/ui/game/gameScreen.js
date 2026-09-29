@@ -10,7 +10,7 @@ import { openShop } from './shop.js';
 import { openMarket } from './market.js';
 import { toggleMap } from './mapOverlay.js';
 import { openIntro } from '../screens/intro.js';
-import { markIntroSeen } from '../../progression/index.js';
+import { markIntroSeen, mentorForStep } from '../../progression/index.js';
 
 const MAX_TICKS_PER_FRAME = 400;
 
@@ -80,7 +80,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     }
     world = w;
     hud3d.setLoading(false);
-    if (isDev) window.__quarry = { game, world, audio: app.audio, settings }; // handy in the browser console and for automated play tests
+    if (isDev) window.__quarry = { game, world, audio: app.audio, settings, saveTo: (slot) => app.saveTo(slot) }; // handy in the browser console and for automated play tests
   }).catch((err) => {
     console.error(err);
     hud3d.showError(`Could not start 3D: ${err.message ?? err}`);
@@ -181,6 +181,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     start() {
       raf = requestAnimationFrame(frame);
       if (!game.state.objectives?.introSeen) openIntro(app.overlays, { game, onDone: () => markIntroSeen(game.ctx) });
+      else mentorForStep(game.ctx, data.objectives.steps[game.state.objectives.index]); // a loaded game: a reminder of the plan
     },
     destroy() {
       destroyed = true;

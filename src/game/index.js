@@ -7,7 +7,7 @@ import { marketHourly, chargeDailyInterest, fuelDaily, addMoney } from '../econo
 import { tickJobs, fixAllMachines } from '../machinery/index.js';
 import { createNewState } from './state.js';
 import { createActions } from './actions.js';
-import { objectivesOnEvent } from '../progression/index.js';
+import { objectivesOnEvent, mentorOnEvent } from '../progression/index.js';
 import { createGround } from '../ground/index.js';
 
 export function createGame({ data = loadData(), seed = Math.floor(Math.random() * 2 ** 31), state } = {}) {
@@ -24,6 +24,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
 
   events.on('hourPassed', () => marketHourly(ctx));
   events.on('*', (type, payload) => objectivesOnEvent(ctx, type, payload));
+  events.on('*', (type, payload) => mentorOnEvent(ctx, type, payload));
   events.on('dayStarted', () => {
     chargeDailyInterest(ctx);
     fuelDaily(ctx);

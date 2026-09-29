@@ -20,6 +20,9 @@ import { createGroundView } from './groundChunks.js';
 import { createHandTools } from './handTools.js';
 import { createHeadSway } from './headSway.js';
 import { MAP, inRect } from './map.js';
+import { createGuideBeacon } from './guideBeacon.js';
+import { currentObjective } from '../progression/index.js';
+import { barrowFill } from '../handtools/index.js';
 import { keyLabel } from '../input/index.js';
 import { pileTotal } from '../quarry/index.js';
 import {
@@ -539,6 +542,83 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     }),
   ];
 
+  // ---- guidance: where the current goal wants you to go (a beam in the world, an arrow on the
+  // HUD, a ring on the map). Worked out from what you're doing, so it points at the next thing.
+  const beacon = createGuideBeacon(scene);
+  const vehicleOf = (type) => [...vehicles.values()].find((x) => x.type === type) ?? null;
+  const dominant = (load) => Object.entries(load).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  const onField = (p) => !!ground && ground.inside(p.x, p.z);
+  function guideTarget() {
+    const o = currentObjective(game.ctx);
+    if (!o?.guide) return null;
+    const v = current();
+    const me = v ? v.position() : player.feet();
+    const at = (x, z, label, near = 4) => ({ x, z, label, near });
+    const onMachine = (veh, label) => (veh ? at(veh.position().x, veh.position().z, label, veh.radius + 1.5) : null);
+    const wb = MAP.depot.weighbridge;
+    const field = () => (onField(me) ? null : at(140, 14, 'Your field', 3));
+    const barrow = () => { const b = hands.placement(); return at(b.x, b.z, 'The wheelbarrow', 2.5); };
+    const office = (label) => {
+      const d = places.officeDoor;
+      const dl = places.dealerDoor;
+      const near = Math.hypot(dl.x - me.x, dl.z - me.z) < Math.hypot(d.x - me.x, d.z - me.z) ? dl : d;
+      return at(near.x, near.z, label, 3);
+    };
+    // A loaded road vehicle: the weighbridge, then the bay for what's on it.
+    const depotFor = (veh) => {
+      const m = getMachine(game.ctx, veh.machineId);
+      if (!hasTicket(game.ctx, m.id)) return at((wb.x0 + wb.x1) / 2, (wb.z0 + wb.z1) / 2, 'Weighbridge', 6);
+      const bayId = dominant(m.load);
+      const bay = MAP.depot.bays.find((b) => b.id === bayId) ?? MAP.depot.bays.find((b) => b.id === data.depot.mixedProduct);
+      return at((bay.x0 + bay.x1) / 2, (MAP.depot.bayZ.z0 + MAP.depot.bayZ.z1) / 2, `${data.depot.bays[bay.id].name} bay`, 5);
+    };
+    const affordable = (type) => game.state.money >= (data.machines.types[type]?.tiers.rusty.price ?? Infinity);
+    const loadedRoad = () => (v?.road && pileTotal(currentMachine().load) >= data.depot.minLoad ? v : null);
+    switch (o.id) {
+      case 'firstShovel': return field();
+      case 'fillBarrow': return hands.holding() ? null : barrow();
+      case 'loadPickup': {
+        const pickup = vehicleOf('pickup');
+        if (hands.holding() && barrowFill(game.ctx) > 0.3) return onMachine(pickup, 'Tip it into the pickup');
+        return barrowFill(game.ctx) > 0.5 ? barrow() : (onField(me) ? barrow() : field());
+      }
+      case 'weighIn':
+      case 'firstSale': {
+        const road = loadedRoad();
+        return road ? depotFor(road) : onMachine(vehicleOf('pickup'), 'Your pickup');
+      }
+      case 'firstMod': return office('Buy the springs (office laptop, or B)');
+      case 'buyMiniDigger': return affordable('miniDigger') ? office('Buy the mini digger') : null;
+      case 'buyTractor': return affordable('tractor') ? office('Buy the tractor') : null;
+      case 'buyExcavator': return affordable('excavator') ? office('Buy the excavator') : null;
+      case 'buyTruck': return affordable('truck') ? office('Buy the truck') : null;
+      case 'usedMachine': return null;
+      case 'firstScoop': return v?.type === 'miniDigger' ? field() : onMachine(vehicleOf('miniDigger'), 'Your mini digger');
+      case 'sellTrailer':
+      case 'sell': {
+        const type = o.id === 'sell' ? 'truck' : 'tractor';
+        const veh = vehicleOf(type);
+        const m = veh && getMachine(game.ctx, veh.machineId);
+        if (!m) return null;
+        const full = pileTotal(m.load) >= (o.target ?? getStats(data, m).capacity * 0.5);
+        if (!full) return v === veh ? field() : onMachine(veh, `Load the ${typeName(data, type).toLowerCase()}`);
+        return v === veh ? depotFor(veh) : onMachine(veh, `Your ${typeName(data, type).toLowerCase()}`);
+      }
+      default: return null;
+    }
+  }
+  let guide = null; // { x, y, z, label, near, dist } this frame
+  const camFwd = new THREE.Vector3();
+  function updateGuide(dt) {
+    const g = guideTarget();
+    const eye = camera.position;
+    if (g) {
+      const d = Math.hypot(g.x - eye.x, g.z - eye.z);
+      guide = d > g.near ? { ...g, y: heightAt(g.x, g.z), dist: d } : null;
+    } else guide = null;
+    beacon.update(dt, guide, eye);
+  }
+
   // Target marker on the ground where the excavator bucket will dig/dump.
   const marker = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.95, 32),
     new THREE.MeshBasicMaterial({ color: 0xf2b632, transparent: true, opacity: 0.8, depthTest: false }));
@@ -576,12 +656,13 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     // Chase camera behind the machine, orbiting with the mouse.
     const yaw = baseYaw + look.yaw;
     const p = v.position();
-    const dist = v.type === 'pickup' ? 8.5 : v.type === 'miniDigger' || v.type === 'dumper' ? 7 : 12;
+    // Far enough to see the whole machine (and the tractor's trailer), close enough to read it.
+    const dist = v.type === 'tractor' ? 10 : THREE.MathUtils.clamp(v.radius * 3.1, 5, 12);
     const desired = new THREE.Vector3(p.x - Math.cos(yaw) * dist, p.y + dist * 0.45 - look.pitch * 6, p.z + Math.sin(yaw) * dist);
     desired.y = Math.max(desired.y, heightAt(desired.x, desired.z) + 1.2);
     chasePos = chasePos ? chasePos.lerp(desired, Math.min(1, dt * 5)) : desired;
     camera.position.copy(chasePos);
-    camera.lookAt(p.x, p.y + 1.8, p.z);
+    camera.lookAt(p.x, p.y + Math.min(1.8, v.radius * 0.6), p.z);
   }
 
   const resizeObserver = new ResizeObserver(() => {
@@ -725,6 +806,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       jobOf: (id) => getMachine(game.ctx, id)?.job ?? null,
       tierOf: (id) => getMachine(game.ctx, id)?.tier ?? 'rusty',
     });
+    updateGuide(dt);
     env.follow(here);
     renderer.render(scene, camera);
   }
@@ -837,9 +919,16 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         machine.gear = f.shifting ? '–' : f.gear < 0 ? 'R' : String(f.gear);
       }
     }
+    // Where the goal wants you: label, distance and bearing (radians, + = to your right).
+    let guideInfo = null;
+    if (guide) {
+      camera.getWorldDirection(camFwd);
+      const rel = Math.atan2(guide.x - camera.position.x, guide.z - camera.position.z) - Math.atan2(camFwd.x, camFwd.z);
+      guideInfo = { label: guide.label, dist: guide.dist, bearing: -Math.atan2(Math.sin(rel), Math.cos(rel)) };
+    }
     // Which set of control hints applies.
     const hintMode = hands.holding() ? 'barrow' : !v ? 'foot' : v.digger ? (v.isDirect() ? 'digger-direct' : 'digger') : v.type;
-    return { prompt, job, machine: machine ?? tool, mode: hintMode, locked: mouse.locked() };
+    return { prompt, job, machine: machine ?? tool, mode: hintMode, locked: mouse.locked(), guide: guideInfo };
   }
 
   // Remember where everything is, so saves put machines back in place.
@@ -866,6 +955,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         return { id: veh.machineId, type: veh.type, x: q2.x, z: q2.z, yaw: veh.yaw(), current: veh === v };
       }),
       barrow: hands.placement(),
+      guide: guideTarget(),
     };
   }
 
@@ -944,6 +1034,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       sounds?.destroy();
       groundView?.dispose();
       hands.destroy();
+      beacon.destroy();
       for (const veh of vehicles.values()) veh.destroy();
       player.destroy();
       land.dispose();

@@ -11,94 +11,132 @@
       "id": "firstShovel",
       "title": "Dig with the shovel",
       "text": "Walk onto your field (through the gap from the yard), look at the ground and click to dig a shovelful.",
-      "reward": 0
+      "reward": 0,
+      "mentor": "Ray here, the one who sold you the field. First job: grab the shovel and dig. The topsoil's the good stuff, the depot pays best for it. Follow the marker onto your field.",
+      "guide": "field"
     },
     {
       "id": "fillBarrow",
       "title": "Fill the wheelbarrow",
       "text": "The wheelbarrow is just inside the field. Look into it and click to tip each shovelful in, until it's full.",
-      "reward": 0
+      "reward": 0,
+      "mentor": "Tip each shovelful into the barrow. It's just inside the field, marked for you. A full barrow's about 110 kilos.",
+      "guide": "barrow"
     },
     {
       "id": "loadPickup",
       "title": "Load the pickup",
       "text": "Your pickup is parked in the yard. Take the barrow (E), push it up to the pickup's tailgate and tip it in (T). Keep going until there's at least 300 kg on board.",
       "reward": 0,
-      "target": 0.3
+      "target": 0.3,
+      "mentor": "Wheel it up to the pickup's tailgate and tip it in. Or save your legs: park the pickup on the field and shovel straight in.",
+      "guide": "pickup"
     },
     {
       "id": "weighIn",
       "title": "Weigh in at the depot",
       "text": "Get in the pickup (E) and drive to Ashby Aggregates: out of the gate, east along Mill Lane, north into Ashby and left at The Plough onto Quarry Road (Tab shows the map). Stop on the weighbridge at the depot gate.",
-      "reward": 0
+      "reward": 0,
+      "mentor": "That'll do for a first load. Drive to Ashby Aggregates, it's on the map (Tab). Stop dead on the weighbridge at the gate and wait for the light.",
+      "guide": "weighbridge"
     },
     {
       "id": "firstSale",
       "title": "Unload in the topsoil bay",
       "text": "Back up to the TOPSOIL bay and unload (T). Clean loads pay the most: mixed ones are graded down.",
-      "reward": 25
+      "reward": 40,
+      "mentor": "Back up to the TOPSOIL bay and unload. Keep it clean: a load with clay mixed in gets paid less.",
+      "guide": "bay"
     },
     {
       "id": "firstMod",
       "title": "Fix up the pickup",
       "text": "Cheap upgrades make old machines a bit better. Stiffer rear springs let the pickup carry more: buy them in the shop (B, or the office laptop).",
-      "reward": 0
+      "reward": 0,
+      "mentor": "First money in! Stiffer rear springs for the pickup are cheap and she'll carry more. Office laptop, or B anywhere.",
+      "guide": "office"
     },
     {
       "id": "buyMiniDigger",
       "title": "Buy a mini digger",
       "text": "Keep digging by hand until you can buy the Rusty Mini Digger (B, the office laptop, or Ashby Plant in the village). It's delivered to your yard. It digs far faster than you, and it can load the pickup.",
-      "reward": 0
+      "reward": 0,
+      "mentor": "Keep at it. A rusty mini digger does in a minute what takes you ten with a shovel. I've marked the office for when you can afford it.",
+      "guide": "office"
     },
     {
       "id": "firstScoop",
       "title": "Dig with the digger",
       "text": "Get in the mini digger (E), drive it onto your field, swing the bucket over the ground and hold the left mouse button. Swing round and click to dump into the pickup (park it close).",
-      "reward": 0
+      "reward": 0,
+      "mentor": "Get in the digger and take a bucket. Park the pickup alongside so you can swing straight into it. G swaps to Direct controls if you fancy doing it properly.",
+      "guide": "miniDigger"
     },
     {
       "id": "buyTractor",
       "title": "Buy a tractor and trailer",
       "text": "The pickup only carries about a tonne. An old tractor with a tipping trailer carries 4 t to the depot. Save up for it.",
-      "reward": 0
+      "reward": 0,
+      "mentor": "The pickup's holding you back now: a tonne a trip. An old tractor and tipping trailer takes four. Save for that next.",
+      "guide": "office"
     },
     {
       "id": "sellTrailer",
       "title": "Sell a trailer load",
       "text": "Fill the trailer with the digger (at least 3 t), take it to the depot, weigh in and tip it in the right bay (T). Reversing a trailer takes practice: the back goes the opposite way to the wheel.",
       "reward": 60,
-      "target": 3
-    },
-    {
-      "id": "earn",
-      "title": "Earn $2,000",
-      "text": "Keep digging, hauling and selling. Service your machines (R) before they break down. A site dumper can move material round your field while the digger keeps digging.",
-      "reward": 150,
-      "target": 2000
+      "target": 3,
+      "mentor": "Fill the trailer with the digger, three tonnes or more, then off to the depot. Reversing a trailer: steer the wrong way, go slow.",
+      "guide": "tractor"
     },
     {
       "id": "buyExcavator",
       "title": "Buy an excavator",
       "text": "An 8-tonne excavator fills a trailer in a few swings. Save up for the Rusty Excavator.",
-      "reward": 0
+      "reward": 0,
+      "mentor": "You're making proper money now. An 8-tonne excavator fills that trailer in a few swings.",
+      "guide": "office"
     },
     {
       "id": "buyTruck",
       "title": "Buy a tipper truck",
       "text": "A tipper truck carries twice what the trailer does, and faster. Save up for the Rusty Tipper Truck.",
-      "reward": 0
+      "reward": 0,
+      "mentor": "Next, a tipper truck. Twice what the trailer takes, and quicker on the road.",
+      "guide": "office"
     },
     {
       "id": "sell",
       "title": "Sell a truck load",
       "text": "Load the truck with the excavator, drive it to the depot, weigh in and tip in the right bay (T).",
-      "reward": 150
+      "reward": 150,
+      "mentor": "Load the truck with the excavator and take it to the depot. Same drill: weighbridge, then the right bay.",
+      "guide": "truck"
+    },
+    {
+      "id": "earn",
+      "title": "Earn $3,000",
+      "text": "Keep digging, hauling and selling. Service your machines (R) before they break down. A site dumper can move material round your field while the digger keeps digging.",
+      "reward": 150,
+      "target": 3000,
+      "mentor": "That's a working quarry. Keep the machines serviced and the loads clean, and put money by."
     },
     {
       "id": "usedMachine",
       "title": "Get a better machine",
       "text": "Save up for a Used excavator or truck. It's a huge step up from the rusty ones.",
-      "reward": 0
+      "reward": 0,
+      "mentor": "Time to swap a rusty old thing for a Used one. You'll feel the difference straight away.",
+      "guide": "office"
     }
-  ]
+  ],
+  "mentor": {
+    "name": "Ray",
+    "tips": {
+      "breakdown": "Broken down? Walk up to it and press R to repair. Service them before they get that bad (R when you're next to one): it's cheaper than a repair.",
+      "mixedLoad": "That load was graded down: it had other stuff mixed in. Dig one layer at a time and keep your heaps apart.",
+      "worn": "One of your machines is getting tired (under 40%). A service (R next to it) puts it right before it lets you down.",
+      "broke": "Money's tight. Sell a clean load before you spend on fuel and repairs. You can go into debt, but the bank charges interest."
+    }
+  }
 }

@@ -10,7 +10,21 @@ export function createFeedback({ game, getMoneyNode }) {
   const fxLayer = el('div', { class: 'fx-layer' });
   const toasts = el('div', { class: 'toasts' });
   const log = el('div', { class: 'log' });
-  const node = el('div', { class: 'feedback' }, fxLayer, toasts, log);
+  const phone = el('div', { class: 'mentor' });
+  const node = el('div', { class: 'feedback' }, fxLayer, toasts, log, phone);
+
+  // A text from your mentor: slides in under the money, stays a while, newest on top.
+  function mentorText({ from, text, kind }) {
+    const card = el('div', { class: `mentor-card mentor-${kind}` },
+      el('div', { class: 'mentor-head' }, el('span', { class: 'mentor-avatar' }, from.slice(0, 1)),
+        el('span', { class: 'mentor-from' }, from), el('span', { class: 'mentor-when' }, kind === 'tip' ? 'tip' : 'now')),
+      el('div', { class: 'mentor-text' }, text));
+    phone.prepend(card);
+    while (phone.children.length > 2) phone.lastChild.remove();
+    const stay = Math.min(22000, 7000 + text.length * 60);
+    setTimeout(() => card.classList.add('mentor-out'), stay);
+    setTimeout(() => card.remove(), stay + 700);
+  }
 
   function floatText(text, cls, anchor) {
     const r = anchor?.getBoundingClientRect();
@@ -94,6 +108,7 @@ export function createFeedback({ game, getMoneyNode }) {
     }),
     game.events.on('interestCharged', (e) => message(`Debt interest charged: ${money(e.amount)}`, 'warn')),
     game.events.on('message', (e) => message(e.text, e.level)),
+    game.events.on('mentorMessage', (e) => mentorText(e)),
   ];
 
   return {

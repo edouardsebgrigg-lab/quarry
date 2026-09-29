@@ -44,7 +44,7 @@
       "roadLegal": false,
       "tiers": {
         "rusty": {
-          "price": 330,
+          "price": 240,
           "bucketVolume": 0.08,
           "cycleTime": 2.2,
           "digDepth": 0.45,
@@ -64,7 +64,7 @@
           "enginePower": 11
         },
         "used": {
-          "price": 900,
+          "price": 1000,
           "bucketVolume": 0.2,
           "cycleTime": 2.0,
           "digDepth": 0.5,
@@ -92,7 +92,7 @@
       "roadLegal": false,
       "tiers": {
         "rusty": {
-          "price": 240,
+          "price": 220,
           "capacity": 1.2,
           "speed": 1.6,
           "mass": 1100,
@@ -110,7 +110,7 @@
           "repairTo": 70
         },
         "used": {
-          "price": 620,
+          "price": 800,
           "capacity": 3,
           "speed": 1.9,
           "mass": 2200,
@@ -136,9 +136,9 @@
       "roadLegal": true,
       "tiers": {
         "rusty": {
-          "price": 420,
+          "price": 270,
           "capacity": 4,
-          "speed": 6,
+          "speed": 7,
           "mass": 3600,
           "trailerMass": 1500,
           "enginePower": 45,
@@ -157,7 +157,7 @@
         "used": {
           "price": 1100,
           "capacity": 10,
-          "speed": 7,
+          "speed": 8,
           "mass": 5200,
           "trailerMass": 2800,
           "enginePower": 85,
@@ -181,7 +181,7 @@
       "roadLegal": false,
       "tiers": {
         "rusty": {
-          "price": 1400,
+          "price": 450,
           "bucketVolume": 0.4,
           "cycleTime": 3.5,
           "fuelPerJob": 0.08,
@@ -200,7 +200,7 @@
           "enginePower": 45
         },
         "used": {
-          "price": 3800,
+          "price": 1800,
           "bucketVolume": 1.1,
           "cycleTime": 3.5,
           "fuelPerJob": 0.2,
@@ -227,7 +227,7 @@
       "roadLegal": true,
       "tiers": {
         "rusty": {
-          "price": 1200,
+          "price": 600,
           "capacity": 8,
           "speed": 9,
           "mass": 6800,
@@ -245,7 +245,7 @@
           "tipTime": 3
         },
         "used": {
-          "price": 3500,
+          "price": 2400,
           "capacity": 20,
           "speed": 11,
           "mass": 10500,

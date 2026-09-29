@@ -28,6 +28,8 @@ def paints(tier):
     m = lib.standard_materials(tier)
     if tier == 'used':
         m['paint'] = lib.material('Paint', (0.55, 0.06, 0.04), 'paint_worn', lib.tex.paint_worn, roughness=0.5, metallic=0.1)
+    else:  # an old green farm trailer
+        m['paint'] = lib.material('Paint', (0.3, 0.38, 0.2), 'paint_worn', lib.tex.paint_worn, roughness=0.7, metallic=0.05)
     m['chassis'] = lib.material('Chassis', (0.08, 0.08, 0.085), 'paint_worn', lib.tex.paint_worn, roughness=0.6, metallic=0.3)
     m['rim'] = lib.material('Rims', (0.5, 0.45, 0.4) if tier == 'rusty' else (0.8, 0.8, 0.78), 'paint_worn',
                             lib.tex.paint_worn, roughness=0.55, metallic=0.2)

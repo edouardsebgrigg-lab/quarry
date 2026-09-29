@@ -485,11 +485,14 @@ def material(name, color=(1, 1, 1), tex_name=None, tex_fn=None, tex_size=1024, r
 
 
 def standard_materials(tier):
-    """Materials shared by the machines. `tier` picks the paint: rusty or used (yellow)."""
+    """Materials shared by the machines. `tier` picks the paint: faded (rusty) or fresh yellow (used).
+    Body paint materials are named Paint... so the game knows to weather them."""
     m = {}
     if tier == 'rusty':
-        m['paint'] = material('Paint', (1, 1, 1), 'rust', tex.rust, roughness=0.8, metallic=0.2)
-        m['paint2'] = material('PaintDark', (0.55, 0.5, 0.45), 'rust', tex.rust, roughness=0.85, metallic=0.2)
+        # Faded paint: the game weathers it (rust patches, chips, sun fade, mud; see
+        # src/world3d/weathering.js), so the model keeps a readable base colour.
+        m['paint'] = material('Paint', (0.52, 0.27, 0.05), 'paint_worn', tex.paint_worn, roughness=0.7, metallic=0.05)
+        m['paint2'] = material('PaintDark', (0.13, 0.13, 0.13), 'paint_worn', tex.paint_worn, roughness=0.75)
     else:
         m['paint'] = material('Paint', (0.9, 0.52, 0.02), 'paint_worn', tex.paint_worn, roughness=0.45)
         m['paint2'] = material('PaintDark', (0.16, 0.16, 0.16), 'paint_worn', tex.paint_worn, roughness=0.5)

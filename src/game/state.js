@@ -26,6 +26,7 @@ export function createNewState(data, seed) {
     unlocks: {},
     flags: {},
     objectives: createObjectivesState(),
+    mentor: { seen: {} }, // one-off tips already sent
   };
   for (const { type, tier } of data.game.startingMachines) {
     createMachine(state, data, type, tier, state.currentSiteId);

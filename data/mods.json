@@ -13,7 +13,7 @@
   "wideBucket": {
     "name": "Wider bucket",
     "machineType": "miniDigger",
-    "price": 60,
+    "price": 40,
     "description": "+20% bucket size",
     "effects": {
       "bucketVolume": {
@@ -24,7 +24,7 @@
   "newHoses": {
     "name": "New hydraulic hoses",
     "machineType": "miniDigger",
-    "price": 80,
+    "price": 50,
     "description": "10% faster dig cycle",
     "effects": {
       "cycleTime": {
@@ -35,7 +35,7 @@
   "skipExtension": {
     "name": "Skip extension",
     "machineType": "dumper",
-    "price": 40,
+    "price": 30,
     "description": "+0.3 t load",
     "effects": {
       "capacity": {
@@ -46,7 +46,7 @@
   "sideboards": {
     "name": "Trailer sideboards",
     "machineType": "tractor",
-    "price": 90,
+    "price": 60,
     "description": "+1 t load",
     "effects": {
       "capacity": {
@@ -57,7 +57,7 @@
   "tractorTyres": {
     "name": "Better tyres",
     "machineType": "tractor",
-    "price": 70,
+    "price": 50,
     "description": "+10% driving speed",
     "effects": {
       "speed": {
@@ -68,7 +68,7 @@
   "sharpTeeth": {
     "name": "Sharpened bucket teeth",
     "machineType": "excavator",
-    "price": 150,
+    "price": 60,
     "description": "+15% bucket size",
     "effects": {
       "bucketVolume": {
@@ -79,7 +79,7 @@
   "greasedPins": {
     "name": "Greased pins",
     "machineType": "excavator",
-    "price": 220,
+    "price": 90,
     "description": "10% faster dig cycle",
     "effects": {
       "cycleTime": {
@@ -90,7 +90,7 @@
   "patchedTyres": {
     "name": "Patched tyres",
     "machineType": "truck",
-    "price": 120,
+    "price": 50,
     "description": "+10% driving speed",
     "effects": {
       "speed": {
@@ -101,7 +101,7 @@
   "raisedTailgate": {
     "name": "Raised sides",
     "machineType": "truck",
-    "price": 200,
+    "price": 80,
     "description": "+2 t load",
     "effects": {
       "capacity": {
