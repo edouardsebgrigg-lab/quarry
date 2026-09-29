@@ -135,7 +135,7 @@ export function createTerrain({ scene, physics, layout, siteData, materials, get
       tint = layerTints[layer].map((val) => val * shade);
     } else if (edge < 10.5) {
       // Earth bank: rough grass, bare where it's steep or worn.
-      const bare = smoothstep(0.55, 0.85, n2 + slope * 0.35);
+      const bare = smoothstep(0.62, 0.9, n2 + slope * 0.3);
       g = 1 - bare;
       d = bare;
       tint = [0.97, 0.96, 0.88];

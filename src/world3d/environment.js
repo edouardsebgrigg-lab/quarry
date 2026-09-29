@@ -4,10 +4,10 @@ import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { createGroundMaterial, paintGround } from './groundMaterial.js';
 
 const QUALITY = {
-  low: { pixelRatio: 0.75, shadows: false, shadowMap: 1024, trees: 150 },
-  medium: { pixelRatio: 1, shadows: true, shadowMap: 1024, trees: 350 },
-  high: { pixelRatio: 1.5, shadows: true, shadowMap: 2048, trees: 700 },
-  ultra: { pixelRatio: 2, shadows: true, shadowMap: 4096, trees: 1200 },
+  low: { pixelRatio: 0.75, shadows: false, shadowMap: 1024 },
+  medium: { pixelRatio: 1, shadows: true, shadowMap: 1024 },
+  high: { pixelRatio: 1.5, shadows: true, shadowMap: 2048 },
+  ultra: { pixelRatio: 2, shadows: true, shadowMap: 4096 },
 };
 
 export function createRenderer(canvas, quality) {
@@ -72,10 +72,20 @@ export function createEnvironment(scene, renderer, q, site) {
     scene.add(strip);
   }
 
-  addHills(scene, ground);
-  addTrees(scene, q.trees);
+  const hills = addHills(scene, ground);
 
   return {
+    // Height of the countryside outside the site (grass level, or up a hill).
+    groundHeight(x, z) {
+      let h = -0.3;
+      for (const hl of hills) {
+        const dx = (x - hl.x) / hl.sx;
+        const dz = (z - hl.z) / hl.sz;
+        const k = 1 - dx * dx - dz * dz;
+        if (k > 0) h = Math.max(h, hl.y + hl.sy * Math.sqrt(k) * 0.97);
+      }
+      return h;
+    },
     // Keep the shadow area centred on whatever the camera is looking at.
     follow(target) {
       sun.position.copy(target).addScaledVector(sunDir, 120);
@@ -87,6 +97,7 @@ export function createEnvironment(scene, renderer, q, site) {
 // Rolling farmland hills on the horizon: smooth lumps with the same grass as the ground.
 function addHills(scene, material) {
   const rnd = mulberry(7);
+  const hills = [];
   for (let i = 0; i < 40; i++) {
     const angle = (i / 40) * Math.PI * 2 + rnd() * 0.3;
     const dist = 480 + rnd() * 420;
@@ -106,38 +117,9 @@ function addHills(scene, material) {
     hill.scale.set(180 + rnd() * 260, 14 + rnd() * 36, 160 + rnd() * 240);
     hill.position.set(Math.cos(angle) * dist, -2, Math.sin(angle) * dist);
     scene.add(hill);
+    hills.push({ x: hill.position.x, z: hill.position.z, y: -2, sx: hill.scale.x, sy: hill.scale.y, sz: hill.scale.z });
   }
-}
-
-function addTrees(scene, count) {
-  const rnd = mulberry(11);
-  const trunkGeo = new THREE.CylinderGeometry(0.25, 0.35, 3, 6);
-  const leafGeo = new THREE.ConeGeometry(2.2, 7, 7);
-  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5a4030, roughness: 1 });
-  const leafMat = new THREE.MeshStandardMaterial({ color: 0x2f4a24, roughness: 1, flatShading: true });
-  const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, count);
-  const leaves = new THREE.InstancedMesh(leafGeo, leafMat, count);
-  leaves.castShadow = true;
-  const m = new THREE.Matrix4();
-  const q = new THREE.Quaternion();
-  const sc = new THREE.Vector3();
-  for (let i = 0; i < count; i++) {
-    let x;
-    let z;
-    do {
-      x = (rnd() - 0.5) * 900;
-      z = (rnd() - 0.5) * 900;
-      // Keep trees off the quarry site itself.
-    } while (x > -110 && x < 125 && z > -85 && z < 85);
-    const s = 0.7 + rnd() * 0.8;
-    sc.set(s, s, s);
-    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rnd() * Math.PI);
-    m.compose(new THREE.Vector3(x, 1.2 * s, z), q, sc);
-    trunks.setMatrixAt(i, m);
-    m.compose(new THREE.Vector3(x, 5.5 * s, z), q, sc);
-    leaves.setMatrixAt(i, m);
-  }
-  scene.add(trunks, leaves);
+  return hills;
 }
 
 function mulberry(seed) {

@@ -8,9 +8,15 @@ export function createMouse(element, { onLockChange } = {}) {
   let wantLock = true;
 
   const locked = () => document.pointerLockElement === element;
+  let settleUntil = 0;
 
   function onMove(e) {
     if (!locked()) return;
+    // Browsers can report one huge bogus jump just after the mouse is captured, which would
+    // flick the view up at the sky. Ignore movement for a moment after locking, and any
+    // single jump far bigger than a real hand movement.
+    if (performance.now() < settleUntil) return;
+    if (Math.abs(e.movementX) > 400 || Math.abs(e.movementY) > 400) return;
     dx += e.movementX;
     dy += e.movementY;
   }
@@ -28,6 +34,9 @@ export function createMouse(element, { onLockChange } = {}) {
   }
   function onChange() {
     if (!locked()) down = false;
+    else settleUntil = performance.now() + 120;
+    dx = 0;
+    dy = 0;
     onLockChange?.(locked());
   }
 

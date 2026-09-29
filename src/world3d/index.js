@@ -12,7 +12,7 @@ import { createExcavator } from './excavator.js';
 import { createMouse } from './mouse.js';
 import { preloadModels } from './glbModels.js';
 import { preloadGround } from './groundMaterial.js';
-import { preloadVegetation, createVegetation } from './vegetation.js';
+import { preloadVegetation, createVegetation, createTrees } from './vegetation.js';
 import { preloadEntrance, addEntrance } from './entrance.js';
 import { LAYOUTS, zoneAt, inRect } from './layouts.js';
 import { keyLabel } from '../input/index.js';
@@ -66,6 +66,13 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
     area: { x0: layout.terrain.x0 - 40, x1: layout.terrain.x1 + 40, z0: layout.terrain.z0 - 40, z1: layout.terrain.z1 + 40 },
     surfaceAt: (x, z) => terrain.surfaceAt(x, z),
     blocked: (x, z) => noGrowth.some(([r, m]) => inRect(r, x, z, m)),
+  });
+  const T = layout.terrain;
+  const trees = createTrees({
+    scene,
+    quality: settings.graphics,
+    keepClear: (x, z) => inRect(T, x, z, 12) || Math.abs(z - layout.publicRoad.z) < 9,
+    groundHeight: (x, z) => env.groundHeight(x, z),
   });
 
   // Target marker on the ground where the excavator bucket will dig/dump.
@@ -406,6 +413,7 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
 
     particles.update(dt);
     vegetation.update(dt);
+    trees.update(dt);
     placeCamera(dt);
     env.follow(v ? v.position() : player.feet());
     renderer.render(scene, camera);
