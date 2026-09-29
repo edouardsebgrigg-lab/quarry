@@ -447,11 +447,20 @@ export function createGround(groundData, plotId, opts = {}) {
       spoilTotal += spoil[m];
     }
     if (spoilTotal > 1e-6) {
-      const sx = centre.x - uz * (half + reach * 0.6);
-      const sz = centre.z + ux * (half + reach * 0.6);
-      plan.spoilAt = { x: sx, z: sz };
+      // Beside the strip, just clear of its cut and fill (so it never blocks the road or its
+      // sides): on whichever side has room inside your land, else beyond either end.
+      const off = half + reach + 1.5;
+      const room = (p) => p.x - x0 > 5 && x0 + nx * cell - p.x > 5 && p.z - z0 > 5 && z0 + nz * cell - p.z > 5;
+      const spots = [
+        { x: centre.x - uz * off, z: centre.z + ux * off },
+        { x: centre.x + uz * off, z: centre.z - ux * off },
+        { x: ax - ux * off, z: az - uz * off },
+        { x: bx + ux * off, z: bz + uz * off },
+      ];
+      const spot = spots.find(room) ?? spots[0];
+      plan.spoilAt = spot;
       plan.spoilTonnes = spoilTotal;
-      api.deposit({ x: sx, z: sz, tonnes: toRecord(spoil), radius: 1.6 });
+      api.deposit({ x: spot.x, z: spot.z, tonnes: toRecord(spoil), radius: 1.5 + 0.1 * Math.sqrt(spoilTotal) });
     }
     return plan;
   }

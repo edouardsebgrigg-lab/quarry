@@ -164,6 +164,7 @@ export function createHud3d({ settings }) {
 
       const w = info.works;
       worksCard.style.display = w && !overlayOpen ? '' : 'none';
+      node.classList.toggle('planning', !!w);
       if (w) {
         const wkey = JSON.stringify(w);
         if (wkey !== worksKey) {

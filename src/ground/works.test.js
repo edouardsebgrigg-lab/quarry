@@ -151,3 +151,32 @@ describe('earthworks: the plan says what will happen', () => {
     expect(built.spoilTonnes).toBeCloseTo(plan.spoilTonnes, 3);
   });
 });
+
+describe('earthworks: the spoil', () => {
+  it('is heaped clear of the road and its sides, on your land, and settles without burying the road', () => {
+    const g = make();
+    heap(g, 50, 84, 60);
+    const before = total(g);
+    const plan = g.buildWorks(strip());
+    expect(plan.ok).toBe(true);
+    expect(plan.spoilTonnes).toBeGreaterThan(5);
+    expect(Math.abs(plan.spoilAt.z - 60)).toBeGreaterThan(2 + 6); // beyond the strip and its cut/fill zone
+    settleAll(g);
+    // the road surface is still the planned height along its whole length, and nothing is piled beside it
+    for (const x of [42, 50, 58]) expect(g.surfaceAt(x, 60)).toBe('gravel');
+    for (const dz of [3, 4, 5, 6, 7]) for (const s of [-1, 1]) expect(g.heightAt(50, 60 + s * dz)).toBeLessThan(0.5);
+    expect(total(g)).toBeCloseTo(before, 4);
+  });
+
+  it('goes to the far side, or the end, when the near side is at the edge of the land', () => {
+    const g = make();
+    // a road close to the west edge: no room to spoil on that side of it
+    heap(g, 20, 104, 60);
+    const plan = g.buildWorks(strip({ ax: 12, az: 96, bx: 30, bz: 96 }));
+    expect(plan.ok, plan.reason).toBe(true);
+    if (plan.spoilTonnes > 0) {
+      expect(plan.spoilAt.x).toBeGreaterThan(g.x0 + 5);
+      expect(plan.spoilAt.z).toBeGreaterThan(g.z0 + 5);
+    }
+  });
+});
