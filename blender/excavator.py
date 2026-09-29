@@ -9,7 +9,7 @@ import math
 import bmesh
 from mathutils import Matrix, Vector
 import lib
-from lib import bm_box, bm_cylinder, bm_profile, merge, mesh_object, empty, finish
+from lib import bm_box, bm_cylinder, bm_profile, bm_lathe, bm_torus, merge, mesh_object, empty, finish, section
 
 TRACK_Y = 1.2
 TRACK_HALF = 1.75  # distance from centre to sprocket / idler axles
@@ -57,7 +57,8 @@ def undercarriage(mats, root):
     steel = []
     for s in (1, -1):
         y = s * TRACK_Y
-        steel.append(bm_box((3.2, 0.3, 0.32), (0, y, 0.45)))  # track frame
+        steel.append(lib.rounded_box((3.2, 0.3, 0.34), (0, y, 0.45), 0.08))  # track frame
+        steel.append(lib.rounded_box((2.6, 0.62, 0.03), (0, y, 0.87), 0.012))  # track guard on top
         for x in (-TRACK_HALF, TRACK_HALF):  # sprocket / idler
             steel.append(bm_cylinder(TRACK_R - 0.07, 0.34, 'Y', 24, (x, y, TRACK_R)))
             steel.append(bm_cylinder(0.12, 0.42, 'Y', 12, (x, y, TRACK_R)))
@@ -71,7 +72,7 @@ def undercarriage(mats, root):
             steel.append(bm_cylinder(0.11, 0.3, 'Y', 12, (x, y, 0.16)))
         steel.append(bm_cylinder(0.08, 0.2, 'Y', 12, (0, y, 0.76)))  # top carrier roller
     # Centre frame joining the tracks, slew ring.
-    steel.append(bm_box((1.6, 2.1, 0.35), (0, 0, 0.55)))
+    steel.append(lib.rounded_box((1.6, 2.1, 0.36), (0, 0, 0.55), 0.08))
     steel.append(bm_cylinder(0.85, 0.18, 'Z', 32, (0, 0, 0.83)))
     frame = mesh_object('Undercarriage', merge(*steel), mats['steel'], root)
     finish(frame, 0.015, dirt_range=DIRT)
@@ -85,25 +86,35 @@ def undercarriage(mats, root):
     for s in (1, -1):
         blade.append(bm_box((0.9, 0.12, 0.14), (1.85, s * 0.7, 0.42)))
     b = mesh_object('Blade', merge(*blade), mats['paint'], root)
-    finish(b, 0.01, dirt_range=DIRT)
+    finish(b, 0.02, 3, dirt_range=DIRT)
 
 
 def house_body(mats, house):
     body = []
-    body.append(bm_box((2.9, 2.5, 0.18), (-0.35, 0, 0.09)))  # deck
-    engine = bm_box((1.7, 2.5, 0.95), (-1.05, 0, 0.62))  # engine hood (rear)
-    body.append(engine)
-    body.append(bm_box((1.35, 0.85, 0.75), (0.55, -0.85, 0.55)))  # tool box / tank (right front)
+    body.append(lib.rounded_box((2.9, 2.5, 0.2), (-0.35, 0, 0.09), 0.05))  # deck
+    body.append(lib.rounded_box((1.7, 2.5, 0.98), (-1.05, 0, 0.6), 0.16))  # engine cover (rear)
+    body.append(lib.rounded_box((1.35, 0.85, 0.78), (0.55, -0.85, 0.54), 0.1))  # tool box / tank (right front)
     hood = mesh_object('HouseBody', merge(*body), mats['paint'], house)
-    lib.bevel(hood, 0.08, 3)
-    finish(hood, 0, dirt_range=(-1.0, 1.4))
+    finish(hood, 0, uv_scale=1.4, smooth_angle=50, dirt_range=(-1.0, 1.4))
+    # Engine cover panel lines and a lifting handle.
+    lines = [bm_box((0.008, 2.3, 0.004), (x, 0, 1.092)) for x in (-1.45, -0.65)]
+    lines += [bm_box((0.8, 0.008, 0.004), (-1.05, y, 1.092)) for y in (-1.05, 1.05)]
+    ln = mesh_object('PanelLines', merge(*lines), mats['black'], house)
+    finish(ln, 0, dirt=False)
 
-    # Rounded counterweight at the back.
-    arc = [(-1.85 - math.sin(a) * 0.45, math.cos(a) * 1.25) for a in [math.pi * (i / 16 - 0.5) for i in range(17)]]
-    arc = [(-1.85, -1.25)] + arc[1:-1] + [(-1.85, 1.25)]
-    cw = bm_profile(arc, 0.95, 'Z', 0.55)
-    c = mesh_object('Counterweight', cw, mats['paint2'], house)
-    finish(c, 0.05, 3, dirt_range=(-1.0, 1.4))
+    # Rounded counterweight at the back: a D shape in plan with rolled top and bottom edges.
+    def d_shape(inset):
+        pts = []
+        for i in range(25):
+            a = math.pi * (i / 24 - 0.5)
+            pts.append((-1.85 - math.cos(a) * (0.45 - inset) + inset, math.sin(a) * (1.25 - inset)))
+        pts += [(-1.6 - inset * 0.2, 1.25 - inset), (-1.6 - inset * 0.2, -1.25 + inset)]
+        return pts
+    rings = []
+    for z, inset in ((0.08, 0.06), (0.1, 0.02), (0.14, 0.0), (0.9, 0.0), (0.96, 0.02), (1.0, 0.06), (1.02, 0.12)):
+        rings.append((z, d_shape(inset)))
+    c = mesh_object('Counterweight', lib.loft_z(rings), mats['paint2'], house)
+    finish(c, 0, uv_scale=1.4, smooth_angle=50, dirt_range=(-1.0, 1.4))
 
     det = []
     for k in range(7):  # engine vents
@@ -130,32 +141,53 @@ def cab(mats, house):
     # Cab on the left front of the house, floor at z 0.18, roof at 1.85.
     y0 = 0.72
     w = 0.98
-    prof = [(-0.1, 0.18), (1.18, 0.18), (1.22, 0.75), (1.05, 1.75), (0.92, 1.85), (0.0, 1.85), (-0.12, 1.75)]
-    shell = mesh_object('Cab', bm_profile(prof, w, 'Y', y0), mats['paint'], house)
-    lib.bevel(shell, 0.05, 3)
-    finish(shell, 0, dirt_range=(-1.0, 1.4))
 
-    glass = []
-    def quad(pts):
-        b = bmesh.new()
-        b.faces.new([b.verts.new(p) for p in pts])
-        glass.append(b)
-    yl, yr = y0 + w / 2 + 0.005, y0 - w / 2 - 0.005
-    quad([(1.235, yl - 0.08, 0.8), (1.235, yr + 0.08, 0.8), (1.07, yr + 0.08, 1.72), (1.07, yl - 0.08, 1.72)])  # front
-    for y in (yl, yr):
-        quad([(0.05, y, 0.75), (1.12, y, 0.75), (1.0, y, 1.72), (0.05, y, 1.72)])  # sides
-    quad([(-0.13, yl - 0.1, 0.9), (-0.13, yr + 0.1, 0.9), (-0.13, yr + 0.1, 1.65), (-0.13, yl - 0.1, 1.65)])  # rear
-    g = mesh_object('CabGlass', lib.orient_outward(merge(*glass), (0.55, y0, 1.0)), mats['glass'], house)
+    def front(z):
+        pts = [(0.18, 1.18), (0.75, 1.22), (1.75, 1.05), (1.9, 0.95)]
+        for (z0, x0), (z1, x1) in zip(pts, pts[1:]):
+            if z <= z1:
+                return x0 + (x1 - x0) * max(0.0, (z - z0) / (z1 - z0))
+        return pts[-1][1]
+
+    rings = []
+    for z, inset in ((0.18, 0.0), (0.75, 0.0), (1.7, 0.0), (1.78, 0.015), (1.83, 0.045), (1.86, 0.09), (1.875, 0.15)):
+        ring = lib.plan_rect(-0.12 + inset, front(z) - inset, w / 2 - inset, max(0.03, 0.1 - inset * 0.5), 5)
+        rings.append((z, [(x, y + y0) for x, y in ring]))
+    shell = mesh_object('Cab', lib.loft_z(rings), mats['paint'], house)
+    finish(shell, 0.008, 2, uv_scale=1.4, smooth_angle=40, dirt_range=(-1.0, 1.4))
+
+    glass, seals = [], []
+    yl, yr = y0 + w / 2, y0 - w / 2
+    z0, z1 = 0.8, 1.7
+    bot = Vector((front(z0), y0, z0))
+    top = Vector((front(z1), y0, z1))
+    V = (top - bot).normalized()
+    U = Vector((0, 1, 0))
+    n = U.cross(V).normalized()
+    L = (top - bot).length
+    mid = (top + bot) / 2
+    glass.append(lib.panel(lib.rounded_rect(w - 0.16, L, 0.05), mid + n * 0.006, U, V))
+    seals.append(lib.panel(lib.rounded_rect(w - 0.1, L + 0.06, 0.06), mid + n * 0.003, U, V))
+    for y, sgn in ((yl, 1), (yr, -1)):  # big side windows; the door glass on the left
+        pts = [(0.02, 0.72), (1.08, 0.72), (1.04, 1.1), (0.95, 1.7), (0.02, 1.7)]
+        for pp, off, into in ((pts, 0.005, glass), ([(p[0] + (-0.03 if p[0] < 0.5 else 0.03), p[1] + (-0.03 if p[1] < 1.2 else 0.03)) for p in pts], 0.003, seals)):
+            bm = bmesh.new()
+            bm.faces.new([bm.verts.new((x, y + sgn * off, z)) for x, z in pp])
+            into.append(bm)
+    glass.append(lib.panel(lib.rounded_rect(w - 0.2, 0.7, 0.05), (-0.125, y0, 1.3), (0, -1, 0), (0, 0, 1)))
+    centre = (0.55, y0, 1.0)
+    g = mesh_object('CabGlass', lib.orient_outward(merge(*glass), centre), mats['glass'], house)
     lib.box_uv(g)
+    se = mesh_object('CabSeals', lib.orient_outward(merge(*seals), centre), mats['black'], house)
+    lib.box_uv(se)
 
     # Frame pillars, wiper, work lights, beacon, mirror.
     det = []
-    for x, z0, z1 in ((1.2, 0.75, 1.75), (-0.1, 0.2, 1.8)):
-        for y in (yl, yr):
-            det.append(bm_box((0.07, 0.07, z1 - z0), (x, y, (z0 + z1) / 2)))
-    det.append(bm_box((0.04, 0.02, 0.45), (1.16, y0 + 0.38, 1.05)))  # wiper, parked at the side
+    det.append(bm_box((0.012, 0.02, 0.5), (front(1.1) + 0.02, y0 + 0.38, 1.1)))  # wiper, parked at the side
+    det.append(bm_box((0.008, 0.004, 1.0), (1.0, yl + 0.002, 0.7)))  # door shut line
+    det.append(lib.rounded_box((0.3, 0.06, 0.06), (0.55, yl + 0.35, 1.84), 0.02))  # rain guard
     det.append(bm_box((0.05, 0.05, 0.45), (1.05, yl + 0.1, 1.55)))  # mirror arm
-    det.append(bm_box((0.05, 0.2, 0.28), (1.08, yl + 0.18, 1.72)))
+    det.append(lib.rounded_box((0.06, 0.2, 0.28), (1.08, yl + 0.18, 1.72), 0.025))
     det.append(bm_box((0.2, 0.04, 0.04), (0.35, yl + 0.01, 1.05)))  # door handle
     fr = mesh_object('CabFrame', merge(*det), mats['black'], house)
     finish(fr, 0.005, dirt=False)
@@ -189,8 +221,13 @@ def cylinder_between(a, b, r_barrel, r_rod, split=0.6):
     a, b = Vector((a[0], 0, a[1])), Vector((b[0], 0, b[1]))
     d = b - a
     length = d.length
-    barrel = bm_cylinder(r_barrel, length * split, 'X', 16, (length * split / 2, 0, 0))
-    rod = bm_cylinder(r_rod, length * (1 - split) + 0.1, 'X', 12, (length * split + (length * (1 - split)) / 2 - 0.05, 0, 0))
+    Ls = length * split
+    barrel = merge(
+        bm_lathe([(0.0, 0.0), (r_barrel * 0.8, 0.0), (r_barrel, 0.03), (r_barrel, Ls - 0.05), (r_barrel * 1.12, Ls - 0.04),
+                  (r_barrel * 1.12, Ls), (r_rod * 1.3, Ls + 0.01), (0.0, Ls + 0.01)], 20, 'X'),
+        bm_torus(r_barrel * 0.55, r_barrel * 0.28, 'Y', 16, 6, (-r_barrel * 0.6, 0, 0)))  # mounting eye
+    rod = merge(bm_cylinder(r_rod, length * (1 - split) + 0.1, 'X', 16, (Ls + (length - Ls) / 2 - 0.05, 0, 0)),
+                bm_torus(r_rod * 0.9, r_rod * 0.45, 'Y', 16, 6, (length, 0, 0)))
     ang = math.atan2(d.z, d.x)
     for part in (barrel, rod):
         bmesh.ops.rotate(part, cent=(0, 0, 0), matrix=Matrix.Rotation(-ang, 3, 'Y'), verts=part.verts)
@@ -198,16 +235,43 @@ def cylinder_between(a, b, r_barrel, r_rod, split=0.6):
     return barrel, rod
 
 
+def smooth_curve(pts, x):
+    """Catmull-Rom through (x, z) points, sampled at x."""
+    for i in range(len(pts) - 1):
+        if x <= pts[i + 1][0] or i == len(pts) - 2:
+            p0 = pts[max(0, i - 1)]
+            p1, p2 = pts[i], pts[i + 1]
+            p3 = pts[min(len(pts) - 1, i + 2)]
+            t = (x - p1[0]) / (p2[0] - p1[0])
+            t = min(1, max(0, t))
+            return 0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t * t
+                          + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t ** 3)
+
+
+def box_beam(top, bottom, half_w, x0, x1, r=0.06, n=28):
+    """A welded box-section arm: lofted along X between a top and bottom curve,
+    with rounded corners and slightly tapered, closed ends."""
+    st = []
+    for i in range(n + 1):
+        x = x0 + (x1 - x0) * i / n
+        zt, zb = smooth_curve(top, x), smooth_curve(bottom, x)
+        end = min(i, n - i)
+        k = 1.0 if end > 1 else (0.93 if end == 1 else 0.82)
+        mid = (zt + zb) / 2
+        st.append((x, section(half_w * k, half_w * k, mid + (zb - mid) * k, mid + (zt - mid) * k, r, r)))
+    return lib.loft(st)
+
+
 def arm(mats, house):
     boom_pivot = empty('Boom', (0.9, -0.35, 1.1), house)
     # Banana-shaped boom from (0,0) to (3.6,0).
     top = [(-0.2, 0.22), (0.9, 0.5), (1.8, 0.62), (2.8, 0.42), (3.75, 0.18)]
-    bottom = [(3.75, -0.2), (2.6, -0.02), (1.9, 0.12), (0.9, -0.12), (-0.2, -0.26)]
-    boom = [bm_profile(top + bottom, 0.4, 'Y')]
+    bottom = [(-0.2, -0.26), (0.9, -0.12), (1.9, 0.1), (2.6, -0.02), (3.75, -0.2)]
+    boom = [box_beam(top, bottom, 0.2, -0.2, 3.75, 0.07)]
     boom.append(bm_cylinder(0.2, 0.46, 'Y', 20, (0, 0, 0)))  # foot pin boss
     boom.append(bm_cylinder(0.17, 0.44, 'Y', 20, (3.6, 0, 0)))  # tip boss
     b = mesh_object('BoomBody', merge(*boom), mats['paint'], boom_pivot)
-    finish(b, 0.03, dirt_range=(-1.5, 3.0))
+    finish(b, 0, uv_scale=1.4, smooth_angle=50, dirt_range=(-1.5, 3.0))
     # Boom ram underneath and stick ram on top.
     rams_barrel, rams_rod = [], []
     for a, bpt, rb, rr in (((0.2, -0.45), (1.8, -0.02), 0.11, 0.06), ((1.1, 0.72), (3.45, 0.5), 0.1, 0.055)):
@@ -215,15 +279,16 @@ def arm(mats, house):
         rams_barrel.append(barrel)
         rams_rod.append(rod)
     rb_obj = mesh_object('BoomRams', merge(*rams_barrel), mats['paint2'], boom_pivot)
-    finish(rb_obj, 0, dirt=False)
+    finish(rb_obj, 0, smooth_angle=50, dirt=False)
     rr_obj = mesh_object('BoomRods', merge(*rams_rod), mats['chrome'], boom_pivot)
-    finish(rr_obj, 0, dirt=False)
+    finish(rr_obj, 0, smooth_angle=50, dirt=False)
 
     stick_pivot = empty('Stick', (3.6, 0, 0), boom_pivot)
-    stick = [bm_profile([(-0.45, 0.3), (1.2, 0.2), (2.7, 0.13), (2.7, -0.13), (1.2, -0.18), (-0.45, -0.2)], 0.3, 'Y')]
+    stick = [box_beam([(-0.45, 0.3), (1.2, 0.2), (2.7, 0.13)], [(-0.45, -0.2), (1.2, -0.18), (2.7, -0.13)],
+                      0.15, -0.45, 2.7, 0.05, 20)]
     stick.append(bm_cylinder(0.13, 0.36, 'Y', 16, (2.6, 0, 0)))
     s = mesh_object('StickBody', merge(*stick), mats['paint'], stick_pivot)
-    finish(s, 0.025, dirt_range=(-3.0, 3.0))
+    finish(s, 0, uv_scale=1.4, smooth_angle=50, dirt_range=(-3.0, 3.0))
     barrel, rod = cylinder_between((-0.3, 0.42), (2.2, 0.3), 0.09, 0.05)
     mesh_object('StickRam', barrel, mats['paint2'], stick_pivot).data.shade_smooth()
     mesh_object('StickRod', rod, mats['chrome'], stick_pivot).data.shade_smooth()

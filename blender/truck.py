@@ -7,7 +7,7 @@ Wheel order matches TRUCK_SHAPE in src/world3d/truckPhysics.js:
 0 front-left, 1 front-right, 2 rear-left, 3 rear-right (left = +Y in Blender)."""
 import math
 import bmesh
-from mathutils import Vector, Matrix
+from mathutils import Vector, Matrix  # noqa: F401
 import lib
 from lib import bm_box, bm_cylinder, bm_profile, bm_lathe, merge, mesh_object, empty, finish
 
@@ -66,6 +66,58 @@ def arc_panel(cx, cz, r_in, r_out, a0, a1, width, y, steps=14):
     return bm_profile(pts, width, 'Y', y)
 
 
+CAB_W = 1.15      # half width
+CAB_REAR = 1.55
+CAB_RADIUS = 0.16  # rounding of the vertical corners
+
+
+def cab_front(z):
+    """X of the cab front at height z (a slightly raked, bulged face)."""
+    pts = [(-0.12, 3.2), (0.38, 3.25), (0.58, 3.16), (1.48, 2.98), (1.62, 2.9)]
+    for (z0, x0), (z1, x1) in zip(pts, pts[1:]):
+        if z <= z1:
+            t = (z - z0) / (z1 - z0)
+            return x0 + (x1 - x0) * max(0, t)
+    return pts[-1][1]
+
+
+def cab_shell():
+    st = []
+    for z, inset in ((-0.12, 0), (0.1, 0), (0.38, 0), (0.58, 0), (1.0, 0), (1.44, 0), (1.52, 0.012),
+                     (1.57, 0.035), (1.605, 0.075), (1.625, 0.13), (1.635, 0.2)):
+        st.append((z, lib.plan_rect(CAB_REAR + inset, cab_front(z) - inset, CAB_W - inset,
+                                    max(0.04, CAB_RADIUS - inset * 0.4), 5)))
+    return lib.loft_z(st)
+
+
+def cab_glass():
+    glass, seals = [], []
+    # Windscreen on the raked front.
+    z0, z1 = 0.66, 1.42
+    bot = Vector((cab_front(z0), 0, z0))
+    top = Vector((cab_front(z1), 0, z1))
+    V = (top - bot).normalized()
+    U = Vector((0, 1, 0))
+    n = U.cross(V).normalized()
+    L = (top - bot).length
+    mid = (top + bot) / 2
+    glass.append(lib.panel(lib.rounded_rect(2 * CAB_W - 0.36, L, 0.07), mid + n * 0.006, U, V))
+    seals.append(lib.panel(lib.rounded_rect(2 * CAB_W - 0.3, L + 0.06, 0.08), mid + n * 0.003, U, V))
+    # Side windows (door glass) on the flat sides.
+    for s in (1, -1):
+        U = Vector((1, 0, 0))  # facing is fixed afterwards by orient_outward
+        V = Vector((0, 0, 1))
+        c = Vector((2.34, s * (CAB_W + 0.004), 1.02))
+        pane = lib.panel(lib.rounded_rect(1.08, 0.74, 0.06), c, U, V)
+        seal = lib.panel(lib.rounded_rect(1.14, 0.8, 0.07), c - Vector((0, s * 0.002, 0)), U, V)
+        glass.append(pane)
+        seals.append(seal)
+    # Rear window.
+    glass.append(lib.panel(lib.rounded_rect(1.3, 0.45, 0.06), (CAB_REAR - 0.004, 0, 1.12), (0, -1, 0), (0, 0, 1)))
+    centre = (2.3, 0, 0.8)
+    return lib.orient_outward(merge(*glass), centre), lib.orient_outward(merge(*seals), centre)
+
+
 def build(tier):
     mats = lib.standard_materials(tier)
     root = empty('Truck')
@@ -76,10 +128,12 @@ def build(tier):
         parts.append(bm_box((6.0, 0.12, 0.3), (-0.05, y, -0.4)))
     for x in (-2.8, -1.6, -0.4, 0.8, 1.9, 2.9):
         parts.append(bm_box((0.12, 0.84, 0.18), (x, 0, -0.38)))
-    parts.append(bm_box((0.22, 2.3, 0.22), (3.3, 0, -0.28)))  # front bumper
+
     parts.append(bm_box((0.18, 2.1, 0.12), (-3.05, 0, -0.5)))  # rear crossbar
     parts.append(bm_cylinder(0.26, 0.7, 'X', 20, (1.1, 0.78, -0.42)))  # fuel tank
-    parts.append(bm_box((0.55, 0.45, 0.4), (1.1, -0.8, -0.45)))  # battery box
+    parts.append(lib.rounded_box((0.55, 0.45, 0.4), (1.1, -0.8, -0.45), 0.04))  # battery box
+    for x in (0.9, 1.3):  # fuel tank straps
+        parts.append(lib.bm_torus(0.265, 0.012, 'X', 24, 6, (x, 0.78, -0.42)))
     for x in (2.1, -2.0):  # axles
         parts.append(bm_cylinder(0.08, 2.0, 'Y', 12, (x, 0, WHEEL_Z)))
         parts.append(bm_box((0.9, 0.1, 0.1), (x, 0.42, -0.62)))  # leaf springs
@@ -87,75 +141,71 @@ def build(tier):
     # Tipping ram (sits under the bed).
     parts.append(bm_cylinder(0.11, 1.0, 'Z', 16, (0.9, 0, -0.05)))
     chassis = mesh_object('Chassis', merge(*parts), mats['steel'], root)
-    finish(chassis, 0.015, dirt_range=DIRT)
+    bumper = [lib.rounded_box((0.26, 2.4, 0.28), (3.33, 0, -0.3), 0.06),
+              lib.rounded_box((0.1, 0.5, 0.1), (3.47, 0.75, -0.36), 0.03),   # towing eyes
+              lib.rounded_box((0.1, 0.5, 0.1), (3.47, -0.75, -0.36), 0.03)]
+    bp = mesh_object('Bumper', merge(*bumper), mats['paint2'], root)
+    finish(bp, 0, uv_scale=1.0, smooth_angle=50, dirt_range=DIRT)
+    finish(chassis, 0.02, 2, dirt_range=DIRT)
 
     # Hinge brackets at the back, tail lights.
     tail = mesh_object('TailLights', merge(bm_box((0.05, 0.25, 0.12), (-3.15, 0.85, -0.42)),
                                            bm_box((0.05, 0.25, 0.12), (-3.15, -0.85, -0.42))), mats['red'], root)
     finish(tail, 0.01, dirt=False)
 
-    # ---------- mudguards
+    # ---------- mudguards: rolled arches over every wheel, mud flaps behind the rear ones
     guards = []
     for x, y in WHEELS:
-        if x > 0:
-            guards.append(arc_panel(x, WHEEL_Z, 0.64, 0.68, math.radians(15), math.radians(165), 0.52, y))
-        else:
-            guards.append(bm_box((1.3, 0.55, 0.04), (x, y, -0.05)))
-            guards.append(bm_box((0.04, 0.55, 0.5), (x - 0.62, y, -0.3)))  # mud flap
+        guards.append(arc_panel(x, WHEEL_Z, 0.64, 0.68, math.radians(12), math.radians(168), 0.54, y, 20))
+        guards.append(arc_panel(x, WHEEL_Z, 0.6, 0.68, math.radians(12), math.radians(168), 0.03, y + (0.27 if y > 0 else -0.27), 20))
+        if x < 0:
+            guards.append(bm_box((0.03, 0.5, 0.45), (x - 0.72, y, -0.62)))  # mud flap
     mud = mesh_object('Mudguards', merge(*guards), mats['paint2'], root)
-    finish(mud, 0.01, dirt_range=DIRT)
+    finish(mud, 0.008, dirt_range=DIRT)
 
-    # ---------- cab (outer shell)
-    cab_prof = [(1.55, -0.12), (3.2, -0.12), (3.25, 0.38), (3.14, 0.58), (2.98, 1.48), (2.86, 1.6), (1.62, 1.6), (1.55, 1.52)]
-    shell = bm_profile(cab_prof, 2.3, 'Y')
-    cab = mesh_object('Cab', shell, mats['paint'], root)
-    lib.bevel(cab, 0.06, 3)
-    finish(cab, 0, dirt_range=DIRT)
+    # ---------- cab (outer shell): lofted in plan so corners and the roof edge are rounded
+    cab = mesh_object('Cab', cab_shell(), mats['paint'], root)
+    finish(cab, 0.012, 2, uv_scale=1.4, smooth_angle=40, dirt_range=DIRT)
 
-    # Glass: windscreen, side windows, rear window (slightly proud of the shell).
-    glass = []
-    ws = bmesh.new()
-    v = [ws.verts.new(p) for p in [(3.155, 1.0, 0.64), (3.155, -1.0, 0.64), (3.0, -1.0, 1.42), (3.0, 1.0, 1.42)]]
-    ws.faces.new(v)
-    glass.append(ws)
-    for s in (1, -1):
-        sw = bmesh.new()
-        pts = [(1.75, 0.62), (2.95, 0.62), (2.84, 1.42), (1.75, 1.42)] if s > 0 else [(1.75, 0.62), (1.75, 1.42), (2.84, 1.42), (2.95, 0.62)]
-        vv = [sw.verts.new((x, s * 1.158, z)) for x, z in pts]
-        sw.faces.new(vv)
-        glass.append(sw)
-    rw = bmesh.new()
-    vv = [rw.verts.new(p) for p in [(1.545, -0.7, 0.85), (1.545, 0.7, 0.85), (1.545, 0.7, 1.35), (1.545, -0.7, 1.35)]]
-    rw.faces.new(vv)
-    glass.append(rw)
-    g = mesh_object('CabGlass', lib.orient_outward(merge(*glass), (2.3, 0, 0.8)), mats['glass'], root)
-    g.data.shade_smooth()
+    # Glass, set into the cab surfaces, with black rubber seals round each pane.
+    glass, seals = cab_glass()
+    g = mesh_object('CabGlass', glass, mats['glass'], root)
     lib.box_uv(g)
+    se = mesh_object('CabSeals', seals, mats['black'], root)
+    lib.box_uv(se)
 
     # Cab details: grille, lights, mirrors, beacon, door seams, steps, exhaust, sun visor.
     det = []
-    for z in (0.06, 0.16, 0.26):
-        det.append(bm_box((0.04, 1.3, 0.05), (3.27, 0, z)))
-    det.append(bm_box((1.9, 0.02, 0.02), (2.3, 1.16, 0.56)))  # window line
-    det.append(bm_box((1.9, 0.02, 0.02), (2.3, -1.16, 0.56)))
+    det.append(bm_box((0.05, 1.36, 0.36), (3.235, 0, 0.16)))  # grille recess
     for s in (1, -1):
-        det.append(bm_box((0.02, 0.02, 1.3), (1.72, s * 1.16, 0.4)))  # door seam
+        y = s * (CAB_W + 0.002)
+        det.append(bm_box((0.008, 0.005, 1.35), (1.74, y, 0.5)))  # door shut lines
+        det.append(bm_box((0.008, 0.005, 1.1), (2.95, y, 0.35)))
+        det.append(bm_box((1.21, 0.005, 0.008), (2.35, y, -0.08)))
         det.append(bm_box((0.18, 0.04, 0.04), (2.0, s * 1.17, 0.45)))  # handle
-        det.append(bm_box((0.06, 0.35, 0.06), (3.05, s * 1.32, 1.0)))  # mirror arm
-        det.append(bm_box((0.06, 0.06, 0.6), (3.05, s * 1.48, 0.85)))
-        det.append(bm_box((0.08, 0.22, 0.38), (3.05, s * 1.5, 0.85)))  # mirror
-        det.append(bm_box((0.3, 0.3, 0.04), (2.85, s * 1.0, -0.55)))  # step
-        det.append(bm_box((0.3, 0.3, 0.04), (2.85, s * 1.0, -0.25)))
-    det.append(bm_box((0.35, 2.2, 0.04), (3.05, 0, 1.62)))  # sun visor
+        det.append(bm_cylinder(0.022, 0.36, 'Y', 10, (3.0, s * 1.32, 1.12)))  # mirror arms
+        det.append(bm_cylinder(0.022, 0.36, 'Y', 10, (3.0, s * 1.32, 0.62)))
+        det.append(bm_cylinder(0.022, 0.52, 'Z', 10, (3.0, s * 1.49, 0.87)))
+        det.append(lib.rounded_box((0.1, 0.26, 0.42), (3.02, s * 1.56, 0.88), 0.04))  # mirror head
+        det.append(lib.rounded_box((0.08, 0.2, 0.16), (3.1, s * 1.5, 0.52), 0.03))  # kerb mirror
+        det.append(lib.rounded_box((0.32, 0.3, 0.04), (2.85, s * 1.0, -0.55), 0.015))  # steps
+        det.append(lib.rounded_box((0.32, 0.3, 0.04), (2.85, s * 1.0, -0.25), 0.015))
+    visor = lib.rounded_box((0.36, 2.24, 0.05), (0, 0, 0), 0.02)
+    bmesh.ops.rotate(visor, cent=(0, 0, 0), matrix=Matrix.Rotation(math.radians(-10), 3, 'Y'), verts=visor.verts)
+    bmesh.ops.translate(visor, vec=(3.0, 0, 1.6), verts=visor.verts)
+    det.append(visor)
     cabdet = mesh_object('CabDetails', merge(*det), mats['black'], root)
     finish(cabdet, 0.008, dirt=False)
+    grille = [bm_box((0.03, 1.3, 0.035), (3.265, 0, z)) for z in (0.04, 0.11, 0.18, 0.25)]
+    gr = mesh_object('Grille', merge(*grille), mats['paint2'], root)
+    finish(gr, 0.006, dirt=False)
 
     lights = []
     for s in (1, -1):
-        lights.append(bm_box((0.04, 0.28, 0.16), (3.27, s * 0.88, 0.2)))
+        lights.append(bm_box((0.05, 0.3, 0.17), (3.245, s * 0.86, 0.2)))
         lights.append(bm_cylinder(0.06, 0.08, 'Z', 12, (2.2, s * 0.9, 1.66)))  # roof spotlights
     hl = mesh_object('Headlights', merge(*lights), mats['light'], root)
-    finish(hl, 0.01, dirt=False)
+    finish(hl, 0.02, 3, dirt=False)
     beacon = mesh_object('Beacon', merge(bm_cylinder(0.09, 0.14, 'Z', 16, (1.9, 0, 1.68)),
                                          bm_cylinder(0.07, 0.05, 'Z', 16, (1.9, 0, 1.78))), mats['amber'], root)
     finish(beacon, 0, dirt=False)
@@ -193,7 +243,11 @@ def build(tier):
     bed = [bm_profile(u, L, 'X', L / 2)]
     # Headboard + cab protector canopy.
     bed.append(bm_box((0.1, 2.36, 1.6), (L + 0.02, 0, 0.78)))
-    bed.append(bm_box((0.75, 2.36, 0.08), (L + 0.38, 0, 1.6)))
+    bed.append(lib.rounded_box((0.78, 2.4, 0.08), (L + 0.38, 0, 1.6), 0.03))
+    for k in range(4):  # stiffening ribs on the headboard and canopy
+        y = -0.9 + k * 0.6
+        bed.append(lib.rounded_box((0.08, 0.08, 1.5), (L + 0.1, y, 0.8), 0.02))
+        bed.append(lib.rounded_box((0.7, 0.07, 0.06), (L + 0.38, y, 1.66), 0.02))
     # Ribs along the sides and under the floor.
     for i in range(6):
         x = 0.35 + i * 0.72
@@ -207,7 +261,7 @@ def build(tier):
     bed.append(bm_box((0.08, 2.2, 0.95), (-0.02, 0, 0.52)))
     bed.append(bm_cylinder(0.04, 2.3, 'Y', 10, (-0.04, 0, 1.0)))
     b = mesh_object('Bed', merge(*bed), mats['paint'], pivot)
-    finish(b, 0.015, dirt_range=(-1.35, 0.5))
+    finish(b, 0.02, 2, dirt_range=(-1.35, 0.5))
 
     # ---------- wheels
     for i, (x, y) in enumerate(WHEELS):

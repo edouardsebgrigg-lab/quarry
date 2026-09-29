@@ -47,9 +47,11 @@ blender --background --python blender/build_models.py -- truck   # just one
 or Blender as a Python module (`pip install bpy` with Python 3.11) and run `python blender/build_models.py truck`. To rebuild only some props: `python blender/build_models.py prop:gate,fence`. Add `--no-preview` to skip the preview renders (they take a few minutes).
 
 The scripts:
-- `lib.py`: shape helpers (boxes, cylinders, extruded profiles, lathe), bevels, UVs, grime vertex colours, materials, export and preview rendering.
+- `lib.py`: shape helpers (boxes, rounded boxes, cylinders, extruded profiles, lathe, lofted bodies from cross-sections, flat panels for glass), bevels with weighted normals, subdivision, UVs, grime vertex colours, materials, export and preview rendering.
 - `textures.py`: generates the tileable textures (worn paint, rust, grimy steel, rubber, concrete, cladding, weathered wood, plastic).
-- `truck.py`, `excavator.py`, `props.py`: the models themselves.
+- `truck.py`, `excavator.py`, `pickup.py`, `props.py`: the models themselves.
+
+**How the shapes are made (so they don't look blocky):** bodies such as the pickup, the truck cab and the excavator's boom and cab are *lofted*: a series of rounded cross-sections is skinned into one smooth surface, so panels have rolled edges and curves instead of flat boxes. Glass is set into those surfaces with a black rubber seal. Chunky parts (bumpers, mirrors, tool boxes, the portaloo) use `rounded_box`. Every part is finished with a real bevel plus *weighted normals*, which keeps big panels flat and lets their edges catch the light. Boulders start as a random lump, get smoothed, roughened with layered noise and then cut by a few flat fracture planes.
 - `menu_background.py`: renders the main-menu picture (`assets/ui/menu.jpg`), with the excavator loading a truck at a quarry face. Add `--fast` for a quick low-res test.
 
 ## Making your own models in Blender

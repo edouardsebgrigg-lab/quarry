@@ -139,6 +139,133 @@ def bm_lathe(profile, segments=32, axis='Y', center=(0, 0, 0)):
     return bm
 
 
+def section(wb, wt, zb, zt, rb=0.05, rt=0.08, corner=5, flat=3, side=3):
+    """Closed cross-section (y, z) of a body panel: a rounded rectangle whose sides lean in
+    from half-width `wb` at the bottom to `wt` at the top (tumblehome). Always returns the
+    same number of points, so sections can be lofted together."""
+    h = max(zt - zb, 1e-3)
+    rb = min(rb, h * 0.45, wb * 0.45)
+    rt = min(rt, h * 0.45, wt * 0.45)
+    right = []
+    for i in range(flat):  # bottom, centre -> corner
+        right.append(((wb - rb) * i / flat, zb))
+    for i in range(corner):  # bottom corner
+        a = -math.pi / 2 + (math.pi / 2) * i / corner
+        right.append((wb - rb + math.cos(a) * rb, zb + rb + math.sin(a) * rb))
+    for i in range(side):  # side, leaning in
+        t = i / side
+        right.append((wb + (wt - wb) * t, zb + rb + (zt - rt - zb - rb) * t))
+    for i in range(corner):  # top corner
+        a = (math.pi / 2) * i / corner
+        right.append((wt - rt + math.cos(a) * rt, zt - rt + math.sin(a) * rt))
+    for i in range(flat):  # top, corner -> centre
+        right.append(((wt - rt) * (1 - i / flat), zt))
+    left = [(-y, z) for y, z in reversed(right[1:])]  # mirror, skipping the shared bottom centre
+    return right + [(0.0, zt)] + left
+
+
+def loft(stations, cap_start=True, cap_end=True):
+    """Skin a list of (x, [(y, z), ...]) cross-sections into a closed body."""
+    bm = bmesh.new()
+    rings = [[bm.verts.new((x, y, z)) for y, z in sec] for x, sec in stations]
+    n = len(rings[0])
+    for a, b in zip(rings, rings[1:]):
+        for j in range(n):
+            k = (j + 1) % n
+            bm.faces.new([a[j], a[k], b[k], b[j]])
+    if cap_start:
+        bm.faces.new(list(reversed(rings[0])))
+    if cap_end:
+        bm.faces.new(rings[-1])
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return bm
+
+
+def rounded_rect(w, h, r, steps=4):
+    """Points of a rounded rectangle centred on (0, 0) in 2D (u, v)."""
+    r = min(r, w / 2 - 1e-4, h / 2 - 1e-4)
+    pts = []
+    for cx, cy, a0 in ((w / 2 - r, h / 2 - r, 0), (-w / 2 + r, h / 2 - r, 90), (-w / 2 + r, -h / 2 + r, 180), (w / 2 - r, -h / 2 + r, 270)):
+        for i in range(steps + 1):
+            a = math.radians(a0 + 90 * i / steps)
+            pts.append((cx + math.cos(a) * r, cy + math.sin(a) * r))
+    return pts
+
+
+def panel(points2d, origin, u_axis, v_axis, thickness=0.0):
+    """A flat polygon (e.g. a window) placed in 3D: point (u, v) goes to origin + u*U + v*V.
+    With a thickness it becomes a thin slab, extruded along the face normal."""
+    O, U, V = Vector(origin), Vector(u_axis), Vector(v_axis)
+    bm = bmesh.new()
+    front = [bm.verts.new(O + U * u + V * v) for u, v in points2d]
+    bm.faces.new(front)
+    if thickness:
+        N = U.cross(V).normalized() * -thickness
+        back = [bm.verts.new(v.co + N) for v in front]
+        bm.faces.new(list(reversed(back)))
+        n = len(front)
+        for i in range(n):
+            j = (i + 1) % n
+            bm.faces.new([front[j], front[i], back[i], back[j]])
+    if thickness:
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    else:  # single face: make it face along U x V
+        bm.normal_update()
+        bm.faces.ensure_lookup_table()
+        f = bm.faces[0]
+        if f.normal.dot(U.cross(V)) < 0:
+            f.normal_flip()
+    return bm
+
+
+def plan_rect(x0, x1, w, r, steps=4):
+    """Rounded rectangle in plan (x from x0 to x1, y from -w to w), constant point count."""
+    cx, cy = (x0 + x1) / 2, 0.0
+    return [(cx + u, cy + v) for u, v in rounded_rect(x1 - x0, 2 * w, r, steps)]
+
+
+def loft_z(stations, cap_bottom=True, cap_top=True):
+    """Skin horizontal rings [(z, [(x, y), ...]), ...] (bottom to top) into a closed body."""
+    bm = bmesh.new()
+    rings = [[bm.verts.new((x, y, z)) for x, y in ring] for z, ring in stations]
+    n = len(rings[0])
+    for a, b in zip(rings, rings[1:]):
+        for j in range(n):
+            k = (j + 1) % n
+            bm.faces.new([a[j], a[k], b[k], b[j]])
+    if cap_bottom:
+        bm.faces.new(list(reversed(rings[0])))
+    if cap_top:
+        bm.faces.new(rings[-1])
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return bm
+
+
+def rounded_box(size, center=(0, 0, 0), r=0.05, segs=3):
+    """A box with every edge rounded to radius r (a proper cast/pressed look, unlike a
+    small bevel). Built as a plan-view loft, so it stays light."""
+    sx, sy, sz = size
+    r = min(r, sx / 2 - 1e-3, sy / 2 - 1e-3, sz / 2 - 1e-3)
+    cx, cy, cz = center
+    st = []
+    for i in range(segs + 1):  # bottom rounding
+        a = math.pi / 2 * i / segs
+        inset = r * (1 - math.sin(a))
+        z = cz - sz / 2 + r * (1 - math.cos(a))
+        st.append((z, inset))
+    for i in range(segs + 1):  # top rounding
+        a = math.pi / 2 * i / segs
+        inset = r * (1 - math.cos(a))
+        z = cz + sz / 2 - r + r * math.sin(a)
+        st.append((z, inset))
+    rings = []
+    for z, inset in st:
+        rr = max(1e-3, r - inset)
+        rings.append((z, [(cx + x, cy + y) for x, y in plan_rect(-sx / 2 + inset, sx / 2 - inset, sy / 2 - inset, rr, segs)]))
+    return loft_z(rings)
+
+
 def orient_outward(bm, center):
     """Make every face of a (single-sided) bmesh face away from `center`."""
     c = Vector(center)
@@ -165,10 +292,43 @@ def merge(*bms):
 def bevel(obj, width=0.02, segments=2, angle=35):
     m = obj.modifiers.new('Bevel', 'BEVEL')
     m.width = width
-    m.segments = segments
+    m.segments = max(2, segments)
     m.limit_method = 'ANGLE'
     m.angle_limit = math.radians(angle)
-    m.harden_normals = False
+    m.profile = 0.6  # slightly fuller than a circle: reads as pressed/rolled metal
+    m.harden_normals = True
+    m.miter_outer = 'MITER_ARC'
+    return obj
+
+
+def weighted_normals(obj):
+    """Big flat faces keep flat shading, small bevel faces take the curve: the classic
+    'hard surface' look where edges catch the light without the panels looking bent."""
+    m = obj.modifiers.new('WeightedNormal', 'WEIGHTED_NORMAL')
+    m.keep_sharp = True
+    m.weight = 50
+    m.mode = 'FACE_AREA'
+    return obj
+
+
+def subdivide(obj, levels=2, crease_angle=None):
+    """Smooth a low-poly cage into a rounded shape (Catmull-Clark). Edges sharper than
+    `crease_angle` degrees are creased so they stay crisp."""
+    if crease_angle is not None:
+        me = obj.data
+        attr = me.attributes.get('crease_edge') or me.attributes.new('crease_edge', 'FLOAT', 'EDGE')
+        bm = bmesh.new()
+        bm.from_mesh(me)
+        bm.edges.ensure_lookup_table()
+        vals = []
+        for e in bm.edges:
+            sharp = len(e.link_faces) == 2 and math.degrees(e.calc_face_angle(0)) > crease_angle
+            vals.append(0.85 if sharp else 0.0)
+        bm.free()
+        attr.data.foreach_set('value', vals)
+    m = obj.modifiers.new('Subsurf', 'SUBSURF')
+    m.levels = levels
+    m.render_levels = levels
     return obj
 
 
@@ -229,15 +389,22 @@ def grime(obj, low=-1.0, high=1.2, dark=(0.55, 0.47, 0.38), world_z_offset=0.0, 
     me.color_attributes.active_color = attr
 
 
-def finish(obj, bevel_width=0.02, segments=2, uv_scale=1.2, smooth_angle=35, dirt=True, dirt_range=(-1.2, 1.0)):
+def finish(obj, bevel_width=0.02, segments=2, uv_scale=1.2, smooth_angle=35, dirt=True, dirt_range=(-1.2, 1.0),
+           weighted=True, dirt_color=(0.55, 0.47, 0.38)):
+    """Bevel, shade and UV a part, then add grime. Modifiers already on the object (e.g. a
+    subdivision from subdivide()) are applied first."""
     bpy.context.view_layer.update()
-    if bevel_width:
-        bevel(obj, bevel_width, segments)
-    apply_modifiers(obj)
+    if obj.modifiers:
+        apply_modifiers(obj)
     smooth(obj, smooth_angle)
+    if bevel_width:
+        bevel(obj, bevel_width, segments, smooth_angle)
+    if weighted:
+        weighted_normals(obj)
+    apply_modifiers(obj)
     box_uv(obj, uv_scale)
     if dirt:
-        grime(obj, *dirt_range)
+        grime(obj, *dirt_range, dark=dirt_color)
     return obj
 
 
