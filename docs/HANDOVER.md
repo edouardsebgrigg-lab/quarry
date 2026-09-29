@@ -3,7 +3,7 @@
 Written for Codex, who continues on a **separate branch**. Nothing here has been merged. No PR was created.
 
 - **Repository:** `edouardsebgrigg-lab/quarry`
-- **Branch worked on:** `claude/quarry-mining-brainstorm-0yq0ww`; the verification pass below is on `claude/step7-verification` (branched from `a0fae6c`, docs and test scripts only, no game code changed) (pushed; the exact tip SHA is in the final report of the handover message and in `git log -1` of this branch; this file is committed as the last commit)
+- **Branch worked on:** `claude/quarry-mining-brainstorm-0yq0ww`; the verification pass below is on `claude/step7-verification` (branched from `a0fae6c`: docs, test scripts, and one small planner fix) (pushed; the exact tip SHA is in the final report of the handover message and in `git log -1` of this branch; this file is committed as the last commit)
 - **Step 7 code was first pushed in:** `be75555` ("Step 7: plan and build haul roads, ramps and level areas"), on top of `128fbdc` (ground earthworks) and `b40d2b5` (time gate + map labels)
 - **Plan:** `docs/implementation-plan.md` (Version 2). Steps 3–7 done. Next: step 8 (buildings). Machine tiers stay in Milestone 4
 
@@ -58,7 +58,7 @@ A follow-up run of `docs/handover/browser-checks/verify.mjs` on this code (same 
 | Screenshot | `docs/handover/screenshots/verify-after-load.png` (the reloaded game: the ramp, the dumper at its top, and the mentor tip) |
 | Tracked dumper up the steep ramp | passed: from the pit floor (−1.29 m) to the top (−0.07 m), reached the far end |
 
-Also found (by the test, not a defect as such): the confirming click only counts while the crosshair is on the ground. Looking at the sky and clicking does nothing, silently.
+Also found by the test and **fixed** on this branch: the confirming click only counted while the crosshair was on the ground, so looking at the sky and clicking did nothing, silently. Now, once both ends are set, the click builds wherever you look, and a click that misses the ground while setting an end says "Aim at the ground to set the end points" (`src/world3d/planner.js`, test in `planner.test.js`; 136 tests pass).
 
 Not verified in a browser (the run was cut short after the ramp drives; the container session also ended):
 
