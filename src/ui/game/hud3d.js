@@ -1,61 +1,71 @@
-// On-screen info over the 3D view: crosshair, action prompt, control hints,
-// machine gauges and the "click to play" card.
-import { el, clear, setText, progressBar, kbd } from '../dom.js';
+// On-screen info over the 3D view, kept small so the world stays in view:
+// a dot crosshair, a small action prompt low in the middle, control hints bottom left
+// (they fade after a few seconds; H brings them back), and a compact machine dash bottom
+// right (only while you're in a machine).
+import { el, clear, setText, kbd } from '../dom.js';
 import { conditionColor } from '../format.js';
 import { keyLabel } from '../../input/index.js';
+
+const HINT_TIME = 8; // seconds the hints stay after you switch machine
 
 export function createHud3d({ settings }) {
   const k = (action) => keyLabel(settings.bindings[action]);
 
   const crosshair = el('div', { class: 'crosshair' });
-  const prompt = el('div', { class: 'prompt glass' });
-  const help = el('div', { class: 'controls-help glass' });
+  const prompt = el('div', { class: 'prompt' });
+  const help = el('div', { class: 'controls-help' });
+  const helpTag = el('div', { class: 'controls-tag' });
 
-  const mName = el('div', { class: 'mp-name' });
-  const mStatus = el('div', { class: 'mp-status' });
-  const gauge = (label) => {
-    const bar = progressBar();
-    const val = el('span', { class: 'val' });
-    return { bar, val, node: el('div', { class: 'mp-gauge' }, el('span', {}, label), bar.node, val) };
+  // ---- machine dash
+  const mName = el('div', { class: 'md-name' });
+  const mStatus = el('div', { class: 'md-status' });
+  const speedValue = el('b', { class: 'md-speed' });
+  const gearValue = el('span', { class: 'md-gear' });
+  const rpmFill = el('div', { class: 'md-rpm-fill' });
+  const drive = el('div', { class: 'md-drive' },
+    el('div', { class: 'md-speed-row' }, gearValue, speedValue, el('span', { class: 'md-unit' }, 'km/h')),
+    el('div', { class: 'md-rpm' }, rpmFill));
+  const meter = (label) => {
+    const fill = el('div', { class: 'md-fill' });
+    const val = el('span', { class: 'md-val' });
+    const lab = el('span', { class: 'md-label' }, label);
+    return { fill, val, lab, node: el('div', { class: 'md-meter' }, lab, el('div', { class: 'md-track' }, fill), val) };
   };
-  const cond = gauge('Condition');
-  const load = gauge('Load');
-  const loadLabel = load.node.firstChild;
-  const speedValue = el('b');
-  const gearValue = el('b', { class: 'mp-gear' });
-  const rpmFill = el('div', { class: 'mp-rpm-fill' });
-  const rpm = el('div', { class: 'mp-rpm', title: 'Engine revs' }, rpmFill);
-  const speed = el('div', { class: 'mp-speed' },
-    el('div', { class: 'mp-drive' }, gearValue, rpm), speedValue, el('span', {}, 'km/h'));
-  const machinePanel = el('div', { class: 'machine-panel glass' },
-    el('div', { class: 'mp-head' }, mName, mStatus), cond.node, load.node, speed);
+  const cond = meter('Cond');
+  const load = meter('Load');
+  const machinePanel = el('div', { class: 'machine-dash' },
+    el('div', { class: 'md-head' }, mName, mStatus), drive, load.node, cond.node);
 
   const ctpTitle = el('div', { class: 'ctp-title' }, 'Click to play');
   const clickToPlay = el('div', { class: 'click-to-play' },
-    el('div', { class: 'ctp-card glass' }, ctpTitle,
-      el('div', { class: 'ctp-sub' }, 'Mouse to look', el('span', { class: 'sep' }, '·'), kbd('Esc'), 'for the menu')));
-  const loading = el('div', { class: 'click-to-play' }, el('div', { class: 'ctp-card glass' }, el('div', { class: 'ctp-title' }, 'Loading the quarry…')));
+    el('div', { class: 'ctp-card' }, ctpTitle,
+      el('div', { class: 'ctp-sub' }, 'Mouse to look', el('span', { class: 'sep' }, '·'), kbd('Esc'), 'menu')));
+  const loading = el('div', { class: 'click-to-play' }, el('div', { class: 'ctp-card' }, el('div', { class: 'ctp-title' }, 'Loading…')));
 
-  const node = el('div', { class: 'hud3d' }, crosshair, prompt, help, machinePanel, clickToPlay, loading);
+  const node = el('div', { class: 'hud3d' }, crosshair, prompt, help, helpTag, machinePanel, clickToPlay, loading);
 
-  // Control hints per mode: [keys, label].
+  // Control hints per mode: [keys, label]. The last rows are the same everywhere.
   function hints(mode) {
+    let rows;
     if (mode === 'truck') {
-      return [[[k('forward'), k('back')], 'Drive / brake'], [[k('left'), k('right')], 'Steer'], [[k('jump')], 'Handbrake'],
+      rows = [[[k('forward'), k('back')], 'Drive / brake'], [[k('left'), k('right')], 'Steer'], [[k('jump')], 'Handbrake'],
         [[k('tip')], 'Tip load'], [[k('loadPile')], 'Load from pile'], [[k('camera')], 'Camera'], [[k('recover')], 'Recover'],
         [[k('interact')], 'Get out']];
-    }
-    if (mode === 'excavator') {
-      return [[['Mouse'], 'Swing arm'], [['LMB'], 'Dig / dump'], [[k('forward'), k('left'), k('back'), k('right')], 'Tracks'],
+    } else if (mode === 'excavator') {
+      rows = [[['Mouse'], 'Swing'], [['LMB'], 'Dig / dump'], [[k('forward'), k('left'), k('back'), k('right')], 'Tracks'],
         [[k('camera')], 'Camera'], [[k('interact')], 'Get out']];
+    } else {
+      rows = [[[k('forward'), k('left'), k('back'), k('right')], 'Move'], [[k('sprint')], 'Sprint'], [[k('jump')], 'Jump'],
+        [[k('interact')], 'Use / get in'], [[k('repair')], 'Service / repair']];
     }
-    return [[[k('forward'), k('left'), k('back'), k('right')], 'Move'], [[k('sprint')], 'Sprint'], [[k('jump')], 'Jump'],
-      [[k('interact')], 'Get in'], [[k('repair')], 'Service / repair']];
+    return [...rows, null, [[k('shop')], 'Shop'], [[k('market')], 'Market'], [[k('map')], 'Map'], [[k('goal')], 'Goal']];
   }
 
   let helpKey = '';
   let promptKey = '';
-  let promptBar = null;
+  let promptFill = null;
+  let hintT = HINT_TIME;
+  let hintsPinned = false;
 
   return {
     node,
@@ -66,7 +76,11 @@ export function createHud3d({ settings }) {
       setText(loading.querySelector('.ctp-title'), text);
       loading.style.display = '';
     },
-    update(info, { overlayOpen, started }) {
+    toggleHints() {
+      hintsPinned = !(hintsPinned || hintT > 0);
+      hintT = 0;
+    },
+    update(info, { overlayOpen, started, dt = 1 / 60 }) {
       if (!info) {
         clickToPlay.style.display = 'none';
         return;
@@ -82,44 +96,57 @@ export function createHud3d({ settings }) {
       if (key !== promptKey) {
         promptKey = key;
         clear(prompt);
-        promptBar = null;
+        promptFill = null;
         if (j) {
-          promptBar = progressBar();
-          promptBar.node.classList.add('prompt-progress');
-          prompt.append(el('span', {}, `${j.label}…`), promptBar.node);
+          promptFill = el('div', { class: 'prompt-fill' });
+          prompt.append(el('span', {}, j.label), el('div', { class: 'prompt-track' }, promptFill));
         } else if (p) {
           if (p.key) prompt.append(kbd(p.key));
           prompt.append(el('span', {}, p.text));
         }
         prompt.classList.toggle('info', !!p && !p.key && !j);
       }
-      if (promptBar && j) promptBar.set(j.progress);
+      if (promptFill && j) promptFill.style.width = `${Math.round(j.progress * 100)}%`;
       prompt.style.display = key ? '' : 'none';
 
+      // Hints: shown for a while when you change what you're driving, or pinned with H.
       if (helpKey !== info.mode) {
         helpKey = info.mode;
+        hintT = HINT_TIME;
         clear(help);
-        for (const [keys, label] of hints(info.mode)) {
-          help.append(el('div', { class: 'help-row' }, el('span', { class: 'keys' }, keys.map(kbd)), label));
+        for (const row of hints(info.mode)) {
+          if (!row) {
+            help.append(el('div', { class: 'help-gap' }));
+            continue;
+          }
+          const [keys, label] = row;
+          help.append(el('div', { class: 'help-row' }, el('span', { class: 'keys' }, keys.map(kbd)), el('span', {}, label)));
         }
       }
+      hintT = Math.max(0, hintT - dt);
+      const showHelp = hintsPinned || hintT > 0;
+      help.classList.toggle('hidden', !showHelp);
+      helpTag.classList.toggle('hidden', showHelp);
+      clear(helpTag);
+      helpTag.append(kbd(k('hints')), el('span', {}, 'Controls'));
 
       const m = info.machine;
       machinePanel.style.display = m ? '' : 'none';
       if (!m) return;
       setText(mName, m.name);
-      const engineStatus = { off: 'Engine off', cranking: 'Starting…', stopping: 'Engine off', stall: 'Stalled' }[m.engine];
-      const status = m.broken ? 'Broken' : j ? j.label : engineStatus ?? (m.type === 'truck' && m.speedKmh > 1 ? 'Moving' : 'Ready');
+      const engineStatus = { off: 'Engine off', cranking: 'Starting', stopping: 'Engine off', stall: 'Stalled' }[m.engine];
+      const status = m.broken ? 'Broken' : j ? j.label : engineStatus ?? 'Ready';
       setText(mStatus, status);
-      mStatus.className = `mp-status ${m.broken ? 'bad' : j ? 'busy' : ''}`;
-      cond.bar.set(m.condition / 100, conditionColor(m.condition, m.broken));
+      mStatus.className = `md-status ${m.broken ? 'bad' : j ? 'busy' : engineStatus ? 'off' : ''}`;
+      cond.fill.style.width = `${Math.round(m.condition)}%`;
+      cond.fill.style.background = conditionColor(m.condition, m.broken);
       setText(cond.val, `${Math.round(m.condition)}%`);
-      setText(loadLabel, m.type === 'truck' ? 'Load' : 'Bucket');
-      load.bar.set(m.load / m.capacity, '#d9b98a');
-      setText(load.val, `${m.load.toFixed(1)} / ${m.capacity.toFixed(1)} t`);
-      speed.style.display = m.type === 'truck' ? '' : 'none';
-      setText(speedValue, Math.round(m.speedKmh));
+      setText(load.lab, m.type === 'truck' ? 'Load' : 'Bucket');
+      load.fill.style.width = `${Math.round(Math.min(1, m.load / m.capacity) * 100)}%`;
+      setText(load.val, `${m.load.toFixed(1)}/${m.capacity.toFixed(1)} t`);
+      drive.style.display = m.type === 'truck' ? '' : 'none';
       if (m.type === 'truck') {
+        setText(speedValue, String(Math.round(m.speedKmh)).padStart(2, '0'));
         setText(gearValue, m.engine === 'running' ? m.gear : 'N');
         const r = Math.min(1, (m.rpm ?? 0) / 2600);
         rpmFill.style.width = `${Math.round(r * 100)}%`;

@@ -43,17 +43,13 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     game,
     runtime,
     settings,
-    onShop: () => openOverlay(() => openShop(app.overlays, { game, feedback })),
-    onMarket: () => openOverlay(() => openMarket(app.overlays, { game, feedback })),
-    onMap: () => openOverlay(() => toggleMap(app.overlays, { game, settings })),
-    onMenu: () => app.openPauseMenu(),
   });
   feedback = createFeedback({ game, getMoneyNode: () => hud.moneyNode });
   const hud3d = createHud3d({ settings });
   const devPanel = isDev ? createDevPanel({ game, runtime, feedback }) : null;
   const viewport = el('div', { class: 'world-view' });
 
-  const pausedBanner = el('div', { class: 'paused-banner glass' }, 'PAUSED');
+  const pausedBanner = el('div', { class: 'paused-banner' }, 'Paused');
   const node = el('div', { class: 'game-screen' },
     el('div', { class: 'game-main' }, viewport, hud3d.node),
     hud.node,
@@ -99,6 +95,8 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
       case 'shop': openOverlay(() => openShop(app.overlays, { game, feedback })); break;
       case 'market': openOverlay(() => openMarket(app.overlays, { game, feedback })); break;
       case 'map': openOverlay(() => toggleMap(app.overlays, { game, settings })); break;
+      case 'hints': hud3d.toggleHints(); break;
+      case 'goal': hud.toggleGoal(); break;
       case 'dev':
         if (!devPanel) break;
         devPanel.toggle();
@@ -158,7 +156,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     hud.update(realDt);
     const info = world?.hudInfo() ?? null;
     if (info?.locked) started = true;
-    hud3d.update(info, { overlayOpen, started });
+    hud3d.update(info, { overlayOpen, started, dt: realDt });
     devPanel?.update(realDt);
     app.overlays.update(realDt);
     raf = requestAnimationFrame(frame);

@@ -1,16 +1,19 @@
-// Top of the screen: status card (money, date, site, speed) and shortcut chips.
-import { el, setText, kbd, icon } from '../dom.js';
+// Top of the screen, sim style: a compact money / date / game-speed widget top right and
+// a one-line goal top left (details show when a goal is new, or with J).
+import { el, setText, icon } from '../dom.js';
 import { money, clockTime } from '../format.js';
 import { getDate } from '../../core/index.js';
 import { getSiteData } from '../../quarry/index.js';
 import { keyLabel } from '../../input/index.js';
 import { currentObjective } from '../../progression/index.js';
 
-export function createHud({ game, runtime, settings, onShop, onMarket, onMap, onMenu }) {
-  const moneyText = el('div', { class: 'hud-money' });
-  const debtTag = el('div', { class: 'hud-debt' }, 'IN DEBT');
-  const dateText = el('span', { class: 'hud-date' });
-  const siteText = el('span', { class: 'hud-site' });
+const DETAIL_TIME = 9; // seconds a new goal stays expanded
+
+export function createHud({ game, runtime, settings }) {
+  const moneyText = el('div', { class: 'hs-money' });
+  const debtTag = el('span', { class: 'hs-debt' }, 'DEBT');
+  const dateText = el('span', { class: 'hs-date' });
+  const siteText = el('span', { class: 'hs-site' });
 
   const speedButtons = [
     { content: icon('pause'), title: 'Pause time', onClick: () => runtime.togglePause(), isActive: () => runtime.isUserPaused() },
@@ -22,39 +25,36 @@ export function createHud({ game, runtime, settings, onShop, onMarket, onMap, on
     })),
   ].map((b) => ({ ...b, node: el('button', { title: b.title, onClick: b.onClick }, b.content) }));
 
-  const key = (action) => kbd(keyLabel(settings.bindings[action]));
-  const shortcut = (label, k, onClick) => el('button', { class: 'shortcut', onClick }, k, label);
+  const status = el('div', { class: 'hud-status' },
+    el('div', { class: 'hs-top' }, debtTag, moneyText),
+    el('div', { class: 'hs-meta' }, siteText, el('span', { class: 'sep' }, '·'), dateText),
+    el('div', { class: 'hs-speed' }, speedButtons.map((b) => b.node)));
 
-  // Current goal card.
+  // Goal: one line, expands with details.
   const goalCount = el('span', { class: 'goal-count' });
-  const goalTitle = el('div', { class: 'goal-title' });
-  const goalText = el('div', { class: 'goal-text' });
-  const goalBar = el('div', { class: 'bar bar-thin goal-bar' }, el('div', { class: 'bar-fill' }));
+  const goalTitle = el('span', { class: 'goal-title' });
   const goalReward = el('span', { class: 'goal-reward' });
-  const goal = el('div', { class: 'hud-goal glass' },
-    el('div', { class: 'goal-head' }, el('span', { class: 'goal-label' }, 'Goal'), goalCount, goalReward),
-    goalTitle, goalText, goalBar);
-  let goalKey = '';
+  const goalText = el('div', { class: 'goal-text' });
+  const goalKey = el('span', { class: 'goal-key' });
+  const goalFill = el('div', { class: 'goal-fill' });
+  const goal = el('div', { class: 'hud-goal' },
+    el('div', { class: 'goal-line' }, el('span', { class: 'goal-dot' }), goalTitle, goalCount, goalReward),
+    el('div', { class: 'goal-track' }, goalFill),
+    el('div', { class: 'goal-details' }, goalText, goalKey));
+  let currentGoal = '';
+  let detailT = 0;
+  let pinned = false;
 
-  const node = el('div', { class: 'hud' },
-    el('div', { class: 'hud-left' },
-    el('div', { class: 'hud-status glass' },
-      el('div', { class: 'hud-money-row' }, moneyText, debtTag),
-      el('div', { class: 'hud-meta' }, dateText, el('span', { class: 'sep' }, '•'), siteText),
-      el('div', { class: 'hud-speed seg' }, speedButtons.map((b) => b.node))),
-    goal),
-    el('div', { class: 'hud-shortcuts' },
-      shortcut('Shop', key('shop'), onShop),
-      shortcut('Market', key('market'), onMarket),
-      shortcut('Map', key('map'), onMap),
-      shortcut('Menu', kbd('Esc'), onMenu)),
-  );
-
+  const node = el('div', { class: 'hud' }, goal, status);
   let shownMoney = game.state.money;
 
   return {
     node,
     moneyNode: moneyText,
+    toggleGoal() {
+      pinned = !pinned;
+      detailT = 0;
+    },
     update(dt) {
       const target = game.state.money;
       // Count toward the real value so gains feel like they "roll in".
@@ -69,21 +69,23 @@ export function createHud({ game, runtime, settings, onShop, onMarket, onMap, on
 
       const o = currentObjective(game.ctx);
       goal.style.display = o ? '' : 'none';
-      if (o) {
-        const key = `${o.id}`;
-        if (key !== goalKey) {
-          goalKey = key;
-          setText(goalCount, `${o.number} / ${o.total}`);
-          setText(goalTitle, o.title);
-          setText(goalText, o.text);
-          setText(goalReward, o.reward ? `+${money(o.reward)}` : '');
-          goal.classList.remove('goal-new');
-          void goal.offsetWidth; // restart the highlight animation
-          goal.classList.add('goal-new');
-        }
-        goalBar.style.display = o.progress === null ? 'none' : '';
-        if (o.progress !== null) goalBar.firstChild.style.width = `${Math.round(o.progress * 100)}%`;
+      if (!o) return;
+      if (o.id !== currentGoal) {
+        currentGoal = o.id;
+        setText(goalTitle, o.title);
+        setText(goalCount, `${o.number}/${o.total}`);
+        setText(goalReward, o.reward ? `+${money(o.reward)}` : '');
+        setText(goalText, o.text);
+        detailT = DETAIL_TIME;
+        goal.classList.remove('goal-new');
+        void goal.offsetWidth; // restart the highlight animation
+        goal.classList.add('goal-new');
       }
+      setText(goalKey, `${keyLabel(settings.bindings.goal)} · ${pinned ? 'hide details' : 'keep details open'}`);
+      detailT = Math.max(0, detailT - dt);
+      goal.classList.toggle('open', pinned || detailT > 0);
+      goal.classList.toggle('has-progress', o.progress !== null);
+      if (o.progress !== null) goalFill.style.width = `${Math.round(o.progress * 100)}%`;
     },
   };
 }

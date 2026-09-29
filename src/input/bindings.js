@@ -23,6 +23,8 @@ export const DEFAULT_BINDINGS = {
   speed3: 'Digit3',
   shop: 'KeyB',
   market: 'KeyM',
+  hints: 'KeyH',
+  goal: 'KeyJ',
   dev: 'F1',
 };
 
@@ -46,6 +48,8 @@ export const ACTION_LABELS = {
   speed3: 'Speed 4×',
   shop: 'Shop',
   market: 'Market',
+  hints: 'Show / hide control hints',
+  goal: 'Show / hide goal details',
   dev: 'Dev panel',
 };
 
