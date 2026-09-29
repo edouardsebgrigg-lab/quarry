@@ -60,7 +60,7 @@ A follow-up run of `docs/handover/browser-checks/verify.mjs` on this code (same 
 
 | Tractor with its trailer up the 6% ramp out of a pit (`ramps.mjs`) | passed: pit floor (−1.29 m) to the top (−0.01 m), reached the far end. Only the tractor's position was measured, not the trailer's |
 | Tractor with its trailer up the 17% ramp | passed: −1.31 m to −0.11 m, reached the top |
-| Mini digger on the ramps (`ramps.mjs` phases T3, T4) | not recorded: the run was still going when the session's time ran out |
+| Mini digger on the ramps (`ramps.mjs` phases T3, T4) | not recorded: the 600 s limit I put on the script stopped it during the mini digger's first drive (T3). That is my time limit, not a game error, but the drive was much slower than the others, so check it (the digger may be slow on the 17% slope, or `setKeys` may not drive it the way it drives the other machines) |
 | Paint before/after | not done: `capture.mjs` with `TAG=after` was queued after `ramps.mjs` but not reached. The "before" shots were taken earlier and are not in the repo |
 
 Also found by the test and **fixed** on this branch: the confirming click only counted while the crosshair was on the ground, so looking at the sky and clicking did nothing, silently. Now, once both ends are set, the click builds wherever you look, and a click that misses the ground while setting an end says "Aim at the ground to set the end points" (`src/world3d/planner.js`, test in `planner.test.js`; 136 tests pass).
