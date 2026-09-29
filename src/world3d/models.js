@@ -1,7 +1,7 @@
 // Machine models. Uses the Blender models (assets/models/*.glb) when they exist,
 // otherwise placeholders built from simple shapes. Each faces +X locally.
 import * as THREE from 'three';
-import { glbTruck, glbExcavator, glbPickup } from './glbModels.js';
+import { glbTruck, glbExcavator, glbPickup, glbMiniDigger, glbDumper, glbTractor, glbTrailer } from './glbModels.js';
 import { rustyMetal } from './textures.js';
 import { createHeap } from './piles.js';
 import { TRUCK_SHAPE } from './truckPhysics.js';
@@ -270,3 +270,13 @@ export function buildExcavatorModel(tier) {
     },
   };
 }
+
+// ---------- the newer machines: they need their Blender models (assets/models/*.glb) ----------
+function required(model, what) {
+  if (!model) throw new Error(`The ${what} model is missing (assets/models). Run blender/build_models.py.`);
+  return model;
+}
+export const buildMiniDiggerModel = (tier) => required(glbMiniDigger(tier), 'mini digger');
+export const buildDumperModel = (tier) => required(glbDumper(tier), 'site dumper');
+export const buildTractorModel = (tier, rideHeight) => required(glbTractor(tier, rideHeight), 'tractor');
+export const buildTrailerModel = (tier) => required(glbTrailer(tier), 'trailer');

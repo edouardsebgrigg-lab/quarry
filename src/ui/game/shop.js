@@ -34,7 +34,7 @@ export function openShop(overlays, { game, feedback }) {
         const owned = machinesAt(ctx, game.state.currentSiteId).filter((m) => m.type === type);
         let best = null;
         for (const m of owned) {
-          const lines = describeStats(type, getStats(data, m));
+          const lines = describeStats(data, type, getStats(data, m));
           if (!best || lines[0].value > best[0].value) best = lines;
         }
         return best;
@@ -57,7 +57,7 @@ export function openShop(overlays, { game, feedback }) {
           body.append(el('div', { class: 'shop-group' },
             el('div', { class: 'row-between' }, el('h3', {}, `${t.name}s`), el('span', { class: 'muted small' }, `You own ${owned}`)), row));
           for (const [tier, td] of Object.entries(t.tiers)) {
-            const lines = describeStats(type, td);
+            const lines = describeStats(data, type, td);
             const unlocked = isTierUnlocked(ctx, type, tier);
             const ratio = best ? lines[0].value / best[0].value : null;
             row.append(el('div', { class: `card ${unlocked ? '' : 'locked'}` },
@@ -96,14 +96,14 @@ export function openShop(overlays, { game, feedback }) {
               mod.fitted
                 ? el('div', { class: 'card-foot' }, el('span', { class: 'card-badge' }, '✓ Fitted'))
                 : buyFoot(mod.price, () => {
-                  const before = describeStats(m.type, getStats(data, m));
+                  const before = describeStats(data, m.type, getStats(data, m));
                   const r = game.actions.buyMod(m.id, mod.id);
                   if (!r.ok) return feedback.message(r.reason, 'warn');
                   feedback.upgradeCard({
                     title: mod.name,
                     subtitle: machineName(data, m),
                     before,
-                    after: describeStats(m.type, getStats(data, m)),
+                    after: describeStats(data, m.type, getStats(data, m)),
                   });
                 })));
           }

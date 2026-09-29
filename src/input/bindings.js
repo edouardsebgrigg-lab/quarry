@@ -24,6 +24,11 @@ export const DEFAULT_BINDINGS = {
   market: 'KeyM',
   hints: 'KeyH',
   goal: 'KeyJ',
+  controls: 'KeyG',
+  boomUp: 'ArrowUp',
+  boomDown: 'ArrowDown',
+  bucketCurl: 'ArrowLeft',
+  bucketDump: 'ArrowRight',
   dev: 'F1',
 };
 
@@ -32,7 +37,7 @@ export const ACTION_LABELS = {
   back: 'Move back / brake / reverse',
   left: 'Move left / steer left',
   right: 'Move right / steer right',
-  jump: 'Jump / handbrake',
+  jump: 'Jump / handbrake / digger (Direct): arm or tracks',
   sprint: 'Sprint',
   interact: 'Get in / get out',
   tip: 'Tip / unload (truck, pickup, barrow)',
@@ -48,6 +53,11 @@ export const ACTION_LABELS = {
   market: 'Depot prices',
   hints: 'Show / hide control hints',
   goal: 'Show / hide goal details',
+  controls: 'Digger controls: Assisted or Direct',
+  boomUp: 'Digger (Direct): boom up',
+  boomDown: 'Digger (Direct): boom down',
+  bucketCurl: 'Digger (Direct): curl bucket in',
+  bucketDump: 'Digger (Direct): open bucket (dump)',
   dev: 'Dev panel',
 };
 

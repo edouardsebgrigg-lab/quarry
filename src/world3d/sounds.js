@@ -8,6 +8,9 @@ const ENGINE_KIND = {
   truck: { rusty: 'truckOld', used: 'truckTurbo' },
   pickup: { rusty: 'pickupOld' },
   excavator: { rusty: 'excavator', used: 'excavator' },
+  miniDigger: { rusty: 'miniDiesel', used: 'miniDiesel' },
+  dumper: { rusty: 'miniDiesel', used: 'miniDiesel' },
+  tractor: { rusty: 'tractorOld', used: 'tractorOld' },
 };
 const v3 = (p) => ({ x: p.x, y: p.y, z: p.z });
 
@@ -28,7 +31,7 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
     let m = machines.get(v.machineId);
     if (m) return m;
     const kind = ENGINE_KIND[v.type][tier] ?? 'truckOld';
-    const road = v.type !== 'excavator';
+    const road = !!v.road;
     m = {
       engine: audio.engineVoice(kind),
       level: 0, // engine loudness envelope 0..1 (start/stop)
@@ -38,7 +41,7 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
           gravel: audio.loopVoice('gravel'),
           road: audio.loopVoice('road'),
           beeper: v.type === 'truck' ? audio.loopVoice('beeper') : null,
-          ram: v.type === 'truck' ? audio.whineVoice() : null,
+          ram: v.type === 'truck' || v.type === 'tractor' ? audio.whineVoice() : null,
         }
         : { tracks: audio.loopVoice('tracks'), hyd: audio.loopVoice('hydraulic'), scrape: audio.loopVoice('scrape'), pump: audio.whineVoice() },
       shifted: 0,
@@ -109,7 +112,7 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
     m.extra.ram?.set({ freq: 95 + f.bedAngle * 30, gain: f.bedSpeed > 0.01 ? 0.12 : (bedUp && f.bedSpeed < -0.01 ? 0.05 : 0), pos: body });
     if (job?.type === 'tip' && f.bedAngle > 0.35 && !m.tipPoured) {
       m.tipPoured = true;
-      audio.play('pourLong', { pos: v3(v.model.root.localToWorld(new THREE.Vector3(-3.6, -0.6, 0))), gain: 1 });
+      audio.play('pourLong', { pos: v3(v.unload().point), gain: 1 });
     }
     if (m.bedWasUp && !bedUp) {
       audio.play('boom', { pos: body, gain: 0.6, rate: 0.9 });
@@ -149,8 +152,22 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
     // Tracks clanking round.
     m.extra.tracks?.set({ gain: Math.min(1, f.travel / 1.2) * 0.8, rate: 0.35 + f.travel * 0.9, pos: v3(v.position()) });
     // Teeth grinding through gravel.
-    const teeth = v3(v.teethWorld());
+    const teeth = v3(v.teethWorld ? v.teethWorld() : v.position());
     m.extra.scrape?.set({ gain: f.digging ? 0.7 : 0, rate: 0.9 + Math.random() * 0.05, pos: teeth });
+    // The dumper's skip: the ram whines, the load slides out of the front, the skip drops back.
+    if (v.type === 'dumper') {
+      const up = f.bedAngle > 0.05;
+      m.extra.pump?.set({ freq: 110 + f.bedAngle * 30, gain: f.bedSpeed > 0.01 ? 0.1 : (up && f.bedSpeed < -0.01 ? 0.04 : 0), pos: v3(v.position()) });
+      if (up && f.bedAngle > 0.4 && !m.tipPoured) {
+        m.tipPoured = true;
+        audio.play('pourLong', { pos: v3(v.unload().point), gain: 0.8 });
+      }
+      if (m.bedWasUp && !up) {
+        audio.play('boom', { pos: v3(v.position()), gain: 0.4, rate: 1.1 });
+        m.tipPoured = false;
+      }
+      m.bedWasUp = up;
+    }
     if (f.phase !== m.phase) {
       if (f.phase === 'bite') audio.play('thud', { pos: teeth, gain: 0.6, rate: 0.7 });
       if (f.phase === 'dump') {
@@ -250,7 +267,7 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
       const L = v3(camera.position);
       audio.setListener(L, fwd, up);
       const list = [...vehicles.values()];
-      const trucks = list.filter((x) => x.road);
+      const trucks = list.filter((x) => x.carrier);
       for (const v of list) {
         v.tier = tierOf(v.machineId);
         const inside = v === current;

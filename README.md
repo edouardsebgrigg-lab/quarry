@@ -35,24 +35,42 @@ Use Chrome or Edge for the best experience (full screen and mouse capture work b
 | T | Tip it: pushed up to the pickup's tailgate it goes into the bed, anywhere else on your field it makes a pile |
 | E | Let go |
 
-| Pickup and tipper truck | |
+| Pickup, tractor and tipper truck | |
 |---|---|
 | W / S | Accelerate / brake. Stopped, hold S to reverse |
 | A / D | Steer |
 | Space | Handbrake |
-| T | Unload: in a depot bay (after weighing in) you get paid; on your field it makes a heap. The truck tips its bed, you shovel the pickup off by hand |
+| T | Unload: in a depot bay (after weighing in) you get paid; on your field it makes a heap. The truck tips its bed, the tractor tips its trailer, you shovel the pickup off by hand |
 | C | Cab / outside camera |
-| V | Recover (if it's stuck or on its side) |
+| V | Recover (if it's stuck or on its side; puts the trailer straight behind the tractor) |
 | E | Get out |
 
-| Excavator | |
+| Mini digger and excavator: Assisted (the default) | |
 |---|---|
 | Mouse left/right | Swing the arm (the house turns) |
 | Hold Left Mouse | Dig a bucket out of your field where the ring is |
-| Left Mouse | Dump the bucket into a truck or the pickup (ring turns blue) or on the ground |
-| W A S D | Drive on tracks (it's not road-legal: it stays on your land) |
+| Left Mouse | Dump the bucket into a truck, trailer or the pickup (ring turns blue) or on the ground |
+| W A S D | Drive on tracks (not road-legal: they stay on your land) |
+| G | Switch to Direct controls |
 | C | Cab / outside camera |
 | E | Get out |
+
+| Mini digger and excavator: Direct (G, or Settings) | |
+|---|---|
+| Mouse left/right | Swing |
+| Mouse forward/back | Stick out / in |
+| Mouse wheel (or Up / Down arrows) | Boom up / down |
+| Hold Left Mouse (or Left arrow) | Curl the bucket in |
+| Hold Right Mouse (or Right arrow) | Open the bucket |
+| W A S D | Drive on tracks |
+
+In Direct mode the teeth cut the ground where they really are (as much as fits in the bucket, and not into rock or off your land), and the load runs out where the tilted bucket really is: into a truck or trailer under it, or onto the ground as a heap.
+
+| Site dumper | |
+|---|---|
+| W / S, A / D | Drive, turn on the spot (tracks; it stays on your land) |
+| T | Tip the skip forward |
+| C / E | Camera / get out |
 
 | Anywhere | |
 |---|---|
@@ -72,6 +90,8 @@ All keys can be changed in Settings.
 The machines behave like the real thing:
 - **Pickup:** an old petrol six with a 4-speed automatic. It carries 0.8 t in the bed; you load it by barrow, shovel or excavator and shovel it off by hand at the other end.
 - **Tipper truck:** a diesel engine with a torque curve and a 4-speed automatic gearbox, engine braking, air brakes and grip that depends on the ground (tarmac, gravel, dirt, grass). A loaded truck is heavier at the back, slower to pull away, slower up hills and longer to stop. Worn trucks misfire.
+- **Tractor and trailer:** an old diesel with a low-revving torque curve and big driven rear wheels, pulling a tipping trailer. The trailer follows like a real one: it cuts the corner inside the tractor's path, and it jackknifes if you reverse carelessly (the back goes the opposite way to the wheel). Loaded, it's slow to get going and slow to stop.
+- **Mini digger and site dumper:** small rubber-tracked site machines. The mini digger is Assisted or Direct like the excavator, just smaller and much cheaper; the dumper carries a tonne or so round your field and tips its skip forward.
 - **Excavator:** the arm is solved so the bucket really reaches the ground or the truck bed: it reaches out, bites, drags back along the ground and curls. Every joint moves like a hydraulic ram, the rams slide in and out, the house swings with inertia, and the tracks roll round their sprockets. The machine tilts with the ground and rocks as the bucket bites.
 - Engines start when you get in (starter motor, a puff of black smoke) and stop a few seconds after you leave. From the cab you feel acceleration, braking, bumps and engine vibration.
 
@@ -86,10 +106,11 @@ You've bought a field off Mill Lane, outside the village of Ashby, with $200, a 
 3. Take the handles (**E**), push the barrow up to the pickup's tailgate in the yard and tip it in (**T**). Do it again until there's at least 300 kg on board.
 4. Get in the pickup and drive to **Ashby Aggregates**: out of the gate, east along Mill Lane, north into Ashby, left at The Plough onto Quarry Road, and the depot is on the right. **Tab** shows the map.
 5. Stop on the weighbridge at the depot gate to weigh in, then back up to the **topsoil** bay and unload (**T**).
-6. Keep going until you can buy a rusty excavator and a tipper truck (on the office laptop, **E** at the door, **B** anywhere, or at Ashby Plant in the village). Bought machines are delivered to your yard.
-7. Dig, load, haul, weigh in, tip and sell your first truck load, buy a cheap upgrade, earn $500, then save up for your first Used machine.
+6. Buy a cheap upgrade for the pickup, then keep going by hand until you can afford the **mini digger** (on the office laptop, **E** at the door, **B** anywhere, or at Ashby Plant in the village). Bought machines are delivered to your yard. It digs far faster than you can and loads the pickup.
+7. Save up for the **tractor and trailer** (4 t a trip instead of 0.8), and sell a trailer load.
+8. Earn $2,000, then the 8 t **excavator** and the **tipper truck**, and finally a Used machine.
 
-Each goal pays a small bonus. Everything starts slow and clapped-out on purpose.
+Each goal pays a small bonus. Everything starts slow and clapped-out on purpose. Every machine tier is roughly 2.5 to 3 times better than the one before, so each purchase is a big step.
 
 ## The map
 
@@ -109,10 +130,12 @@ The field is real ground you can dig anywhere: topsoil on top, then clay, sand a
 
 ## The loop with machines
 
-1. Get in the excavator, drive it onto your field, swing the bucket over the ground and hold the left mouse button to dig. It digs where the ring is, as deep as the bucket bites.
-2. Park the truck (or the pickup) next to it, swing round and click to dump each bucket into the bed.
-3. Drive to the depot, weigh in, back into the right bay and press **T** to tip.
+1. Get in the mini digger (or excavator), drive it onto your field, swing the bucket over the ground and hold the left mouse button to dig. It digs where the ring is, as deep as the bucket bites.
+2. Park the pickup, tractor or truck next to it, swing round and click to dump each bucket into the bed.
+3. Drive to the depot, weigh in, back into the right bay and press **T** to tip (with the tractor, back the trailer in: take it slowly).
 4. Buy upgrades in the shop (**B**). Service your machines (**R**) before they break down.
+
+Site machines (mini digger, excavator, dumper) can't leave your land; the pickup, tractor and truck can go anywhere.
 
 ## Docs
 

@@ -521,6 +521,7 @@ h3 {
 .key-you { color: #f5b82e; }
 .key-pickup { color: #6fb7ff; }
 .key-truck { color: #ff9a4a; }
+.key-tractor { color: #ff6a5a; }
 .key-excavator { color: #ffd24a; }
 .key-barrow { color: #7fe08a; }
 .sidebar { width: 21rem; display: flex; flex-direction: column; gap: 0.8rem; overflow-y: auto; }

@@ -42,6 +42,9 @@ export const MAP = {
     parking: {
       excavator: [{ x: 166, z: 6, yaw: Math.PI }, { x: 166, z: -6, yaw: Math.PI }],
       truck: [{ x: 188, z: 26, yaw: Math.PI / 2 }, { x: 196, z: 26, yaw: Math.PI / 2 }],
+      miniDigger: [{ x: 198, z: 14, yaw: Math.PI }, { x: 198, z: 19, yaw: Math.PI }],
+      dumper: [{ x: 192, z: 15, yaw: Math.PI }, { x: 192, z: 20, yaw: Math.PI }],
+      tractor: [{ x: 200, z: 4, yaw: -Math.PI / 2 }], // facing south: the trailer stands behind it, to the north
       spare: { x: 162, z: 32, stepX: 8 },
     },
     barrow: { x: 145.5, z: 14, yaw: -Math.PI / 2 }, // just inside the field, pointing at the yard

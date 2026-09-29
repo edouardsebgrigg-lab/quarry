@@ -3,7 +3,7 @@
 import { weighIn as depotWeighIn } from '../economy/index.js';
 import {
   getMachine, machinesAt, startJob, buyMachine as fleetBuyMachine,
-  sellMachine as fleetSellMachine, buyMod as fleetBuyMod, dumpBucket as fleetDumpBucket,
+  sellMachine as fleetSellMachine, buyMod as fleetBuyMod, dumpBucket as fleetDumpBucket, bucketCut as fleetBucketCut,
 } from '../machinery/index.js';
 import { shovelDig, shovelDump, tipBarrow } from '../handtools/index.js';
 
@@ -29,11 +29,13 @@ export function createActions(ctx) {
     },
 
     // ---- machines on the ground ----
-    // One bucket out of the ground at { x, z } (where the excavator's bucket is).
-    scoop: (excavatorId, at) => startJob(ctx, excavatorId, 'dig', { params: { x: at.x, z: at.z } }),
-    // Empty the bucket into a bed ({ machineId }) or onto the ground ({ x, z }).
-    dumpBucket: (excavatorId, target) => fleetDumpBucket(ctx, excavatorId, target),
-    // Empty a truck or pickup: { bay } at the depot (sells it) or { x, z } onto your ground.
+    // Assisted digging: one bucket out of the ground at { x, z } (where the digger's bucket is).
+    scoop: (diggerId, at) => startJob(ctx, diggerId, 'dig', { params: { x: at.x, z: at.z } }),
+    // Direct digging: the teeth cut a little bowl { x, z, bottomY, radius } as they move.
+    bucketCut: (diggerId, cut) => fleetBucketCut(ctx, diggerId, cut),
+    // Empty the bucket (or a `share` of it) into a bed ({ machineId }) or onto the ground ({ x, z }).
+    dumpBucket: (diggerId, target, share = 1) => fleetDumpBucket(ctx, diggerId, target, share),
+    // Empty a carrier: { bay } at the depot (sells it) or { x, z } onto your ground.
     tip: (machineId, where) => startJob(ctx, machineId, 'tip', { params: { ...where } }),
     // Stop on the depot's weighbridge.
     weighIn(machineId) {

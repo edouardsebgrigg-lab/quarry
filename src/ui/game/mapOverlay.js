@@ -2,7 +2,7 @@
 // things are.
 import { el, clear, setText } from '../dom.js';
 import { createMapView } from './mapView.js';
-import { machinesAt, machineName, getStats } from '../../machinery/index.js';
+import { machinesAt, machineName, getStats, isDigger } from '../../machinery/index.js';
 import { pileTotal } from '../../quarry/index.js';
 import { conditionColor } from '../format.js';
 
@@ -44,7 +44,7 @@ export function toggleMap(overlays, { game, world }) {
         });
         clear(fleet);
         for (const m of machinesAt(game.ctx, game.state.currentSiteId)) {
-          const cap = m.type === 'excavator' ? null : getStats(game.data, m).capacity;
+          const cap = isDigger(game.data, m.type) ? null : getStats(game.data, m).capacity;
           const load = pileTotal(m.load);
           fleet.append(el('div', { class: 'fleet-row' },
             el('div', { class: 'row-between' },
@@ -60,7 +60,8 @@ export function toggleMap(overlays, { game, world }) {
           el('section', { class: 'panel' }, el('h3', {}, 'Key'),
             el('div', { class: 'small muted map-key' },
               el('span', { class: 'key-you' }, '▶ you'), el('span', { class: 'key-pickup' }, '● pickup'),
-              el('span', { class: 'key-truck' }, '● truck'), el('span', { class: 'key-excavator' }, '● excavator'),
+              el('span', { class: 'key-truck' }, '● truck'), el('span', { class: 'key-tractor' }, '● tractor'),
+              el('span', { class: 'key-excavator' }, '● diggers, dumper'),
               el('span', { class: 'key-barrow' }, '■ wheelbarrow')))));
     },
   });

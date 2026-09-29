@@ -6,9 +6,11 @@ export function breakdownChance(stats, condition) {
   return stats.breakdownBase + stats.breakdownWear * worn * worn;
 }
 
-export function applyWear(ctx, machine, stats) {
-  machine.condition = Math.max(0, machine.condition - stats.wearPerJob);
-  const breaks = machine.condition <= 0 || ctx.rng.chance(breakdownChance(stats, machine.condition));
+// `share` is how much of a whole job this was (a Direct-mode digger wears a little with
+// every bite, adding up to one job per bucketful).
+export function applyWear(ctx, machine, stats, share = 1) {
+  machine.condition = Math.max(0, machine.condition - stats.wearPerJob * share);
+  const breaks = machine.condition <= 0 || ctx.rng.chance(breakdownChance(stats, machine.condition) * share);
   if (breaks) {
     machine.broken = true;
     ctx.events.emit('machineBrokeDown', { machineId: machine.id });

@@ -177,7 +177,7 @@ export function startApp(root, { data, storage, isDev }) {
     if (session && document.activeElement?.tagName === 'BUTTON' && !overlays.top()) document.activeElement.blur();
   });
 
-  const app = { overlays, openPauseMenu: openPause, saveTo, audio };
+  const app = { overlays, openPauseMenu: openPause, saveTo, audio, saveSettings: () => saveSettings(storage, settings) };
   showMainMenu();
   return app;
 }

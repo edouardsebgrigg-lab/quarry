@@ -1,7 +1,11 @@
 {
   "models": [
+    "dumper_rusty",
+    "dumper_used",
     "excavator_rusty",
     "excavator_used",
+    "minidigger_rusty",
+    "minidigger_used",
     "prop_block",
     "prop_boulder1",
     "prop_boulder2",
@@ -27,6 +31,10 @@
     "prop_tyres",
     "prop_weighbridge",
     "prop_wheelbarrow",
+    "tractor_rusty",
+    "tractor_used",
+    "trailer_rusty",
+    "trailer_used",
     "truck_rusty",
     "truck_used",
     "vehicle_pickup"

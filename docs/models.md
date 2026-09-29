@@ -18,6 +18,10 @@ All models are made in **Blender** by Python scripts in `blender/`, exported as 
 | Fence bay (3 m), farm gate | `prop_fence.glb`, `prop_gate.glb` | |
 | Portaloo, power pole | `prop_portaloo.glb`, `prop_pole.glb` | |
 | Wheelbarrow, shovel | `prop_wheelbarrow.glb`, `prop_shovel.glb` | |
+| Mini digger (1.5 t class) | `minidigger_rusty.glb`, `minidigger_used.glb` | `docs/images/models/minidigger_*.jpg` |
+| Tracked site dumper | `dumper_rusty.glb`, `dumper_used.glb` | `docs/images/models/dumper_*.jpg` |
+| Tractor | `tractor_rusty.glb`, `tractor_used.glb` | `docs/images/models/tractor_*.jpg` |
+| Tipping trailer | `trailer_rusty.glb`, `trailer_used.glb` | `docs/images/models/trailer_*.jpg` |
 | Village houses: cottage, semi, bungalow, pub | `prop_house_cottage.glb`, `prop_house_semi.glb`, `prop_house_bungalow.glb`, `prop_house_pub.glb` | `docs/images/models/prop_house_*.jpg` |
 | Steel shed (the dealer, 24 × 16 m) | `prop_shed.glb` | |
 | Weighbridge (3.4 × 16 m deck with a traffic light) | `prop_weighbridge.glb` | |
@@ -53,7 +57,7 @@ or Blender as a Python module (`pip install bpy` with Python 3.11) and run `pyth
 The scripts:
 - `lib.py`: shape helpers (boxes, rounded boxes, cylinders, extruded profiles, lathe, lofted bodies from cross-sections, flat panels for glass), bevels with weighted normals, subdivision, UVs, grime vertex colours, materials, export and preview rendering.
 - `textures.py`: generates the tileable textures (worn paint, rust, grimy steel, rubber, concrete, cladding, weathered wood, plastic, brick, slate, roof tiles, render, checker plate).
-- `truck.py`, `excavator.py`, `pickup.py`, `props.py`, `handtools.py`, `buildings.py` (houses, the shed, the weighbridge), `vehicles.py` (the drivable pickup): the models themselves.
+- `truck.py`, `excavator.py`, `pickup.py`, `props.py`, `handtools.py`, `buildings.py` (houses, the shed, the weighbridge), `vehicles.py` (the drivable pickup), `minidigger.py`, `dumper.py`, `tractor.py`, `trailer.py`: the models themselves.
 
 **How the shapes are made (so they don't look blocky):** bodies such as the pickup, the truck cab and the excavator's boom and cab are *lofted*: a series of rounded cross-sections is skinned into one smooth surface, so panels have rolled edges and curves instead of flat boxes. Glass is set into those surfaces with a black rubber seal. Chunky parts (bumpers, mirrors, tool boxes, the portaloo) use `rounded_box`. Every part is finished with a real bevel plus *weighted normals*, which keeps big panels flat and lets their edges catch the light. Boulders start as a random lump, get smoothed, roughened with layered noise and then cut by a few flat fracture planes.
 - `menu_background.py`: renders the main-menu picture (`assets/ui/menu.jpg`), with the excavator loading a truck at a quarry face. Add `--fast` for a quick low-res test.
@@ -81,6 +85,19 @@ You can replace any model with your own. Keep the file name, keep the named part
 - `Interior`: what you see from the seat. The eye is at about (0.4, 0.72, 1.42) in House space.
 - Hydraulic rams (optional; the game animates them if present): `BoomRam`, `StickRam`, `BucketRam` are the barrels, `BoomRamRod`, `StickRamRod`, `BucketRamRod` the rods. Each has its origin on its pin with the part pointing along +X; the barrel sits on one part (House, Boom, Stick) and the rod on the other (Boom, Stick, `BucketLink`). The game points each barrel at its rod's pin and each rod back at its barrel every frame, so they slide in and out. `BucketLink` is an empty at the stick tip that the game turns at 0.55 × the bucket angle + 1.9 rad.
 - Tracks (optional): `TrackShoe` is one loose shoe; the game copies it round the track path and moves the copies as you drive (and hides the static `Tracks` mesh). `TrackWheelL0/L1`, `TrackWheelR0/R1` are the sprockets and idlers, turned by the game.
+
+### Mini digger (`minidigger_<tier>.glb`)
+- Same parts as the excavator (`House`, `Boom`, `Stick`, `Bucket`, `BucketLink`, the three rams and their rods, `TrackWheelL0/L1/R0/R1`), at 1.5 t size: house floor 0.42 m up, boom foot at house (0.5, 0, 0.3), boom 1.75 m, stick 1.1 m, bucket teeth at (0.407, 0.095) in the bucket's frame. The operator's eyes are at (−0.05, 1.44, 0) in house space.
+- Tracks: `TrackBand` (the smooth rubber belt, always shown) and one loose `TrackShoe` (a chevron lug, local +Z outward) that the game copies 44 times round each track and rolls with the machine.
+- `Blade`: the dozer blade on its pivot.
+
+### Site dumper (`dumper_<tier>.glb`)
+- Origin on the ground between the tracks, facing +X; same track parts as the mini digger.
+- `SkipPivot`: the skip's hinge at its front bottom edge (x 1.12, z 0.6); the game tips it about Y (the back rises). The skip floor is at z 0.62. `Interior`: the seat and levers; the operator's eyes are at about (−0.55, 1.75, 0).
+
+### Tractor (`tractor_<tier>.glb`) and trailer (`trailer_<tier>.glb`)
+- Tractor: origin on the ground halfway between the axles, facing +X. `Wheel0` to `Wheel3` (front-left, front-right, rear-left, rear-right) at their axle centres: front axle x 0.93 (tyre radius 0.36), rear axle x −0.9 (radius 0.65). The hitch pin is at (−1.32, 0, 0.5); the driver's eyes at about (−0.9, 0, 2.0). `SteeringWheel` and `Interior` are for looks.
+- Trailer: origin on the ground under the axle, facing +X (the drawbar end); the drawbar eye is at (3.3, 0, 0.5). `Wheel0`/`Wheel1` at the axle. `BedPivot` is the bed's rear hinge (the game tips it so the front rises) and `TailgatePivot`, inside it, is the top of the tailgate (the game keeps it hanging). The bed floor is at z 1.0 from x −1.7 to 2.1.
 
 ### Pickup (`vehicle_pickup.glb`)
 - Origin: on the ground under the middle of the body; it faces +X like the other machines. The game lifts it by its ride height.

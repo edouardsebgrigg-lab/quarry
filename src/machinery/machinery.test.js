@@ -26,16 +26,29 @@ describe('stats and mods', () => {
     expect(getStats(ctx.data, excavator).bucketVolume).toBeCloseTo(base * 1.15);
     const cap = getStats(ctx.data, truck).capacity;
     truck.mods.push('raisedTailgate');
-    expect(getStats(ctx.data, truck).capacity).toBeCloseTo(cap + 1);
+    expect(getStats(ctx.data, truck).capacity).toBeCloseTo(cap + ctx.data.mods.raisedTailgate.effects.capacity.add);
   });
 
   it('makes each tier a big jump (at least 2.5x output)', () => {
     const { ctx } = setup();
-    for (const type of ['excavator', 'truck']) {
-      const tiers = ctx.data.machines.types[type].tiers;
-      const rate = (tier) => describeStats(type, tiers[tier])[0].value;
-      expect(rate('used') / rate('rusty')).toBeGreaterThanOrEqual(2.5);
+    for (const [type, def] of Object.entries(ctx.data.machines.types)) {
+      if (!def.tiers.used) continue;
+      const rate = (tier) => describeStats(ctx.data, type, def.tiers[tier])[0].value;
+      expect(rate('used') / rate('rusty'), type).toBeGreaterThanOrEqual(2.5);
     }
+  });
+
+  it('knows diggers from carriers, and which can use the roads', () => {
+    const { ctx } = setup();
+    const kinds = Object.fromEntries(Object.entries(ctx.data.machines.types).map(([t, d]) => [t, [d.kind, !!d.roadLegal]]));
+    expect(kinds).toEqual({
+      pickup: ['carrier', true],
+      miniDigger: ['digger', false],
+      dumper: ['carrier', false],
+      tractor: ['carrier', true],
+      excavator: ['digger', false],
+      truck: ['carrier', true],
+    });
   });
 });
 
@@ -129,7 +142,7 @@ describe('buying and selling', () => {
 
   it('sells for less when worn or broken', () => {
     const { ctx } = setup();
-    ctx.state.money = 1000;
+    ctx.state.money = 10000;
     const { machine } = buyMachine(ctx, 'truck', 'used');
     machine.condition = 100;
     const good = resaleValue(ctx, machine);

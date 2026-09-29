@@ -9,7 +9,7 @@ A short tour of the code. The logic modules never touch the screen. Each module 
 | `economy.json` | Starting money, fuel price, debt interest, resale value |
 | `materials.json` | Materials you can sell (topsoil, clay, sand, gravel, mixed fill) and their base prices per tonne |
 | `market.json` | How prices swing (trend) and drop when you sell a lot (saturation) |
-| `machines.json` | Every machine tier's stats and price (including mass and engine power, used by the driving physics and the engine sound), which types are road-legal and which are sold in the shop |
+| `machines.json` | Every machine tier's stats and price (including mass and engine power, used by the driving physics and the engine sound). Each type says what it is (`kind`: a `digger` with a bucket or a `carrier` with a bed), whether it's road-legal, whether it's sold in the shop and how it unloads |
 | `mods.json` | Cheap upgrades you can fit to machines |
 | `sites.json` | Your properties (just Home Field for now) and which ground plot each one has |
 | `depot.json` | The selling depot: its bays, the purity grades (clean, slightly mixed) and what they pay |
@@ -27,7 +27,7 @@ You can change any of these and reload the game. No code changes are needed.
 | `src/quarry` | Which sites you own, and helpers for loads (a load is `{ material: tonnes }`) |
 | `src/ground` | The real, diggable ground: a grid of soil columns with layers; digging carves bowls and returns tonnes by material, dumped material piles up and slumps to its natural slope, undercut walls cave in; saves only the chunks that changed |
 | `src/handtools` | Your shovel and wheelbarrow: digging a shovelful out of the real ground, tipping it into the barrow, the pickup's or a truck's bed or onto the ground, and tipping the barrow as a pile or into a bed. Loads are dug material measured by loose volume |
-| `src/machinery` | Machine stats and mods, buying and selling machines, timed jobs (dig a bucket out of the real ground, tip or unload a road vehicle at the depot or on your land, service, repair), wear and breakdowns |
+| `src/machinery` | Machine stats and mods (a machine's `kind` decides which jobs it can do), buying and selling machines, Direct-mode bucket cutting and pouring, timed jobs (dig a bucket out of the real ground, tip or unload a road vehicle at the depot or on your land, service, repair), wear and breakdowns |
 | `src/progression` | The step-by-step goals for a new game: which one is current, checking them against game events, paying rewards |
 | `src/game` | Wires everything together: `createGame()` builds a game, `game.tick()` advances time, `game.actions.*` are the player's actions |
 
@@ -53,8 +53,10 @@ You can change any of these and reload the game. No code changes are needed.
 | `vegetation.js` | Grass tufts and weeds (streamed in around you), hedgerows, copses and lone trees |
 | `environment.js` | Sky, sun, fog and the hills on the horizon |
 | `player.js`, `headSway.js`, `handTools.js` | You on foot, head bob, the shovel in your hands and the wheelbarrow |
-| `truck.js`, `truckPhysics.js` | Road vehicles (the pickup and the tipper truck): the model, bed or tailgate, and Rapier ray-cast vehicle physics with an engine, gearbox, brakes and grip by surface (the pickup has its own shape and a petrol engine) |
-| `excavator.js`, `excavatorArm.js` | The excavator on tracks and its arm solver with hydraulic joints. It can't leave your land |
+| `truck.js`, `truckPhysics.js` | Road vehicles (the pickup, the tipper truck and the tractor): the model, bed or tailgate, and Rapier ray-cast vehicle physics with an engine, gearbox, brakes and grip by surface (the pickup and the tractor have their own shape and engine) |
+| `trailer.js` | The tractor's tipping trailer: it hangs off the hitch and follows it with the one-axle pursuit maths (`trailerYawStep`, tested), sits on the ground, and has a kinematic collider |
+| `excavator.js`, `excavatorArm.js` | The two diggers (excavator and mini digger, from a spec each) with their arm solver and hydraulic joints; Assisted (the arm plans the dig) and Direct (boom, stick, bucket and swing on their own controls) |
+| `trackDrive.js`, `dumper.js` | The rubber or steel track undercarriage shared by the diggers and the site dumper (track speeds, rolling shoes, sitting on the ground), and the dumper with its tipping skip. Site machines can't leave your land |
 | `glbModels.js`, `models.js` | Blender models (loaded from `.glb`) and placeholder shapes if a model is missing |
 | `sounds.js`, `engineLife.js` | What the machines sound like, engines starting and stopping, passing cars on the lane |
 | `index.js` | Ties it together and turns driving, digging, weighing in and unloading into game actions |

@@ -1,13 +1,16 @@
-// A drivable road vehicle: the tipper truck or your pickup. Rapier vehicle physics + model,
-// engine start/stop, brake lights, and unloading: the truck's bed tips; the pickup's tailgate
-// drops while its load is shovelled off. `feel()` reports what the sound and camera need.
+// A drivable road vehicle: the tipper truck, your pickup, or the tractor with its trailer.
+// Rapier vehicle physics + model, engine start/stop, brake lights, and unloading: the truck's
+// bed tips; the pickup's tailgate drops while its load is shovelled off; the tractor's trailer
+// (trailer.js) tips. `feel()` reports what the sound and camera need.
 import * as THREE from 'three';
-import { buildTruckModel, buildPickupModel } from './models.js';
-import { createTruckPhysics, PICKUP, TRUCK_SHAPE } from './truckPhysics.js';
+import { buildTruckModel, buildPickupModel, buildTractorModel } from './models.js';
+import { createTruckPhysics, PICKUP, TRACTOR, TRUCK_SHAPE } from './truckPhysics.js';
 import { createEngineLife } from './engineLife.js';
+import { createTrailer } from './trailer.js';
 
 const TIP_ANGLE = 0.85; // radians the bed lifts when tipping
 const TAILGATE_OPEN = 1.5; // radians the pickup's tailgate drops
+const PROFILES = { truck: null, pickup: PICKUP, tractor: TRACTOR };
 
 // Brake-light meshes: turned up when braking. Returns a setter.
 function brakeLights(root) {
@@ -31,10 +34,13 @@ function brakeLights(root) {
 }
 
 export function createTruck({ physics, scene, terrain, machine, spawn, stats, live, surfaceAt }) {
-  const kind = machine.type; // 'truck' or 'pickup'
-  const profile = kind === 'pickup' ? PICKUP : null;
+  const kind = machine.type; // 'truck', 'pickup' or 'tractor'
+  const profile = PROFILES[kind] ?? null;
   const shape = profile?.shape ?? TRUCK_SHAPE;
-  const model = kind === 'pickup' ? buildPickupModel(PICKUP.tuning.rideHeight) : buildTruckModel(machine.tier);
+  const rideHeight = profile?.tuning?.rideHeight;
+  const model = kind === 'pickup' ? buildPickupModel(rideHeight)
+    : kind === 'tractor' ? buildTractorModel(machine.tier, rideHeight)
+      : buildTruckModel(machine.tier);
   scene.add(model.root);
   const y = terrain.heightAt(spawn.x, spawn.z);
   const st = stats();
@@ -43,6 +49,9 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
     mass: st.mass ?? 5000, power: st.enginePower ?? 90, surfaceAt, profile,
   });
   phys.setEngineRunning(false);
+  const trailer = kind === 'tractor'
+    ? createTrailer({ physics, scene, terrain, tier: machine.tier, yaw: spawn.trailerYaw ?? spawn.yaw ?? 0 })
+    : null;
   const offStep = physics.onBeforeStep((dt) => phys.update(dt));
   const setBrakeLights = brakeLights(model.root);
   let bedAngle = 0;
@@ -54,6 +63,13 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
 
   const quat = new THREE.Quaternion();
   const tmp = new THREE.Vector3();
+
+  function yawNow() {
+    const r = phys.body.rotation();
+    quat.set(r.x, r.y, r.z, r.w);
+    tmp.set(1, 0, 0).applyQuaternion(quat);
+    return Math.atan2(-tmp.z, tmp.x);
+  }
 
   function update(dt, { job, fill, color, occupied }) {
     const m = live();
@@ -71,7 +87,8 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
     for (let i = 0; i < 4; i++) {
       const w = model.wheels[i];
       const susp = phys.vehicle.wheelSuspensionLength(i) ?? shape.suspensionRest;
-      w.steerGroup.position.y = shape.wheelY - susp + (model.wheelOffsetY ?? 0);
+      const wy = Array.isArray(shape.wheelY) ? shape.wheelY[i] : shape.wheelY;
+      w.steerGroup.position.y = wy - susp + (model.wheelOffsetY ?? 0);
       w.steerGroup.rotation.y = phys.vehicle.wheelSteering(i) ?? 0;
       w.spin.rotation.z = -(phys.vehicle.wheelRotation(i) ?? 0);
     }
@@ -83,6 +100,14 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
     }
 
     const unloading = job?.type === 'tip';
+    if (trailer) {
+      model.root.updateMatrixWorld(true);
+      const hitch = model.root.localToWorld(model.hitchLocal.clone());
+      trailer.update(dt, { hitch, tractorYaw: yawNow(), unloading, job, fill, color });
+      bedAngle = trailer.state.bed;
+      bedSpeed = trailer.state.bedSpeed;
+      gate = trailer.state.gate;
+    }
     if (model.bedPivot) {
       // Bed: the ram pushes it up at a steady rate, then it drops back down.
       const target = unloading ? TIP_ANGLE * Math.min(1, (job.elapsed / job.duration) * 1.6) : 0;
@@ -98,18 +123,34 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
       gate += Math.sign(target - gate) * Math.min(Math.abs(target - gate), dt * 3.5);
       model.tailgate.rotation.z = gate;
     }
-    model.setLoad(unloading ? fill * (1 - job.elapsed / job.duration) : fill, color);
+    if (model.setLoad) model.setLoad(unloading ? fill * (1 - job.elapsed / job.duration) : fill, color);
   }
+
+  // The bed the load sits in: the truck's own, or the tractor's trailer.
+  const bed = trailer ?? {
+    isOverBed(point, margin = 0.6) {
+      const local = model.root.worldToLocal(point.clone());
+      return Math.abs(local.x - model.bedCenter.x) <= model.bedHalf.x + margin
+        && Math.abs(local.z - model.bedCenter.z) <= model.bedHalf.z + margin;
+    },
+    bedWorld: () => model.root.localToWorld(model.bedCenter.clone()),
+    // Where you'd tip a barrow in or shovel off: the middle of the tailgate (pickup), or the
+    // back of the bed (truck).
+    tailgateWorld: () => model.root.localToWorld((model.tailgateLocal ?? new THREE.Vector3(-3.2, 0.3, 0)).clone()),
+    bedFloorWorldY: () => model.root.localToWorld(new THREE.Vector3(model.bedCenter.x, model.bedFloorY ?? 0.2, 0)).y,
+  };
 
   return {
     type: kind,
     road: true, // a road vehicle (driven with the truck controls)
+    carrier: true, // carries a load in a bed
     machineId: machine.id,
     model,
     phys,
+    trailer,
     control: phys.control,
     update,
-    setCargo: (t) => phys.setCargo(t),
+    setCargo: (t) => phys.setCargo(t + (trailer ? (stats().trailerMass ?? 0) / 1000 : 0)),
     // Everything the sound and camera react to.
     feel() {
       const tel = phys.telemetry();
@@ -130,26 +171,15 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
       const p = phys.body.translation();
       return new THREE.Vector3(p.x, p.y, p.z);
     },
-    yaw() {
-      const r = phys.body.rotation();
-      quat.set(r.x, r.y, r.z, r.w);
-      tmp.set(1, 0, 0).applyQuaternion(quat);
-      return Math.atan2(-tmp.z, tmp.x);
-    },
+    yaw: yawNow,
     quaternion() {
       const r = phys.body.rotation();
       return quat.set(r.x, r.y, r.z, r.w).clone();
     },
     speed: () => phys.speed(),
-    // Is a world point over this truck's bed?
-    isOverBed(point, margin = 0.6) {
-      const local = model.root.worldToLocal(point.clone());
-      return Math.abs(local.x - model.bedCenter.x) <= model.bedHalf.x + margin
-        && Math.abs(local.z - model.bedCenter.z) <= model.bedHalf.z + margin;
-    },
-    bedWorld() {
-      return model.root.localToWorld(model.bedCenter.clone());
-    },
+    // Is a world point over this vehicle's bed?
+    isOverBed: (point, margin) => bed.isOverBed(point, margin),
+    bedWorld: () => bed.bedWorld(),
     seatWorld() {
       return model.root.localToWorld(model.cabSeat.clone());
     },
@@ -157,26 +187,31 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
       // Truck: the stack behind the cab, right side. Pickup: the tailpipe under the back.
       return model.root.localToWorld((model.exhaustLocal ?? tmp.set(1.45, 1.55, 1.0)).clone());
     },
-    // Where you'd tip a barrow in or shovel off: the middle of the tailgate (pickup), or the
-    // back of the bed (truck).
-    tailgateWorld() {
-      return model.root.localToWorld((model.tailgateLocal ?? new THREE.Vector3(-3.2, 0.3, 0)).clone());
-    },
-    bedFloorWorldY() {
-      return model.root.localToWorld(new THREE.Vector3(model.bedCenter.x, model.bedFloorY ?? 0.2, 0)).y;
+    tailgateWorld: () => bed.tailgateWorld(),
+    bedFloorWorldY: () => bed.bedFloorWorldY(),
+    // Where a load leaves the vehicle and which way it falls (out of the back).
+    unload() {
+      const heading = trailer ? trailer.state.yaw : yawNow();
+      return { point: bed.tailgateWorld(), out: { x: -Math.cos(heading), z: Math.sin(heading) } };
     },
     placement() {
       const p = phys.body.translation();
-      return { x: p.x, z: p.z, yaw: this.yaw() };
+      return { x: p.x, z: p.z, yaw: yawNow(), trailerYaw: trailer?.state.yaw };
+    },
+    // Put it (and its trailer) upright and straight at a spot.
+    reset(x, z, yaw) {
+      phys.reset(x, terrain.heightAt(x, z), z, yaw);
+      trailer?.reset(x - Math.cos(yaw) * 1.32, z + Math.sin(yaw) * 1.32, yaw);
     },
     recover() {
       const p = phys.body.translation();
-      phys.reset(p.x, terrain.heightAt(p.x, p.z), p.z, this.yaw());
+      this.reset(p.x, p.z, yawNow());
     },
-    radius: kind === 'pickup' ? 2.8 : 3.4,
+    radius: kind === 'pickup' ? 2.8 : kind === 'tractor' ? 2.4 : 3.4,
     destroy() {
       offStep();
       phys.destroy();
+      trailer?.destroy();
       scene.remove(model.root);
     },
   };

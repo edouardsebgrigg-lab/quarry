@@ -47,12 +47,14 @@ describe('game', () => {
     expect(game.state.objectives.index).toBe(0);
   });
 
-  it('starts with a shovel and a wheelbarrow, and money for one rusty machine but not both', () => {
+  it('starts with a shovel and a wheelbarrow, and not quite enough for the first machine', () => {
     const game = createGame({ seed: 1 });
     expect(game.state.tools).toEqual({ shovel: { load: {} }, barrow: { load: {} } });
-    expect(game.actions.buyMachine('excavator', 'rusty').ok).toBe(true);
-    expect(game.actions.buyMachine('truck', 'rusty').ok).toBe(false);
-    expect(game.state.money).toBeGreaterThanOrEqual(0);
+    const cheapest = Math.min(...Object.values(game.data.machines.types).filter((t) => t.shop !== false)
+      .map((t) => t.tiers.rusty.price));
+    expect(game.state.money).toBeLessThan(cheapest);
+    expect(game.state.money).toBeGreaterThan(cheapest * 0.5); // but it's not far off
+    expect(game.actions.buyMachine('miniDigger', 'rusty').ok).toBe(false);
   });
 
   it('digging, hauling and selling at the depot earns money', () => {

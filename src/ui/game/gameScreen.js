@@ -80,7 +80,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     }
     world = w;
     hud3d.setLoading(false);
-    if (isDev) window.__quarry = { game, world, audio: app.audio }; // handy in the browser console and for automated play tests
+    if (isDev) window.__quarry = { game, world, audio: app.audio, settings }; // handy in the browser console and for automated play tests
   }).catch((err) => {
     console.error(err);
     hud3d.showError(`Could not start 3D: ${err.message ?? err}`);
@@ -96,6 +96,14 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
       case 'market': openOverlay(() => openMarket(app.overlays, { game, feedback })); break;
       case 'map': openOverlay(() => toggleMap(app.overlays, { game, world })); break;
       case 'hints': hud3d.toggleHints(); break;
+      case 'controls':
+        settings.diggerControls = settings.diggerControls === 'direct' ? 'assisted' : 'direct';
+        app.saveSettings();
+        feedback.message(settings.diggerControls === 'direct'
+          ? 'Digger controls: Direct (boom, stick, bucket and swing on their own keys)'
+          : 'Digger controls: Assisted (aim and click)', 'good');
+        world?.handleAction('controls');
+        break;
       case 'goal': hud.toggleGoal(); break;
       case 'dev':
         if (!devPanel) break;

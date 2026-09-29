@@ -4,6 +4,8 @@ export function createMouse(element, { onLockChange } = {}) {
   let dx = 0;
   let dy = 0;
   let down = false;
+  let rightDown = false; // (Direct digger control: open the bucket)
+  let wheel = 0; // scroll since last frame (Direct digger control: the boom)
   let pressed = false; // went down since last frame
   let wantLock = true;
 
@@ -21,6 +23,10 @@ export function createMouse(element, { onLockChange } = {}) {
     dy += e.movementY;
   }
   function onDown(e) {
+    if (e.button === 2) {
+      rightDown = locked();
+      return;
+    }
     if (e.button !== 0) return;
     if (!locked()) {
       if (wantLock) element.requestPointerLock?.()?.catch?.(() => {});
@@ -31,9 +37,16 @@ export function createMouse(element, { onLockChange } = {}) {
   }
   function onUp(e) {
     if (e.button === 0) down = false;
+    if (e.button === 2) rightDown = false;
+  }
+  function onWheel(e) {
+    if (locked()) wheel += e.deltaY;
   }
   function onChange() {
-    if (!locked()) down = false;
+    if (!locked()) {
+      down = false;
+      rightDown = false;
+    }
     else settleUntil = performance.now() + 120;
     dx = 0;
     dy = 0;
@@ -41,6 +54,7 @@ export function createMouse(element, { onLockChange } = {}) {
   }
 
   element.addEventListener('mousedown', onDown);
+  element.addEventListener('wheel', onWheel, { passive: true });
   window.addEventListener('mouseup', onUp);
   window.addEventListener('mousemove', onMove);
   document.addEventListener('pointerlockchange', onChange);
@@ -55,6 +69,13 @@ export function createMouse(element, { onLockChange } = {}) {
       return d;
     },
     isDown: () => down && locked(),
+    isRightDown: () => rightDown && locked(),
+    // Scroll since the last call (positive = wheel toward you).
+    takeWheel() {
+      const w = wheel;
+      wheel = 0;
+      return w;
+    },
     takePressed() {
       const p = pressed;
       pressed = false;
@@ -72,6 +93,7 @@ export function createMouse(element, { onLockChange } = {}) {
     },
     destroy() {
       element.removeEventListener('mousedown', onDown);
+      element.removeEventListener('wheel', onWheel);
       window.removeEventListener('mouseup', onUp);
       window.removeEventListener('mousemove', onMove);
       document.removeEventListener('pointerlockchange', onChange);

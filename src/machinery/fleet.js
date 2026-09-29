@@ -1,7 +1,8 @@
 // Owning machines: create, buy, sell, fit mods.
-import { canAfford, spendMoney, addMoney, isInDebt } from '../economy/index.js';
+import { canAfford, spendMoney, addMoney, isInDebt, chargeFuel } from '../economy/index.js';
 import { pileTotal, addToPile, takeProportional } from '../quarry/index.js';
-import { tierData, typeName, tierName, getStats } from './stats.js';
+import { tierData, typeName, tierName, getStats, isDigger } from './stats.js';
+import { applyWear } from './wear.js';
 
 export function createMachine(state, data, type, tier, siteId) {
   const td = tierData(data, type, tier);
@@ -17,7 +18,7 @@ export function createMachine(state, data, type, tier, siteId) {
     broken: false,
     mods: [],
     job: null,
-    load: {}, // rock in an excavator's bucket or a truck's bed
+    load: {}, // material in a digger's bucket or a carrier's bed
   };
   state.machines.push(machine);
   return machine;
@@ -106,14 +107,15 @@ export function buyMod(ctx, machineId, modId) {
   return { ok: true };
 }
 
-// Empties an excavator's bucket into a machine's bed (target { machineId }) or onto the
-// ground as a heap (target { x, z }, on your own land). What doesn't fit in a bed stays in
-// the bucket. Returns { ok, tonnes } (what came out).
-export function dumpBucket(ctx, excavatorId, target = {}) {
-  const ex = getMachine(ctx, excavatorId);
-  if (!ex || ex.type !== 'excavator') return { ok: false, reason: 'Not an excavator' };
-  const amount = pileTotal(ex.load);
-  if (amount < 0.01) return { ok: false, reason: 'The bucket is empty' };
+// Empties a digger's bucket into a machine's bed (target { machineId }) or onto the ground
+// as a heap (target { x, z }, on your own land). `share` (0..1) pours only part of it (a
+// Direct-mode bucket opening slowly). What doesn't fit in a bed stays in the bucket.
+// Returns { ok, tonnes } (what came out).
+export function dumpBucket(ctx, diggerId, target = {}, share = 1) {
+  const ex = getMachine(ctx, diggerId);
+  if (!ex || !isDigger(ctx.data, ex.type)) return { ok: false, reason: 'Not a digger' };
+  const amount = pileTotal(ex.load) * Math.min(1, Math.max(0, share));
+  if (pileTotal(ex.load) < 0.01) return { ok: false, reason: 'The bucket is empty' };
   let moved = 0;
   if (target.machineId) {
     const bed = getMachine(ctx, target.machineId);
@@ -123,16 +125,41 @@ export function dumpBucket(ctx, excavatorId, target = {}) {
     const room = Math.max(0, cap - pileTotal(bed.load));
     if (room < 0.01) return { ok: false, reason: `The ${typeName(ctx.data, bed.type).toLowerCase()} is full` };
     moved = Math.min(room, amount);
-    if (amount - moved < 0.01) moved = amount; // the last few crumbs go in too
+    if (pileTotal(ex.load) - moved < 0.01 && room >= pileTotal(ex.load) - 1e-9) moved = pileTotal(ex.load); // the last few crumbs go in too
     addToPile(bed.load, takeProportional(ex.load, moved));
   } else {
     if (!ctx.ground || !ctx.ground.workable(target.x, target.z)) return { ok: false, reason: 'You can only dump on your own land' };
-    moved = ctx.ground.deposit({ x: target.x, z: target.z, tonnes: ex.load, radius: 0.7 });
-    ex.load = {};
+    const all = pileTotal(ex.load) - amount < 0.01; // the last few crumbs come out too
+    const out = all ? ex.load : takeProportional(ex.load, amount);
+    if (all) ex.load = {};
+    moved = ctx.ground.deposit({ x: target.x, z: target.z, tonnes: out, radius: target.radius ?? 0.7 });
   }
   if (pileTotal(ex.load) < 1e-6) ex.load = {};
-  ctx.events.emit('bucketDumped', { machineId: excavatorId, truckId: target.machineId ?? null, tonnes: moved });
+  ctx.events.emit('bucketDumped', { machineId: diggerId, truckId: target.machineId ?? null, tonnes: moved });
   return { ok: true, tonnes: moved };
+}
+
+// Direct control: the bucket's teeth are in the ground and moving. Cuts a small bowl at
+// { x, z } down to `bottomY` (radius `radius`), but only as much as still fits in the bucket.
+// Fuel and wear are charged by the share of a full bucket. Returns { ok, tonnes, full }.
+export function bucketCut(ctx, diggerId, { x, z, bottomY, radius }) {
+  const m = getMachine(ctx, diggerId);
+  if (!m || !isDigger(ctx.data, m.type)) return { ok: false, reason: 'Not a digger' };
+  if (m.broken) return { ok: false, reason: `${machineName(ctx.data, m)} is broken down. Repair it first.` };
+  if (m.job) return { ok: false, reason: `${machineName(ctx.data, m)} is busy` };
+  if (!ctx.ground || !ctx.ground.workable(x, z)) return { ok: false, reason: 'You can only dig on your own land' };
+  const stats = getStats(ctx.data, m);
+  const room = stats.bucketVolume - ctx.ground.looseVolume(m.load);
+  if (room < 0.002) return { ok: true, tonnes: 0, full: true };
+  const r = ctx.ground.dig({ x, z, radius, bottomY, maxVolume: room });
+  if (r.total <= 0) return { ok: true, tonnes: 0, full: false };
+  addToPile(m.load, r.tonnes);
+  const share = r.volume / stats.bucketVolume;
+  chargeFuel(ctx, stats.fuelPerJob * share);
+  ctx.state.stats.tonnesDug += r.total;
+  ctx.events.emit('rockDug', { machineId: m.id, tonnes: r.total, materials: { ...r.tonnes }, x, z, direct: true });
+  applyWear(ctx, m, stats, share);
+  return { ok: true, tonnes: r.total, full: room - r.volume < 0.002 };
 }
 
 // Dev helper: every machine back to perfect condition.

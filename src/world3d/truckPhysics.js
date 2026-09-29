@@ -4,7 +4,7 @@
 // in the bed (so a loaded truck is heavier at the back and higher up).
 // No graphics here, so it can be tested headless. The chassis faces +X in its local space.
 // Units are real: kilograms, newtons, metres, seconds. The tipper truck is the default; the
-// pickup passes its own shape, tuning and (petrol) engine (see PICKUP below).
+// pickup and the tractor pass their own shape, tuning and engine (see PICKUP and TRACTOR below).
 
 export const TRUCK_SHAPE = {
   halfLength: 3.2,
@@ -94,6 +94,55 @@ export const PICKUP = {
   },
 };
 
+// The old tractor: slow, heavy and stubborn. Small steering wheels in front, big driven wheels
+// behind, a low-revving diesel with lots of pull. The trailer is separate (trailer.js); its
+// weight and load are added to the tractor as cargo over the rear axle.
+export const TRACTOR = {
+  shape: {
+    halfLength: 1.6,
+    halfHeight: 0.42,
+    halfWidth: 0.7,
+    wheelRadius: 0.65,
+    driveRadius: 0.65,
+    wheelRadii: [0.36, 0.36, 0.65, 0.65],
+    wheelX: [0.93, 0.93, -0.9, -0.9],
+    wheelZ: [-0.63, 0.63, -0.68, 0.68],
+    wheelY: [-0.27, -0.27, 0.03, 0.03],
+    suspensionRest: 0.3,
+  },
+  tuning: {
+    brakeDecel: 6,
+    maxSteer: 0.6,
+    steerRate: 1.0,
+    returnRate: 1.8,
+    wheelbase: 1.83,
+    track: 1.26,
+    stiffness: 34,
+    dragArea: 2.2,
+    rideHeight: 0.95,
+    colliderY: 0.25,
+    massCentre: { x: 0.35, y: -0.3 },
+    cargoCentre: { x: -0.9, y: 0.0 },
+    powerRpm: 1800,
+  },
+  engine: {
+    idleRpm: 800,
+    maxRpm: 2300,
+    curve: [[500, 0.6], [800, 0.85], [1200, 1.0], [1800, 1.0], [2100, 0.9], [2300, 0.75], [2500, 0]],
+    gears: [4.0, 2.4, 1.5, 1.0],
+    reverse: 4.0,
+    efficiency: 0.85,
+    shiftTime: 0.5,
+    upshiftAt: 0.9,
+    downshiftAt: 1000,
+    engineBrake: 0.25,
+    revRate: 1.0,
+  },
+  // The tractor and its trailer never collide with each other (the trailer is kinematic and
+  // hangs off the hitch): membership 0x4 here, and the trailer's filter leaves 0x4 out.
+  collisionGroups: 0x0004ffff,
+};
+
 // Default ground: dry tarmac.
 const DEFAULT_SURFACE = { grip: 1.0, roll: 0.012, name: 'asphalt' };
 
@@ -125,6 +174,7 @@ export function createTruckPhysics({ RAPIER, world }, {
   const S = profile?.shape ?? TRUCK_SHAPE;
   const T = { ...TUNING, ...(profile?.tuning ?? {}) };
   const E = profile?.engine ?? ENGINE;
+  const RD = S.driveRadius ?? S.wheelRadius; // the driven wheels' radius
   const body = world.createRigidBody(
     RAPIER.RigidBodyDesc.dynamic()
       .setTranslation(x, y + T.rideHeight, z)
@@ -143,13 +193,14 @@ export function createTruckPhysics({ RAPIER, world }, {
     RAPIER.ColliderDesc.cuboid(S.halfLength, S.halfHeight, S.halfWidth)
       .setTranslation(0, T.colliderY, 0)
       .setMassProperties(mass, { x: T.massCentre.x, y: T.massCentre.y, z: 0 }, box(mass), { x: 0, y: 0, z: 0, w: 1 })
-      .setFriction(0.6),
+      .setFriction(0.6)
+      .setCollisionGroups(profile?.collisionGroups ?? 0xffffffff),
     body,
   );
   const vehicle = world.createVehicleController(body);
   for (let i = 0; i < 4; i++) {
-    vehicle.addWheel({ x: S.wheelX[i], y: S.wheelY, z: S.wheelZ[i] }, { x: 0, y: -1, z: 0 },
-      { x: 0, y: 0, z: 1 }, S.suspensionRest, S.wheelRadius);
+    vehicle.addWheel({ x: S.wheelX[i], y: Array.isArray(S.wheelY) ? S.wheelY[i] : S.wheelY, z: S.wheelZ[i] }, { x: 0, y: -1, z: 0 },
+      { x: 0, y: 0, z: 1 }, S.suspensionRest, S.wheelRadii ? S.wheelRadii[i] : S.wheelRadius);
     vehicle.setWheelSuspensionStiffness(i, T.stiffness);
     vehicle.setWheelSuspensionCompression(i, T.compression);
     vehicle.setWheelSuspensionRelaxation(i, T.relaxation);
@@ -182,7 +233,7 @@ export function createTruckPhysics({ RAPIER, world }, {
 
   function updateFinalDrive() {
     // Top gear at max rpm = top speed.
-    const wheelRadS = topSpeed / S.wheelRadius;
+    const wheelRadS = topSpeed / RD;
     finalDrive = ((E.maxRpm * 2 * Math.PI) / 60) / (wheelRadS * E.gears[E.gears.length - 1]);
   }
   updateFinalDrive();
@@ -192,7 +243,7 @@ export function createTruckPhysics({ RAPIER, world }, {
   }
 
   const gearRatio = (g) => (g < 0 ? E.reverse : E.gears[g - 1]) * finalDrive;
-  const wheelRpmAt = (v, g) => (Math.abs(v) / S.wheelRadius) * gearRatio(g) * (60 / (2 * Math.PI));
+  const wheelRpmAt = (v, g) => (Math.abs(v) / RD) * gearRatio(g) * (60 / (2 * Math.PI));
 
   function surfaceUnder(i) {
     if (!surfaceAt || !vehicle.wheelIsInContact(i)) return DEFAULT_SURFACE;
@@ -264,12 +315,12 @@ export function createTruckPhysics({ RAPIER, world }, {
       }
     }
     const dir = eng.gear < 0 ? -1 : 1;
-    const driveForce = (engineTorque * gearRatio(eng.gear) * E.efficiency) / S.wheelRadius * dir;
+    const driveForce = (engineTorque * gearRatio(eng.gear) * E.efficiency) / RD * dir;
     eng.load = eng.running ? throttle * (coupled ? 1 : 0.3) : 0;
 
     // Engine braking when off the throttle in gear (a drag through the driven wheels).
     const engineDrag = eng.running && coupled && throttle === 0 && Math.abs(v) > 0.5
-      ? (E.engineBrake * maxTorque * gearRatio(eng.gear) * (eng.rpm / E.maxRpm)) / S.wheelRadius
+      ? (E.engineBrake * maxTorque * gearRatio(eng.gear) * (eng.rpm / E.maxRpm)) / RD
       : 0;
 
     // ---- per-wheel forces

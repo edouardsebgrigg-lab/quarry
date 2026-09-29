@@ -1,8 +1,74 @@
 {
+  "stifferSprings": {
+    "name": "Stiffer rear springs",
+    "machineType": "pickup",
+    "price": 30,
+    "description": "+0.2 t load",
+    "effects": {
+      "capacity": {
+        "add": 0.2
+      }
+    }
+  },
+  "wideBucket": {
+    "name": "Wider bucket",
+    "machineType": "miniDigger",
+    "price": 60,
+    "description": "+20% bucket size",
+    "effects": {
+      "bucketVolume": {
+        "mul": 1.2
+      }
+    }
+  },
+  "newHoses": {
+    "name": "New hydraulic hoses",
+    "machineType": "miniDigger",
+    "price": 80,
+    "description": "10% faster dig cycle",
+    "effects": {
+      "cycleTime": {
+        "mul": 0.9
+      }
+    }
+  },
+  "skipExtension": {
+    "name": "Skip extension",
+    "machineType": "dumper",
+    "price": 40,
+    "description": "+0.3 t load",
+    "effects": {
+      "capacity": {
+        "add": 0.3
+      }
+    }
+  },
+  "sideboards": {
+    "name": "Trailer sideboards",
+    "machineType": "tractor",
+    "price": 90,
+    "description": "+1 t load",
+    "effects": {
+      "capacity": {
+        "add": 1
+      }
+    }
+  },
+  "tractorTyres": {
+    "name": "Better tyres",
+    "machineType": "tractor",
+    "price": 70,
+    "description": "+10% driving speed",
+    "effects": {
+      "speed": {
+        "mul": 1.1
+      }
+    }
+  },
   "sharpTeeth": {
     "name": "Sharpened bucket teeth",
     "machineType": "excavator",
-    "price": 60,
+    "price": 150,
     "description": "+15% bucket size",
     "effects": {
       "bucketVolume": {
@@ -13,7 +79,7 @@
   "greasedPins": {
     "name": "Greased pins",
     "machineType": "excavator",
-    "price": 100,
+    "price": 220,
     "description": "10% faster dig cycle",
     "effects": {
       "cycleTime": {
@@ -24,7 +90,7 @@
   "patchedTyres": {
     "name": "Patched tyres",
     "machineType": "truck",
-    "price": 40,
+    "price": 120,
     "description": "+10% driving speed",
     "effects": {
       "speed": {
@@ -33,13 +99,13 @@
     }
   },
   "raisedTailgate": {
-    "name": "Raised tailgate",
+    "name": "Raised sides",
     "machineType": "truck",
-    "price": 80,
-    "description": "+1 t load",
+    "price": 200,
+    "description": "+2 t load",
     "effects": {
       "capacity": {
-        "add": 1
+        "add": 2
       }
     }
   }

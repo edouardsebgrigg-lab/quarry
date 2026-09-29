@@ -1,9 +1,10 @@
 // Timed jobs: Dig, Tip, Service, Repair. The player (and later operators) start work
 // through startJob(). Digging and tipping work on the real ground (src/ground); tipping in
-// a depot bay sells the load.
+// a depot bay sells the load. Which machines can do a job goes by what they are (a digger
+// has a bucket, a carrier has a bed), not by their exact type.
 import { pileTotal } from '../quarry/index.js';
 import { chargeFuel, spendMoney, hasTicket, sellLoad } from '../economy/index.js';
-import { getStats, typeName } from './stats.js';
+import { getStats, typeName, isDigger, isRoadLegal, unloadSeconds } from './stats.js';
 import { applyWear, serviceCost } from './wear.js';
 import { getMachine, machineName } from './fleet.js';
 
@@ -15,10 +16,13 @@ function snap(ground, x, z) {
   return { x: ground.x0 + (Math.floor((x - ground.x0) / c) + 0.5) * c, z: ground.z0 + (Math.floor((z - ground.z0) / c) + 0.5) * c };
 }
 
+// Size of the bowl one bucket takes out of the ground.
+export const bucketRadius = (stats) => 0.4 + stats.bucketVolume * 0.75;
+
 export const JOBS = {
   // One bucket out of the ground at { x, z } (the excavator's bucket target).
   dig: {
-    machineTypes: ['excavator'],
+    can: (data, m) => isDigger(data, m.type),
     label: 'Digging',
     check(ctx, m, stats, params) {
       if (!ctx.ground || !ctx.ground.workable(params.x, params.z)) return 'You can only dig on your own land';
@@ -32,7 +36,7 @@ export const JOBS = {
     finish(ctx, m, stats, job) {
       const { x, z } = job.params;
       const r = ctx.ground.dig({
-        x, z, radius: 0.55 + stats.bucketVolume * 0.6, bottomY: ctx.ground.heightAt(x, z) - 0.7, maxVolume: stats.bucketVolume,
+        x, z, radius: bucketRadius(stats), bottomY: ctx.ground.heightAt(x, z) - (stats.digDepth ?? 0.7), maxVolume: stats.bucketVolume,
       });
       m.load = { ...r.tonnes };
       ctx.state.stats.tonnesDug += r.total;
@@ -42,14 +46,15 @@ export const JOBS = {
   },
 
   // Empty the bed: params { bay } in a depot bay (sold), or { x, z } onto your own ground
-  // as a heap. A truck tips its body; a pickup is shovelled off by hand (slower).
+  // as a heap. Trucks, trailers and dumpers tip; a pickup is shovelled off by hand (slower).
   tip: {
-    machineTypes: ['truck', 'pickup'],
+    can: (data, m) => getStats(data, m).capacity > 0,
     label: 'Tipping',
     check(ctx, m, stats, params) {
       if (pileTotal(m.load) < MIN_LOAD) return `The ${typeName(ctx.data, m.type).toLowerCase()} is empty`;
       if (params.bay) {
         if (!ctx.data.depot.bays[params.bay]) return 'Not a depot bay';
+        if (!isRoadLegal(ctx.data, m.type)) return 'Only road vehicles can deliver to the depot';
         if (!hasTicket(ctx, m.id)) return 'Weigh in on the weighbridge first';
         return null;
       }
@@ -58,8 +63,7 @@ export const JOBS = {
     },
     begin(ctx, m, stats) {
       chargeFuel(ctx, stats.fuelPerJob);
-      if (stats.unloadPerTonne) return stats.unloadTime + stats.unloadPerTonne * pileTotal(m.load);
-      return stats.loadTime * 0.6;
+      return unloadSeconds(stats, pileTotal(m.load));
     },
     finish(ctx, m, stats, job) {
       const load = m.load;
@@ -77,7 +81,6 @@ export const JOBS = {
   },
 
   service: {
-    machineTypes: null,
     label: 'Servicing',
     check(ctx, m) {
       if (m.condition >= 99.9) return 'Already in top condition';
@@ -95,7 +98,6 @@ export const JOBS = {
   },
 
   repair: {
-    machineTypes: null,
     label: 'Repairing',
     worksWhenBroken: true,
     check(ctx, m) {
@@ -129,9 +131,7 @@ export function whyCannotStart(ctx, m, jobType, { byPlayer = true, params = {} }
   const def = JOBS[jobType];
   if (!def) return 'Unknown job';
   if (!m) return 'No such machine';
-  if (def.machineTypes && !def.machineTypes.includes(m.type)) {
-    return `A ${typeName(ctx.data, m.type).toLowerCase()} can't do that`;
-  }
+  if (def.can && !def.can(ctx.data, m)) return `A ${typeName(ctx.data, m.type).toLowerCase()} can't do that`;
   if (m.job) return `${machineName(ctx.data, m)} is busy`;
   if (m.broken && !def.worksWhenBroken) return `${machineName(ctx.data, m)} is broken down. Repair it first.`;
   if (byPlayer && isPlayerBusy(ctx)) return 'You are busy with another job';

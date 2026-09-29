@@ -12,7 +12,10 @@ const COLORS = {
   you: '#f5b82e',
   pickup: '#6fb7ff',
   truck: '#ff9a4a',
+  tractor: '#ff6a5a',
   excavator: '#ffd24a',
+  miniDigger: '#ffd24a',
+  dumper: '#ffd24a',
   barrow: '#7fe08a',
 };
 

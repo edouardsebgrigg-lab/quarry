@@ -139,16 +139,17 @@ export function glbPickup(rideHeight) {
   };
 }
 
-export function glbExcavator(tier) {
-  const root = instance(`excavator_${tier}`);
+// The diggers (excavator, mini digger) share their parts: House, Boom, Stick, Bucket and the rams.
+function diggerFromFile(name, { cabSeat, scoop }) {
+  const root = instance(name);
   if (!root) return null;
   const bucketPivot = node(root, 'Bucket');
-  const scoop = createHeap(31);
-  scoop.position.set(0.45, -0.25, 0);
-  scoop.scale.set(0.38, 0.55, 0.38);
-  scoop.visible = false;
-  bucketPivot.add(scoop);
-  const opt = (name) => root.getObjectByName(name) ?? null;
+  const heap = createHeap(31);
+  heap.position.set(...scoop.pos);
+  heap.scale.set(...scoop.scale);
+  heap.visible = false;
+  bucketPivot.add(heap);
+  const opt = (n) => root.getObjectByName(n) ?? null;
   const rams = ['BoomRam', 'StickRam', 'BucketRam']
     .map((n) => ({ barrel: opt(n), rod: opt(`${n}Rod`) }))
     .filter((r) => r.barrel && r.rod);
@@ -166,11 +167,116 @@ export function glbExcavator(tier) {
     trackChain: opt('Tracks'),
     trackWheels: { L: [opt('TrackWheelL0'), opt('TrackWheelL1')], R: [opt('TrackWheelR0'), opt('TrackWheelR1')] },
     setBucketLoad(full, color) {
-      scoop.visible = full;
-      if (color) scoop.material.color.copy(color);
+      heap.visible = full;
+      if (color) heap.material.color.copy(color);
     },
-    cabSeat: new THREE.Vector3(0.4, 1.42, -0.72), // in house space
+    cabSeat, // in house space
     setFirstPerson() {},
+  };
+}
+
+export const glbExcavator = (tier) => diggerFromFile(`excavator_${tier}`, {
+  cabSeat: new THREE.Vector3(0.4, 1.42, -0.72), scoop: { pos: [0.45, -0.25, 0], scale: [0.38, 0.55, 0.38] },
+});
+export const glbMiniDigger = (tier) => diggerFromFile(`minidigger_${tier}`, {
+  cabSeat: new THREE.Vector3(-0.05, 1.44, 0), scoop: { pos: [0.2, -0.11, 0], scale: [0.17, 0.25, 0.17] },
+});
+
+// Track parts shared by the tracked machines.
+function trackParts(root) {
+  const opt = (n) => root.getObjectByName(n) ?? null;
+  let shoeMesh = null;
+  opt('TrackShoe')?.traverse((o) => { if (o.isMesh && !shoeMesh) shoeMesh = o; });
+  return {
+    trackShoe: shoeMesh,
+    trackChain: opt('Tracks'),
+    trackWheels: { L: [opt('TrackWheelL0'), opt('TrackWheelL1')], R: [opt('TrackWheelR0'), opt('TrackWheelR1')] },
+  };
+}
+
+// The site dumper: tracks, and a skip that tips forward about SkipPivot.
+export function glbDumper(tier) {
+  const root = instance(`dumper_${tier}`);
+  if (!root) return null;
+  const skipPivot = node(root, 'SkipPivot');
+  const heap = createHeap(27);
+  heap.position.set(-0.55, 0.05, 0);
+  heap.visible = false;
+  skipPivot.add(heap);
+  return {
+    root,
+    skipPivot,
+    ...trackParts(root),
+    setLoad(fill, color) {
+      heap.visible = fill > 0.02;
+      const f = Math.min(1, fill);
+      heap.scale.set(0.5 * Math.sqrt(f) + 0.05, 0.42 * f + 0.03, 0.4);
+      if (color) heap.material.color.copy(color);
+    },
+    // In the model's frame: the skip's middle, where a bucket or shovel drops in, and its front lip.
+    bedCenter: new THREE.Vector3(0.67, 0.85, 0),
+    bedHalf: { x: 0.6, z: 0.5 },
+    lipLocal: new THREE.Vector3(1.2, 0.6, 0),
+    cabSeat: new THREE.Vector3(-0.55, 1.75, 0),
+    exhaustLocal: new THREE.Vector3(-0.75, 1.25, 0.32),
+    setFirstPerson() {},
+  };
+}
+
+// The tractor (tractor_<tier>.glb): origin on the ground between the axles, lowered to sit
+// under the physics body's centre like the pickup. The trailer is a separate model.
+export function glbTractor(tier, rideHeight) {
+  const inner = instance(`tractor_${tier}`);
+  if (!inner) return null;
+  inner.position.y = -rideHeight;
+  const root = new THREE.Group();
+  root.add(inner);
+  const wheels = [0, 1, 2, 3].map((i) => {
+    const w = node(inner, `Wheel${i}`);
+    w.rotation.order = 'YXZ';
+    return { steerGroup: w, spin: w };
+  });
+  return {
+    root,
+    wheels,
+    wheelOffsetY: rideHeight,
+    hitchLocal: new THREE.Vector3(-1.32, 0.5 - rideHeight, 0),
+    cabSeat: new THREE.Vector3(-0.9, 2.0 - rideHeight, 0),
+    exhaustLocal: new THREE.Vector3(1.15, 1.9 - rideHeight, 0.2),
+    setFirstPerson() {},
+  };
+}
+
+// The tipping trailer (trailer_<tier>.glb): origin on the ground under the axle; the drawbar
+// eye is 3.3 m ahead of it. The bed tips about BedPivot (its rear hinge), and the tailgate
+// hangs from TailgatePivot.
+export function glbTrailer(tier) {
+  const root = instance(`trailer_${tier}`);
+  if (!root) return null;
+  const wheels = [0, 1].map((i) => node(root, `Wheel${i}`));
+  const bedPivot = node(root, 'BedPivot');
+  const tailgatePivot = node(root, 'TailgatePivot');
+  const heap = createHeap(29);
+  heap.position.set(1.9, 0.03, 0);
+  heap.visible = false;
+  bedPivot.add(heap);
+  return {
+    root,
+    wheels,
+    bedPivot,
+    tailgatePivot,
+    setLoad(fill, color) {
+      heap.visible = fill > 0.02;
+      const f = Math.min(1, fill);
+      heap.scale.set(1.75 * Math.sqrt(f) + 0.1, 0.85 * f + 0.04, 0.85);
+      if (color) heap.material.color.copy(color);
+    },
+    bedCenter: new THREE.Vector3(0.2, 1.3, 0),
+    bedHalf: { x: 1.9, z: 0.95 },
+    bedFloorY: 1.0,
+    tailgateLocal: new THREE.Vector3(-1.75, 1.0, 0),
+    eyeLocal: new THREE.Vector3(3.3, 0.5, 0),
+    axleLength: 3.3,
   };
 }
 

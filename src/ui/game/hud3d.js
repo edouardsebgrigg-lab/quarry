@@ -47,16 +47,23 @@ export function createHud3d({ settings }) {
   // Control hints per mode: [keys, label]. The last rows are the same everywhere.
   function hints(mode) {
     let rows;
-    if (mode === 'truck' || mode === 'pickup') {
+    if (mode === 'truck' || mode === 'pickup' || mode === 'tractor') {
       rows = [[[k('forward'), k('back')], 'Drive / brake'], [[k('left'), k('right')], 'Steer'], [[k('jump')], 'Handbrake'],
-        [[k('tip')], mode === 'pickup' ? 'Unload' : 'Tip load'], [[k('camera')], 'Camera'], [[k('recover')], 'Recover'],
+        [[k('tip')], { pickup: 'Unload', tractor: 'Tip trailer' }[mode] ?? 'Tip load'], [[k('camera')], 'Camera'], [[k('recover')], 'Recover'],
         [[k('interact')], 'Get out']];
     } else if (mode === 'barrow') {
       rows = [[[k('forward'), k('back')], 'Push / pull'], [['Mouse', k('left'), k('right')], 'Steer'],
         [[k('tip')], 'Tip it'], [[k('interact')], 'Let go']];
-    } else if (mode === 'excavator') {
-      rows = [[['Mouse'], 'Swing'], [['LMB'], 'Dig / dump'], [[k('forward'), k('left'), k('back'), k('right')], 'Tracks'],
+    } else if (mode === 'dumper') {
+      rows = [[[k('forward'), k('back')], 'Drive'], [[k('left'), k('right')], 'Turn'], [[k('tip')], 'Tip the skip'],
         [[k('camera')], 'Camera'], [[k('interact')], 'Get out']];
+    } else if (mode === 'digger') {
+      rows = [[['Mouse'], 'Swing'], [['LMB'], 'Dig / dump'], [[k('forward'), k('left'), k('back'), k('right')], 'Tracks'],
+        [[k('controls')], 'Direct controls'], [[k('camera')], 'Camera'], [[k('interact')], 'Get out']];
+    } else if (mode === 'digger-direct') {
+      rows = [[['Mouse ←→'], 'Swing'], [['Mouse ↑↓'], 'Stick out / in'], [['Wheel'], 'Boom up / down'], [['LMB'], 'Curl bucket in'],
+        [['RMB'], 'Open bucket'], [[k('forward'), k('left'), k('back'), k('right')], 'Tracks'],
+        [[k('controls')], 'Assisted controls'], [[k('camera')], 'Camera'], [[k('interact')], 'Get out']];
     } else {
       rows = [[[k('forward'), k('left'), k('back'), k('right')], 'Move'], [[k('sprint')], 'Sprint'], [[k('jump')], 'Jump'],
         [['LMB'], 'Dig / tip the shovel'], [[k('interact')], 'Use / get in / take barrow'], [[k('repair')], 'Service / repair']];
@@ -160,9 +167,10 @@ export function createHud3d({ settings }) {
       cond.fill.style.width = `${Math.round(m.condition)}%`;
       cond.fill.style.background = conditionColor(m.condition, m.broken);
       setText(cond.val, `${Math.round(m.condition)}%`);
-      setText(load.lab, m.road ? 'Load' : 'Bucket');
+      setText(load.lab, m.carrier ? 'Load' : 'Bucket');
       load.fill.style.width = `${Math.round(Math.min(1, m.load / m.capacity) * 100)}%`;
-      setText(load.val, `${m.load.toFixed(1)}/${m.capacity.toFixed(1)} t`);
+      const dp = m.capacity < 1 ? 2 : 1; // (small buckets need the extra digit)
+      setText(load.val, `${m.load.toFixed(dp)}/${m.capacity.toFixed(dp)} t`);
       drive.style.display = m.road ? '' : 'none';
       if (m.road) {
         setText(speedValue, String(Math.round(m.speedKmh)).padStart(2, '0'));

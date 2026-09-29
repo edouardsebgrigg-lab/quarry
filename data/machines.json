@@ -12,6 +12,8 @@
   "types": {
     "pickup": {
       "name": "Pickup",
+      "kind": "carrier",
+      "unload": "hand",
       "roadLegal": true,
       "shop": false,
       "tiers": {
@@ -36,11 +38,150 @@
         }
       }
     },
-    "excavator": {
-      "name": "Excavator",
+    "miniDigger": {
+      "name": "Mini Digger",
+      "kind": "digger",
+      "roadLegal": false,
       "tiers": {
         "rusty": {
-          "price": 120,
+          "price": 330,
+          "bucketVolume": 0.08,
+          "cycleTime": 2.2,
+          "digDepth": 0.45,
+          "fuelPerJob": 0.02,
+          "wearPerJob": 0.25,
+          "breakdownBase": 0.0015,
+          "breakdownWear": 0.035,
+          "startCondition": 70,
+          "serviceCostPerPoint": 0.3,
+          "serviceTime": 5,
+          "repairCost": 30,
+          "repairTime": 10,
+          "repairTo": 70,
+          "reach": 3.0,
+          "swingSpeed": 1.1,
+          "mass": 1600,
+          "enginePower": 11
+        },
+        "used": {
+          "price": 900,
+          "bucketVolume": 0.2,
+          "cycleTime": 2.0,
+          "digDepth": 0.5,
+          "fuelPerJob": 0.03,
+          "wearPerJob": 0.15,
+          "breakdownBase": 0.001,
+          "breakdownWear": 0.025,
+          "startCondition": 90,
+          "serviceCostPerPoint": 0.5,
+          "serviceTime": 5,
+          "repairCost": 60,
+          "repairTime": 10,
+          "repairTo": 75,
+          "reach": 3.3,
+          "swingSpeed": 1.35,
+          "mass": 3500,
+          "enginePower": 22
+        }
+      }
+    },
+    "dumper": {
+      "name": "Site Dumper",
+      "kind": "carrier",
+      "unload": "tip",
+      "roadLegal": false,
+      "tiers": {
+        "rusty": {
+          "price": 240,
+          "capacity": 1.2,
+          "speed": 1.6,
+          "mass": 1100,
+          "enginePower": 10,
+          "tipTime": 2.5,
+          "fuelPerJob": 0.05,
+          "wearPerJob": 0.3,
+          "breakdownBase": 0.0015,
+          "breakdownWear": 0.03,
+          "startCondition": 70,
+          "serviceCostPerPoint": 0.2,
+          "serviceTime": 5,
+          "repairCost": 20,
+          "repairTime": 10,
+          "repairTo": 70
+        },
+        "used": {
+          "price": 620,
+          "capacity": 3,
+          "speed": 1.9,
+          "mass": 2200,
+          "enginePower": 18,
+          "tipTime": 2.5,
+          "fuelPerJob": 0.08,
+          "wearPerJob": 0.2,
+          "breakdownBase": 0.001,
+          "breakdownWear": 0.02,
+          "startCondition": 90,
+          "serviceCostPerPoint": 0.35,
+          "serviceTime": 5,
+          "repairCost": 40,
+          "repairTime": 10,
+          "repairTo": 75
+        }
+      }
+    },
+    "tractor": {
+      "name": "Tractor & Trailer",
+      "kind": "carrier",
+      "unload": "tip",
+      "roadLegal": true,
+      "tiers": {
+        "rusty": {
+          "price": 420,
+          "capacity": 4,
+          "speed": 6,
+          "mass": 3600,
+          "trailerMass": 1500,
+          "enginePower": 45,
+          "tipTime": 4,
+          "fuelPerJob": 0.8,
+          "wearPerJob": 0.8,
+          "breakdownBase": 0.002,
+          "breakdownWear": 0.035,
+          "startCondition": 70,
+          "serviceCostPerPoint": 0.3,
+          "serviceTime": 6,
+          "repairCost": 35,
+          "repairTime": 12,
+          "repairTo": 70
+        },
+        "used": {
+          "price": 1100,
+          "capacity": 10,
+          "speed": 7,
+          "mass": 5200,
+          "trailerMass": 2800,
+          "enginePower": 85,
+          "tipTime": 4,
+          "fuelPerJob": 1.1,
+          "wearPerJob": 0.5,
+          "breakdownBase": 0.0012,
+          "breakdownWear": 0.025,
+          "startCondition": 90,
+          "serviceCostPerPoint": 0.5,
+          "serviceTime": 6,
+          "repairCost": 70,
+          "repairTime": 12,
+          "repairTo": 75
+        }
+      }
+    },
+    "excavator": {
+      "name": "Excavator",
+      "kind": "digger",
+      "roadLegal": false,
+      "tiers": {
+        "rusty": {
+          "price": 1400,
           "bucketVolume": 0.4,
           "cycleTime": 3.5,
           "fuelPerJob": 0.08,
@@ -50,7 +191,7 @@
           "startCondition": 70,
           "serviceCostPerPoint": 0.4,
           "serviceTime": 6,
-          "repairCost": 25,
+          "repairCost": 70,
           "repairTime": 12,
           "repairTo": 70,
           "reach": 5.5,
@@ -59,7 +200,7 @@
           "enginePower": 45
         },
         "used": {
-          "price": 170,
+          "price": 3800,
           "bucketVolume": 1.1,
           "cycleTime": 3.5,
           "fuelPerJob": 0.2,
@@ -69,7 +210,7 @@
           "startCondition": 90,
           "serviceCostPerPoint": 0.8,
           "serviceTime": 6,
-          "repairCost": 80,
+          "repairCost": 160,
           "repairTime": 12,
           "repairTo": 75,
           "reach": 6.0,
@@ -77,50 +218,51 @@
           "mass": 9200,
           "enginePower": 60
         }
-      },
-      "roadLegal": false
+      }
     },
     "truck": {
       "name": "Tipper Truck",
+      "kind": "carrier",
+      "unload": "tip",
+      "roadLegal": true,
       "tiers": {
         "rusty": {
-          "price": 100,
-          "capacity": 3,
-          "speed": 8,
-          "mass": 4200,
-          "enginePower": 70,
-          "loadTime": 5,
-          "fuelPerJob": 0.8,
+          "price": 1200,
+          "capacity": 8,
+          "speed": 9,
+          "mass": 6800,
+          "enginePower": 110,
+          "fuelPerJob": 1.2,
           "wearPerJob": 1.2,
           "breakdownBase": 0.003,
           "breakdownWear": 0.04,
           "startCondition": 70,
           "serviceCostPerPoint": 0.4,
           "serviceTime": 6,
-          "repairCost": 20,
+          "repairCost": 60,
           "repairTime": 12,
-          "repairTo": 70
+          "repairTo": 70,
+          "tipTime": 3
         },
         "used": {
-          "price": 150,
-          "capacity": 8,
+          "price": 3500,
+          "capacity": 20,
           "speed": 11,
-          "mass": 7400,
-          "enginePower": 125,
-          "loadTime": 5,
-          "fuelPerJob": 1.6,
+          "mass": 10500,
+          "enginePower": 190,
+          "fuelPerJob": 2.0,
           "wearPerJob": 0.7,
           "breakdownBase": 0.0015,
           "breakdownWear": 0.03,
           "startCondition": 90,
           "serviceCostPerPoint": 0.8,
           "serviceTime": 6,
-          "repairCost": 70,
+          "repairCost": 140,
           "repairTime": 12,
-          "repairTo": 75
+          "repairTo": 75,
+          "tipTime": 3
         }
-      },
-      "roadLegal": true
+      }
     }
   }
 }

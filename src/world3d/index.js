@@ -9,7 +9,8 @@ import { buildPlaces } from './places.js';
 import { createParticles } from './particles.js';
 import { createPlayer } from './player.js';
 import { createTruck } from './truck.js';
-import { createExcavator } from './excavator.js';
+import { createExcavator, POUR_ANGLE } from './excavator.js';
+import { createDumper } from './dumper.js';
 import { createMouse } from './mouse.js';
 import { preloadModels } from './glbModels.js';
 import { preloadGround } from './groundMaterial.js';
@@ -22,7 +23,7 @@ import { MAP, inRect } from './map.js';
 import { keyLabel } from '../input/index.js';
 import { pileTotal } from '../quarry/index.js';
 import {
-  getStats, machinesAt, machineName, getMachine, JOBS, jobProgress,
+  getStats, machinesAt, machineName, getMachine, JOBS, jobProgress, isDigger, bucketRadius, typeName,
 } from '../machinery/index.js';
 import { hasTicket, quoteDelivery } from '../economy/index.js';
 
@@ -110,11 +111,15 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   // ---- machines ----
   const vehicles = new Map();
-  const parkingUsed = { excavator: 0, truck: 0, spare: 0 };
+  const parkingUsed = { spare: 0 };
   function parkingSpot(type) {
     if (type === 'pickup') return home.pickup;
     const list = home.parking[type] ?? [];
-    if ((parkingUsed[type] ?? 0) < list.length) return list[parkingUsed[type]++];
+    const used = parkingUsed[type] ?? 0;
+    if (used < list.length) {
+      parkingUsed[type] = used + 1;
+      return list[used];
+    }
     const s = home.parking.spare;
     return { x: s.x + s.stepX * parkingUsed.spare++, z: s.z, yaw: -Math.PI / 2 };
   }
@@ -156,17 +161,19 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const stats = () => getStats(data, getMachine(game.ctx, machine.id) ?? machine);
     const live = () => getMachine(game.ctx, machine.id);
     const args = { physics, scene, terrain, machine, spawn: spot, stats, live, surfaceAt: groundSurface };
-    const v = machine.type === 'excavator'
-      ? createExcavator({
-        ...args,
-        allowedAt: onYourLand,
-        onBlocked: () => {
-          if (blockedNoteT > 0) return;
-          blockedNoteT = 4;
-          notify('Site machines aren\'t road-legal: the excavator stays on your land', 'warn');
-        },
-      })
-      : createTruck(args);
+    // Site machines aren't road-legal: they stay on your land.
+    const site = {
+      allowedAt: onYourLand,
+      onBlocked: () => {
+        if (blockedNoteT > 0) return;
+        blockedNoteT = 4;
+        notify(`Site machines aren't road-legal: the ${typeName(data, machine.type).toLowerCase()} stays on your land`, 'warn');
+      },
+    };
+    let v;
+    if (isDigger(data, machine.type)) v = createExcavator({ ...args, ...site, canDigAt: (x, z) => ground?.workable(x, z) });
+    else if (machine.type === 'dumper') v = createDumper({ ...args, ...site });
+    else v = createTruck(args);
     vehicles.set(machine.id, v);
   }
   for (const m of machinesAt(game.ctx, siteId)) addVehicle(m);
@@ -218,9 +225,9 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     player.setEnabled(false);
     game.actions.selectMachine(v.machineId);
     look.yaw = 0;
-    look.pitch = v.type === 'excavator' ? -0.3 : -0.08;
+    look.pitch = v.digger ? -0.3 : -0.08;
     chasePos = null;
-    if (v.type === 'excavator') v.state.targetHouseYaw = v.state.houseYaw;
+    if (v.digger) v.state.targetHouseYaw = v.state.houseYaw;
   }
 
   function exit() {
@@ -236,7 +243,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       v.control.handbrake = true;
     }
     // Step out on the driver's side (left, which is -Z in the machine's frame).
-    const yaw = v.type === 'excavator' ? v.houseWorldYaw() : v.yaw();
+    const yaw = v.digger ? v.houseWorldYaw() : v.yaw();
     const p = v.position();
     const out = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw)).multiplyScalar(-(v.radius * 0.7 + 1));
     const x = p.x + out.x;
@@ -261,14 +268,13 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   // Where a road vehicle would unload: a depot bay (if its tail is in one) or the ground just
   // behind it. Returns { bay } or { x, z } (or { reason }).
   function unloadSpot(v) {
-    const tail = v.tailgateWorld();
-    const bay = places.bayAt(tail.x, tail.z);
+    const u = v.unload();
+    const bay = v.road ? places.bayAt(u.point.x, u.point.z) : null;
     if (bay) return { bay: bay.id, name: bay.name };
-    const back = new THREE.Vector3(-Math.cos(v.yaw()), 0, Math.sin(v.yaw()));
-    const x = tail.x + back.x * 1.2;
-    const z = tail.z + back.z * 1.2;
+    const x = u.point.x + u.out.x * (v.road ? 1.2 : 1.4);
+    const z = u.point.z + u.out.z * (v.road ? 1.2 : 1.4);
     if (ground?.workable(x, z)) return { x, z };
-    return { reason: 'Unload on your field, or in a bay at Ashby Aggregates' };
+    return { reason: v.road ? 'Unload on your field, or in a bay at Ashby Aggregates' : 'Tip on your own field' };
   }
 
   // ---- single-press actions (from hotkeys) ----
@@ -297,7 +303,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
           hands.tip();
           return true;
         }
-        if (!v?.road) return true;
+        if (!v?.carrier) return true;
         if (Math.abs(v.speed()) > 1.5) {
           notify('Stop before unloading', 'warn');
           return true;
@@ -346,11 +352,102 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     v.control.handbrake = keys('jump') || m.broken || busy;
   }
 
-  // What the excavator's bucket is over: a vehicle's bed, or the ground.
-  const bedUnder = (t) => [...vehicles.values()].find((tr) => tr.road && tr.isOverBed(t)) ?? null;
+  // What a digger's bucket is over: a carrier's bed, or the ground.
+  const bedUnder = (t) => [...vehicles.values()].find((tr) => tr.carrier && tr.isOverBed(t)) ?? null;
+
+  // Tracked machines with no physics vehicle (the dumper): W/S drive, A/D turn on the spot.
+  function controlDumper(v, m, keys, d, sens, dt) {
+    look.yaw = THREE.MathUtils.clamp(look.yaw - d.x * sens, -2.3, 2.3);
+    look.pitch = THREE.MathUtils.clamp(look.pitch - d.y * sens, -1.2, 0.8);
+    const idle = m.broken || !!m.job;
+    v.drive(dt, idle ? 0 : (keys('forward') ? 1 : 0) - (keys('back') ? 1 : 0), idle ? 0 : (keys('left') ? 1 : 0) - (keys('right') ? 1 : 0));
+  }
+
+  // Direct digger control. Mouse left/right swings; mouse forward/back works the stick; the
+  // wheel raises and lowers the boom; the left button curls the bucket in and the right button
+  // opens it (the arrow keys do boom and bucket too); W A S D drive the tracks. The teeth cut the
+  // ground where they really are, as much as fits in the bucket, and the load runs out
+  // where the tilted bucket really is: into a bed under it, or onto your ground as a heap.
+  const directState = new Map(); // machineId -> { cutT, pourT, pour, cutting, note }
+  let testInput = null; // automated play tests stand in for the mouse and keys
+  let testKeys = new Set();
+  function controlDirect(v, m, keys, d, sens, dt) {
+    const st = directState.get(m.id) ?? { cutT: 0, pourT: 0, pour: 0, cutting: false, note: 0 };
+    directState.set(m.id, st);
+    look.pitch = -0.35;
+    st.note = Math.max(0, st.note - dt);
+    if (m.broken || m.job) {
+      v.drive(dt, 0, 0);
+      v.directInput({});
+      v.directReport({});
+      return;
+    }
+    v.swingBy(-d.x * sens);
+    v.drive(dt, (keys('forward') ? 1 : 0) - (keys('back') ? 1 : 0), (keys('left') ? 1 : 0) - (keys('right') ? 1 : 0));
+    const wheel = mouse.takeWheel();
+    v.directInput(testInput ?? {
+      boom: (keys('boomUp') ? 1 : 0) - (keys('boomDown') ? 1 : 0),
+      bucket: (mouse.isRightDown() || keys('bucketDump') ? 1 : 0) - (mouse.isDown() || keys('bucketCurl') ? 1 : 0),
+      stickDelta: -d.y * sens * 1.2,
+      boomDelta: THREE.MathUtils.clamp(-wheel / 100, -3, 3) * 0.1,
+    });
+
+    const s = v.directState();
+    const stats = getStats(data, m);
+    const full = pileTotal(m.load) > 0.01;
+    const tp = new THREE.Vector3(s.teeth.x, s.teeth.y, s.teeth.z);
+    // Teeth in the ground, moving: cut a little bowl, as much as still fits.
+    st.cutT -= dt;
+    if (!s.under) st.stuck = false;
+    if (s.under && !full && s.moving) {
+      if (st.cutT <= 0) {
+        st.cutT = 0.07;
+        const r = game.actions.bucketCut(m.id, { x: s.teeth.x, z: s.teeth.z, bottomY: s.teeth.y, radius: bucketRadius(stats) });
+        st.cutting = r.ok && r.tonnes > 0;
+        st.stuck = r.ok && r.tonnes === 0 && !r.full; // rock, or the edge of your land
+        if (st.cutting) particles.spawn(tp, { count: 1, spread: 0.4, life: 1.2, up: 0.5 });
+        if (!r.ok && st.note <= 0) {
+          notify(r.reason, 'warn');
+          st.note = 4;
+        }
+      }
+    } else if (!s.under || !s.moving) st.cutting = false;
+    // Bucket tilted open with a load in it: the load runs out (faster the further it's tipped).
+    let pouring = 0;
+    if (full && s.phi > POUR_ANGLE && !s.under) { // (in the ground, the earth holds it in)
+      pouring = THREE.MathUtils.clamp((s.phi - POUR_ANGLE) / 0.9, 0, 1);
+      st.pour += 1 - Math.exp(-2.2 * pouring * dt);
+      st.pourT -= dt;
+      if (st.pourT <= 0) {
+        st.pourT = 0.1;
+        const bed = bedUnder(tp);
+        const spot = bed ? { machineId: bed.machineId } : ground?.workable(s.teeth.x, s.teeth.z) ? { x: s.teeth.x, z: s.teeth.z, radius: 0.5 } : null;
+        if (spot) {
+          const r = game.actions.dumpBucket(m.id, spot, Math.min(1, st.pour));
+          if (r.ok) {
+            st.pour = 0;
+            particles.spawn(bed ? bed.bedWorld() : tp, { count: 3, spread: 0.8, life: 1.4 });
+          } else if (st.note <= 0) {
+            notify(r.reason, 'warn');
+            st.note = 4;
+          }
+        } else if (st.note <= 0) {
+          notify('Tip the bucket over your field or a truck', 'warn');
+          st.note = 4;
+        }
+      }
+    } else st.pour = 0;
+    v.directReport({ cutting: st.cutting, pouring, stuck: st.stuck });
+  }
 
   let digHintShown = false;
   function controlExcavator(v, m, keys, d, sens, clicked, dt) {
+    const direct = settings.diggerControls === 'direct';
+    v.setDirect(direct);
+    if (direct) {
+      controlDirect(v, m, keys, d, sens, dt);
+      return;
+    }
     look.pitch = THREE.MathUtils.clamp(look.pitch - d.y * sens, -1.2, 0.6);
     const working = !!m.job || v.busy();
     if (!m.broken && !working) {
@@ -418,7 +515,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const offs = [
     game.events.on('rockDug', (e) => {
       const v = vehicles.get(e.machineId);
-      if (v?.type === 'excavator') {
+      if (v?.digger && !e.direct) {
         const t = v.bucketTarget();
         t.y = heightAt(t.x, t.z);
         particles.spawn(t, { count: 8, spread: 1.2, life: 1.5, up: 0.6 });
@@ -426,7 +523,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     }),
     game.events.on('rockHauled', (e) => {
       const v = vehicles.get(e.machineId);
-      if (v?.road) particles.spawn(v.tailgateWorld(), { count: 20, spread: 2.5, life: 2.6, size: 1.6 });
+      if (v?.carrier) particles.spawn(v.unload().point, { count: 20, spread: 2.5, life: 2.6, size: 1.6 });
     }),
     game.events.on('productSold', (e) => places.delivered(e.bayId, e.tonnes)),
     game.events.on('machineBought', (e) => {
@@ -464,11 +561,11 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       camera.rotation.set(player.look.pitch, player.look.yaw, 0);
       return;
     }
-    const baseYaw = v.type === 'excavator' ? v.houseWorldYaw() : v.yaw();
+    const baseYaw = v.digger ? v.houseWorldYaw() : v.yaw();
     if (camMode === 'cab') {
       // The seat moves with the cab (pitch and roll too); your head sways against the
       // machine's acceleration and picks up engine and ground vibration.
-      const cabQ = v.type === 'excavator' ? v.model.house.getWorldQuaternion(tmpQ) : tmpQ.copy(v.quaternion());
+      const cabQ = v.digger ? v.model.house.getWorldQuaternion(tmpQ) : tmpQ.copy(v.quaternion());
       const sway = head.update(dt, v, cabQ);
       camera.position.copy(v.seatWorld()).add(sway.offset);
       lookQ.setFromEuler(lookE.set(look.pitch + sway.pitch, -Math.PI / 2 + look.yaw, sway.roll, 'YXZ'));
@@ -479,7 +576,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     // Chase camera behind the machine, orbiting with the mouse.
     const yaw = baseYaw + look.yaw;
     const p = v.position();
-    const dist = v.type === 'pickup' ? 8.5 : 12;
+    const dist = v.type === 'pickup' ? 8.5 : v.type === 'miniDigger' || v.type === 'dumper' ? 7 : 12;
     const desired = new THREE.Vector3(p.x - Math.cos(yaw) * dist, p.y + dist * 0.45 - look.pitch * 6, p.z + Math.sin(yaw) * dist);
     desired.y = Math.max(desired.y, heightAt(desired.x, desired.z) + 1.2);
     chasePos = chasePos ? chasePos.lerp(desired, Math.min(1, dt * 5)) : desired;
@@ -508,10 +605,11 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     if (!st) fx.set(veh.machineId, st = { smoke: 0, dust: 0, prev: f.engine, side: 1 });
     const running = f.engine === 'running' || f.engine === 'idleOut';
     const worn = mm?.tier === 'rusty' ? 1 : 0.45;
-    const petrol = veh.type === 'pickup' ? 0.35 : 1; // a petrol engine smokes far less
+    const petrol = (veh.type === 'pickup' ? 0.35 : 1) * Math.min(1, veh.radius / 2.6); // a petrol engine smokes far less; small engines make small clouds
+    const puff = Math.min(1, veh.radius / 2.6);
     // A thick black cough when a cold diesel catches.
     if (f.engine === 'running' && st.prev === 'cranking') {
-      particles.spawn(veh.exhaustWorld(), { count: 7, spread: 0.3, up: 1.8, life: 2.6, size: 0.9, color: 0x1c1b1a, opacity: (0.55 * worn + 0.15) * petrol });
+      particles.spawn(veh.exhaustWorld(), { count: 7, spread: 0.3 * puff, up: 1.8 * puff, life: 2.6, size: 0.9 * puff, color: 0x1c1b1a, opacity: (0.55 * worn + 0.15) * petrol });
     }
     st.prev = f.engine;
     if (running) {
@@ -521,7 +619,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       while (st.smoke > 1) {
         st.smoke -= 1;
         particles.spawn(veh.exhaustWorld(), {
-          count: 1, spread: 0.12, up: 1.5 + load, life: 1.4 + load * 1.2, size: 0.3 + load * 0.45,
+          count: 1, spread: 0.12 * puff, up: (1.5 + load) * puff, life: 1.4 + load * 1.2, size: (0.3 + load * 0.45) * puff,
           color: smokeCol.getHex(), opacity: (0.1 + load * (0.18 + 0.3 * worn)) * petrol,
         });
       }
@@ -543,14 +641,15 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       st.dust += dt * ((f.digging ? 9 : 0) + f.travel * 5);
       while (st.dust > 1) {
         st.dust -= 1;
-        const at = f.digging ? veh.teethWorld() : veh.model.root.localToWorld(new THREE.Vector3(-2 * Math.sign(veh.speed() || 1), 0.2, (Math.random() - 0.5) * 2.6));
+        const r = veh.radius;
+        const at = f.digging ? veh.teethWorld() : veh.model.root.localToWorld(new THREE.Vector3(-0.75 * r * Math.sign(veh.speed() || 1), 0.2, (Math.random() - 0.5) * r));
         particles.spawn(at, { count: 1, spread: 0.6, up: f.digging ? 0.8 : 0.3, life: 2, size: 1, color: 0xb7a07c, opacity: 0.28 });
       }
     }
   }
 
   function update(dt, { paused, keyboard }) {
-    const keys = (a) => !paused && keyboard.isHeld(a);
+    const keys = (a) => !paused && (testKeys.has(a) || keyboard.isHeld(a));
     const d = mouse.takeDelta();
     const clicked = mouse.takePressed();
     const sens = MOUSE_SCALE * (settings.mouseSensitivity ?? 1);
@@ -563,7 +662,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     if (!v && hands.holding()) hands.controlHeld(paused ? 0 : dt, keys, delta, sens);
     else if (!v) controlFoot(keys, delta, sens);
     else if (v.road) controlTruck(v, m, keys, delta, sens);
-    else controlExcavator(v, m, keys, delta, sens, clicked && !paused, paused ? 0 : dt);
+    else if (v.digger) controlExcavator(v, m, keys, delta, sens, clicked && !paused, paused ? 0 : dt);
+    else controlDumper(v, m, keys, delta, sens, paused ? 0 : dt);
 
     if (!paused) physics.step(dt);
     groundView?.update();
@@ -574,25 +674,35 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     for (const veh of vehicles.values()) {
       const mm = getMachine(game.ctx, veh.machineId);
       if (!mm) continue;
-      if (veh.road) {
+      if (veh.carrier) {
         const cap = getStats(data, mm).capacity;
         const tonnes = pileTotal(mm.load);
         veh.setCargo(tonnes);
         veh.update(dt, { job: mm.job, fill: tonnes / cap, color: bedColor(mm.load), occupied: veh === v });
         if (veh !== v) {
-          veh.control.throttle = 0;
-          veh.control.handbrake = true;
+          if (veh.road) {
+            veh.control.throttle = 0;
+            veh.control.handbrake = true;
+          } else veh.drive(dt, 0, 0);
         }
       } else {
-        if (veh !== v) veh.drive(dt, 0, 0);
+        if (veh !== v) {
+          veh.drive(dt, 0, 0);
+          veh.directInput({});
+        }
         veh.update(dt, { job: mm.job, bucketFull: pileTotal(mm.load) > 0.01, bucketColor: bedColor(mm.load), occupied: veh === v });
       }
     }
 
     if (!paused) for (const veh of vehicles.values()) vehicleEffects(dt, veh);
 
-    // Bucket target marker.
-    if (v?.type === 'excavator' && !m.job) {
+    // Bucket target marker (in Direct control: a ring on the ground under the teeth).
+    if (v?.digger && !m.job && v.isDirect()) {
+      const s = v.directState();
+      marker.visible = true;
+      marker.position.set(s.teeth.x, s.ground + 0.08, s.teeth.z);
+      marker.material.color.set(pileTotal(m.load) > 0.01 ? 0xf2b632 : 0x7ee07e);
+    } else if (v?.digger && !m.job) {
       const t = v.bucketTarget();
       const bed = bedUnder(t);
       const full = pileTotal(m.load) > 0.01;
@@ -656,7 +766,14 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     } else if (m.job) {
       const label = m.job.type === 'tip' && v.type === 'pickup' ? 'Shovelling off' : JOBS[m.job.type].label;
       job = { label, progress: jobProgress(m.job) };
-    } else if (v.type === 'excavator') {
+    } else if (v.digger && v.isDirect()) {
+      const s = v.directState();
+      if (pileTotal(m.load) > 0.01) {
+        prompt = s.phi > POUR_ANGLE && !s.under ? { key: null, text: 'Emptying the bucket…' }
+          : { key: 'RMB', text: 'Tilt the bucket over a truck or your field to empty it' };
+      } else prompt = s.under ? { key: 'LMB', text: 'Curl the bucket in to fill it' }
+        : { key: 'Wheel', text: 'Lower the boom, push the stick out, then curl the bucket in' };
+    } else if (v.digger) {
       const t = v.bucketTarget();
       const full = pileTotal(m.load) > 0.01;
       const bed = bedUnder(t);
@@ -689,6 +806,9 @@ export async function createWorld3D({ container, game, settings, audio = null, n
           prompt = { key: null, text: `Take it to ${MAP.depot.name} to sell (Tab: map)` };
         }
       }
+    } else if (v.type === 'dumper' && pileTotal(m.load) >= data.depot.minLoad) {
+      const spot = unloadSpot(v);
+      prompt = spot.reason ? { key: null, text: spot.reason } : { key: key('tip'), text: 'Tip the skip here' };
     }
 
     let machine = null;
@@ -699,10 +819,12 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         tier: m.tier,
         type: m.type,
         road: !!v.road,
+        carrier: !!v.carrier,
         condition: m.condition,
         broken: m.broken,
         load: pileTotal(m.load),
-        capacity: m.type === 'excavator' ? stats.bucketVolume * 1.6 : stats.capacity,
+        capacity: v.digger ? stats.bucketVolume * 1.6 : stats.capacity,
+        direct: !!v.digger && v.isDirect(),
         speedKmh: Math.abs(v.speed()) * 3.6,
         camera: camMode,
         ticket: hasTicket(game.ctx, m.id),
@@ -711,11 +833,13 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       machine.engine = f.engine; // off / cranking / running / idleOut / stopping / stall
       if (v.road) {
         machine.rpm = f.rpm;
-        machine.maxRpm = v.type === 'pickup' ? 4600 : 2600;
+        machine.maxRpm = { pickup: 4600, tractor: 2500 }[v.type] ?? 2600;
         machine.gear = f.shifting ? '–' : f.gear < 0 ? 'R' : String(f.gear);
       }
     }
-    return { prompt, job, machine: machine ?? tool, mode: hands.holding() ? 'barrow' : mode.kind, locked: mouse.locked() };
+    // Which set of control hints applies.
+    const hintMode = hands.holding() ? 'barrow' : !v ? 'foot' : v.digger ? (v.isDirect() ? 'digger-direct' : 'digger') : v.type;
+    return { prompt, job, machine: machine ?? tool, mode: hintMode, locked: mouse.locked() };
   }
 
   // Remember where everything is, so saves put machines back in place.
@@ -734,7 +858,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   function mapInfo() {
     const v = current();
     const p = v ? v.position() : player.feet();
-    const yaw = v ? (v.type === 'excavator' ? v.houseWorldYaw() : v.yaw()) : player.look.yaw + Math.PI / 2;
+    const yaw = v ? (v.digger ? v.houseWorldYaw() : v.yaw()) : player.look.yaw + Math.PI / 2;
     return {
       you: { x: p.x, z: p.z, yaw },
       vehicles: [...vehicles.values()].map((veh) => {
@@ -758,8 +882,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     },
     placeVehicle(id, x, z, yaw = 0) {
       const veh = vehicles.get(id);
-      if (veh?.road) veh.phys.reset(x, heightAt(x, z), z, yaw);
-      if (veh?.type === 'excavator') Object.assign(veh.state, { x, z, yaw });
+      if (veh?.road) veh.reset(x, z, yaw);
+      else if (veh?.tracked) Object.assign(veh.state, { x, z, yaw });
     },
     enterVehicle(id) {
       const veh = vehicles.get(id);
@@ -767,14 +891,14 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     },
     exitVehicle: () => exit(),
     swing(dl) {
-      if (current()?.type === 'excavator') current().swingBy(dl);
+      if (current()?.digger) current().swingBy(dl);
     },
     setFootPitch(pitch) {
       player.look.pitch = pitch;
     },
     setHouseYaw(yaw) {
       const veh = current();
-      if (veh?.type === 'excavator') Object.assign(veh.state, { houseYaw: yaw, targetHouseYaw: yaw });
+      if (veh?.digger) Object.assign(veh.state, { houseYaw: yaw, targetHouseYaw: yaw });
     },
     // Hand tools: press the mouse button (dig / tip the shovel), or E / T with the barrow.
     useShovel: () => hands.useShovel(),
@@ -795,6 +919,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       look.pitch = pitch;
     },
     setCamMode: (c) => { camMode = c; },
+    // Direct digger control without a mouse: { boom, stick, bucket } axes -1..1 (null: real input).
+    setDirectInput: (i) => { testInput = i; },
+    // Hold some actions down without a keyboard, e.g. ['forward', 'left'] ([]: real input only).
+    setKeys: (list) => { testKeys = new Set(list); },
   };
 
   return {

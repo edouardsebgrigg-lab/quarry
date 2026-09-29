@@ -388,7 +388,7 @@ export function createHandTools({
   // A vehicle's bed you're looking at (a truck's sides are above your head: you throw it up and in).
   function rayTruck(reach) {
     for (const v of vehicles.values()) {
-      if (!v.road || Math.abs(v.speed()) > 0.5) continue;
+      if (!v.carrier || Math.abs(v.speed()) > 0.5) continue;
       const floorY = v.bedWorld().y - 0.3;
       for (let t = 0.3; t <= reach + 0.8; t += 0.1) {
         const p = eye.clone().addScaledVector(look, t);
