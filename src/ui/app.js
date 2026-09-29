@@ -10,6 +10,7 @@ import { createGameScreen } from './game/gameScreen.js';
 import { createSaveSystem, migrations } from '../core/index.js';
 import { createGame } from '../game/index.js';
 import { createKeyboard } from '../input/index.js';
+import { createAudio } from '../audio/index.js';
 
 function enterFullscreen() {
   const docEl = document.documentElement;
@@ -27,6 +28,18 @@ function exitFullscreen() {
 export function startApp(root, { data, storage, isDev }) {
   const settings = loadSettings(storage);
   applyUiScale(settings);
+  // Sound starts on the first click or key press (browsers block it before that).
+  const audio = createAudio({ volume: settings.volume });
+  const applyAudio = (s) => {
+    audio.setVolume(s.volume);
+    audio.setBusGain('ambient', 0.55 * (s.ambientVolume ?? 0.8));
+  };
+  const wake = () => {
+    audio.resume();
+    applyAudio(settings);
+  };
+  window.addEventListener('pointerdown', wake, true);
+  window.addEventListener('keydown', wake, true);
   const saves = createSaveSystem({ storage, version: data.game.saveVersion, migrations });
 
   const screenRoot = el('div', { class: 'screen-root' });
@@ -123,6 +136,7 @@ export function startApp(root, { data, storage, isDev }) {
       onChange: (s) => {
         saveSettings(storage, s);
         applyUiScale(s);
+        applyAudio(s);
         if (s.fullscreen) enterFullscreen();
         else exitFullscreen();
       },
@@ -163,7 +177,7 @@ export function startApp(root, { data, storage, isDev }) {
     if (session && document.activeElement?.tagName === 'BUTTON' && !overlays.top()) document.activeElement.blur();
   });
 
-  const app = { overlays, openPauseMenu: openPause, saveTo };
+  const app = { overlays, openPauseMenu: openPause, saveTo, audio };
   showMainMenu();
   return app;
 }

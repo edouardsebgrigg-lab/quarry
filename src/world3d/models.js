@@ -208,6 +208,11 @@ export function buildExcavatorModel(tier) {
       if (color) scoop.material.color.copy(color);
     },
     cabSeat: new THREE.Vector3(0.55, 2.45, -0.75), // in house space
+    rams: [], // the simple stand-in has no moving rams or tracks
+    bucketLink: null,
+    trackShoe: null,
+    trackChain: null,
+    trackWheels: null,
     setFirstPerson(on) {
       cab.visible = !on;
       interior.visible = on;

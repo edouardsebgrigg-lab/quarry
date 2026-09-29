@@ -372,6 +372,12 @@ h3 {
 .mp-speed { display: flex; align-items: baseline; justify-content: flex-end; gap: 0.3rem; margin-top: 0.1rem; }
 .mp-speed b { font-family: var(--display); font-weight: 700; font-size: 2.4rem; line-height: 1; font-variant-numeric: tabular-nums; }
 .mp-speed span { color: var(--muted); font-size: 0.75rem; }
+.mp-drive { display: flex; align-items: center; gap: 0.45rem; margin-right: auto; align-self: center; }
+.mp-speed b.mp-gear { font-size: 1.35rem; min-width: 1.4rem; height: 1.8rem; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 6px; background: rgba(255, 255, 255, 0.08); color: var(--accent); }
+.mp-rpm { width: 4.5rem; height: 0.35rem; border-radius: 999px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+.mp-rpm-fill { height: 100%; width: 0; background: linear-gradient(90deg, #7fd37f, #f5b82e); transition: width 0.08s linear; }
+.mp-rpm-fill.high { background: linear-gradient(90deg, #f5b82e, #ff6b4a); }
 .click-to-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.55)); pointer-events: none; }
 .ctp-card { padding: 1.3rem 2rem; text-align: center; }

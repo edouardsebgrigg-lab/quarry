@@ -14,6 +14,7 @@ import { preloadModels } from './glbModels.js';
 import { preloadGround } from './groundMaterial.js';
 import { preloadVegetation, createVegetation, createTrees } from './vegetation.js';
 import { preloadEntrance, addEntrance } from './entrance.js';
+import { createWorldSounds } from './sounds.js';
 import { LAYOUTS, zoneAt, inRect } from './layouts.js';
 import { keyLabel } from '../input/index.js';
 import { getSiteData, getZoneInfo, pileTotal } from '../quarry/index.js';
@@ -24,7 +25,66 @@ import {
 const MOUSE_SCALE = 0.0022;
 const ENTER_DISTANCE = 2.8;
 
-export async function createWorld3D({ container, game, settings, notify, onPointerLockLost, onUseOffice }) {
+// Driver's head in the cab: springs against acceleration (pushed back when pulling away,
+// forward when braking, sideways in corners) plus vibration from the engine and the ground.
+function createHeadSway() {
+  const off = new THREE.Vector3();
+  const vel = new THREE.Vector3();
+  const lastPos = new THREE.Vector3();
+  const lastVel = new THREE.Vector3();
+  const accel = new THREE.Vector3();
+  const inv = new THREE.Quaternion();
+  const out = { offset: new THREE.Vector3(), pitch: 0, roll: 0 };
+  let primed = false;
+  let t = 0;
+  return {
+    reset() {
+      primed = false;
+    },
+    update(dt, v, cabQ) {
+      t += dt;
+      const p = v.seatWorld();
+      if (!primed || dt <= 0) {
+        lastPos.copy(p);
+        lastVel.set(0, 0, 0);
+        off.set(0, 0, 0);
+        vel.set(0, 0, 0);
+        primed = true;
+      }
+      const velNow = p.clone().sub(lastPos).divideScalar(Math.max(dt, 1e-3));
+      accel.copy(velNow).sub(lastVel).divideScalar(Math.max(dt, 1e-3));
+      lastPos.copy(p);
+      lastVel.lerp(velNow, 0.5);
+      // Into the cab's own frame (x forward, y up, z right), gravity-free, clamped.
+      inv.copy(cabQ).invert();
+      const a = accel.applyQuaternion(inv).clampLength(0, 12);
+      const target = a.multiplyScalar(-0.009);
+      const k = 60;
+      const c = 2 * Math.sqrt(k) * 0.55;
+      vel.addScaledVector(target.sub(off).multiplyScalar(k), dt).addScaledVector(vel, -c * dt);
+      off.addScaledVector(vel, dt).clampLength(0, 0.14);
+      const f = v.feel?.() ?? {};
+      const running = f.engine === 'running' || f.engine === 'idleOut' || f.running;
+      const rpm = f.rpm ?? (running ? 1400 + (f.work ?? 0) * 500 : 0);
+      const rough = { gravel: 1, dirt: 0.8, grass: 0.9, rock: 1.2, asphalt: 0.15 }[f.surface] ?? 0.6;
+      const engineShake = running ? 0.0012 + (f.load ?? f.work ?? 0) * 0.0018 : 0;
+      const roadShake = Math.min(1, Math.abs(v.speed()) / 10) * rough * 0.005 + Math.min(0.02, (f.bump ?? 0) * 0.004);
+      const digShake = f.digging ? 0.006 : 0;
+      const w = (rpm / 60) * 2 * Math.PI * 0.5;
+      const n = (a1, a2) => Math.sin(t * a1 + a2) * 0.6 + Math.sin(t * a1 * 1.73 + a2 * 2.1) * 0.4;
+      out.offset.set(
+        n(w * 0.9, 0.3) * engineShake + n(23, 1.1) * roadShake,
+        n(w, 0) * engineShake * 1.4 + n(17, 0.5) * (roadShake + digShake) * 1.5,
+        n(w * 1.1, 2.1) * engineShake + n(29, 2.7) * roadShake,
+      ).add(off).applyQuaternion(cabQ);
+      out.pitch = -off.x * 0.35 + n(19, 3.3) * (roadShake + digShake) * 0.25;
+      out.roll = -off.z * 0.4 + n(13, 0.9) * roadShake * 0.25;
+      return out;
+    },
+  };
+}
+
+export async function createWorld3D({ container, game, settings, audio = null, notify, onPointerLockLost, onUseOffice }) {
   const { data } = game;
   const siteId = game.state.currentSiteId;
   const layout = LAYOUTS[siteId];
@@ -99,10 +159,41 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
     return { x: s.x + s.stepX * parkingUsed.spare++, z: s.z, yaw: Math.PI / 2 };
   }
 
+  // What the ground is like under a wheel or track: grip (friction) and rolling resistance.
+  const SURFACES = {
+    grass: { grip: 0.62, roll: 0.05 },
+    dirt: { grip: 0.8, roll: 0.035 },
+    gravel: { grip: 0.72, roll: 0.03 },
+    rock: { grip: 0.9, roll: 0.02 },
+  };
+  const ASPHALT = { grip: 1.0, roll: 0.012, name: 'asphalt' };
+  function groundSurface(x, z) {
+    const road = layout.publicRoad;
+    if (road && Math.abs(z - road.z) < road.width / 2 && !inRect(layout.terrain, x, z)) return ASPHALT;
+    const s = terrain.surfaceAt(x, z);
+    const w = { grass: s.grass, dirt: s.dirt, gravel: s.gravel, rock: s.rock };
+    let grip = 0;
+    let roll = 0;
+    let name = 'dirt';
+    let best = 0;
+    for (const [k, share] of Object.entries(w)) {
+      grip += SURFACES[k].grip * share;
+      roll += SURFACES[k].roll * share;
+      if (share > best) {
+        best = share;
+        name = k;
+      }
+    }
+    return { grip, roll, name };
+  }
+
+  const sounds = audio ? createWorldSounds({ audio, layout, groundSurface }) : null;
+
   function addVehicle(machine) {
     const spot = saved.machines?.[machine.id] ?? parkingSpot(machine.type);
     const stats = () => getStats(data, getMachine(game.ctx, machine.id) ?? machine);
-    const args = { physics, scene, terrain, machine, spawn: spot, stats };
+    const live = () => getMachine(game.ctx, machine.id);
+    const args = { physics, scene, terrain, machine, spawn: spot, stats, live, surfaceAt: groundSurface };
     const v = machine.type === 'truck' ? createTruck(args) : createExcavator(args);
     vehicles.set(machine.id, v);
   }
@@ -260,13 +351,13 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
   let digHintShown = false;
   function controlExcavator(v, m, keys, d, sens, clicked, dt) {
     look.pitch = THREE.MathUtils.clamp(look.pitch - d.y * sens, -1.2, 0.6);
-    const working = !!m.job;
+    const working = !!m.job || v.busy();
     if (!m.broken && !working) {
       v.swingBy(-d.x * sens);
       const move = (keys('forward') ? 1 : 0) - (keys('back') ? 1 : 0);
       const turn = (keys('left') ? 1 : 0) - (keys('right') ? 1 : 0);
       v.drive(dt, move, turn);
-    }
+    } else v.drive(dt, 0, 0);
     if (m.broken || working) return;
 
     const target = v.bucketTarget();
@@ -288,7 +379,7 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
       }
       const r = game.actions.dumpBucket(m.id, truck?.machineId ?? null);
       if (r.ok) {
-        v.startDump();
+        v.startDump(truck ? truck.bedWorld().y : null);
         const at = truck ? truck.bedWorld() : target.setY(terrain.heightAt(target.x, target.z));
         particles.spawn(at, { count: 12, spread: 1.5, life: 1.8 });
       } else notify(r.reason, 'warn');
@@ -323,6 +414,11 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
   ];
 
   // ---- camera ----
+  const tmpQ = new THREE.Quaternion();
+  const lookQ = new THREE.Quaternion();
+  const lookE = new THREE.Euler();
+  const head = createHeadSway();
+
   function placeCamera(dt) {
     const v = current();
     for (const veh of vehicles.values()) veh.model.setFirstPerson(veh === v && camMode === 'cab');
@@ -333,10 +429,16 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
     }
     const baseYaw = v.type === 'excavator' ? v.houseWorldYaw() : v.yaw();
     if (camMode === 'cab') {
-      camera.position.copy(v.seatWorld());
-      camera.rotation.set(look.pitch, baseYaw - Math.PI / 2 + look.yaw, 0);
+      // The seat moves with the cab (pitch and roll too); your head sways against the
+      // machine's acceleration and picks up engine and ground vibration.
+      const cabQ = v.type === 'excavator' ? v.model.house.getWorldQuaternion(tmpQ) : tmpQ.copy(v.quaternion());
+      const sway = head.update(dt, v, cabQ);
+      camera.position.copy(v.seatWorld()).add(sway.offset);
+      lookQ.setFromEuler(lookE.set(look.pitch + sway.pitch, -Math.PI / 2 + look.yaw, sway.roll, 'YXZ'));
+      camera.quaternion.copy(cabQ).multiply(lookQ);
       return;
     }
+    head.reset();
     // Chase camera behind the machine, orbiting with the mouse.
     const yaw = baseYaw + look.yaw;
     const p = v.position();
@@ -354,7 +456,58 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
   });
   resizeObserver.observe(container);
 
-  let wheelDust = 0;
+  // ---- exhaust smoke and dust
+  const fx = new Map();
+  const smokeClean = new THREE.Color(0x8e8c88);
+  const smokeDirty = new THREE.Color(0x151413);
+  const smokeCol = new THREE.Color();
+  const DUSTY = { gravel: 1, dirt: 1.2, grass: 0.25, rock: 0.6, asphalt: 0 };
+  function vehicleEffects(dt, veh) {
+    const f = veh.feel();
+    const mm = getMachine(game.ctx, veh.machineId);
+    let st = fx.get(veh.machineId);
+    if (!st) fx.set(veh.machineId, st = { smoke: 0, dust: 0, prev: f.engine, side: 1 });
+    const running = f.engine === 'running' || f.engine === 'idleOut';
+    const worn = mm?.tier === 'rusty' ? 1 : 0.45;
+    // A thick black cough when a cold diesel catches.
+    if (f.engine === 'running' && st.prev === 'cranking') {
+      particles.spawn(veh.exhaustWorld(), { count: 7, spread: 0.3, up: 1.8, life: 2.6, size: 0.9, color: 0x1c1b1a, opacity: 0.55 * worn + 0.15 });
+    }
+    st.prev = f.engine;
+    if (running) {
+      const load = f.load ?? f.work ?? 0;
+      st.smoke += dt * (2.5 + (f.rpm ?? 1500) / 500 + load * 7);
+      smokeCol.copy(smokeClean).lerp(smokeDirty, Math.min(1, load * worn * 1.3 + (f.misfire ? 0.6 : 0)));
+      while (st.smoke > 1) {
+        st.smoke -= 1;
+        particles.spawn(veh.exhaustWorld(), {
+          count: 1, spread: 0.12, up: 1.5 + load, life: 1.4 + load * 1.2, size: 0.3 + load * 0.45,
+          color: smokeCol.getHex(), opacity: 0.1 + load * (0.18 + 0.3 * worn),
+        });
+      }
+    }
+    if (veh.type === 'truck') {
+      const speed = Math.abs(f.speed);
+      const dusty = DUSTY[f.surface] ?? 0.8;
+      st.dust += dt * dusty * (Math.max(0, speed - 1.5) * 1.3 + f.slip * 10);
+      while (st.dust > 1) {
+        st.dust -= 1;
+        st.side = -st.side;
+        const at = veh.model.root.localToWorld(new THREE.Vector3(-2.0 - Math.random() * 0.6, -1.2, st.side * 1.05));
+        particles.spawn(at, {
+          count: 1, spread: 0.5, up: 0.45, life: 2.4, size: 1.1 + speed * 0.09,
+          color: 0xb7a07c, opacity: Math.min(0.4, 0.14 + speed * 0.012) * Math.min(1, dusty),
+        });
+      }
+    } else {
+      st.dust += dt * ((f.digging ? 9 : 0) + f.travel * 5);
+      while (st.dust > 1) {
+        st.dust -= 1;
+        const at = f.digging ? veh.teethWorld() : veh.model.root.localToWorld(new THREE.Vector3(-2 * Math.sign(veh.speed() || 1), 0.2, (Math.random() - 0.5) * 2.6));
+        particles.spawn(at, { count: 1, spread: 0.6, up: f.digging ? 0.8 : 0.3, life: 2, size: 1, color: 0xb7a07c, opacity: 0.28 });
+      }
+    }
+  }
 
   function update(dt, { paused, keyboard }) {
     const keys = (a) => !paused && keyboard.isHeld(a);
@@ -382,23 +535,18 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
         const cap = getStats(data, mm).capacity;
         const tonnes = pileTotal(mm.load);
         veh.setCargo(tonnes);
-        veh.update(dt, { job: mm.job, fill: tonnes / cap, color: bedColor(mm.load) });
+        veh.update(dt, { job: mm.job, fill: tonnes / cap, color: bedColor(mm.load), occupied: veh === v });
         if (veh !== v) {
           veh.control.throttle = 0;
           veh.control.handbrake = true;
         }
-        if (!paused && Math.abs(veh.speed()) > 4) {
-          wheelDust += dt;
-          if (wheelDust > 0.08) {
-            wheelDust = 0;
-            const back = veh.model.root.localToWorld(new THREE.Vector3(-3.2, -1, 0));
-            particles.spawn(back, { count: 1, spread: 1.5, life: 1.6, size: 1.4, opacity: 0.35 });
-          }
-        }
       } else {
-        veh.update(dt, { job: mm.job, bucketFull: pileTotal(mm.load) > 0.01, bucketColor: bedColor(mm.load) });
+        if (veh !== v) veh.drive(dt, 0, 0);
+        veh.update(dt, { job: mm.job, bucketFull: pileTotal(mm.load) > 0.01, bucketColor: bedColor(mm.load), occupied: veh === v });
       }
     }
+
+    if (!paused) for (const veh of vehicles.values()) vehicleEffects(dt, veh);
 
     // Bucket target marker.
     if (v?.type === 'excavator' && !m.job) {
@@ -415,6 +563,14 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
     vegetation.update(dt);
     trees.update(dt);
     placeCamera(dt);
+    sounds?.update(dt, {
+      camera,
+      vehicles,
+      current: v,
+      player: paused ? null : player,
+      jobOf: (id) => getMachine(game.ctx, id)?.job ?? null,
+      tierOf: (id) => getMachine(game.ctx, id)?.tier ?? 'rusty',
+    });
     env.follow(v ? v.position() : player.feet());
     renderer.render(scene, camera);
   }
@@ -473,6 +629,12 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
         speedKmh: Math.abs(v.speed()) * 3.6,
         camera: camMode,
       };
+      const f = v.feel();
+      machine.engine = f.engine; // off / cranking / running / idleOut / stopping / stall
+      if (v.type === 'truck') {
+        machine.rpm = f.rpm;
+        machine.gear = f.shifting ? '–' : f.gear < 0 ? 'R' : String(f.gear);
+      }
     }
     return { prompt, job, machine, mode: mode.kind, locked: mouse.locked() };
   }
@@ -514,6 +676,12 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
     mode: () => mode.kind,
     scene,
     look: () => ({ ...look, foot: { ...player.look } }),
+    vehicle: (id) => vehicles.get(id),
+    // Machine camera angle (for screenshots): yaw offset and pitch.
+    setLook(yaw, pitch = look.pitch) {
+      look.yaw = yaw;
+      look.pitch = pitch;
+    },
   };
 
   return {
@@ -529,6 +697,7 @@ export async function createWorld3D({ container, game, settings, notify, onPoint
       offs.forEach((off) => off());
       resizeObserver.disconnect();
       mouse.destroy();
+      sounds?.destroy();
       for (const v of vehicles.values()) v.destroy();
       player.destroy();
       terrain.dispose();

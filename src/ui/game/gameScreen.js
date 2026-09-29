@@ -66,6 +66,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     container: viewport,
     game,
     settings,
+    audio: app.audio,
     notify: (text, level) => feedback.message(text, level),
     onUseOffice: () => openOverlay(() => openShop(app.overlays, { game, feedback })),
     // Esc (or alt-tab) released the mouse: show the pause menu, like any PC game.
@@ -83,7 +84,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     }
     world = w;
     hud3d.setLoading(false);
-    if (isDev) window.__quarry = { game, world }; // handy in the browser console and for automated play tests
+    if (isDev) window.__quarry = { game, world, audio: app.audio }; // handy in the browser console and for automated play tests
   }).catch((err) => {
     console.error(err);
     hud3d.showError(`Could not start 3D: ${err.message ?? err}`);
@@ -118,6 +119,12 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     world?.writePositions(game.state);
   }
 
+  // Small UI sounds for money in and goals done.
+  const offSounds = [
+    game.events.on('productSold', () => app.audio?.play('coin', { bus: 'ui', gain: 0.8 })),
+    game.events.on('objectiveCompleted', () => app.audio?.play('chime', { bus: 'ui', gain: 0.8 })),
+    game.events.on('machineBought', () => app.audio?.play('coin', { bus: 'ui', gain: 0.5, rate: 0.8 })),
+  ];
   const offAutosave = game.events.on('dayStarted', () => {
     if (settings.autosave) app.saveTo('autosave', { silent: true });
   });
@@ -171,6 +178,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     },
     destroy() {
       destroyed = true;
+      offSounds.forEach((off) => off());
       cancelAnimationFrame(raf);
       offAutosave();
       feedback.destroy();

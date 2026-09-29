@@ -1,28 +1,67 @@
-// A drivable haul truck: Rapier vehicle physics + model, tipping bed animation.
+// A drivable haul truck: Rapier vehicle physics + model, engine start/stop, brake lights,
+// tipping bed. `feel()` reports what the sound and camera need.
 import * as THREE from 'three';
 import { buildTruckModel } from './models.js';
 import { createTruckPhysics } from './truckPhysics.js';
+import { createEngineLife } from './engineLife.js';
 
 const TIP_ANGLE = 0.85; // radians the bed lifts when tipping
 
-export function createTruck({ physics, scene, terrain, machine, spawn, stats }) {
+// Brake-light meshes: turned up when braking. Returns a setter.
+function brakeLights(root) {
+  const mats = [];
+  root.traverse((o) => {
+    if (o.isMesh && /taillight/i.test(o.name)) {
+      const list = Array.isArray(o.material) ? o.material : [o.material];
+      o.material = list.map((m) => m.clone());
+      if (!Array.isArray(o.material) || o.material.length === 1) o.material = o.material[0];
+      for (const m of (Array.isArray(o.material) ? o.material : [o.material])) {
+        if (m.emissive) {
+          m.emissive.set(0xff1a0a);
+          mats.push(m);
+        }
+      }
+    }
+  });
+  return (on) => {
+    for (const m of mats) m.emissiveIntensity = on ? 3.2 : 0.25;
+  };
+}
+
+export function createTruck({ physics, scene, terrain, machine, spawn, stats, live, surfaceAt }) {
   const model = buildTruckModel(machine.tier);
   scene.add(model.root);
   const y = terrain.heightAt(spawn.x, spawn.z);
-  const phys = createTruckPhysics(physics, { x: spawn.x, y, z: spawn.z, yaw: spawn.yaw ?? 0, speedStat: stats().speed });
+  const st = stats();
+  const phys = createTruckPhysics(physics, {
+    x: spawn.x, y, z: spawn.z, yaw: spawn.yaw ?? 0, speedStat: st.speed,
+    mass: st.mass ?? 5000, power: st.enginePower ?? 90, surfaceAt,
+  });
+  phys.setEngineRunning(false);
   const offStep = physics.onBeforeStep((dt) => phys.update(dt));
+  const setBrakeLights = brakeLights(model.root);
   let bedAngle = 0;
+  let bedSpeed = 0;
+  let lightsOn = null;
+
+  const engine = createEngineLife();
 
   const quat = new THREE.Quaternion();
   const tmp = new THREE.Vector3();
 
-  function update(dt, { job, fill, color }) {
+  function update(dt, { job, fill, color, occupied }) {
+    const m = live();
     phys.setSpeedStat(stats().speed);
+    phys.setCondition(m?.condition ?? 100);
+
+    engine.update(dt, { occupied, broken: !!m?.broken });
+    phys.setEngineRunning(engine.running());
+
+    // ---- body and wheels
     const p = phys.body.translation();
     const r = phys.body.rotation();
     model.root.position.set(p.x, p.y, p.z);
     model.root.quaternion.set(r.x, r.y, r.z, r.w);
-
     for (let i = 0; i < 4; i++) {
       const w = model.wheels[i];
       const susp = phys.vehicle.wheelSuspensionLength(i) ?? 0.45;
@@ -31,9 +70,18 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats }) 
       w.spin.rotation.z = -(phys.vehicle.wheelRotation(i) ?? 0);
     }
 
-    // Bed rises while tipping, then settles back down.
+    const tel = phys.telemetry();
+    if (tel.braking !== lightsOn) {
+      lightsOn = tel.braking;
+      setBrakeLights(lightsOn && engine.state !== 'off');
+    }
+
+    // ---- bed: the ram pushes it up at a steady rate, then it drops back down
     const target = job?.type === 'tip' ? TIP_ANGLE * Math.min(1, (job.elapsed / job.duration) * 1.6) : 0;
-    bedAngle += (target - bedAngle) * Math.min(1, dt * (target > bedAngle ? 6 : 2.5));
+    const prev = bedAngle;
+    if (target > bedAngle) bedAngle = Math.min(target, bedAngle + dt * 0.45);
+    else bedAngle = Math.max(target, bedAngle - dt * 0.28);
+    bedSpeed = (bedAngle - prev) / Math.max(dt, 1e-4);
     model.bedPivot.rotation.z = bedAngle; // hinge at the back: the front of the bed lifts
     model.setLoad(job?.type === 'tip' ? fill * (1 - job.elapsed / job.duration) : fill, color);
   }
@@ -46,6 +94,21 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats }) 
     control: phys.control,
     update,
     setCargo: (t) => phys.setCargo(t),
+    // Everything the sound and camera react to.
+    feel() {
+      const tel = phys.telemetry();
+      return {
+        ...tel,
+        engine: engine.state,
+        speed: phys.speed(),
+        bedSpeed,
+        bedAngle,
+        size: Math.min(1, (stats().mass ?? 5000) / 8000),
+      };
+    },
+    engineOn: () => engine.running(),
+    // Engine starts and stops since last asked (for the sound).
+    takeEngineEvents: () => engine.takeEvents(),
     position: () => {
       const p = phys.body.translation();
       return new THREE.Vector3(p.x, p.y, p.z);
@@ -72,6 +135,9 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats }) 
     },
     seatWorld() {
       return model.root.localToWorld(model.cabSeat.clone());
+    },
+    exhaustWorld() {
+      return model.root.localToWorld(tmp.set(1.45, 1.55, 1.0).clone()); // exhaust stack, right side
     },
     placement() {
       const p = phys.body.translation();

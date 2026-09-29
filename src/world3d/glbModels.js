@@ -106,12 +106,23 @@ export function glbExcavator(tier) {
   scoop.scale.set(0.38, 0.55, 0.38);
   scoop.visible = false;
   bucketPivot.add(scoop);
+  const opt = (name) => root.getObjectByName(name) ?? null;
+  const rams = ['BoomRam', 'StickRam', 'BucketRam']
+    .map((n) => ({ barrel: opt(n), rod: opt(`${n}Rod`) }))
+    .filter((r) => r.barrel && r.rod);
+  let shoeMesh = null;
+  opt('TrackShoe')?.traverse((o) => { if (o.isMesh && !shoeMesh) shoeMesh = o; });
   return {
     root,
     house: node(root, 'House'),
     boomPivot: node(root, 'Boom'),
     stickPivot: node(root, 'Stick'),
     bucketPivot,
+    bucketLink: opt('BucketLink'),
+    rams,
+    trackShoe: shoeMesh,
+    trackChain: opt('Tracks'),
+    trackWheels: { L: [opt('TrackWheelL0'), opt('TrackWheelL1')], R: [opt('TrackWheelR0'), opt('TrackWheelR1')] },
     setBucketLoad(full, color) {
       scoop.visible = full;
       if (color) scoop.material.color.copy(color);

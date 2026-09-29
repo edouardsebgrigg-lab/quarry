@@ -22,7 +22,11 @@ export function createHud3d({ settings }) {
   const load = gauge('Load');
   const loadLabel = load.node.firstChild;
   const speedValue = el('b');
-  const speed = el('div', { class: 'mp-speed' }, speedValue, el('span', {}, 'km/h'));
+  const gearValue = el('b', { class: 'mp-gear' });
+  const rpmFill = el('div', { class: 'mp-rpm-fill' });
+  const rpm = el('div', { class: 'mp-rpm', title: 'Engine revs' }, rpmFill);
+  const speed = el('div', { class: 'mp-speed' },
+    el('div', { class: 'mp-drive' }, gearValue, rpm), speedValue, el('span', {}, 'km/h'));
   const machinePanel = el('div', { class: 'machine-panel glass' },
     el('div', { class: 'mp-head' }, mName, mStatus), cond.node, load.node, speed);
 
@@ -104,7 +108,8 @@ export function createHud3d({ settings }) {
       machinePanel.style.display = m ? '' : 'none';
       if (!m) return;
       setText(mName, m.name);
-      const status = m.broken ? 'Broken' : j ? j.label : m.type === 'truck' && m.speedKmh > 1 ? 'Moving' : 'Ready';
+      const engineStatus = { off: 'Engine off', cranking: 'Starting…', stopping: 'Engine off', stall: 'Stalled' }[m.engine];
+      const status = m.broken ? 'Broken' : j ? j.label : engineStatus ?? (m.type === 'truck' && m.speedKmh > 1 ? 'Moving' : 'Ready');
       setText(mStatus, status);
       mStatus.className = `mp-status ${m.broken ? 'bad' : j ? 'busy' : ''}`;
       cond.bar.set(m.condition / 100, conditionColor(m.condition, m.broken));
@@ -114,6 +119,12 @@ export function createHud3d({ settings }) {
       setText(load.val, `${m.load.toFixed(1)} / ${m.capacity.toFixed(1)} t`);
       speed.style.display = m.type === 'truck' ? '' : 'none';
       setText(speedValue, Math.round(m.speedKmh));
+      if (m.type === 'truck') {
+        setText(gearValue, m.engine === 'running' ? m.gear : 'N');
+        const r = Math.min(1, (m.rpm ?? 0) / 2600);
+        rpmFill.style.width = `${Math.round(r * 100)}%`;
+        rpmFill.classList.toggle('high', r > 0.88);
+      }
     },
   };
 }

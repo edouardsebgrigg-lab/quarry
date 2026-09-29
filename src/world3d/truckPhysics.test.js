@@ -7,11 +7,15 @@ beforeAll(async () => {
   await RAPIER.init();
 });
 
-function setup(cargo = 0) {
+function setup(cargo = 0, slope = 0) {
   const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
   world.timestep = 1 / 60;
-  world.createCollider(RAPIER.ColliderDesc.cuboid(500, 1, 500).setTranslation(0, -1, 0).setFriction(1));
-  const truck = createTruckPhysics({ RAPIER, world }, { x: 0, y: 0, z: 0, yaw: 0, speedStat: 8 });
+  // A slope rising toward +X (the way the truck faces).
+  const q = { x: 0, y: 0, z: Math.sin(slope / 2), w: Math.cos(slope / 2) };
+  world.createCollider(RAPIER.ColliderDesc.cuboid(500, 1, 500).setTranslation(0, -1, 0).setRotation(q).setFriction(1));
+  const truck = createTruckPhysics({ RAPIER, world }, {
+    x: 0, y: 0, z: 0, yaw: 0, speedStat: 8, mass: 4200, power: 70,
+  });
   truck.setCargo(cargo);
   const run = (seconds) => {
     for (let i = 0; i < seconds * 60; i++) {
@@ -57,6 +61,42 @@ describe('truck driving', () => {
     const empty = stopTime(0);
     expect(empty).toBeLessThan(3);
     expect(stopTime(3)).toBeGreaterThan(empty);
+  });
+
+  it('changes up through the gears and revs within the engine range', () => {
+    const { truck, run } = setup(0);
+    expect(truck.telemetry().rpm).toBeCloseTo(700, -1); // idling
+    truck.control.throttle = 1;
+    let maxRpm = 0;
+    for (let i = 0; i < 80; i++) {
+      run(0.1);
+      maxRpm = Math.max(maxRpm, truck.telemetry().rpm);
+    }
+    expect(truck.telemetry().gear).toBe(4);
+    expect(maxRpm).toBeLessThan(2700);
+  });
+
+  it('reverses when you hold back from a standstill', () => {
+    const { truck, run } = setup(0);
+    truck.control.throttle = -1;
+    run(3);
+    expect(truck.speed()).toBeLessThan(-2);
+    expect(truck.telemetry().reversing).toBe(true);
+  });
+
+  it('climbs a steep hill slower when loaded, and holds still with no pedal', () => {
+    const climb = (cargo) => {
+      const { truck, run } = setup(cargo, Math.atan(0.12));
+      truck.control.throttle = 1;
+      run(10);
+      return truck;
+    };
+    const loaded = climb(3);
+    expect(loaded.speed()).toBeGreaterThan(0.8);
+    expect(loaded.speed()).toBeLessThan(climb(0).speed());
+    const { truck, run } = setup(3, Math.atan(0.12));
+    run(4);
+    expect(Math.abs(truck.speed())).toBeLessThan(0.3);
   });
 
   it('turns without rolling over', () => {

@@ -59,15 +59,21 @@ def undercarriage(mats, root):
         y = s * TRACK_Y
         steel.append(lib.rounded_box((3.2, 0.3, 0.34), (0, y, 0.45), 0.08))  # track frame
         steel.append(lib.rounded_box((2.6, 0.62, 0.03), (0, y, 0.87), 0.012))  # track guard on top
-        for x in (-TRACK_HALF, TRACK_HALF):  # sprocket / idler
-            steel.append(bm_cylinder(TRACK_R - 0.07, 0.34, 'Y', 24, (x, y, TRACK_R)))
-            steel.append(bm_cylinder(0.12, 0.42, 'Y', 12, (x, y, TRACK_R)))
-        for k in range(10):  # sprocket teeth
-            a = 2 * math.pi * k / 10
-            tooth = bm_box((0.1, 0.12, 0.08), (0, 0, TRACK_R - 0.04))
-            bmesh.ops.rotate(tooth, cent=(0, 0, 0), matrix=Matrix.Rotation(a, 3, 'Y'), verts=tooth.verts)
-            bmesh.ops.translate(tooth, vec=(-TRACK_HALF, y, TRACK_R), verts=tooth.verts)
-            steel.append(tooth)
+        # Sprocket (rear, toothed) and idler (front): separate objects the game turns.
+        for k, x in enumerate((-TRACK_HALF, TRACK_HALF)):
+            parts = [bm_cylinder(TRACK_R - 0.07, 0.34, 'Y', 24, (0, 0, 0)), bm_cylinder(0.12, 0.42, 'Y', 12, (0, 0, 0))]
+            spokes = 10 if k == 0 else 5
+            for j in range(spokes):
+                a = 2 * math.pi * j / spokes
+                if k == 0:  # teeth
+                    t = bm_box((0.1, 0.12, 0.08), (0, 0, TRACK_R - 0.04))
+                else:  # lightening holes read as bolts on the idler face
+                    t = bm_cylinder(0.035, 0.36, 'Y', 8, (0, 0, 0.2))
+                bmesh.ops.rotate(t, cent=(0, 0, 0), matrix=Matrix.Rotation(a, 3, 'Y'), verts=t.verts)
+                parts.append(t)
+            side = 'L' if s > 0 else 'R'
+            wobj = mesh_object(f'TrackWheel{side}{k}', merge(*parts), mats['steel'], root, (x, y, TRACK_R))
+            finish(wobj, 0.01, dirt_range=(-0.4, 0.6))
         for x in (-1.0, -0.35, 0.35, 1.0):  # bottom rollers
             steel.append(bm_cylinder(0.11, 0.3, 'Y', 12, (x, y, 0.16)))
         steel.append(bm_cylinder(0.08, 0.2, 'Y', 12, (0, y, 0.76)))  # top carrier roller
@@ -78,6 +84,11 @@ def undercarriage(mats, root):
     finish(frame, 0.015, dirt_range=DIRT)
 
     chains = mesh_object('Tracks', merge(track_chain(TRACK_Y), track_chain(-TRACK_Y)), mats['steel'], root)
+    # One loose shoe: the game copies it round the track path and moves them as you drive.
+    pitch = (4 * TRACK_HALF + 2 * math.pi * TRACK_R) / 52
+    shoe = mesh_object('TrackShoe', merge(bm_box((pitch * 0.92, 0.55, 0.05), (0, 0, -0.03)),
+                                          bm_box((0.035, 0.55, 0.05), (0, 0, 0.02))), mats['steel'], root)
+    finish(shoe, 0.006, uv_scale=0.5, dirt_range=(-0.2, 0.3))
     finish(chains, 0.006, uv_scale=0.5, dirt_range=(0.0, 1.0))
 
     # Dozer blade at the front.
@@ -262,6 +273,85 @@ def box_beam(top, bottom, half_w, x0, x1, r=0.06, n=28):
     return lib.loft(st)
 
 
+# Ram pins, in the (x, z) plane of the part each end is fixed to.
+# name: (barrel parent, barrel pin, rod parent, rod pin, barrel radius, rod radius, (min, max) pin distance)
+LINK_LEN = 0.45
+LINK_RATIO = 0.55
+LINK_OFFSET = 1.9
+RAMS = {
+    'BoomRam': ('house', (1.1, 0.5), 'boom', (2.4, -0.12), 0.11, 0.06),
+    'StickRam': ('boom', (1.0, 0.74), 'stick', (-0.45, 0.42), 0.1, 0.055),
+    'BucketRam': ('stick', (0.25, 0.38), 'link', (LINK_LEN, 0.0), 0.085, 0.048),
+}
+
+
+def _rot(p, a):
+    return (p[0] * math.cos(a) - p[1] * math.sin(a), p[0] * math.sin(a) + p[1] * math.cos(a))
+
+
+def ram_range(name):
+    """Shortest and longest pin-to-pin distance over each joint's range of movement."""
+    bp, bpin, rp, rpin, *_ = RAMS[name]
+    ds = []
+    for i in range(61):
+        t = i / 60
+        if name == 'BoomRam':  # house -> boom (boom pivot at house (0.9, 1.1)), boom -0.8..1.0
+            a = -0.8 + 1.8 * t
+            q = _rot(rpin, a)
+            q = (0.9 + q[0], 1.1 + q[1])
+        elif name == 'StickRam':  # boom -> stick (stick pivot at boom (3.6, 0)), stick -2.55..-0.3
+            a = -2.55 + 2.25 * t
+            q = _rot(rpin, a)
+            q = (3.6 + q[0], q[1])
+        else:  # stick -> link end (link at stick tip, angle = ratio * bucket + offset), bucket -3..1.3
+            a = LINK_RATIO * (-3.0 + 4.3 * t) + LINK_OFFSET
+            q = _rot(rpin, a)
+            q = (2.6 + q[0], q[1])
+        ds.append(math.hypot(q[0] - bpin[0], q[1] - bpin[1]))
+    return min(ds), max(ds)
+
+
+def build_rams(mats, house, boom, stick, link):
+    parents = {'house': (house, (0.0, -0.35)), 'boom': (boom, (0.0, 0.0)), 'stick': (stick, (0.0, 0.0)),
+               'link': (link, (0.0, 0.0))}
+    for name, (bp, bpin, rp, rpin, rb, rr) in RAMS.items():
+        dmin, dmax = ram_range(name)
+        barrel_len = dmin - 0.12
+        rod_len = min(dmin - 0.1, dmax - barrel_len + 0.25)
+        bparent, boff = parents[bp]
+        rparent, roff = parents[rp]
+        # Barrel: eye at the origin, body along +X.
+        barrel = merge(
+            bm_torus(rb * 0.55, rb * 0.3, 'Y', 16, 6, (0, 0, 0)),
+            bm_lathe([(0.0, rb * 0.6), (rb * 0.85, rb * 0.6), (rb, rb * 0.8), (rb, barrel_len - 0.06),
+                      (rb * 1.14, barrel_len - 0.05), (rb * 1.14, barrel_len), (rr * 1.3, barrel_len + 0.01),
+                      (0.0, barrel_len + 0.01)], 20, 'X'))
+        bo = mesh_object(name, barrel, mats['paint2'], bparent)
+        bo.location = (bpin[0], boff[1], bpin[1])
+        finish(bo, 0, smooth_angle=50, dirt=False)
+        # Rod: eye at the origin, chrome rod along +X (the game points it back at the barrel).
+        rod = merge(bm_torus(rr * 0.9, rr * 0.45, 'Y', 16, 6, (0, 0, 0)),
+                    bm_cylinder(rr, rod_len, 'X', 16, (rod_len / 2 + rr * 0.8, 0, 0)))
+        ro = mesh_object(name + 'Rod', rod, mats['chrome'], rparent)
+        ro.location = (rpin[0], roff[1], rpin[1])
+        finish(ro, 0, smooth_angle=50, dirt=False)
+        print(f'{name}: pins {dmin:.2f}-{dmax:.2f} m, barrel {barrel_len:.2f}, rod {rod_len:.2f}')
+
+
+def aim_rams():
+    """Point every barrel at its rod's pin and every rod back at its barrel (Blender preview;
+    the game does the same each frame)."""
+    import bpy
+    bpy.context.view_layer.update()
+    for name in RAMS:
+        for obj, other in ((bpy.data.objects[name], bpy.data.objects[name + 'Rod']),
+                           (bpy.data.objects[name + 'Rod'], bpy.data.objects[name])):
+            target = obj.parent.matrix_world.inverted() @ other.matrix_world.translation
+            d = target - obj.location
+            obj.rotation_euler = (0, -math.atan2(d.z, d.x), 0)
+        bpy.context.view_layer.update()
+
+
 def arm(mats, house):
     boom_pivot = empty('Boom', (0.9, -0.35, 1.1), house)
     # Banana-shaped boom from (0,0) to (3.6,0).
@@ -272,31 +362,28 @@ def arm(mats, house):
     boom.append(bm_cylinder(0.17, 0.44, 'Y', 20, (3.6, 0, 0)))  # tip boss
     b = mesh_object('BoomBody', merge(*boom), mats['paint'], boom_pivot)
     finish(b, 0, uv_scale=1.4, smooth_angle=50, dirt_range=(-1.5, 3.0))
-    # Boom ram underneath and stick ram on top.
-    rams_barrel, rams_rod = [], []
-    for a, bpt, rb, rr in (((0.2, -0.45), (1.8, -0.02), 0.11, 0.06), ((1.1, 0.72), (3.45, 0.5), 0.1, 0.055)):
-        barrel, rod = cylinder_between(a, bpt, rb, rr)
-        rams_barrel.append(barrel)
-        rams_rod.append(rod)
-    rb_obj = mesh_object('BoomRams', merge(*rams_barrel), mats['paint2'], boom_pivot)
-    finish(rb_obj, 0, smooth_angle=50, dirt=False)
-    rr_obj = mesh_object('BoomRods', merge(*rams_rod), mats['chrome'], boom_pivot)
-    finish(rr_obj, 0, smooth_angle=50, dirt=False)
-
+    # Rams are built on their pins: barrels and rods are separate objects that the game aims at
+    # each other every frame, so they slide in and out as the arm moves (see RAMS below).
     stick_pivot = empty('Stick', (3.6, 0, 0), boom_pivot)
     stick = [box_beam([(-0.45, 0.3), (1.2, 0.2), (2.7, 0.13)], [(-0.45, -0.2), (1.2, -0.18), (2.7, -0.13)],
                       0.15, -0.45, 2.7, 0.05, 20)]
     stick.append(bm_cylinder(0.13, 0.36, 'Y', 16, (2.6, 0, 0)))
     s = mesh_object('StickBody', merge(*stick), mats['paint'], stick_pivot)
     finish(s, 0, uv_scale=1.4, smooth_angle=50, dirt_range=(-3.0, 3.0))
-    barrel, rod = cylinder_between((-0.3, 0.42), (2.2, 0.3), 0.09, 0.05)
-    mesh_object('StickRam', barrel, mats['paint2'], stick_pivot).data.shade_smooth()
-    mesh_object('StickRod', rod, mats['chrome'], stick_pivot).data.shade_smooth()
     link = merge(bm_box((0.4, 0.34, 0.08), (2.35, 0, 0.3)), bm_box((0.08, 0.34, 0.3), (2.52, 0, 0.18)))
     lk = mesh_object('Linkage', link, mats['steel'], stick_pivot)
     finish(lk, 0.01, dirt=False)
 
     bucket_pivot = empty('Bucket', (2.6, 0, 0), stick_pivot)
+    # Bucket linkage: a short link at the stick tip that turns with the bucket (at
+    # LINK_RATIO of its angle); the bucket ram's rod hangs on its end.
+    link_obj = empty('BucketLink', (2.6, 0, 0), stick_pivot)
+    lb = merge(lib.rounded_box((LINK_LEN + 0.12, 0.3, 0.1), (LINK_LEN / 2, 0, 0), 0.04),
+               bm_cylinder(0.07, 0.34, 'Y', 12, (LINK_LEN, 0, 0)))
+    lo = mesh_object('LinkBar', lb, mats['steel'], link_obj)
+    finish(lo, 0, smooth_angle=50, dirt=False)
+    link_obj.rotation_euler = (0, -LINK_OFFSET, 0)
+    build_rams(mats, house, boom_pivot, stick_pivot, link_obj)
     # Curved shell: an arc around (0.45, 0.05), opening upward in local space.
     cx, cz = 0.45, 0.05
     outer = [(cx + math.cos(a) * 0.5, cz + math.sin(a) * 0.5) for a in [math.radians(170 + i * 10) for i in range(22)]]
@@ -340,6 +427,8 @@ def pose(root, boom=0.55, stick=-1.6, bucket=-1.3):
     import bpy
     for name, a in (('Boom', boom), ('Stick', stick), ('Bucket', bucket)):
         bpy.data.objects[name].rotation_euler = (0, -a, 0)
+    bpy.data.objects['BucketLink'].rotation_euler = (0, -(LINK_RATIO * bucket + LINK_OFFSET), 0)
+    aim_rams()
 
 
 PREVIEW = dict(target=(0.8, 0, 1.4), distance=12, angle=40, elevation=16, ground_z=0.0)

@@ -1,7 +1,7 @@
 // Dust puffs (digging, dumping, tipping, wheels on gravel).
 import * as THREE from 'three';
 
-const MAX = 300;
+const MAX = 600;
 
 function dustTexture() {
   const c = document.createElement('canvas');

@@ -8,6 +8,7 @@ export function defaultSettings() {
     bindings: { ...DEFAULT_BINDINGS },
     bindingsVersion: BINDINGS_VERSION,
     volume: 0.8,
+    ambientVolume: 0.8,
     uiScale: 1,
     fullscreen: true,
     autosave: true,

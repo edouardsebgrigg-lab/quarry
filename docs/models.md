@@ -75,6 +75,8 @@ You can replace any model with your own. Keep the file name, keep the named part
 - `Bucket`: an empty at the stick tip (2.6, 0, 0).
 - The game rotates Boom, Stick and Bucket about the Y axis, so keep their own rotation at zero.
 - `Interior`: what you see from the seat. The eye is at about (0.4, 0.72, 1.42) in House space.
+- Hydraulic rams (optional; the game animates them if present): `BoomRam`, `StickRam`, `BucketRam` are the barrels, `BoomRamRod`, `StickRamRod`, `BucketRamRod` the rods. Each has its origin on its pin with the part pointing along +X; the barrel sits on one part (House, Boom, Stick) and the rod on the other (Boom, Stick, `BucketLink`). The game points each barrel at its rod's pin and each rod back at its barrel every frame, so they slide in and out. `BucketLink` is an empty at the stick tip that the game turns at 0.55 × the bucket angle + 1.9 rad.
+- Tracks (optional): `TrackShoe` is one loose shoe; the game copies it round the track path and moves the copies as you drive (and hides the static `Tracks` mesh). `TrackWheelL0/L1`, `TrackWheelR0/R1` are the sprockets and idlers, turned by the game.
 
 ### Props (`prop_<name>.glb`)
 The origin sits on the ground at the centre. The office's door faces −Y (south in the game).

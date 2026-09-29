@@ -38,7 +38,7 @@ Use Chrome or Edge for the best experience (full screen and mouse capture work b
 
 | Haul truck | |
 |---|---|
-| W / S | Accelerate / brake and reverse |
+| W / S | Accelerate / brake. Stopped, hold S to reverse |
 | A / D | Steer |
 | Space | Handbrake |
 | T | Tip the load (in the yellow tipping bay at the yard) |
@@ -57,6 +57,15 @@ Use Chrome or Edge for the best experience (full screen and mouse capture work b
 | F1 | Dev panel (in `npm run dev` only) |
 
 All keys can be changed in Settings.
+
+## Machines and sound
+
+The machines behave like the real thing:
+- **Haul truck:** a diesel engine with a torque curve and a 4-speed automatic gearbox, engine braking, air brakes and grip that depends on the ground (tarmac, gravel, dirt, grass). A loaded truck is heavier at the back, slower to pull away, slower up hills and longer to stop. Worn trucks misfire.
+- **Excavator:** the arm is solved so the bucket really reaches the ground or the truck bed: it reaches out, bites, drags back along the ground and curls. Every joint moves like a hydraulic ram, the rams slide in and out, the house swings with inertia, and the tracks roll round their sprockets. The machine tilts with the ground and rocks as the bucket bites.
+- Engines start when you get in (starter motor, a puff of black smoke) and stop a few seconds after you leave. From the cab you feel acceleration, braking, bumps and engine vibration.
+
+All sound is generated in code (no recordings): engines by rpm and load, gear changes, tyres on gravel or tarmac, air brakes, the reverse alarm, hydraulics, clanking tracks, digging, rock pouring into the steel bed, footsteps, wind, birds and the odd car on the road outside. Volume is in Settings.
 
 ## Getting started
 
