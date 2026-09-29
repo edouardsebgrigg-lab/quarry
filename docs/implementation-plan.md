@@ -19,6 +19,21 @@ Based on `docs/design-spec.md`. Every milestone ends with something you can run 
 - Truck: Rapier vehicle physics (heavier when loaded), cab and chase cameras, tip at the yard, load from the face pile
 - Site map (Tab), control hints, prompts, machine panel; graphics, mouse sensitivity and invert-Y settings
 
+## ✅ Milestone 1c: Realism pass
+- Blender models (lofted bodies, rounded parts), multi-texture ground, grass and weeds, trees, site entrance and props
+- Truck drivetrain (engine, gearbox, brakes, grip by surface), excavator arm IK with hydraulic joints, moving rams and tracks
+- Synthesised sound for engines, machines, ground and countryside
+
+## Milestone V2: the first loop (in progress, agreed plan in the design spec, section 0)
+Each step is playable and committed.
+1. HUD redesign: small sim-style corner widgets, fading key hints (H)
+2. Deformable layered ground: chunked high-resolution heightfield, soil layers, dig/deposit, slumping piles, physics colliders that follow; tests
+3. Hand-dig start: shovel, wheelbarrow, ground piles, picking material back up
+4. The bigger map: your plot, public roads, village, selling depot with weighbridge and material bays, pricing by material and purity
+5. Machines on the new ground: mini digger (Assisted + Direct controls), site dumper, tractor + trailer, the existing excavator and truck; road-legal rules
+6. Mentor guidance with map markers; balance pass
+7. Building with material: haul roads, ramps, levelling
+
 ## Milestone 2: Operators and automation
 - Hiring board, operators with names, wages, skills and traits
 - Operators drive machines in 3D on their own: excavators dig and load trucks, trucks drive the haul road and tip

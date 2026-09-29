@@ -6,6 +6,32 @@
 
 A PC quarry tycoon game. You start with a rusty excavator, a rusty truck and a roadside gravel pit. At first you do the digging and hauling yourself. Slowly you save up for better machines, hire operators, automate, buy richer sites, and end up running several quarries from a manager view. You can still jump into any machine and drive it.
 
+> **Version 2 (agreed): the first loop is being rebuilt around real digging.** See section 0 below. Where it disagrees with the older sections, section 0 wins.
+
+## 0. Version 2: the first loop
+
+**You start small on a bigger map.** Your first property is a flat field (about 150 × 150 m) on a countryside map of about 2 × 2 km (we can grow it later), with public roads, a village, a selling depot a few minutes' drive away and a machine dealer. You start with a **shovel, a wheelbarrow** and a little cash.
+
+**The ladder of machines:** shovel + wheelbarrow → mini digger (about 1.5 t) + tracked site dumper → tractor with tipping trailer (road-legal, for selling trips) → the 8 t excavator and tipper truck → bigger. **Site machines are not road-legal**: to sell you need a road vehicle (wheelbarrow and dumper stay on your land).
+
+**Real digging.** The ground is a deformable surface with soil layers (topsoil → clay/sand → gravel → rock), stored at 0.25–0.5 m resolution where you dig, in chunks so only what you touch is rebuilt.
+- A shovel or bucket carves its own shape out of the ground; the removed volume becomes its load (by material).
+- Anything you drop makes a real pile that slumps to its natural slope (about 34° for sand and gravel). Piles are ground: you can drive on them and dig them back up.
+- Loads are volumes of material. Trucks, dumpers and barrows show the heap and tip it out as a real pile.
+- Clumps flying off the bucket are visual only.
+
+**Excavator controls:** two modes, switchable in settings: **Assisted** (aim and click; the arm plans the dig, default) and **Direct** (realistic: boom, stick, bucket and swing each on their own keys/mouse).
+
+**Selling:** drive to the depot, cross the weighbridge, tip into the bay for that material, get paid per tonne. Clean loads pay more; mixed loads (e.g. gravel with topsoil in it) are graded down.
+
+**Building with material:** spread and level gravel to make haul roads (better grip, less rolling resistance), dig ramps into your pit, fill holes.
+
+**Guidance, not rails:** a mentor sends phone messages with a recommended plan and map markers. Goals check results (sell your first 5 t, build a ramp), not exact steps, so you can play your own way.
+
+**HUD:** realistic sim style: small see-through corner widgets (money/time top right, machine dash bottom right only in machines, one-line goal top left, small prompts bottom centre, key hints that fade and come back with H, small slide-in messages). Nothing big covers the view.
+
+**Saves:** the new map starts fresh; old saves and the gravel-pit start are replaced.
+
 ## 2. Design pillars
 
 1. **Every upgrade is a big jump.** Each machine tier is about 2.5–3× better. The shop always shows before and after (`Dig speed 3 → 8 t/min (×2.7)`).
