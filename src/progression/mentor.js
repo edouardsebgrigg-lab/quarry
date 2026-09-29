@@ -31,6 +31,9 @@ export function mentorOnEvent(ctx, type, payload) {
     case 'objectiveCompleted':
       if (payload.next) mentorForStep(ctx, payload.next);
       break;
+    case 'machineBought':
+      if (['miniDigger', 'dumper', 'tractor', 'excavator'].includes(payload.type)) tip(ctx, 'works');
+      break;
     case 'machineBrokeDown':
       tip(ctx, 'breakdown');
       break;

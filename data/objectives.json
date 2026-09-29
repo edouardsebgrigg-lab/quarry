@@ -136,7 +136,8 @@
       "breakdown": "Broken down? Walk up to it and press R to repair. Service them before they get that bad (R when you're next to one): it's cheaper than a repair.",
       "mixedLoad": "That load was graded down: it had other stuff mixed in. Dig one layer at a time and keep your heaps apart.",
       "worn": "One of your machines is getting tired (under 40%). A service (R next to it) puts it right before it lets you down.",
-      "broke": "Money's tight. Sell a clean load before you spend on fuel and repairs. You can go into debt, but the bank charges interest."
+      "broke": "Money's tight. Sell a clean load before you spend on fuel and repairs. You can go into debt, but the bank charges interest.",
+      "works": "Now you have a machine on the field, press F to plan a gravel haul road, or a ramp out of a pit. It's built from what you dig out plus loose gravel heaps within 30 m, so tip some gravel by it first. Right click cancels; nothing is spent until you click to build."
     }
   }
 }

@@ -27,6 +27,14 @@ Use Chrome or Edge for the best experience (full screen and mouse capture work b
 | Left Mouse | Shovel: dig a shovelful (aim at the ground on your field), click again to tip it (into the wheelbarrow, the pickup's or a truck's bed, or on the ground) |
 | E | Take the wheelbarrow (at its handles) / get into the machine in front of you / use the office laptop or the dealer's door |
 | R | Service / repair the nearest machine |
+| F | Plan a haul road, ramp or level area on your land (see below) |
+
+| Planning works (F, on foot) | |
+|---|---|
+| Left Mouse | Set the start, then the end (a coloured strip shows what will be built), then click again to build it |
+| Mouse wheel | Width |
+| F | Road, ramp or level area |
+| Right Mouse | Step back, then cancel. Nothing is spent or changed until the last click |
 
 | Wheelbarrow | |
 |---|---|
@@ -131,6 +139,12 @@ Prices drift up and down, and flooding the market with one material lowers its p
 ## Digging by hand
 
 The field is real ground you can dig anywhere: topsoil on top, then clay, sand and gravel, with rock at the bottom. Each shovelful comes out of the ground where you aim, so holes get deeper and walls that are too steep cave in. Whatever you tip on the ground (off the shovel, out of the barrow or off a truck) makes a real heap that slumps to its natural slope; you can walk on it and shovel it back up. A barrow holds about 0.11 m³: around 115 kg of topsoil, more of heavier gravel. Topsoil sells best; clay is worth little. Keep the layers apart if you want clean loads.
+
+## Building with material
+
+Press **F** on foot to plan works on your field: a **haul road**, a **ramp** (steeper, for getting out of a pit) or a **level area** (flattens a patch, filling holes). Aim at the ground and click where it starts and where it ends; a coloured strip shows the finished surface (green: you can build it, amber: you can't afford it yet, red: it can't be built, with the reason on the card). The card says the slope, the price (labour, per square metre) and the material: what has to be dug out, the gravel for the surface and where it comes from.
+
+Nothing is made from nothing. The strip is cut or filled to the planned grade, gravel for the surface and any fill still needed are taken from **loose heaps within 30 m** of it (tip gravel there first: off the truck, the dumper, the barrow or a bucket), and whatever the cut left over is heaped beside the road, never lost. Roads and ramps are topped with a loose gravel surface (better grip and less rolling resistance than dirt or grass); a built strip is firm, so it doesn't slump, but digging into it breaks it up again. Roads can be up to 10% slope, ramps 18%. You can't build under a machine, on rock, or at the edge of your land. Built ground is saved with the game.
 
 ## The loop with machines
 

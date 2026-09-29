@@ -139,3 +139,15 @@ describe('earthworks: building', () => {
     expect(g.cellBuilt(i, j)).toBe(false);
   });
 });
+
+describe('earthworks: the plan says what will happen', () => {
+  it('predicts the spoil and the heap material the build then really uses', () => {
+    const g = make();
+    heap(g, 50, 82, 60);
+    const plan = g.planWorks(strip());
+    expect(plan.surfaceTonnes).toBeGreaterThan(5);
+    expect(plan.heapTonnes).toBeGreaterThan(0);
+    const built = g.buildWorks(strip());
+    expect(built.spoilTonnes).toBeCloseTo(plan.spoilTonnes, 3);
+  });
+});

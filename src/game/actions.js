@@ -6,6 +6,7 @@ import {
   sellMachine as fleetSellMachine, buyMod as fleetBuyMod, dumpBucket as fleetDumpBucket, bucketCut as fleetBucketCut,
 } from '../machinery/index.js';
 import { shovelDig, shovelDump, tipBarrow } from '../handtools/index.js';
+import { planEarthworks, buildEarthworks } from '../earthworks/index.js';
 
 export function createActions(ctx) {
   const site = () => ctx.state.currentSiteId;
@@ -62,6 +63,11 @@ export function createActions(ctx) {
     shovelDig: (at) => shovelDig(ctx, at),
     shovelDump: (target) => shovelDump(ctx, target),
     tipBarrow: (at) => tipBarrow(ctx, at),
+
+    // Earthworks on your land: { mode: 'road' | 'ramp' | 'level', ax, az, bx, bz, width, obstacles }.
+    // planWorks only says what would happen and what it costs; buildWorks does it and charges.
+    planWorks: (input) => planEarthworks(ctx, input),
+    buildWorks: (input) => buildEarthworks(ctx, input),
 
     buyMachine: (type, tier) => fleetBuyMachine(ctx, type, tier),
     sellMachine: (id) => fleetSellMachine(ctx, id),

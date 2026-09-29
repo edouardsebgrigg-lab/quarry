@@ -138,6 +138,18 @@ describe('the mentor', () => {
     expect(game.state.mentor.seen.breakdown).toBe(true);
   });
 
+  it('points at the planner for roads and ramps once you have a machine, once', () => {
+    const game = createGame({ seed: 2 });
+    const got = [];
+    game.events.on('mentorMessage', (e) => got.push(e));
+    game.events.emit('machineBought', { machineId: 9, type: 'pickup', tier: 'rusty', price: 1 });
+    expect(got).toHaveLength(0);
+    game.events.emit('machineBought', { machineId: 10, type: 'miniDigger', tier: 'rusty', price: 1 });
+    game.events.emit('machineBought', { machineId: 11, type: 'dumper', tier: 'rusty', price: 1 });
+    expect(got.filter((m) => m.kind === 'tip')).toHaveLength(1);
+    expect(got.at(-1).text).toMatch(/haul road/);
+  });
+
   it('every goal has a message from the mentor', () => {
     const game = createGame({ seed: 2 });
     for (const s of game.data.objectives.steps) expect(s.mentor, s.id).toBeTruthy();

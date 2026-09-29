@@ -48,7 +48,15 @@ export function createHud3d({ settings }) {
   const guideDist = el('span', { class: 'guide-dist' });
   const guidePill = el('div', { class: 'guide-pill' }, guideArrow, guideLabel, guideDist);
 
-  const node = el('div', { class: 'hud3d' }, crosshair, guidePill, prompt, help, helpTag, machinePanel, clickToPlay, loading);
+  // The earthworks planner's card: what is being planned, what it costs and needs, and whether it can be built.
+  const worksTitle = el('div', { class: 'wk-title' });
+  const worksModeKey = el('span', { class: 'wk-key' });
+  const worksModes = el('div', { class: 'wk-modes' }, worksModeKey, ...['road', 'ramp', 'level'].map((m) => el('span', { class: 'wk-mode', 'data-mode': m }, { road: 'Road', ramp: 'Ramp', level: 'Level' }[m])));
+  const worksRows = el('div', { class: 'wk-rows' });
+  const worksCard = el('div', { class: 'works-card' }, worksTitle, worksModes, worksRows);
+  let worksKey = '';
+
+  const node = el('div', { class: 'hud3d' }, crosshair, guidePill, prompt, help, helpTag, machinePanel, worksCard, clickToPlay, loading);
 
   // Control hints per mode: [keys, label]. The last rows are the same everywhere.
   function hints(mode) {
@@ -57,6 +65,9 @@ export function createHud3d({ settings }) {
       rows = [[[k('forward'), k('back')], 'Drive / brake'], [[k('left'), k('right')], 'Steer'], [[k('jump')], 'Handbrake'],
         [[k('tip')], { pickup: 'Unload', tractor: 'Tip trailer' }[mode] ?? 'Tip load'], [[k('camera')], 'Camera'], [[k('recover')], 'Recover'],
         [[k('interact')], 'Get out']];
+    } else if (mode === 'plan') {
+      rows = [[['LMB'], 'Set start / end, then build'], [['Wheel'], 'Width'], [[k('works')], 'Road / ramp / level'],
+        [['RMB'], 'Back / cancel'], [[k('forward'), k('left'), k('back'), k('right')], 'Move']];
     } else if (mode === 'barrow') {
       rows = [[[k('forward'), k('back')], 'Push / pull'], [['Mouse', k('left'), k('right')], 'Steer'],
         [[k('tip')], 'Tip it'], [[k('interact')], 'Let go']];
@@ -72,7 +83,8 @@ export function createHud3d({ settings }) {
         [[k('controls')], 'Assisted controls'], [[k('camera')], 'Camera'], [[k('interact')], 'Get out']];
     } else {
       rows = [[[k('forward'), k('left'), k('back'), k('right')], 'Move'], [[k('sprint')], 'Sprint'], [[k('jump')], 'Jump'],
-        [['LMB'], 'Dig / tip the shovel'], [[k('interact')], 'Use / get in / take barrow'], [[k('repair')], 'Service / repair']];
+        [['LMB'], 'Dig / tip the shovel'], [[k('interact')], 'Use / get in / take barrow'], [[k('repair')], 'Service / repair'],
+        [[k('works')], 'Plan a road, ramp or level area']];
     }
     return [...rows, null, [[k('shop')], 'Shop'], [[k('market')], 'Prices'], [[k('map')], 'Map'], [[k('goal')], 'Goal']];
   }
@@ -149,6 +161,25 @@ export function createHud3d({ settings }) {
       helpTag.classList.toggle('hidden', showHelp);
       clear(helpTag);
       helpTag.append(kbd(k('hints')), el('span', {}, 'Controls'));
+
+      const w = info.works;
+      worksCard.style.display = w && !overlayOpen ? '' : 'none';
+      if (w) {
+        const wkey = JSON.stringify(w);
+        if (wkey !== worksKey) {
+          worksKey = wkey;
+          setText(worksTitle, w.title);
+          clear(worksModeKey);
+          worksModeKey.append(kbd(w.modeKey));
+          for (const n of worksModes.children) n.classList.toggle('on', n.dataset.mode === w.mode);
+          clear(worksRows);
+          for (const [label, value] of w.lines) {
+            worksRows.append(label
+              ? el('div', { class: 'wk-row' }, el('span', { class: 'wk-label' }, label), el('span', { class: 'wk-val' }, value))
+              : el('div', { class: `wk-note ${w.level}` }, value));
+          }
+        }
+      }
 
       const g = info.guide;
       guidePill.style.display = g && !overlayOpen ? '' : 'none';

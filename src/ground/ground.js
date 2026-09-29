@@ -380,11 +380,23 @@ export function createGround(groundData, plotId, opts = {}) {
     // (heaps inside the works are already part of the cut, so they can't be used twice)
     const inWorks = new Set(cells.map((c) => c.k));
     const src = gatherLoose(centre, radius, { gravel: sm >= 0 ? { m: sm, vol: gravelFromHeaps } : null, bank: fillFromHeaps, exclude: inWorks }, commit);
+    // What there will be to build with, and what's left over: the cut (less the surface's gravel)
+    // plus the heaps' fill, of which the fill takes what it needs.
+    const availPlan = pool.slice();
+    if (sm >= 0) availPlan[sm] = Math.max(0, availPlan[sm] - gravelFromCut * looseDensity[sm]);
+    for (let m = 0; m < M; m++) availPlan[m] += src.tonnes[m];
+    const availBankPlan = availPlan.reduce((a, v, m) => a + v / bankDensity[m], 0);
+    const usePlan = availBankPlan > 0 ? Math.min(1, fillBank / availBankPlan) : 0;
+    const availTonnes = availPlan.reduce((a, v) => a + v, 0);
     const plan = {
       ok: true, mode, length: L, width, grade, pA, pB, cells: jobs.length, coreArea: core * area,
       cutBank, fillBank, surfaceLoose, cutTonnes: pool.reduce((a, v) => a + v, 0),
       heapGravelNeeded: gravelFromHeaps, heapFillNeeded: fillFromHeaps,
       heapGravelFound: src.gravelFound, heapFillFound: src.bankFound,
+      surfaceTonnes: sm >= 0 ? surfaceLoose * looseDensity[sm] : 0,
+      heapTonnes: src.gravelTonnes + src.tonnes.reduce((a, v) => a + v, 0),
+      fillTonnes: availTonnes * usePlan,
+      spoilTonnes: availTonnes * (1 - usePlan),
     };
     if (src.gravelFound < gravelFromHeaps - 1e-6) return { ...plan, ok: false, reason: 'gravel' };
     if (src.bankFound < fillFromHeaps - 1e-6) return { ...plan, ok: false, reason: 'fill' };

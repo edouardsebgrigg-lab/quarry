@@ -18,6 +18,7 @@ import { preloadVegetation, createVegetation, createTrees } from './vegetation.j
 import { createWorldSounds } from './sounds.js';
 import { createGroundView } from './groundChunks.js';
 import { createHandTools } from './handTools.js';
+import { createPlanner } from './planner.js';
 import { createHeadSway } from './headSway.js';
 import { MAP, inRect } from './map.js';
 import { createGuideBeacon } from './guideBeacon.js';
@@ -187,6 +188,19 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     scene, camera, physics, terrain, game, home, player, particles, vehicles, audio, notify, saved: saved.barrow ?? null,
   });
 
+  // ---- earthworks planner (on foot): plan a haul road, ramp or level area on your land
+  const machineObstacles = () => {
+    const list = [];
+    for (const veh of vehicles.values()) {
+      const p = veh.position();
+      list.push({ x: p.x, z: p.z, r: veh.radius, label: machineName(data, getMachine(game.ctx, veh.machineId)) });
+    }
+    const b = hands.state;
+    list.push({ x: b.x, z: b.z, r: 1.2, label: 'The wheelbarrow' });
+    return list;
+  };
+  const planner = ground ? createPlanner({ scene, camera, game, heightAt, notify, obstacles: machineObstacles }) : null;
+
   // ---- modes: on foot, or in a machine ----
   let mode = { kind: 'foot' };
   let camMode = 'cab';
@@ -298,6 +312,14 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         }
         return true;
       }
+      case 'works':
+        if (!mouse.locked()) return true; // (only while you're playing)
+        if (!planner) notify('There is no land of yours to build on here', 'warn');
+        else if (v) notify('Get out of the machine to plan roads and ramps', 'warn');
+        else if (hands.holding()) notify('Let go of the wheelbarrow first', 'warn');
+        else if (planner.active) planner.cycleMode();
+        else planner.toggle();
+        return true;
       case 'camera':
         if (v) camMode = camMode === 'cab' ? 'chase' : 'cab';
         return true;
@@ -733,6 +755,9 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const keys = (a) => !paused && (testKeys.has(a) || keyboard.isHeld(a));
     const d = mouse.takeDelta();
     const clicked = mouse.takePressed();
+    const rightPressed = mouse.takeRightPressed();
+    const planning = !!planner?.active;
+    const wheelNotch = planning ? mouse.takeWheel() : 0;
     const sens = MOUSE_SCALE * (settings.mouseSensitivity ?? 1);
     const dy = settings.invertY ? -d.y : d.y;
     const delta = paused ? { x: 0, y: 0 } : { x: d.x, y: dy };
@@ -748,7 +773,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
     if (!paused) physics.step(dt);
     groundView?.update();
-    hands.update(paused ? 0 : dt, { onFoot: !v, clicked: clicked && !paused, paused });
+    if (planning && (v || hands.holding())) planner.cancel();
+    // (while planning, the shovel is put away and the clicks belong to the planner)
+    hands.update(paused ? 0 : dt, { onFoot: !v && !planner?.active, clicked: clicked && !paused && !planner?.active, paused });
+    planner?.update(paused ? 0 : dt, { clicked: clicked && !paused, rightPressed: rightPressed && !paused, wheel: paused ? 0 : wheelNotch });
     if (!paused) updateWeighbridge(dt);
 
     // Sync machines with their game state.
@@ -820,7 +848,9 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     let prompt = null;
     let job = null;
     let tool = null;
-    if (!v) {
+    const works = planner?.hud(key) ?? null;
+    if (works) prompt = works.prompts;
+    else if (!v) {
       const h = hands.hud(key);
       tool = h.dash;
       let use = null;
@@ -927,8 +957,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       guideInfo = { label: guide.label, dist: guide.dist, bearing: -Math.atan2(Math.sin(rel), Math.cos(rel)) };
     }
     // Which set of control hints applies.
-    const hintMode = hands.holding() ? 'barrow' : !v ? 'foot' : v.digger ? (v.isDirect() ? 'digger-direct' : 'digger') : v.type;
-    return { prompt, job, machine: machine ?? tool, mode: hintMode, locked: mouse.locked(), guide: guideInfo };
+    const hintMode = works ? 'plan' : hands.holding() ? 'barrow' : !v ? 'foot' : v.digger ? (v.isDirect() ? 'digger-direct' : 'digger') : v.type;
+    return { prompt, job, machine: machine ?? tool, mode: hintMode, locked: mouse.locked(), guide: guideInfo, works: works?.card ?? null };
   }
 
   // Remember where everything is, so saves put machines back in place.
@@ -989,6 +1019,15 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     setFootYaw(yaw) {
       player.look.yaw = yaw;
     },
+    // Look at a point on the ground (from where you stand).
+    aimAt(x, z) {
+      const e = player.eye();
+      const dx = x - e.x;
+      const dz = z - e.z;
+      player.look.yaw = Math.atan2(-dx, -dz);
+      player.look.pitch = Math.atan2(heightAt(x, z) - e.y, Math.hypot(dx, dz));
+    },
+    planner,
     feet: () => player.feet().toArray(),
     eye: () => camera.position.toArray(),
     setHouseYaw(yaw) {

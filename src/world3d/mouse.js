@@ -7,6 +7,7 @@ export function createMouse(element, { onLockChange } = {}) {
   let rightDown = false; // (Direct digger control: open the bucket)
   let wheel = 0; // scroll since last frame (Direct digger control: the boom)
   let pressed = false; // went down since last frame
+  let rightPressed = false; // right button went down since last frame
   let wantLock = true;
 
   const locked = () => document.pointerLockElement === element;
@@ -25,6 +26,7 @@ export function createMouse(element, { onLockChange } = {}) {
   function onDown(e) {
     if (e.button === 2) {
       rightDown = locked();
+      if (rightDown) rightPressed = true;
       return;
     }
     if (e.button !== 0) return;
@@ -75,6 +77,11 @@ export function createMouse(element, { onLockChange } = {}) {
       const w = wheel;
       wheel = 0;
       return w;
+    },
+    takeRightPressed() {
+      const p = rightPressed;
+      rightPressed = false;
+      return p && locked();
     },
     takePressed() {
       const p = pressed;
