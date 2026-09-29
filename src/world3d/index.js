@@ -16,6 +16,7 @@ import { preloadVegetation, createVegetation, createTrees } from './vegetation.j
 import { preloadEntrance, addEntrance } from './entrance.js';
 import { createWorldSounds } from './sounds.js';
 import { createGroundView } from './groundChunks.js';
+import { createHandTools } from './handTools.js';
 import { LAYOUTS, zoneAt, inRect } from './layouts.js';
 import { keyLabel } from '../input/index.js';
 import { getSiteData, getZoneInfo, pileTotal } from '../quarry/index.js';
@@ -25,6 +26,7 @@ import {
 
 const MOUSE_SCALE = 0.0022;
 const ENTER_DISTANCE = 2.8;
+const BARROW_GRAB = 1.5; // how close to the wheelbarrow's handles you must be to take it
 
 // Driver's head in the cab: springs against acceleration (pushed back when pulling away,
 // forward when braking, sideways in corners) plus vibration from the engine and the ground.
@@ -204,6 +206,12 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   for (const m of machinesAt(game.ctx, siteId)) addVehicle(m);
 
+  // Your shovel and wheelbarrow (the shovel is drawn in front of the camera).
+  scene.add(camera);
+  const hands = createHandTools({
+    scene, camera, physics, terrain, game, layout, player, particles, vehicles, audio, notify, saved: saved.barrow ?? null,
+  });
+
   // ---- modes: on foot, or in a machine ----
   let mode = { kind: 'foot' };
   let camMode = 'cab';
@@ -216,6 +224,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   const current = () => (mode.kind === 'foot' ? null : mode.v);
   const currentMachine = () => (current() ? getMachine(game.ctx, current().machineId) : null);
+
+  const vehicleDistance = (veh) => veh.position().setY(player.feet().y).distanceTo(player.feet()) - veh.radius;
 
   function nearestVehicle(maxDist) {
     const feet = player.feet();
@@ -289,9 +299,12 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     switch (action) {
       case 'interact': {
         if (v) exit();
+        else if (hands.holding()) hands.letGo();
         else {
           const near = nearestVehicle(ENTER_DISTANCE);
-          if (near) enter(near);
+          const barrowD = hands.grabDistance();
+          if (barrowD < BARROW_GRAB && (!near || barrowD < vehicleDistance(near))) hands.grab();
+          else if (near) enter(near);
           else if (nearOffice()) onUseOffice?.();
         }
         return true;
@@ -300,6 +313,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         if (v) camMode = camMode === 'cab' ? 'chase' : 'cab';
         return true;
       case 'tip':
+        if (!v && hands.holding()) {
+          hands.tip();
+          return true;
+        }
         if (v?.type !== 'truck') return true;
         if (!inRect(layout.tipBay, v.position().x, v.position().z, 1.5)) notify('Drive into the yellow tipping bay at the yard first', 'warn');
         else if (Math.abs(v.speed()) > 1.5) notify('Stop the truck before tipping', 'warn');
@@ -523,7 +540,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
     const v = current();
     const m = currentMachine();
-    if (!v) controlFoot(keys, delta, sens);
+    if (!v && hands.holding()) hands.controlHeld(paused ? 0 : dt, keys, delta, sens);
+    else if (!v) controlFoot(keys, delta, sens);
     else if (v.type === 'truck') controlTruck(v, m, keys, delta, sens);
     else controlExcavator(v, m, keys, delta, sens, clicked && !paused, paused ? 0 : dt);
 
@@ -531,6 +549,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     terrain.update(dt);
     groundView?.update();
     piles.update();
+    hands.update(paused ? 0 : dt, { onFoot: !v, clicked: clicked && !paused, paused });
 
     // Sync machines with their game state.
     for (const veh of vehicles.values()) {
@@ -589,16 +608,27 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const key = (action) => keyLabel(settings.bindings[action]);
     let prompt = null;
     let job = null;
+    let tool = null;
     if (!v) {
-      const near = nearestVehicle(ENTER_DISTANCE);
-      if (near) {
-        const nm = getMachine(game.ctx, near.machineId);
-        prompt = nm.broken
-          ? { key: key('repair'), text: `Repair ${machineName(data, nm)}` }
-          : { key: key('interact'), text: `Get in ${machineName(data, nm)}` };
-      } else if (nearOffice()) {
-        prompt = { key: key('interact'), text: 'Use the office laptop (buy machines)' };
+      const h = hands.hud(key);
+      tool = h.dash;
+      let use = null;
+      if (!hands.holding()) {
+        const near = nearestVehicle(ENTER_DISTANCE);
+        const barrowD = hands.grabDistance();
+        if (barrowD < BARROW_GRAB && (!near || barrowD < vehicleDistance(near))) {
+          use = { key: key('interact'), text: 'Take the wheelbarrow' };
+        } else if (near) {
+          const nm = getMachine(game.ctx, near.machineId);
+          use = nm.broken
+            ? { key: key('repair'), text: `Repair ${machineName(data, nm)}` }
+            : { key: key('interact'), text: `Get in ${machineName(data, nm)}` };
+        } else if (nearOffice()) {
+          use = { key: key('interact'), text: 'Use the office laptop (buy machines)' };
+        }
       }
+      const list = [...h.prompts, use].filter(Boolean);
+      prompt = list.length ? list : null;
     } else if (m.broken) {
       prompt = { key: key('repair'), text: 'Broken down — repair' };
     } else if (m.job) {
@@ -641,7 +671,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         machine.gear = f.shifting ? '–' : f.gear < 0 ? 'R' : String(f.gear);
       }
     }
-    return { prompt, job, machine, mode: mode.kind, locked: mouse.locked() };
+    return { prompt, job, machine: machine ?? tool, mode: hands.holding() ? 'barrow' : mode.kind, locked: mouse.locked() };
   }
 
   // Remember where everything is, so saves put machines back in place.
@@ -651,6 +681,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const feet = current() ? current().position() : player.feet();
     state.positions = {
       facePile: { ...facePilePos },
+      barrow: hands.placement(),
       machines,
       player: { x: feet.x + 3, z: feet.z, yaw: current() ? 0 : player.look.yaw },
     };
@@ -658,8 +689,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   // For automated play tests and the dev console.
   const debug = {
+    hands,
     teleportPlayer(x, z, yaw = player.look.yaw) {
       if (current()) exit();
+      hands.letGo();
       player.teleport(x, terrain.heightAt(x, z) + 0.1, z);
       player.look.yaw = yaw;
     },
@@ -674,6 +707,11 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     setFootPitch(pitch) {
       player.look.pitch = pitch;
     },
+    // Hand tools: press the mouse button (dig / tip the shovel), or E / T with the barrow.
+    useShovel: () => hands.useShovel(),
+    takeBarrow: () => hands.grab(),
+    letGoBarrow: () => hands.letGo(),
+    tipBarrow: () => hands.tip(),
     setHouseYaw(yaw) {
       const v = current();
       if (v?.type === 'excavator') Object.assign(v.state, { houseYaw: yaw, targetHouseYaw: yaw });
@@ -707,6 +745,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       mouse.destroy();
       sounds?.destroy();
       groundView?.dispose();
+      hands.destroy();
       for (const v of vehicles.values()) v.destroy();
       player.destroy();
       terrain.dispose();

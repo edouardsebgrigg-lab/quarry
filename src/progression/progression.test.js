@@ -9,13 +9,38 @@ function finish(ctx, m) {
 }
 
 describe('getting-started goals', () => {
-  it('walks from an empty pit to a first sale', () => {
+  it('walks from a shovel and a barrow to machines and a first load of gravel', () => {
     const game = createGame({ seed: 4 });
     const { ctx, actions } = game;
     const step = () => currentObjective(ctx)?.id;
-    expect(step()).toBe('buyExcavator');
+    expect(step()).toBe('firstShovel');
 
-    // Buying the truck first still works: owning both completes both steps.
+    // By hand: dig, fill the barrow, tip it in the yard, sell.
+    expect(actions.shovelDig({ x: 30, z: 20 }).ok).toBe(true);
+    expect(step()).toBe('fillBarrow');
+    const fill = () => {
+      for (let i = 0; i < 12; i++) {
+        if (!actions.shovelDump({ into: 'barrow' }).ok) break;
+        actions.shovelDig({ x: 30 + (i % 4) * 0.5, z: 20 + Math.floor(i / 4) * 0.5 });
+      }
+    };
+    fill();
+    expect(step()).toBe('tipBarrow');
+    expect(actions.tipBarrow({ x: 20, z: 30 }).ok).toBe(true); // a heap on the field doesn't count
+    expect(step()).toBe('tipBarrow');
+    fill();
+    expect(actions.tipBarrow({ x: 50, z: 8, intoYard: true }).ok).toBe(true);
+    expect(step()).toBe('firstSale');
+    expect(yardAmount(ctx, 'gravelPit', 'topsoil')).toBeGreaterThan(0);
+    const before = ctx.state.money;
+    const sale = actions.sellAll();
+    const reward = ctx.data.objectives.steps.find((s) => s.id === 'firstSale').reward;
+    expect(ctx.state.money).toBeCloseTo(before + sale.revenue + reward, 1);
+    expect(step()).toBe('buyExcavator');
+    expect(currentObjective(ctx).progress).toBe(1); // you can afford the excavator already
+
+    // Then the machines: buying the truck first still works.
+    ctx.state.money += 100; // (the barrow work that pays for the second machine)
     const truck = actions.buyMachine('truck', 'rusty').machine;
     expect(step()).toBe('buyExcavator');
     const ex = actions.buyMachine('excavator', 'rusty').machine;
@@ -35,11 +60,15 @@ describe('getting-started goals', () => {
     finish(ctx, truck);
     expect(step()).toBe('sell');
     expect(yardAmount(ctx, 'gravelPit', 'gravel')).toBeGreaterThan(0);
-    const before = ctx.state.money;
-    const sale = actions.sellAll();
+    actions.sellAll();
     expect(step()).toBe('firstMod');
-    const reward = ctx.data.objectives.steps.find((s) => s.id === 'sell').reward;
-    expect(ctx.state.money).toBeCloseTo(before + sale.revenue + reward, 1);
+  });
+
+  it('shows how far you are with saving up for the truck', () => {
+    const game = createGame({ seed: 1 });
+    game.state.objectives.index = game.data.objectives.steps.findIndex((s) => s.id === 'buyTruck');
+    game.state.money = 25;
+    expect(currentObjective(game.ctx).progress).toBeCloseTo(0.25);
   });
 
   it('reports progress for measurable goals', () => {

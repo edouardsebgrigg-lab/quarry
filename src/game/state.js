@@ -4,6 +4,7 @@ import { createMarketState, recordPriceHistory } from '../economy/index.js';
 import { createSitesState } from '../quarry/index.js';
 import { createMachine } from '../machinery/index.js';
 import { createObjectivesState } from '../progression/index.js';
+import { createToolsState } from '../handtools/index.js';
 
 export function createNewState(data, seed) {
   const state = {
@@ -20,6 +21,7 @@ export function createNewState(data, seed) {
     nextMachineId: 1,
     counters: {},
     player: { selectedMachineId: null },
+    tools: createToolsState(), // your shovel and wheelbarrow
     unlocks: {},
     flags: {},
     objectives: createObjectivesState(),

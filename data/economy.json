@@ -1,5 +1,5 @@
 {
-  "startMoney": 250,
+  "startMoney": 200,
   "fuelPrice": 1.5,
   "fuelDrift": {
     "min": 0.8,

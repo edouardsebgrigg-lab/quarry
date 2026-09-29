@@ -32,10 +32,11 @@ describe('game', () => {
     expect(game.state.objectives.index).toBe(0);
   });
 
-  it('can afford the rusty starter machines', () => {
+  it('starts with a shovel and a wheelbarrow, and money for one rusty machine but not both', () => {
     const game = createGame({ seed: 1 });
+    expect(game.state.tools).toEqual({ shovel: { load: {} }, barrow: { load: {} } });
     expect(game.actions.buyMachine('excavator', 'rusty').ok).toBe(true);
-    expect(game.actions.buyMachine('truck', 'rusty').ok).toBe(true);
+    expect(game.actions.buyMachine('truck', 'rusty').ok).toBe(false);
     expect(game.state.money).toBeGreaterThanOrEqual(0);
   });
 

@@ -8,5 +8,15 @@
     "name": "Gravel",
     "basePrice": 7,
     "color": "#9a938a"
+  },
+  "topsoil": {
+    "name": "Topsoil",
+    "basePrice": 15,
+    "color": "#5e4a36"
+  },
+  "clay": {
+    "name": "Clay",
+    "basePrice": 4,
+    "color": "#8a6a4c"
   }
 }

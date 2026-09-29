@@ -331,6 +331,49 @@ export function rockPour(sr, seconds = 1.6, { heavy = 1, seed = 9 } = {}) {
   return normalize(envelope(body, sr, 0.02, seconds * 0.25, seconds * 0.55), 0.9);
 }
 
+// A shovel blade biting into soil: the steel edge scrapes in, grit crackles, a soft thump.
+export function shovelBite(sr, seed = 90) {
+  const n = Math.round(0.4 * sr);
+  const r = rng(seed);
+  const grit = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / sr;
+    const density = 5000 * Math.exp(-t / 0.07);
+    if (r() < density / sr) {
+      const len = Math.round((0.0004 + r() * 0.0018) * sr);
+      const a = 0.3 + r();
+      for (let k = 0; k < len && i + k < n; k++) grit[i + k] += (r() * 2 - 1) * a * Math.exp(-k / (len * 0.3));
+    }
+  }
+  const edge = envelope(filter(white(n, r), 'bandpass', 2600 + r() * 900, 3, sr), sr, 0.004, 0.06);
+  const body = envelope(filter(brown(n, r), 'lowpass', 500, 0.7, sr), sr, 0.01, 0.12);
+  return normalize(mix([filter(grit, 'bandpass', 1800, 0.8, sr), 1], [normalize(edge, 0.35), 1], [normalize(body, 0.5), 1],
+    [thud(sr, 0.4, seed), 0.25]), 0.85);
+}
+
+// Loose soil sliding off a shovel or out of a barrow: fine grains, a soft rush, the odd clod.
+export function soilPour(sr, seconds = 0.7, seed = 95) {
+  const n = Math.round(seconds * sr);
+  const r = rng(seed);
+  const grains = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / n;
+    const density = 2600 * Math.sin(Math.PI * Math.min(1, t * 1.25)) + 40;
+    if (r() < density / sr) {
+      const clod = r() < 0.02;
+      const len = Math.round((clod ? 0.02 : 0.0006 + r() * 0.002) * sr);
+      const a = (clod ? 1.4 : 0.25 + r() * 0.6) * (1 - t * 0.4);
+      for (let k = 0; k < len && i + k < n; k++) {
+        grains[i + k] += (clod ? Math.sin(k * 0.05) : r() * 2 - 1) * a * Math.exp(-k / (len * 0.3));
+      }
+    }
+  }
+  const rush = filter(white(n, r), 'lowpass', 900, 0.7, sr);
+  for (let i = 0; i < n; i++) rush[i] *= Math.sin(Math.PI * Math.min(1, (i / n) * 1.15));
+  const out = mix([filter(grains, 'lowpass', 3200, 0.7, sr), 1], [normalize(rush, 0.3), 1]);
+  return normalize(envelope(out, sr, 0.015, seconds * 0.3, seconds * 0.5), 0.8);
+}
+
 // A steel truck bed booming as rock lands in it.
 export function metalBoom(sr, seconds = 1.4, seed = 10) {
   const n = Math.round(seconds * sr);

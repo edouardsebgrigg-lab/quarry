@@ -4,6 +4,8 @@
   "historyLength": 72,
   "products": {
     "sand": { "saturationPerTonne": 0.004 },
-    "gravel": { "saturationPerTonne": 0.004 }
+    "gravel": { "saturationPerTonne": 0.004 },
+    "topsoil": { "saturationPerTonne": 0.006 },
+    "clay": { "saturationPerTonne": 0.006 }
   }
 }

@@ -67,6 +67,7 @@ export function createGround(groundData, plotId, opts = {}) {
   const mi = Object.fromEntries(mats.map((m, i) => [m, i]));
   const P = mats.map((m) => groundData.materials[m]);
   const bankDensity = P.map((p) => p.density); // t/m³ in the ground
+  const swell = P.map((p) => p.swell);
   const looseDensity = P.map((p) => p.density / p.swell); // t/m³ once dug
   const tanRepose = P.map((p) => Math.tan((p.repose * Math.PI) / 180));
   const tanStanding = P.map((p) => Math.tan((p.standing * Math.PI) / 180));
@@ -218,6 +219,22 @@ export function createGround(groundData, plotId, opts = {}) {
     return t;
   }
 
+  // Loose volume (m³, once dug) above height y in a column.
+  function looseAbove(k, y) {
+    let top = height(k);
+    if (top <= y) return 0;
+    let v = 0;
+    const lt = Math.min(loose[k], top - y);
+    if (lt > 0) v += lt * area;
+    top -= loose[k];
+    for (let l = K - 1; l >= 0 && top > y; l--) {
+      const take = Math.min(nat[l][k], top - y);
+      v += take * area * swell[layers[l]];
+      top -= nat[l][k];
+    }
+    return v;
+  }
+
   function cellsInRadius(x, z, r, fn) {
     const i0 = Math.max(0, Math.floor((x - r - x0) / cell));
     const i1 = Math.min(nx - 1, Math.floor((x + r - x0) / cell));
@@ -280,20 +297,23 @@ export function createGround(groundData, plotId, opts = {}) {
     cellLoose: (i, j) => loose[idx(i, j)],
 
     // Carve a bowl (radius r, lowest point `bottomY`) out of the ground. If it would take more
-    // than `maxTonnes`, the bowl is made shallower until it fits. Bedrock can't be dug.
-    // Returns { tonnes: { material: t }, total }.
-    dig({ x, z, radius, bottomY, maxTonnes = Infinity }) {
+    // than `maxTonnes` (or more than `maxVolume` m³ once loose), the bowl is made shallower
+    // until it fits. Bedrock can't be dug.
+    // Returns { tonnes: { material: t }, total, volume } (volume: loose m³).
+    dig({ x, z, radius, bottomY, maxTonnes = Infinity, maxVolume = Infinity }) {
       const cells = [];
       cellsInRadius(x, z, radius, (k, d) => cells.push([k, d]));
+      if (!cells.length) return { tonnes: {}, total: 0, volume: 0 };
       const cutAt = (b, d) => b + (d / radius) ** 2 * radius * 0.7;
-      const tonnesFor = (b) => cells.reduce((s, [k, d]) => s + tonnesAbove(k, Math.max(cutAt(b, d), bed[k])), 0);
+      const sumFor = (b, fn) => cells.reduce((s, [k, d]) => s + fn(k, Math.max(cutAt(b, d), bed[k])), 0);
+      const tooMuch = (b) => sumFor(b, tonnesAbove) > maxTonnes || (maxVolume < Infinity && sumFor(b, looseAbove) > maxVolume);
       let b = bottomY;
-      if (tonnesFor(b) > maxTonnes) {
+      if (tooMuch(b)) {
         let lo = bottomY;
         let hi = Math.max(...cells.map(([k]) => height(k)));
         for (let it = 0; it < 22; it++) {
           const mid = (lo + hi) / 2;
-          if (tonnesFor(mid) > maxTonnes) lo = mid;
+          if (tooMuch(mid)) lo = mid;
           else hi = mid;
         }
         b = hi;
@@ -310,19 +330,29 @@ export function createGround(groundData, plotId, opts = {}) {
         }
       }
       const tonnes = toRecord(out);
-      return { tonnes, total: out.reduce((a, c) => a + c, 0) };
+      return { tonnes, total: out.reduce((a, c) => a + c, 0), volume: out.reduce((a, t, m) => a + t / looseDensity[m], 0) };
     },
 
-    // Drop loose material ({ material: tonnes }) as a mound around (x, z).
+    // Loose volume (m³) of some dug material ({ material: tonnes }).
+    looseVolume(tonnes) {
+      let v = 0;
+      for (const [m, t] of Object.entries(tonnes)) if (m in mi && t > 0) v += t / looseDensity[mi[m]];
+      return v;
+    },
+
+    // Drop loose material ({ material: tonnes }) as a mound around (x, z). Returns the tonnes
+    // placed (0 if the spot is off the plot).
     deposit({ x, z, tonnes, radius = 0.6 }) {
       const vols = new Float64Array(M);
       let total = 0;
+      let placed = 0;
       for (const [m, t] of Object.entries(tonnes)) {
         if (!(m in mi) || !(t > 0)) continue;
         vols[mi[m]] += t / looseDensity[mi[m]];
-        total += vols[mi[m]];
+        total += t / looseDensity[mi[m]];
+        placed += t;
       }
-      if (total <= 0) return;
+      if (total <= 0) return 0;
       const cells = [];
       let wsum = 0;
       cellsInRadius(x, z, radius, (k, d) => {
@@ -330,6 +360,7 @@ export function createGround(groundData, plotId, opts = {}) {
         cells.push([k, w]);
         wsum += w;
       });
+      if (!cells.length) return 0;
       for (const [k, w] of cells) {
         const share = w / wsum;
         addLoose(k, Array.from(vols, (v) => v * share));
@@ -337,6 +368,7 @@ export function createGround(groundData, plotId, opts = {}) {
         changed(k);
         activateAround(k);
       }
+      return placed;
     },
 
     // Let loose material slump and undercut walls cave in. Does at most `budget` cells.

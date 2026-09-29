@@ -1,6 +1,6 @@
 # Quarry
 
-A first-person quarry mining game for PC. Start with a rusty excavator and truck at a roadside gravel pit. Dig, haul and sell your way up to better machines, more sites and a mining empire.
+A first-person quarry mining game for PC. Start with a shovel and a wheelbarrow at a roadside gravel pit. Dig by hand, save up for a rusty excavator and truck, and work your way up to better machines, more sites and a mining empire.
 
 Built with plain JavaScript, [Three.js](https://threejs.org) (3D) and [Rapier](https://rapier.rs) (physics). The game logic is separate from the 3D, so balancing and rules live in `data/` and `src/` modules that know nothing about graphics.
 
@@ -24,8 +24,16 @@ Use Chrome or Edge for the best experience (full screen and mouse capture work b
 | Mouse | Look |
 | Shift | Sprint |
 | Space | Jump |
-| E | Get into the machine in front of you |
+| Left Mouse | Shovel: dig a shovelful (aim at the ground on the field), click again to tip it (into the wheelbarrow, a truck bed, or on the ground) |
+| E | Take the wheelbarrow (at its handles) / get into the machine in front of you |
 | R | Service / repair the nearest machine |
+
+| Wheelbarrow | |
+|---|---|
+| W / S | Push / pull |
+| Mouse, A / D | Steer (it goes where you look) |
+| T | Tip it: on the field it makes a pile, in the yellow bay in the yard it goes into stock to sell |
+| E | Let go |
 
 | Excavator | |
 |---|---|
@@ -69,15 +77,21 @@ All sound is generated in code (no recordings): engines by rpm and load, gear ch
 
 ## Getting started
 
-You take over an old, overgrown gravel pit with $250 and no machines. A goal card (top left) walks you through the first steps:
+You take over an old, overgrown gravel pit with $200, a shovel and a wheelbarrow. That's not quite enough for a machine, so you start by hand. A goal card (top left) walks you through the first steps:
 
-1. Walk to the site office and use the laptop (**E** at the door, or **B** anywhere) to buy a rusty excavator, then a rusty truck. They're delivered to the pit.
-2. Dig, load, haul, tip and sell your first load (see below).
-3. Buy a first cheap upgrade, earn $500, then save up for your first Used machine.
+1. Walk to the bare field next to the yard, look at the ground and click to dig a shovelful of topsoil.
+2. Look into the wheelbarrow (it's at the corner of the field) and click to tip each shovelful in until it's full.
+3. Take the handles (**E**), push it into the yellow tipping bay in the yard and tip it (**T**). Sell it at the market (**M**).
+4. Keep going until you can buy a rusty excavator, then a rusty truck, on the office laptop (**E** at the door, or **B** anywhere).
+5. Dig, load, haul, tip and sell your first truck load (see below), buy a cheap upgrade, earn $500, then save up for your first Used machine.
 
 Each goal pays a small bonus. Everything starts slow and clapped-out on purpose.
 
-## The loop
+## Digging by hand
+
+The field is real ground you can dig anywhere: topsoil on top, then clay, sand and gravel, with rock at the bottom. Each shovelful comes out of the ground where you aim, so holes get deeper and walls that are too steep cave in. Whatever you tip on the ground (off the shovel or out of the barrow) makes a real heap that slumps to its natural slope; you can walk on it and shovel it back up. A barrow holds about 0.11 m³: around 115 kg of topsoil, more of heavier gravel. Topsoil sells best by hand; clay is worth little.
+
+## The loop with machines
 
 1. Get in the excavator, swing it over the pit and hold the left mouse button to dig.
 2. Swing round to the truck and click to dump each bucket into it.

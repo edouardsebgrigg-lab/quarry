@@ -26,14 +26,17 @@ export function createPlayer({ physics, spawn }) {
   let grounded = false;
   let active = true;
   const look = { yaw: spawn.yaw ?? 0, pitch: 0 };
-  const input = { forward: 0, right: 0, sprint: false, jump: false };
+  // maxSpeed and moveYaw (optional) override the walking speed and direction, e.g. while
+  // pushing a wheelbarrow you walk slower and go where the barrow points.
+  const input = { forward: 0, right: 0, sprint: false, jump: false, maxSpeed: null, moveYaw: null };
 
   function step(dt) {
     if (!active) return;
-    const speed = input.sprint ? SPRINT : WALK;
+    const speed = input.maxSpeed ?? (input.sprint ? SPRINT : WALK);
     // Move relative to where you are looking (camera yaw: 0 looks along -Z).
-    const fx = -Math.sin(look.yaw);
-    const fz = -Math.cos(look.yaw);
+    const yaw = input.moveYaw ?? look.yaw;
+    const fx = -Math.sin(yaw);
+    const fz = -Math.cos(yaw);
     const rx = -fz;
     const rz = fx;
     let mx = fx * input.forward + rx * input.right;
@@ -61,6 +64,8 @@ export function createPlayer({ physics, spawn }) {
   return {
     look,
     input,
+    collider,
+    grounded: () => grounded,
     feet() {
       const p = body.translation();
       return new THREE.Vector3(p.x, p.y - feetToCentre, p.z);

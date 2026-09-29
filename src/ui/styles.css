@@ -366,6 +366,7 @@ h3 {
 }
 .prompt.info { padding-left: 0.65rem; color: rgba(236, 238, 241, 0.85); font-weight: 500; }
 .prompt .kbd { height: 1.3rem; min-width: 1.4rem; font-size: 0.66rem; }
+.prompt-sep { width: 1px; height: 0.9rem; margin: 0 0.3rem; background: rgba(255, 255, 255, 0.25); }
 .prompt-track { width: 5.5rem; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.2); overflow: hidden; }
 .prompt-fill { height: 100%; width: 0; background: var(--accent); }
 

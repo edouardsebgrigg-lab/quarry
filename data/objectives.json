@@ -3,16 +3,20 @@
     "title": "Roadside Gravel Pit",
     "text": [
       "The old gravel pit off the county road has sat idle for years. The office leaks, the weeds are winning, and the last machines were sold for scrap. Now it's yours.",
-      "There's $250 in the bank. That buys a clapped-out excavator and an old tipper from the dealer, and not much else. Dig the gravel, haul it to the yard, and sell it to get the place paying again."
+      "There's $200 in the bank, an old shovel and a wheelbarrow. That's not quite enough for a machine yet, so you start by hand: strip the topsoil off the field next to the yard and sell it by the barrow load."
     ]
   },
   "steps": [
-    { "id": "buyExcavator", "title": "Buy an excavator", "text": "Use the laptop in the site office (or press B) and buy the Rusty Excavator. It's old, but it digs.", "reward": 0 },
-    { "id": "buyTruck", "title": "Buy a haul truck", "text": "You need something to carry the gravel. Buy the Rusty Haul Truck.", "reward": 0 },
+    { "id": "firstShovel", "title": "Dig with the shovel", "text": "Walk onto the bare field next to the yard. Look at the ground and click to dig a shovelful.", "reward": 0 },
+    { "id": "fillBarrow", "title": "Fill the wheelbarrow", "text": "The wheelbarrow is at the corner of the field. Look into it and click to tip each shovelful in, until it's full.", "reward": 0 },
+    { "id": "tipBarrow", "title": "Tip it in the yard", "text": "Grab the handles (E), push the barrow into the yellow tipping bay in the yard and tip it (T).", "reward": 0 },
+    { "id": "firstSale", "title": "Sell your topsoil", "text": "Open the market (M) and sell what you tipped in the yard.", "reward": 10 },
+    { "id": "buyExcavator", "title": "Buy an excavator", "text": "Keep digging and selling by hand until you can buy the Rusty Excavator on the office laptop (or press B). Tip anything you can't sell in a heap on the field; you can shovel it back up later.", "reward": 0 },
+    { "id": "buyTruck", "title": "Buy a haul truck", "text": "You need something to carry the gravel. Save up for the Rusty Haul Truck. The barrow still earns while you wait.", "reward": 0 },
     { "id": "firstScoop", "title": "Dig your first bucket", "text": "Your machines are waiting by the pit. Get in the excavator (E), swing the bucket over the pit and hold the left mouse button.", "reward": 0 },
     { "id": "loadTruck", "title": "Fill the truck", "text": "Swing round to the truck and click to dump each bucket into its bed until it's full.", "reward": 0 },
     { "id": "tip", "title": "Tip the load at the yard", "text": "Get out, climb into the truck, drive to the yellow tipping bay in the yard and press T.", "reward": 0 },
-    { "id": "sell", "title": "Make your first sale", "text": "Open the market (M) and sell what's in the yard.", "reward": 50 },
+    { "id": "sell", "title": "Sell the gravel", "text": "Open the market (M) and sell what's in the yard.", "reward": 50 },
     { "id": "firstMod", "title": "Fix something up", "text": "Cheap upgrades make your old machines a bit quicker. Buy one in the shop.", "reward": 0 },
     { "id": "earn", "title": "Earn $500", "text": "Keep digging, hauling and selling. Service your machines (R) before they break down.", "reward": 100, "target": 500 },
     { "id": "usedMachine", "title": "Get a better machine", "text": "Save up for a Used excavator or truck. It's a huge step up from the rusty ones.", "reward": 0 }

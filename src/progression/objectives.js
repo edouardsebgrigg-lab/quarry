@@ -1,8 +1,9 @@
 // The step-by-step goals that take a new player from an empty pit to a working business.
 // Texts and rewards are in data/objectives.json; the checks for each step are here.
 import { addMoney } from '../economy/index.js';
-import { getStats } from '../machinery/index.js';
+import { getStats, tierData } from '../machinery/index.js';
 import { pileTotal } from '../quarry/index.js';
+import { barrowFill } from '../handtools/index.js';
 
 function fullestTruck(ctx) {
   let best = 0;
@@ -15,6 +16,10 @@ function fullestTruck(ctx) {
 
 // Each check gets (ctx, eventType, payload, step) and returns true when the step is done.
 const CHECKS = {
+  firstShovel: (ctx, type) => type === 'shovelDug',
+  fillBarrow: (ctx) => barrowFill(ctx) >= 0.9,
+  tipBarrow: (ctx, type, p) => type === 'barrowTipped' && p.intoYard,
+  firstSale: (ctx, type) => type === 'productSold',
   buyExcavator: (ctx) => ctx.state.machines.some((m) => m.type === 'excavator'),
   buyTruck: (ctx) => ctx.state.machines.some((m) => m.type === 'truck'),
   firstScoop: (ctx, type, p) => type === 'rockDug' && p.tonnes > 0,
@@ -27,7 +32,11 @@ const CHECKS = {
 };
 
 // How far along the current step is (0..1), or null if it has no measurable progress.
+const saving = (ctx, type) => Math.min(1, Math.max(0, ctx.state.money) / tierData(ctx.data, type, 'rusty').price);
 const PROGRESS = {
+  fillBarrow: (ctx) => Math.min(1, barrowFill(ctx)),
+  buyExcavator: (ctx) => saving(ctx, 'excavator'),
+  buyTruck: (ctx) => saving(ctx, 'truck'),
   loadTruck: (ctx) => Math.min(1, fullestTruck(ctx)),
   earn: (ctx, step) => Math.min(1, ctx.state.stats.totalEarned / step.target),
 };

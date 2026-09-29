@@ -3,6 +3,7 @@
 import { el } from '../dom.js';
 import { getZoneInfo, getSiteData, facePileTotal, yardTotal } from '../../quarry/index.js';
 import { machinesAt, jobProgress, getStats } from '../../machinery/index.js';
+import { barrowFill } from '../../handtools/index.js';
 
 const COLORS = {
   grass: '#15181b',
@@ -340,6 +341,23 @@ export function createSiteView({ game, onSelectZone, onSelectMachine }) {
       drawPile(x, L.yard.y + L.yard.h * 0.9, t, siteData.yardCapacity / 2, data.materials[id]?.color ?? '#999',
         `${data.materials[id]?.name ?? id} ${t.toFixed(0)} t`);
     });
+
+    // The field you dig by hand (drawn small, below the yard), with the wheelbarrow's load.
+    if (ctx.ground) {
+      const f = { x: L.yard.x, y: L.yard.y + L.yard.h + 18, w: L.yard.w, h: Math.max(40, height - (L.yard.y + L.yard.h + 18) - 24) };
+      g.fillStyle = '#1f2a1d';
+      g.fillRect(f.x, f.y, f.w, f.h);
+      g.strokeStyle = 'rgba(0,0,0,0.3)';
+      g.strokeRect(f.x + 0.5, f.y + 0.5, f.w - 1, f.h - 1);
+      g.fillStyle = COLORS.text;
+      g.font = `600 15px ${FONT}`;
+      g.textAlign = 'left';
+      g.textBaseline = 'top';
+      g.fillText('Field', f.x + 10, f.y + 10);
+      g.font = `13px ${FONT}`;
+      g.fillStyle = COLORS.textDim;
+      g.fillText(`Dig by hand · barrow ${Math.round(Math.min(1, barrowFill(ctx)) * 100)}% full`, f.x + 10, f.y + 30);
+    }
 
     // Face pile
     const face = facePileTotal(ctx, siteId);

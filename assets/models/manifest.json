@@ -18,7 +18,9 @@
     "prop_pickup",
     "prop_pole",
     "prop_portaloo",
+    "prop_shovel",
     "prop_tyres",
+    "prop_wheelbarrow",
     "truck_rusty",
     "truck_used"
   ]

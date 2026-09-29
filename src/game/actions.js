@@ -6,6 +6,7 @@ import {
   getMachine, machinesAt, startJob, whyCannotStart, buyMachine as fleetBuyMachine,
   sellMachine as fleetSellMachine, buyMod as fleetBuyMod, dumpBucket as fleetDumpBucket,
 } from '../machinery/index.js';
+import { shovelDig, shovelDump, tipBarrow } from '../handtools/index.js';
 
 export function createActions(ctx) {
   const site = () => ctx.state.currentSiteId;
@@ -90,6 +91,12 @@ export function createActions(ctx) {
       ctx.events.emit('groundDumped', { x: opts.x, z: opts.z, tonnes: opts.tonnes });
     },
     tip: (truckId) => startJob(ctx, truckId, 'tip'),
+
+    // Hand tools: dig a shovelful at { x, z }; tip it { into: 'barrow' | 'truck' | 'ground', ... };
+    // tip the wheelbarrow at { x, z, intoYard }.
+    shovelDig: (at) => shovelDig(ctx, at),
+    shovelDump: (target) => shovelDump(ctx, target),
+    tipBarrow: (at) => tipBarrow(ctx, at),
 
     buyMachine: (type, tier) => fleetBuyMachine(ctx, type, tier),
     sellMachine: (id) => fleetSellMachine(ctx, id),

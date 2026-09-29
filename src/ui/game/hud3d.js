@@ -51,12 +51,15 @@ export function createHud3d({ settings }) {
       rows = [[[k('forward'), k('back')], 'Drive / brake'], [[k('left'), k('right')], 'Steer'], [[k('jump')], 'Handbrake'],
         [[k('tip')], 'Tip load'], [[k('loadPile')], 'Load from pile'], [[k('camera')], 'Camera'], [[k('recover')], 'Recover'],
         [[k('interact')], 'Get out']];
+    } else if (mode === 'barrow') {
+      rows = [[[k('forward'), k('back')], 'Push / pull'], [['Mouse', k('left'), k('right')], 'Steer'],
+        [[k('tip')], 'Tip it'], [[k('interact')], 'Let go']];
     } else if (mode === 'excavator') {
       rows = [[['Mouse'], 'Swing'], [['LMB'], 'Dig / dump'], [[k('forward'), k('left'), k('back'), k('right')], 'Tracks'],
         [[k('camera')], 'Camera'], [[k('interact')], 'Get out']];
     } else {
       rows = [[[k('forward'), k('left'), k('back'), k('right')], 'Move'], [[k('sprint')], 'Sprint'], [[k('jump')], 'Jump'],
-        [[k('interact')], 'Use / get in'], [[k('repair')], 'Service / repair']];
+        [['LMB'], 'Dig / tip the shovel'], [[k('interact')], 'Use / get in / take barrow'], [[k('repair')], 'Service / repair']];
     }
     return [...rows, null, [[k('shop')], 'Shop'], [[k('market')], 'Market'], [[k('map')], 'Map'], [[k('goal')], 'Goal']];
   }
@@ -89,10 +92,11 @@ export function createHud3d({ settings }) {
       setText(ctpTitle, started ? 'Click to resume' : 'Click to play');
       crosshair.style.display = info.locked ? '' : 'none';
 
-      // Prompt: a keycap and an action, or a job in progress.
-      const p = info.prompt;
+      // Prompt: a keycap and an action (or a few side by side), or a job in progress.
+      const list = !info.prompt ? [] : Array.isArray(info.prompt) ? info.prompt : [info.prompt];
+      const p = list[0] ?? null;
       const j = info.job;
-      const key = j ? `job:${j.label}` : p ? `${p.key}|${p.text}` : '';
+      const key = j ? `job:${j.label}` : list.map((x) => `${x.key}|${x.text}`).join('/');
       if (key !== promptKey) {
         promptKey = key;
         clear(prompt);
@@ -100,11 +104,14 @@ export function createHud3d({ settings }) {
         if (j) {
           promptFill = el('div', { class: 'prompt-fill' });
           prompt.append(el('span', {}, j.label), el('div', { class: 'prompt-track' }, promptFill));
-        } else if (p) {
-          if (p.key) prompt.append(kbd(p.key));
-          prompt.append(el('span', {}, p.text));
+        } else {
+          list.forEach((x, i) => {
+            if (i) prompt.append(el('span', { class: 'prompt-sep' }));
+            if (x.key) prompt.append(kbd(x.key));
+            prompt.append(el('span', {}, x.text));
+          });
         }
-        prompt.classList.toggle('info', !!p && !p.key && !j);
+        prompt.classList.toggle('info', list.length === 1 && !p.key && !j);
       }
       if (promptFill && j) promptFill.style.width = `${Math.round(j.progress * 100)}%`;
       prompt.style.display = key ? '' : 'none';
@@ -134,6 +141,18 @@ export function createHud3d({ settings }) {
       machinePanel.style.display = m ? '' : 'none';
       if (!m) return;
       setText(mName, m.name);
+      if (m.type === 'barrow') {
+        // A wheelbarrow: just what's in it, by volume and weight.
+        setText(mStatus, m.load > 0.001 ? `${Math.round(m.tonnes * 1000)} kg` : 'Empty');
+        mStatus.className = 'md-status off';
+        cond.node.style.display = 'none';
+        drive.style.display = 'none';
+        setText(load.lab, 'Load');
+        load.fill.style.width = `${Math.round(Math.min(1, m.load / m.capacity) * 100)}%`;
+        setText(load.val, `${m.load.toFixed(2)}/${m.capacity.toFixed(2)} m³`);
+        return;
+      }
+      cond.node.style.display = '';
       const engineStatus = { off: 'Engine off', cranking: 'Starting', stopping: 'Engine off', stall: 'Stalled' }[m.engine];
       const status = m.broken ? 'Broken' : j ? j.label : engineStatus ?? 'Ready';
       setText(mStatus, status);

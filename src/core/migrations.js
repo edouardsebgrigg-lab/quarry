@@ -8,4 +8,22 @@ export const migrations = {
   }),
   // v3: the getting-started goals. Older saves are past the tutorial.
   2: (state) => ({ ...state, objectives: state.objectives ?? { index: 999, introSeen: true } }),
+  // v4: hand tools (shovel and wheelbarrow), topsoil and clay on the market, and hand-digging
+  // goals before the machine ones (a save part-way through the old goals keeps its place).
+  3: (state) => {
+    const oldSteps = ['buyExcavator', 'buyTruck', 'firstScoop', 'loadTruck', 'tip', 'sell', 'firstMod', 'earn', 'usedMachine'];
+    const newSteps = ['firstShovel', 'fillBarrow', 'tipBarrow', 'firstSale', ...oldSteps];
+    const products = { ...state.market.products };
+    for (const id of ['topsoil', 'clay']) {
+      products[id] ??= { trend: 1, velocity: 0, saturation: 0, history: [] };
+    }
+    const o = state.objectives;
+    const index = o.index < oldSteps.length ? newSteps.indexOf(oldSteps[o.index]) : o.index;
+    return {
+      ...state,
+      tools: state.tools ?? { shovel: { load: {} }, barrow: { load: {} } },
+      market: { ...state.market, products },
+      objectives: { ...o, index },
+    };
+  },
 };

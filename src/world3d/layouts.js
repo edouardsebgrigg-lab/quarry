@@ -22,11 +22,13 @@ export const LAYOUTS = {
     publicRoad: { z: -72, width: 7 },
     yard: { x0: 42, x1: 78, z0: -20, z1: 20 },
     tipBay: { x0: 46, x1: 56, z0: 4, z1: 14 },
-    stockpiles: { x: 66, z0: -12, spacing: 12 }, // one cone per product
+    stockpiles: { x: 66, z0: -14, spacing: 9 }, // one cone per product
     cabin: { x: 20, z: -22, yaw: 0 },
     // You arrive in your old pickup, parked by the office.
     pickup: { x: 30, z: -14.5, yaw: Math.PI - 0.2 },
     playerSpawn: { x: 27, z: -17, yaw: 1.3 },
+    // Your wheelbarrow waits at the corner of the field (axle position; it points toward the yard).
+    barrow: { x: 36.5, z: 17.5, yaw: -1.03 },
     // Where machines park: the first of each type starts in the pit.
     parking: {
       excavator: [{ x: -11, z: -2.2, yaw: Math.PI / 2 }, { x: -43, z: -2.2, yaw: Math.PI / 2 }],

@@ -17,6 +17,7 @@ All models are made in **Blender** by Python scripts in `blender/`, exported as 
 | Your old pickup | `prop_pickup.glb` | |
 | Fence bay (3 m), farm gate | `prop_fence.glb`, `prop_gate.glb` | |
 | Portaloo, power pole | `prop_portaloo.glb`, `prop_pole.glb` | |
+| Wheelbarrow, shovel | `prop_wheelbarrow.glb`, `prop_shovel.glb` | |
 
 Previews for all of them are in `docs/images/models/`.
 
@@ -49,7 +50,7 @@ or Blender as a Python module (`pip install bpy` with Python 3.11) and run `pyth
 The scripts:
 - `lib.py`: shape helpers (boxes, rounded boxes, cylinders, extruded profiles, lathe, lofted bodies from cross-sections, flat panels for glass), bevels with weighted normals, subdivision, UVs, grime vertex colours, materials, export and preview rendering.
 - `textures.py`: generates the tileable textures (worn paint, rust, grimy steel, rubber, concrete, cladding, weathered wood, plastic).
-- `truck.py`, `excavator.py`, `pickup.py`, `props.py`: the models themselves.
+- `truck.py`, `excavator.py`, `pickup.py`, `props.py`, `handtools.py`: the models themselves.
 
 **How the shapes are made (so they don't look blocky):** bodies such as the pickup, the truck cab and the excavator's boom and cab are *lofted*: a series of rounded cross-sections is skinned into one smooth surface, so panels have rolled edges and curves instead of flat boxes. Glass is set into those surfaces with a black rubber seal. Chunky parts (bumpers, mirrors, tool boxes, the portaloo) use `rounded_box`. Every part is finished with a real bevel plus *weighted normals*, which keeps big panels flat and lets their edges catch the light. Boulders start as a random lump, get smoothed, roughened with layered noise and then cut by a few flat fracture planes.
 - `menu_background.py`: renders the main-menu picture (`assets/ui/menu.jpg`), with the excavator loading a truck at a quarry face. Add `--fast` for a quick low-res test.
@@ -77,6 +78,15 @@ You can replace any model with your own. Keep the file name, keep the named part
 - `Interior`: what you see from the seat. The eye is at about (0.4, 0.72, 1.42) in House space.
 - Hydraulic rams (optional; the game animates them if present): `BoomRam`, `StickRam`, `BucketRam` are the barrels, `BoomRamRod`, `StickRamRod`, `BucketRamRod` the rods. Each has its origin on its pin with the part pointing along +X; the barrel sits on one part (House, Boom, Stick) and the rod on the other (Boom, Stick, `BucketLink`). The game points each barrel at its rod's pin and each rod back at its barrel every frame, so they slide in and out. `BucketLink` is an empty at the stick tip that the game turns at 0.55 × the bucket angle + 1.9 rad.
 - Tracks (optional): `TrackShoe` is one loose shoe; the game copies it round the track path and moves the copies as you drive (and hides the static `Tracks` mesh). `TrackWheelL0/L1`, `TrackWheelR0/R1` are the sprockets and idlers, turned by the game.
+
+### Wheelbarrow (`prop_wheelbarrow.glb`)
+- Origin on the ground between the wheel and the legs; the wheel end points along +X.
+- `Wheel`: an empty at the axle (X 0.56, Z 0.19; tyre radius 0.19 m). The game spins it as you push.
+- The grips are at about (−0.98, ±0.29, 0.53) and the feet at X −0.34. The tray floor is at Z 0.35 and its rim at Z 0.64 (the game fills it with a heap of whatever you shovel in).
+
+### Shovel (`prop_shovel.glb`)
+- Origin at the D-grip; the shaft runs along +X, scoop side up (+Z).
+- `Blade`: an empty at the middle of the blade (X 1.26), where the game puts the shovelful.
 
 ### Props (`prop_<name>.glb`)
 The origin sits on the ground at the centre. The office's door faces −Y (south in the game).

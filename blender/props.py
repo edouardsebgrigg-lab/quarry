@@ -7,6 +7,7 @@ import numpy as np
 from mathutils import Matrix, Vector
 import lib
 import pickup as pickup_model
+import handtools
 import textures as tex
 from lib import bm_box, bm_cylinder, bm_profile, merge, mesh_object, empty, finish, material
 
@@ -419,6 +420,7 @@ PARTS.update({
     'gate': gate,
     'portaloo': portaloo,
     'pole': pole,
+    **handtools.PARTS,
 })
 
 _PREVIEWS = {
@@ -428,6 +430,7 @@ _PREVIEWS = {
     'fence': dict(target=(1.5, 0, 0.6), distance=5, angle=-60, elevation=15, samples=24),
     'portaloo': dict(target=(0, 0, 1.2), distance=5, angle=-35, elevation=15, samples=24),
     'pole': dict(target=(0, 0, 5.0), distance=14, angle=-50, elevation=10, samples=24),
+    **handtools.PREVIEWS,
 }
 
 
