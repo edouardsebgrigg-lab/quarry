@@ -58,6 +58,11 @@ A follow-up run of `docs/handover/browser-checks/verify.mjs` on this code (same 
 | Screenshot | `docs/handover/screenshots/verify-after-load.png` (the reloaded game: the ramp, the dumper at its top, and the mentor tip) |
 | Tracked dumper up the steep ramp | passed: from the pit floor (−1.29 m) to the top (−0.07 m), reached the far end |
 
+| Tractor with its trailer up the 6% ramp out of a pit (`ramps.mjs`) | passed: pit floor (−1.29 m) to the top (−0.01 m), reached the far end. Only the tractor's position was measured, not the trailer's |
+| Tractor with its trailer up the 17% ramp | passed: −1.31 m to −0.11 m, reached the top |
+| Mini digger on the ramps (`ramps.mjs` phases T3, T4) | not recorded: the run was still going when the session's time ran out |
+| Paint before/after | not done: `capture.mjs` with `TAG=after` was queued after `ramps.mjs` but not reached. The "before" shots were taken earlier and are not in the repo |
+
 Also found by the test and **fixed** on this branch: the confirming click only counted while the crosshair was on the ground, so looking at the sky and clicking did nothing, silently. Now, once both ends are set, the click builds wherever you look, and a click that misses the ground while setting an end says "Aim at the ground to set the end points" (`src/world3d/planner.js`, test in `planner.test.js`; 136 tests pass).
 
 Not verified in a browser (the run was cut short after the ramp drives; the container session also ended):
@@ -65,7 +70,7 @@ Not verified in a browser (the run was cut short after the ramp drives; the cont
 - ~~Save, reload and persistence in the browser~~: done in the verification pass above
 - ~~Level area in a browser~~: done in the verification pass above
 - ~~The tracked dumper on a ramp~~: done in the verification pass above
-- Tractor and trailer on a ramp; the mini digger on a ramp
+- ~~Tractor and trailer on a ramp~~: done (verification pass above). The mini digger on a ramp is still not recorded
 - The planner UI at real 1080p (screenshots were 960×540); the message log is moved up while planning (`body:has(.hud3d.planning) .log`) which is untested on browsers without `:has`
 - Real pointer lock and real mouse aiming (the aim was set by code); the click that confirms is the third LMB, which is easy to double click by mistake
 - Whether the spoil heap position (9.5 m beside the strip, else the other side, else beyond an end) is always convenient: a 22 m ramp cut leaves about 133 t of spoil in one heap
