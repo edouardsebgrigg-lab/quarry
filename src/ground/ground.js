@@ -79,7 +79,7 @@ export function createGround(groundData, plotId, opts = {}) {
   const nat = layers.map(() => new Float32Array(N)); // natural layer thicknesses
   const loose = new Float32Array(N); // loose material thickness
   const mix = new Float32Array(N * M); // loose material: volume share of each material
-  const disturbed = new Uint8Array(N); // dug, dumped on or scraped (no more grass)
+  const disturbed = new Uint8Array(N); // bit 1: dug, dumped on or scraped (no more grass); bit 2: built on (graded and firm)
   // The outermost ring of cells never changes: the plot's edge meets the countryside around it
   // there, so it has to stay put (dig right up to it and it stands like the edge of a cutting).
   const fixed = new Uint8Array(N);
@@ -262,8 +262,272 @@ export function createGround(groundData, plotId, opts = {}) {
     return out;
   };
 
+  // ---------------------------------------------------------------- earthworks
+  // Grading a strip (a haul road, a ramp or a level area) between two points, with a batter (a
+  // sloping side) where it meets the ground. Nothing is made or lost: the strip's cut becomes
+  // fill, fill that's still needed comes from loose heaps within reach, a gravel surface comes
+  // from gravel in the cut or in those heaps, and any leftover cut is heaped beside the strip.
+  // Fill is compacted into the natural layers under the surface, so it doesn't slump.
+  // works(spec, commit) plans the job (commit false) or does it (commit true): the same
+  // steps either way, so a plan is exactly what gets built.
+  const BATTER = 1.4; // sides slope 1 up for 1.4 across
+  const heightNat = (k) => height(k) - loose[k];
+  // Tonnes per material above height y (natural layers only if `natOnly`), without changing anything.
+  function measureAbove(k, y, out, dropLoose) {
+    let top = height(k);
+    if (loose[k] > 0) {
+      const dh = dropLoose ? loose[k] : Math.min(loose[k], Math.max(0, top - y));
+      for (let m = 0; m < M; m++) out[m] += dh * area * mix[k * M + m] * looseDensity[m];
+    }
+    top -= loose[k];
+    for (let l = K - 1; l >= 0 && top > y; l--) {
+      const take = Math.min(nat[l][k], top - y);
+      if (take > 0) out[layers[l]] += take * area * bankDensity[layers[l]];
+      top -= nat[l][k];
+    }
+  }
+
+  function works(spec, commit) {
+    const { ax, az, bx, bz, width, mode, sourceRadius = 30, surface = null, surfaceThickness = 0.12, maxGrade = 0.1 } = spec;
+    const fail = (reason) => ({ ok: false, reason });
+    const L = Math.hypot(bx - ax, bz - az);
+    if (L < 0.5) return fail('Too short');
+    const ux = (bx - ax) / L;
+    const uz = (bz - az) / L;
+    const half = width / 2;
+    const sm = surface ? mi[surface] : -1;
+    const s = surface ? surfaceThickness : 0;
+    const reach = 6;
+    const xmin = Math.min(ax, bx) - half - reach;
+    const xmax = Math.max(ax, bx) + half + reach;
+    const zmin = Math.min(az, bz) - half - reach;
+    const zmax = Math.max(az, bz) + half + reach;
+    const i0 = Math.floor((xmin - x0) / cell);
+    const i1 = Math.floor((xmax - x0) / cell);
+    const j0 = Math.floor((zmin - z0) / cell);
+    const j1 = Math.floor((zmax - z0) / cell);
+    if (i0 < 1 || j0 < 1 || i1 > nx - 2 || j1 > nz - 2) return fail('Too close to the edge of your land');
+
+    // Pass 1: which cells are in the strip, and where along it.
+    const cells = [];
+    let sumH = 0;
+    let core = 0;
+    for (let j = j0; j <= j1; j++) {
+      for (let i = i0; i <= i1; i++) {
+        const cx = x0 + (i + 0.5) * cell;
+        const cz = z0 + (j + 0.5) * cell;
+        const du = (cx - ax) * ux + (cz - az) * uz;
+        const dv = -(cx - ax) * uz + (cz - az) * ux;
+        const uc = Math.min(L, Math.max(0, du));
+        const d = Math.hypot(du - uc, dv - Math.min(half, Math.max(-half, dv)));
+        if (d > reach) continue;
+        const k = idx(i, j);
+        cells.push({ k, uc, d, isCore: d === 0 });
+        if (d === 0) {
+          core += 1;
+          sumH += heightNat(k);
+        }
+      }
+    }
+    if (!core) return fail('Too narrow');
+    const hA = api.heightAt(ax, az);
+    const hB = api.heightAt(bx, bz);
+    const pA = mode === 'level' ? sumH / core : hA;
+    const pB = mode === 'level' ? sumH / core : hB;
+    const grade = Math.abs(pB - pA) / L;
+    if (grade > maxGrade + 1e-9) return { ok: false, reason: 'steep', grade, pA, pB, length: L };
+
+    // Pass 2: targets, and the cut and fill they need.
+    const pool = new Float64Array(M); // tonnes cut
+    let fillBank = 0; // bank m³ of fill needed
+    let cutBank = 0;
+    let surfaceLoose = 0;
+    const jobs = [];
+    for (const c of cells) {
+      const k = c.k;
+      const plan = pA + (pB - pA) * (c.uc / L);
+      const h = c.isCore ? heightNat(k) : height(k);
+      let t;
+      if (c.isCore) t = plan - s;
+      else {
+        const off = c.d / BATTER;
+        t = plan > h ? Math.max(h, plan - off) : Math.min(h, plan + off);
+      }
+      if (!c.isCore && Math.abs(t - h) < 0.004) continue;
+      if (fixed[k]) return fail('Too close to the edge of your land');
+      if (t < bed[k] + 0.01) return fail('Solid rock in the way: it can\'t be cut here');
+      const before = pool.slice();
+      if (c.isCore) measureAbove(k, t, pool, true);
+      else if (t < h) measureAbove(k, t, pool, false);
+      const cutT = pool.reduce((a, v, m) => a + (v - before[m]) / bankDensity[m], 0);
+      cutBank += cutT;
+      const fillH = t > h ? t - h : 0;
+      fillBank += fillH * area;
+      if (c.isCore) surfaceLoose += s * area;
+      jobs.push({ k, t, h, isCore: c.isCore, fill: fillH });
+    }
+
+    // Supply: the surface's gravel first from the cut, then from heaps; then the fill.
+    const centre = { x: (ax + bx) / 2, z: (az + bz) / 2 };
+    const radius = L / 2 + sourceRadius;
+    const poolLoose = (m) => pool[m] / looseDensity[m];
+    const gravelFromCut = sm >= 0 ? Math.min(surfaceLoose, poolLoose(sm)) : 0;
+    const gravelFromHeaps = surfaceLoose - gravelFromCut;
+    const poolAfter = pool.slice();
+    if (sm >= 0) poolAfter[sm] -= gravelFromCut * looseDensity[sm];
+    const poolBank = poolAfter.reduce((a, v, m) => a + v / bankDensity[m], 0);
+    const fillFromHeaps = Math.max(0, fillBank - poolBank);
+    // (heaps inside the works are already part of the cut, so they can't be used twice)
+    const inWorks = new Set(cells.map((c) => c.k));
+    const src = gatherLoose(centre, radius, { gravel: sm >= 0 ? { m: sm, vol: gravelFromHeaps } : null, bank: fillFromHeaps, exclude: inWorks }, commit);
+    const plan = {
+      ok: true, mode, length: L, width, grade, pA, pB, cells: jobs.length, coreArea: core * area,
+      cutBank, fillBank, surfaceLoose, cutTonnes: pool.reduce((a, v) => a + v, 0),
+      heapGravelNeeded: gravelFromHeaps, heapFillNeeded: fillFromHeaps,
+      heapGravelFound: src.gravelFound, heapFillFound: src.bankFound,
+    };
+    if (src.gravelFound < gravelFromHeaps - 1e-6) return { ...plan, ok: false, reason: 'gravel' };
+    if (src.bankFound < fillFromHeaps - 1e-6) return { ...plan, ok: false, reason: 'fill' };
+    if (!commit) return plan;
+
+    // ---- do it
+    const cutOut = new Float64Array(M);
+    for (const job of jobs) {
+      const k = job.k;
+      if (job.isCore) {
+        if (loose[k] > 0) removeTop(k, loose[k], cutOut);
+        if (heightNat(k) > job.t) removeTop(k, heightNat(k) - job.t, cutOut);
+      } else if (job.t < job.h) removeTop(k, job.h - job.t, cutOut);
+    }
+    // The materials available for fill: what was cut (less the surface's gravel) plus the heaps'.
+    const avail = cutOut.slice();
+    if (sm >= 0) avail[sm] = Math.max(0, avail[sm] - gravelFromCut * looseDensity[sm]);
+    src.take(); // removes the heaps' share from the ground
+    for (let m = 0; m < M; m++) avail[m] += src.tonnes[m];
+    const availBank = avail.reduce((a, v, m) => a + v / bankDensity[m], 0);
+    const use = availBank > 0 ? Math.min(1, fillBank / availBank) : 0;
+    const share = Array.from(avail, (v, m) => (availBank > 0 ? v / bankDensity[m] / availBank : 0));
+    for (const job of jobs) {
+      const k = job.k;
+      if (job.fill > 0) {
+        for (let m = 0; m < M; m++) {
+          const l = layers.indexOf(m);
+          if (share[m] > 0 && l >= 0) nat[l][k] += job.fill * share[m];
+        }
+        // (material that isn't a natural layer, like rock, can't be compacted: it goes to the top layer)
+        const stray = share.reduce((a, v, m) => a + (layers.indexOf(m) < 0 ? v : 0), 0);
+        if (stray > 0) nat[K - 1][k] += job.fill * stray;
+      }
+      if (job.isCore && sm >= 0) {
+        const vols = new Float64Array(M);
+        vols[sm] = s * area;
+        addLoose(k, vols);
+      }
+      disturbed[k] = job.isCore ? 3 : 1;
+      changed(k);
+    }
+    for (const job of jobs) activateAround(job.k);
+    // Anything left over is heaped beside the strip, not lost.
+    const spoil = new Float64Array(M);
+    let spoilTotal = 0;
+    for (let m = 0; m < M; m++) {
+      spoil[m] = Math.max(0, avail[m] * (1 - use));
+      spoilTotal += spoil[m];
+    }
+    if (spoilTotal > 1e-6) {
+      const sx = centre.x - uz * (half + reach * 0.6);
+      const sz = centre.z + ux * (half + reach * 0.6);
+      plan.spoilAt = { x: sx, z: sz };
+      plan.spoilTonnes = spoilTotal;
+      api.deposit({ x: sx, z: sz, tonnes: toRecord(spoil), radius: 1.6 });
+    }
+    return plan;
+  }
+
+  // Loose material in heaps (not on built ground) near a point, nearest first: `bank` m³ of any
+  // material (compared as bank volume) and `gravel.vol` m³ of one material. With commit false it only
+  // measures; take() removes what was found.
+  function gatherLoose(centre, radius, need, commit) {
+    const found = { gravelFound: 0, bankFound: 0, tonnes: new Float64Array(M), gravelTonnes: 0, take() {} };
+    const list = [];
+    cellsInRadius(centre.x, centre.z, radius, (k, d) => {
+      if (loose[k] > 1e-4 && !(disturbed[k] & 2) && !need.exclude?.has(k)) list.push([k, d]);
+    });
+    list.sort((p, q) => p[1] - q[1]);
+    const takes = [];
+    let gravelLeft = need.gravel ? need.gravel.vol : 0;
+    let bankLeft = need.bank;
+    const left = new Map(); // loose thickness still available per cell
+    for (const [k] of list) left.set(k, loose[k]);
+    if (need.gravel && gravelLeft > 0) {
+      const gm = need.gravel.m;
+      for (const [k] of list) {
+        if (gravelLeft <= 1e-9) break;
+        const vol = left.get(k) * area * mix[k * M + gm];
+        if (vol < 1e-6) continue;
+        const t = Math.min(vol, gravelLeft);
+        takes.push({ k, m: gm, vol: t });
+        left.set(k, left.get(k) - t / area);
+        gravelLeft -= t;
+        found.gravelFound += t;
+        found.gravelTonnes += t * looseDensity[gm];
+      }
+    }
+    // (taking gravel changes a cell's mix; the remaining loose thickness is `left`, of the other materials)
+    if (bankLeft > 1e-9) {
+      for (const [k] of list) {
+        if (bankLeft <= 1e-9) break;
+        const thick = left.get(k);
+        if (thick < 1e-6) continue;
+        // the mix once any gravel has been taken from this cell
+        const vols = new Float64Array(M);
+        let tot = 0;
+        for (let m = 0; m < M; m++) {
+          vols[m] = loose[k] * area * mix[k * M + m];
+        }
+        for (const t of takes) if (t.k === k) vols[t.m] -= t.vol;
+        for (let m = 0; m < M; m++) tot += Math.max(0, vols[m]);
+        if (tot < 1e-9) continue;
+        const bankPerLoose = vols.reduce((a, v, m) => a + Math.max(0, v) / swell[m], 0) / tot;
+        const takeLoose = Math.min(tot, bankLeft / bankPerLoose);
+        const f = takeLoose / tot;
+        for (let m = 0; m < M; m++) {
+          const v = Math.max(0, vols[m]) * f;
+          if (v <= 0) continue;
+          takes.push({ k, m, vol: v });
+          found.tonnes[m] += v * looseDensity[m];
+        }
+        bankLeft -= takeLoose * bankPerLoose;
+        found.bankFound += takeLoose * bankPerLoose;
+      }
+    }
+    // (found.tonnes holds the fill's tonnes only; the surface's gravel is separate)
+    found.take = () => {
+      if (!commit) return;
+      const byCell = new Map();
+      for (const t of takes) byCell.set(t.k, [...(byCell.get(t.k) ?? []), t]);
+      for (const [k, list2] of byCell) {
+        const vols = new Float64Array(M);
+        for (let m = 0; m < M; m++) vols[m] = loose[k] * area * mix[k * M + m];
+        for (const t of list2) vols[t.m] = Math.max(0, vols[t.m] - t.vol);
+        const total = vols.reduce((a, v) => a + v, 0);
+        if (total < 1e-6) {
+          loose[k] = 0;
+          mix.fill(0, k * M, k * M + M);
+        } else {
+          loose[k] = total / area;
+          for (let m = 0; m < M; m++) mix[k * M + m] = vols[m] / total;
+        }
+        disturbed[k] = 1;
+        changed(k);
+        activateAround(k);
+      }
+    };
+    return found;
+  }
+
   // ---------------------------------------------------------------- API
-  return {
+  const api = {
     materials: mats,
     cellSize: cell,
     nx,
@@ -301,7 +565,9 @@ export function createGround(groundData, plotId, opts = {}) {
       return mats[topMaterial(idx(i, j))];
     },
     cellSurface: (i, j) => topMaterial(idx(i, j)),
-    cellDisturbed: (i, j) => disturbed[idx(i, j)] === 1,
+    cellDisturbed: (i, j) => disturbed[idx(i, j)] !== 0,
+    // A cell that has been built on (a graded road, ramp or level area).
+    cellBuilt: (i, j) => (disturbed[idx(i, j)] & 2) === 2,
     cellLoose: (i, j) => loose[idx(i, j)],
 
     // Carve a bowl (radius r, lowest point `bottomY`) out of the ground. If it would take more
@@ -340,6 +606,11 @@ export function createGround(groundData, plotId, opts = {}) {
       const tonnes = toRecord(out);
       return { tonnes, total: out.reduce((a, c) => a + c, 0), volume: out.reduce((a, t, m) => a + t / looseDensity[m], 0) };
     },
+
+    // Earthworks: plan a graded strip (see works() above) or build it. spec: { ax, az, bx, bz,
+    // width, mode: 'road' | 'ramp' | 'level', surface, surfaceThickness, maxGrade, sourceRadius }.
+    planWorks: (spec) => works(spec, false),
+    buildWorks: (spec) => works(spec, true),
 
     // Loose volume (m³) of some dug material ({ material: tonnes }).
     looseVolume(tonnes) {
@@ -403,7 +674,7 @@ export function createGround(groundData, plotId, opts = {}) {
             const dist = di && dj ? cell * Math.SQRT2 : cell;
             const dh = h - height(o);
             if (dh <= 0) continue;
-            if (loose[k] > 1e-5) {
+            if (loose[k] > 1e-5 && !(disturbed[k] & 2)) { // (a built surface doesn't slump)
               const excess = dh - reposeOf(k) * dist;
               if (excess > 1e-3) {
                 const move = Math.min(loose[k], excess * 0.3);
@@ -515,4 +786,5 @@ export function createGround(groundData, plotId, opts = {}) {
       }
     },
   };
+  return api;
 }
