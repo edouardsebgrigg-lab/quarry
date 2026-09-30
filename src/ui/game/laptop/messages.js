@@ -27,7 +27,8 @@ export function messagesApp({ game, setHead }) {
             el('div', {}, el('span', {}, 'Costs'), el('b', {}, money(r.spending))),
             el('div', {}, el('span', {}, 'Profit'), el('b', { class: r.profit >= 0 ? 'pos' : 'neg' }, money(r.profit))),
             el('div', {}, el('span', {}, 'Loads sold'), el('b', {}, `${r.loads} (${tonnes(r.tonnesSold)})`)),
-            el('div', {}, el('span', {}, 'Dug'), el('b', {}, tonnes(r.tonnesDug)))),
+            el('div', {}, el('span', {}, 'Dug'), el('b', {}, tonnes(r.tonnesDug))),
+            r.invested ? el('div', {}, el('span', {}, r.invested > 0 ? 'Invested' : 'Sold kit'), el('b', {}, money(Math.abs(r.invested)))) : null),
           r.movers?.length ? el('div', { class: 'lt-movers' }, 'Prices: ', r.movers.map((mv) => el('span', { class: mv.change > 0 ? 'up' : 'down' },
             `${game.data.materials[mv.id]?.name ?? mv.id} ${mv.change > 0 ? '▲' : '▼'} ${Math.abs(Math.round(mv.change * 100))}%`))) : null));
       } else {

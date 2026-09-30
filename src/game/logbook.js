@@ -9,6 +9,8 @@ const MAX_DAYS = 30;
 const round2 = (n) => Math.round(n * 100) / 100;
 // (money movements that aren't trading: borrowing and paying back)
 const NOT_TRADE = new Set(['loan', 'loanPayment', 'loanRepaid', 'dev']);
+// (buying and selling machines, upgrades and buildings is investment, not the day's trading)
+const isCapital = (reason) => reason === 'machine' || reason === 'mod' || reason === 'machineSale' || reason?.startsWith('building:');
 
 export function logbook(ctx) {
   ctx.state.logbook ??= { machines: {}, days: [], messages: [], read: 0 };
@@ -56,7 +58,7 @@ function today(ctx) {
   const { day } = getDate(ctx.state, ctx.data);
   let d = lb.days[lb.days.length - 1];
   if (!d || d.day !== day) {
-    d = { day, income: 0, spending: 0, tonnesSold: 0, tonnesDug: 0, loads: 0 };
+    d = { day, income: 0, spending: 0, invested: 0, tonnesSold: 0, tonnesDug: 0, loads: 0 };
     lb.days.push(d);
     if (lb.days.length > MAX_DAYS) lb.days.splice(0, lb.days.length - MAX_DAYS);
   }
@@ -90,6 +92,10 @@ export function logbookOnEvent(ctx, type, e) {
     case 'moneyChanged': {
       if (NOT_TRADE.has(e.reason)) break;
       const d = today(ctx);
+      if (isCapital(e.reason)) {
+        d.invested = round2((d.invested ?? 0) - e.amount);
+        break;
+      }
       if (e.amount > 0) d.income = round2(d.income + e.amount);
       else d.spending = round2(d.spending - e.amount);
       break;

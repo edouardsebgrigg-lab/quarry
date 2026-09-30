@@ -52,3 +52,15 @@ describe('unread messages', () => {
     expect(unreadMessages(game.ctx)).toBe(1);
   });
 });
+
+describe('the daily summary', () => {
+  it('keeps buying machines out of the day’s costs: that’s investment', () => {
+    const game = createGame({ seed: 5 });
+    const reports = [];
+    game.events.on('dailyReport', (r) => reports.push(r));
+    game.events.emit('moneyChanged', { amount: -240, reason: 'machine', money: 0 });
+    game.events.emit('moneyChanged', { amount: -5, reason: 'fuel', money: 0 });
+    game.dev.skipDays(1);
+    expect(reports[0]).toMatchObject({ spending: 5, invested: 240, profit: -5 });
+  });
+});
