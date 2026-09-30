@@ -5,7 +5,7 @@ Claude owns `docs/TASKS.md`; Codex has not edited it.
 
 ## Ready for review
 
-- **T1 — coordination sync:** merge commit `6cb0c6d65ea7447da720c15032a896e2b05898b6`,
+- **T1 — done, coordination sync:** merge commit `6cb0c6d65ea7447da720c15032a896e2b05898b6`,
   importing `origin/claude/coordination` at `3a4a991a5367cb6cd1d9124ab372bbd27dbc6065`.
   Actually run: `git fetch origin`, `git merge origin/claude/coordination`,
   `npm test` (145 passing tests in 20 files), `npm run build` (passed).
@@ -52,6 +52,36 @@ Claude owns `docs/TASKS.md`; Codex has not edited it.
   driving, manual controls, full tractor-plus-mini script or ramp save/reload
   in this run. The script's "T4" phase is a ramp phase, not queue task T4.
 
+- **T4 — done, `fc332664a2c494c935ab09f825375bb9debf6f48`:** added five
+  `after-*.png` files alongside the five untouched `before-*.png` files in
+  `docs/handover/screenshots/paint/`. All ten decode correctly at 960×540.
+  `capture.mjs` supports `CAPTURE_VIEWS` to isolate a view and `CLEAN_SHOTS=1`
+  to hide transient feedback in screenshots; camera/model placements are unchanged.
+  No paint, shader or model assets changed in T4.
+  Actually run: the full `TAG=after timeout 600 node .../capture.mjs` saved the
+  rusty lineup, then hit the 600 s bound (exit 124) waiting for frames for the
+  used lineup. Fresh isolated 600 s runs passed for `used-lineup`, `rusty-close`,
+  `used-close` and `rusty-tractor-chase`, with CLEAN_SHOTS and no browser errors.
+  A clean isolated `rusty-lineup` retry also timed out waiting for frames; the
+  final rusty lineup is the saved image from the first run, with delivery/mentor
+  overlays partly covering the right-hand machines. The other four are clean.
+  All runs used the portable Playwright override, port 5184, low graphics,
+  320×180 setup and real 960×540 screenshots. Placement/aim set by code and
+  dev money used; this is not a manual pointer-lock or driving verification.
+  Also run: `node --check` on capture.mjs, `npm test` (147 passing in 20 files),
+  `npm run build`, `git diff --check`, PNG decode/dimension checks, and exact
+  Git blob hash checks for all five uploaded images. Final checks passed.
+  Not verified: a successful single-process five-view capture, clean rusty
+  lineup capture, hardware GPU rendering, or an identical-seed/pixel baseline.
+
+  **Visual note:** rusty bodies retain yellow/red/mint paint instead of the
+  earlier overall orange rust appearance; seams and chips are visible. The
+  rusty trailer/dumper look pale, and broad grey mud on tyres/tracks obscures
+  dark rubber/steel detail. Used panels still look fairly flat/pale, although
+  chips and lower-body dirt are present. No missing texture is apparent in these
+  views. HUD/lighting/time and terrain seed differ from the before images, so
+  this is a qualitative comparison. Paint observations are for Claude's review.
+
 ## Decisions and session setup
 
 - CLI push failed for lack of credentials. The connected owner account has push
@@ -76,8 +106,8 @@ Codex did not independently rerun those checks this session.
 
 ## Outstanding checks and risks
 
-- T4: five matching paint after shots and visual comparison.
-- T5: normal-money fresh-save dig/haul/sell loop and measured pacing.
+- **Next: T5**, normal-money fresh-save dig/haul/sell loop and measured pacing.
+- T6–T8 remain queued after T5, per `docs/TASKS.md`.
 - Footprint means the grading job cells requested by T2; heap sourcing and
   spoil deposition retain their existing separate paths.
 - Real pointer lock and manual mouse aiming remain unverified.
@@ -92,3 +122,14 @@ signs, maintenance and fuel discounts, finite-width refusal and the heap-source
 reach fix. Its player obstacle and six-metre clearance approach is superseded
 by T2. Prior Codex browser checks and their limitations remain documented in
 `docs/HANDOVER.md` and `docs/handover/browser-checks/checkpoint.mjs`.
+
+## Session stop
+
+Stopped after the three counted tasks T2, T3 and T4; T1 was the sync task.
+No further queue work started. No decision is required for this batch.
+Only the Codex branch is published, via normal fast-forward GitHub ref updates.
+CLI push lacked credentials; publication through the connected owner account
+succeeded. Later task commits/checkpoints were fetched back, their exact trees
+and ancestry checked, and the local branch advanced to the published descendant.
+The task list blob remains `5c036898d1c0d96f2dd103e840b44e7b45f639a2`,
+unchanged from Claude's coordination branch. No PR or deployment created.
