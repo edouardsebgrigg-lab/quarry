@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { createGame } from '../game/index.js';
+import { loadData } from '../core/data.js';
 import { dailyPayment, bankState, owed } from './bank.js';
 
+// (milestones off: their rewards would change the balances these tests check)
+const noMilestones = () => { const data = loadData(); data.milestones.list = []; return data; };
 const newGame = (money = 100) => {
-  const game = createGame({ seed: 4 });
+  const game = createGame({ seed: 4, data: noMilestones() });
   game.state.money = money;
   return game;
 };
@@ -83,7 +86,7 @@ describe('loans', () => {
     const game = newGame(100);
     game.actions.takeLoan(250, 14);
     const saved = JSON.parse(JSON.stringify(game.snapshot()));
-    const g2 = createGame({ seed: 4, state: saved });
+    const g2 = createGame({ seed: 4, state: saved, data: noMilestones() });
     expect(bankState(g2.ctx).loans).toHaveLength(1);
     day(g2);
     expect(bankState(g2.ctx).loans[0].daysLeft).toBe(13);

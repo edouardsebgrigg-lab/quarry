@@ -111,10 +111,26 @@ export function createFeedback({ game, getMoneyNode }) {
     return m ? machineName(data, m) : 'Machine';
   };
 
+  const milestoneBurst = [];
+  function flushMilestones() {
+    const got = milestoneBurst.splice(0);
+    const reward = got.reduce((a, e) => a + (e.reward ?? 0), 0);
+    if (got.length === 1) toast(`Milestone: ${got[0].title}${reward ? `  +${money(reward)}` : ''}`, 'good');
+    else if (got.length > 1) toast(`${got.length} milestones reached${reward ? `  +${money(reward)}` : ''} (laptop: Milestones)`, 'good');
+    if (reward) floatText(signedMoney(reward), 'gain', getMoneyNode());
+    const perks = got.filter((e) => e.perkName).map((e) => e.perkName);
+    if (perks.length) later(1600, () => toast(`New perk${perks.length > 1 ? 's' : ''}: ${perks.join(', ')} (laptop: Milestones)`, 'good'));
+  }
+
   const offs = [
     game.events.on('objectiveCompleted', (e) => {
       toast(`Goal complete: ${e.title}${e.reward ? `  +${money(e.reward)}` : ''}`, 'good');
       if (e.reward) floatText(signedMoney(e.reward), 'gain', getMoneyNode());
+    }),
+    game.events.on('milestoneReached', (e) => {
+      // Several at once (an old save catching up, or one sale reaching two) make one toast.
+      if (!milestoneBurst.length) later(0.05 * 1000, flushMilestones);
+      milestoneBurst.push(e);
     }),
     game.events.on('machineBought', (e) => {
       const m = getMachine(game.ctx, e.machineId);

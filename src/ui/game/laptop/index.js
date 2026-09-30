@@ -14,11 +14,14 @@ import { bankApp } from './bank.js';
 import { fleetApp } from './fleet.js';
 import { messagesApp } from './messages.js';
 import { jobsApp } from './jobs.js';
+import { milestonesApp } from './milestones.js';
+import { unseenMilestones, markMilestonesSeen } from '../../../career/index.js';
 
 const APPS = [
   { id: 'home', label: 'Home', icon: 'home', make: homeApp },
   { id: 'dealer', label: 'Plant dealer', icon: 'digger', make: dealerApp },
   { id: 'jobs', label: 'Jobs board', icon: 'clipboard', make: jobsApp },
+  { id: 'milestones', label: 'Milestones', icon: 'trophy', make: milestonesApp },
   { id: 'prices', label: 'Depot prices', icon: 'chart', make: pricesApp },
   { id: 'fleet', label: 'Fleet', icon: 'truck', make: fleetApp },
   { id: 'bank', label: 'Bank', icon: 'bank', make: bankApp },
@@ -92,7 +95,9 @@ export function openLaptop(overlays, { game, feedback, world, app = 'home' }) {
         const unread = active?.id === 'messages' ? 0 : unreadMessages(game.ctx);
         const c = contractsState(game.ctx);
         const offers = c.active.length < game.data.contracts.maxActive ? c.offers.length : 0;
-        for (const [id, n] of [['messages', unread], ['jobs', offers]]) {
+        if (active?.id === 'milestones') markMilestonesSeen(game.ctx);
+        const reached = unseenMilestones(game.ctx);
+        for (const [id, n] of [['messages', unread], ['jobs', offers], ['milestones', reached]]) {
           const bdg = badges.get(id);
           setText(bdg, n ? String(n) : '');
           bdg.style.display = n ? '' : 'none';

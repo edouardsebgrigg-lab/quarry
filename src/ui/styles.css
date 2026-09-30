@@ -921,3 +921,30 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .trend-news { display: inline-block; margin-left: 0.45rem; padding: 0.05rem 0.4rem; border-radius: 999px; font-size: 0.68rem; font-weight: 700;
   background: rgba(107, 217, 138, 0.14); color: var(--good); }
 .trend-news.down { background: rgba(255, 154, 138, 0.14); color: #ff9a8a; }
+
+/* Milestones app */
+.lt-ms-groups { display: flex; flex-direction: column; gap: 1.1rem; }
+.lt-ms-group > .lt-card-label { margin-bottom: 0.55rem; }
+.lt-ms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(14.5rem, 1fr)); gap: 0.7rem; }
+.lt-ms { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.8rem 0.9rem; border-radius: 11px;
+  background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.06); }
+.lt-ms.done { background: rgba(245, 184, 46, 0.06); border-color: rgba(245, 184, 46, 0.32); }
+.lt-ms-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; }
+.lt-ms-head b { font-size: 0.95rem; display: flex; align-items: center; gap: 0.35rem; }
+.lt-ms-tick { color: var(--accent); display: inline-flex; }
+.lt-ms-tick .lt-icon svg { width: 1rem; height: 1rem; }
+.lt-ms-reward { color: var(--accent); font-weight: 700; font-size: 0.85rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lt-ms.done .lt-ms-reward { color: var(--muted); }
+.lt-ms-text { color: var(--muted); font-size: 0.8rem; line-height: 1.4; }
+.lt-ms-perk { align-self: flex-start; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--accent); border: 1px solid rgba(245, 184, 46, 0.4); border-radius: 99px; padding: 0.1rem 0.5rem; }
+.lt-ms-bar { height: 5px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); overflow: hidden; margin-top: 0.15rem; }
+.lt-ms-bar i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+.lt-ms-foot { display: flex; justify-content: space-between; gap: 0.5rem; color: var(--muted); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.lt-perks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin-top: 0.6rem; }
+.lt-perk { display: flex; flex-direction: column; gap: 0.2rem; padding: 0.65rem 0.8rem; border-radius: 10px;
+  border: 1px dashed rgba(255, 255, 255, 0.13); color: var(--muted); font-size: 0.8rem; line-height: 1.35; }
+.lt-perk b { color: var(--text); font-size: 0.9rem; }
+.lt-perk em { font-style: normal; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-top: 0.15rem; }
+.lt-perk.on { border-style: solid; border-color: rgba(245, 184, 46, 0.45); background: rgba(245, 184, 46, 0.07); }
+.lt-perk.on b, .lt-perk.on em { color: var(--accent); }

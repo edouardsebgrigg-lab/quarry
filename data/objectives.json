@@ -90,6 +90,14 @@
       "guide": "tractor"
     },
     {
+      "id": "buildWorks",
+      "title": "Build a ramp or a haul road",
+      "text": "On foot, press F to plan groundworks: a ramp out of your pit, a gravel haul road, or a level area for turning the trailer. Click the start, then the end, and click again to build. A road or ramp is surfaced with gravel from the strip and loose gravel heaps within 30 m; a level area needs none.",
+      "reward": 60,
+      "mentor": "Tractor's earning its keep. Now make the site work for you: a ramp out of the pit or a level pad saves you fighting the ground every load. Press F on foot to plan one. Nothing's spent till you click to build.",
+      "guide": "works"
+    },
+    {
       "id": "buyExcavator",
       "title": "Buy an excavator",
       "text": "An 8-tonne excavator fills a trailer in a few swings. Save up for the Rusty Excavator.",
@@ -128,6 +136,55 @@
       "reward": 0,
       "mentor": "Time to swap a rusty old thing for a Used one. You'll feel the difference straight away.",
       "guide": "office"
+    },
+    {
+      "id": "firstJob",
+      "title": "Do a job for a customer",
+      "text": "Open the Jobs board on the office laptop, take a job and deliver its tonnes, clean, before the deadline. The customer pays a bonus on top of the depot price.",
+      "reward": 100,
+      "mentor": "Right, you've got proper kit. Time to get known. Folk round here post jobs on the board (office laptop, Jobs board): so many tonnes of this or that by a certain day, with a bonus. Take one you can do.",
+      "guide": "office"
+    },
+    {
+      "id": "yardBuilding",
+      "title": "Fit out the yard",
+      "text": "Buy a yard building in the plant dealer's Yard buildings tab: the container workshop makes servicing and repairs cheaper and quicker, the bulk fuel supply cuts your diesel bill.",
+      "reward": 50,
+      "mentor": "Your running costs are adding up. Fit out the yard: the old container makes a decent workshop, and a bulk fuel deal takes a slice off every tank. Plant dealer, Yard buildings.",
+      "guide": "office"
+    },
+    {
+      "id": "cleanTonnes",
+      "title": "Sell 300 t of clean material",
+      "text": "Dig one layer at a time and keep your heaps apart: only clean loads in the right bay count. Clean loads in a row also count towards the milestones on the laptop.",
+      "reward": 250,
+      "target": 300,
+      "mentor": "Clean loads pay best, and the depot remembers who sends them. Keep your layers apart and put 300 tonnes of clean stuff over their weighbridge. Your milestones are on the laptop too: plenty there worth chasing."
+    },
+    {
+      "id": "goodName",
+      "title": "Build a name in Ashby",
+      "text": "Finish jobs from the jobs board on time until your reputation reaches 3. A better name brings bigger bonuses and more offers.",
+      "reward": 200,
+      "target": 3,
+      "mentor": "Every job done on time, word gets round. Let one slip and it gets round faster. Get your name up to 3 on the jobs board and the better work starts coming in.",
+      "guide": "office"
+    },
+    {
+      "id": "usedFleet",
+      "title": "Replace the rusty ones",
+      "text": "Own a Used digger (mini digger or excavator) and a Used road vehicle (tractor or truck). Sell the rusty ones to the dealer if you need the money.",
+      "reward": 300,
+      "mentor": "Those rusty old things got you here, but they'll cost you in repairs. Get a Used digger and a Used road vehicle working together and you'll feel the difference in every load.",
+      "guide": "office"
+    },
+    {
+      "id": "earnBig",
+      "title": "Earn $15,000",
+      "text": "Keep the loads clean, the jobs coming and the machines serviced. Watch the depot prices: news in the Prices app moves them for a few days at a time.",
+      "reward": 500,
+      "target": 15000,
+      "mentor": "That's a real business now. Keep an eye on the prices: when there's news, hold off on what's down and sell what's up. Fifteen grand and you can call yourself a quarry."
     }
   ],
   "mentor": {

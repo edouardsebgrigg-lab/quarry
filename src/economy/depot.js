@@ -5,6 +5,7 @@
 import { pileTotal } from '../quarry/index.js';
 import { addMoney } from './money.js';
 import { quoteSale, applySaleToMarket } from './market.js';
+import { cleanSaleBonus } from '../career/index.js';
 
 function tickets(ctx) {
   ctx.state.depot ??= { tickets: {} };
@@ -30,7 +31,9 @@ export function quoteDelivery(ctx, bayId, load, tonnes = pileTotal(load)) {
   const purity = bayId === mixed ? 1 : total > 0 ? (load[bayId] ?? 0) / total : 0;
   const grade = bayId === mixed ? null : depot.grades.find((g) => purity >= g.minPurity - 1e-9) ?? null;
   const product = grade ? bayId : mixed;
-  const factor = grade ? grade.factor : 1;
+  // (a depot account, from a milestone, pays a little more for the top grade)
+  const clean = grade && grade === depot.grades[0];
+  const factor = (grade ? grade.factor : 1) * (clean ? 1 + cleanSaleBonus(ctx) : 1);
   const gross = quoteSale(ctx, product, tonnes) * factor;
   return {
     product,

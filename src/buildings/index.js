@@ -1,5 +1,6 @@
 // Fixed yard facilities: commission existing structures rather than place new footprints.
 import { canAfford, spendMoney } from '../economy/money.js';
+import { dealerPrice } from '../career/index.js';
 
 export function ownsBuilding(ctx, id, siteId = ctx.state.currentSiteId) {
   return ctx.state.buildings?.[siteId]?.[id] === true;
@@ -15,10 +16,11 @@ export function buyBuilding(ctx, id) {
   const siteId = ctx.state.currentSiteId;
   if (ctx.data.sites[siteId]?.groundPlot !== 'home') return { ok: false, reason: 'These facilities belong to your home yard' };
   if (ownsBuilding(ctx, id)) return { ok: false, reason: 'Already commissioned at this site' };
-  if (!canAfford(ctx, cfg.price)) return { ok: false, reason: 'Not enough money' };
+  const price = dealerPrice(ctx, cfg.price);
+  if (!canAfford(ctx, price)) return { ok: false, reason: 'Not enough money' };
   const sites = (ctx.state.buildings ??= {});
   (sites[siteId] ??= {})[id] = true;
-  spendMoney(ctx, cfg.price, `building:${id}`);
-  ctx.events.emit('buildingBought', { buildingId: id, siteId, cost: cfg.price });
-  return { ok: true, buildingId: id, cost: cfg.price };
+  spendMoney(ctx, price, `building:${id}`);
+  ctx.events.emit('buildingBought', { buildingId: id, siteId, cost: price });
+  return { ok: true, buildingId: id, cost: price };
 }

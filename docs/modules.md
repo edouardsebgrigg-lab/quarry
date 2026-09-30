@@ -15,7 +15,8 @@ A short tour of the code. The logic modules never touch the screen. Each module 
 | `depot.json` | The selling depot: its bays, the purity grades (clean, slightly mixed) and what they pay |
 | `works.json` | Earthworks: the kinds (haul road, ramp, level area) with surface, thickness, greatest slope, width range and price, plus the length limits and how far from the works loose heaps can be used |
 | `ground.json` | Diggable ground: materials (density, how much they swell when dug, the slope they settle at, how steep a wall they can stand) and each plot's layers |
-| `objectives.json` | The intro story and the first goals (texts and rewards) |
+| `objectives.json` | The intro story and the goals (texts and rewards): the machine ladder, then the business (jobs, the yard, clean tonnes, a name, a Used fleet, $15,000) |
+| `milestones.json` | Company milestones (what each measures, its target and reward, its group) and the perks some of them switch on (depot account, fuel card, trade account) |
 | `tools.json` | Hand tools: how much a shovelful and a wheelbarrow hold (loose m³), reach, dig and tip times, pushing speeds |
 
 You can change any of these and reload the game. No code changes are needed.
@@ -30,7 +31,8 @@ You can change any of these and reload the game. No code changes are needed.
 | `src/earthworks` | Building with material: what a road, ramp or level area may be (slope, length, width, price by area from `data/works.json`), the plan (what it costs and needs, changing nothing) and the build (checks machine/barrow circles against grading cells with the configured margin, charges the labour and asks the ground to do it); `worksBuilt` carries the footprint query so the world puts player feet on the new surface |
 | `src/handtools` | Your shovel and wheelbarrow: digging a shovelful out of the real ground, tipping it into the barrow, the pickup's or a truck's bed or onto the ground, and tipping the barrow as a pile or into a bed. Loads are dug material measured by loose volume |
 | `src/machinery` | Machine stats and mods (a machine's `kind` decides which jobs it can do), buying and selling machines, Direct-mode bucket cutting and pouring, timed jobs (dig a bucket out of the real ground, tip or unload a road vehicle at the depot or on your land, service, repair), wear and breakdowns |
-| `src/progression` | The step-by-step goals for a new game (which one is current, checking them against game events, paying rewards), the mentor's texts and tips (`mentor.js`), and a pacing check of the machine ladder (`pacing.test.js`) |
+| `src/progression` | The step-by-step goals for a new game (which one is current, checking them against game events, paying rewards), the mentor's texts and tips (`mentor.js`), and a pacing check of the machine ladder and of groundworks prices against a trailer load (`pacing.test.js`) |
+| `src/career` | Milestones and perks. `career.js` keeps the counters milestones need that nothing else keeps (clean loads in a row, gravel dug, metres of road, loads sold in the rain, the best day's takings, loans paid off) from game events, pays each milestone once and sends `milestoneReached`; `perks.js` answers price questions (`dealerPrice`, `fuelPerkMultiplier`, `cleanSaleBonus`) and imports nothing, so the economy, the dealer and the buildings can ask it. Tests that check exact money should turn milestones off (`data.milestones.list = []`), or a reward can land mid-test |
 | `src/game` | Wires everything together: `createGame()` builds a game, `game.tick()` advances time, `game.actions.*` are the player's actions |
 
 **Player actions** (`src/game/actions.js`) are the single way to make things happen. They're used by buttons and hotkeys now, and later by operators and 3D driving.
@@ -42,7 +44,7 @@ You can change any of these and reload the game. No code changes are needed.
 |---|---|
 | `src/input` | Hotkeys and rebinding |
 | `src/audio` | Sound: `synth.js` builds every sound from maths (diesel engines, gravel, rocks, hydraulics, birds…), `index.js` plays them through a mixer with 3D positioning, engine voices driven by rpm and load, loops and one-shots |
-| `src/ui` | Main menu, pause menu, settings, save/load screens, HUD, 3D overlay (prompts, machine dash), the map (`mapView.js` draws the countryside from above, `mapOverlay.js` adds the places and your machines), shop, depot price board (`market.js`), dev panel, feedback effects. `game/timeGate.js` decides when the game clock may run (only while you're playing: not before the first click, not with the pointer released, the window hidden, or paused) and turns frame time into ticks without catch-up |
+| `src/ui` | Main menu, pause menu, settings, save/load screens, HUD, 3D overlay (prompts, machine dash), the map (`mapView.js` draws the countryside from above, `mapOverlay.js` adds the places and your machines), the office laptop and its apps (`game/laptop/`: home, plant dealer, jobs board, milestones, depot prices, fleet, bank, messages), depot price board (`market.js`), dev panel, feedback effects. `game/timeGate.js` decides when the game clock may run (only while you're playing: not before the first click, not with the pointer released, the window hidden, or paused) and turns frame time into ticks without catch-up |
 | `src/world3d` | The 3D world, described below |
 
 ### The 3D world (`src/world3d`)

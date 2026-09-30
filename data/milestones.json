@@ -1,0 +1,55 @@
+{
+  "groups": {
+    "selling": "Selling",
+    "digging": "Digging",
+    "building": "Building",
+    "business": "Business"
+  },
+  "perks": {
+    "depotAccount": {
+      "name": "Depot account",
+      "text": "Ashby Aggregates pays 4% more for clean loads.",
+      "cleanSaleBonus": 0.04
+    },
+    "fuelCard": {
+      "name": "Fuel card",
+      "text": "10% off every litre of diesel.",
+      "fuelCostMultiplier": 0.9
+    },
+    "tradeAccount": {
+      "name": "Trade account",
+      "text": "5% off machines, upgrades and yard buildings at the dealer.",
+      "dealerDiscount": 0.05
+    }
+  },
+  "list": [
+    { "id": "sold25", "group": "selling", "title": "Regular at the depot", "text": "Sell 25 t of material.", "metric": "tonnesSold", "target": 25, "reward": 100 },
+    { "id": "sold150", "group": "selling", "title": "Steady supplier", "text": "Sell 150 t of material.", "metric": "tonnesSold", "target": 150, "reward": 300 },
+    { "id": "sold500", "group": "selling", "title": "Five hundred tonnes", "text": "Sell 500 t of material.", "metric": "tonnesSold", "target": 500, "reward": 800, "perk": "depotAccount" },
+    { "id": "sold2000", "group": "selling", "title": "Two thousand tonnes", "text": "Sell 2,000 t of material.", "metric": "tonnesSold", "target": 2000, "reward": 2500 },
+    { "id": "clean5", "group": "selling", "title": "Clean run", "text": "Sell 5 clean loads in a row.", "metric": "bestCleanStreak", "target": 5, "reward": 80 },
+    { "id": "clean25", "group": "selling", "title": "Known for clean loads", "text": "Sell 25 clean loads in a row.", "metric": "bestCleanStreak", "target": 25, "reward": 400 },
+    { "id": "rain3", "group": "selling", "title": "Whatever the weather", "text": "Sell 3 loads while it's raining.", "metric": "rainLoads", "target": 3, "reward": 120 },
+    { "id": "day500", "group": "selling", "title": "A good day's work", "text": "Earn $500 from sales and jobs in one day.", "metric": "bestDay", "target": 500, "reward": 100 },
+    { "id": "day2000", "group": "selling", "title": "Record day", "text": "Earn $2,000 from sales and jobs in one day.", "metric": "bestDay", "target": 2000, "reward": 400 },
+
+    { "id": "dug50", "group": "digging", "title": "Earth mover", "text": "Dig 50 t, by hand or by machine.", "metric": "tonnesDug", "target": 50, "reward": 60 },
+    { "id": "dug400", "group": "digging", "title": "A proper hole", "text": "Dig 400 t.", "metric": "tonnesDug", "target": 400, "reward": 300, "perk": "fuelCard" },
+    { "id": "dug2000", "group": "digging", "title": "Moving mountains", "text": "Dig 2,000 t.", "metric": "tonnesDug", "target": 2000, "reward": 1200 },
+    { "id": "gravel20", "group": "digging", "title": "Down to the gravel", "text": "Dig 20 t of gravel. It lies under the topsoil and the clay or sand.", "metric": "gravelDug", "target": 20, "reward": 100 },
+
+    { "id": "works1", "group": "building", "title": "Groundworks", "text": "Build a haul road, a ramp or a level area (F on foot).", "metric": "worksBuilt", "target": 1, "reward": 50 },
+    { "id": "road100", "group": "building", "title": "Road builder", "text": "Build 100 m of haul road.", "metric": "roadMetres", "target": 100, "reward": 250 },
+    { "id": "ramps3", "group": "building", "title": "In and out", "text": "Build 3 ramps.", "metric": "rampsBuilt", "target": 3, "reward": 150 },
+    { "id": "yard2", "group": "building", "title": "Fitted out", "text": "Own both yard buildings: the workshop and the fuel supply.", "metric": "yardBuildings", "target": 2, "reward": 200 },
+
+    { "id": "fleet6", "group": "business", "title": "Busy yard", "text": "Own 6 machines.", "metric": "fleetSize", "target": 6, "reward": 300, "perk": "tradeAccount" },
+    { "id": "used2", "group": "business", "title": "Moving up", "text": "Own 2 Used machines.", "metric": "usedMachines", "target": 2, "reward": 250 },
+    { "id": "jobs3", "group": "business", "title": "Regular customers", "text": "Finish 3 jobs from the jobs board.", "metric": "jobsDone", "target": 3, "reward": 150 },
+    { "id": "jobs15", "group": "business", "title": "Trusted supplier", "text": "Finish 15 jobs from the jobs board.", "metric": "jobsDone", "target": 15, "reward": 600 },
+    { "id": "rep5", "group": "business", "title": "A name in Ashby", "text": "Reach reputation 5 with your customers.", "metric": "reputation", "target": 5, "reward": 300 },
+    { "id": "loan1", "group": "business", "title": "Paid in full", "text": "Pay off a bank loan.", "metric": "loansCleared", "target": 1, "reward": 75 },
+    { "id": "earned10k", "group": "business", "title": "Ten grand", "text": "Earn $10,000 in total.", "metric": "totalEarned", "target": 10000, "reward": 500 },
+    { "id": "earned50k", "group": "business", "title": "Fifty grand", "text": "Earn $50,000 in total.", "metric": "totalEarned", "target": 50000, "reward": 2000 }
+  ]
+}

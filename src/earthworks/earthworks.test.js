@@ -11,6 +11,7 @@ const heap = (g, x, z, tonnes = 60) => g.deposit({ x, z, tonnes: { gravel: tonne
 function setup(money = 500, flat = false) {
   const data = structuredClone(loadData());
   if (flat) data.ground.plots.home.surfaceRoll = 0;
+  data.milestones.list = []; // (their rewards would change the money these tests check)
   const game = createGame({ seed: 3, data });
   game.state.money = money;
   const g = game.ctx.ground;

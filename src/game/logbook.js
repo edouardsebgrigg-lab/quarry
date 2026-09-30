@@ -147,6 +147,15 @@ export function logbookOnEvent(ctx, type, e) {
       trim(lb);
       break;
     }
+    case 'milestoneReached': {
+      const lb = logbook(ctx);
+      const { day, hour, minute } = getDate(ctx.state, ctx.data);
+      const perk = e.perk ? ctx.data.milestones?.perks?.[e.perk] : null;
+      const text = `Milestone reached: ${e.title}.${e.reward ? ` $${e.reward} paid in.` : ''}${perk ? ` New perk, ${perk.name}: ${perk.text}` : ''}`;
+      lb.messages.push({ day, hour, minute, from: 'Office', text, kind: 'good' });
+      trim(lb);
+      break;
+    }
     case 'contractCompleted':
     case 'contractFailed': {
       const lb = logbook(ctx);

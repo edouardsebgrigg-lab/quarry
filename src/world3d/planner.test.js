@@ -1,11 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import * as THREE from 'three';
 import { createGame } from '../game/index.js';
+import { loadData } from '../core/data.js';
 import { createPlanner } from './planner.js';
 
 // The planner's flow with a stand-in camera: aim, click, wheel, right click.
 function setup(money = 500) {
-  const game = createGame({ seed: 3 });
+  const data = loadData();
+  data.milestones.list = []; // (their rewards would change the money these tests check)
+  const game = createGame({ seed: 3, data });
   game.state.money = money;
   const ground = game.ctx.ground;
   ground.deposit({ x: 52, z: 84, tonnes: { gravel: 70 }, radius: 2.5 });

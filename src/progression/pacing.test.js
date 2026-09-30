@@ -4,6 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { loadData } from '../core/data.js';
 import { topSpeedKmh, unloadSeconds } from '../machinery/index.js';
+import { worksCost } from '../earthworks/index.js';
 
 const data = loadData();
 const tier = (type, t = 'rusty') => data.machines.types[type].tiers[t];
@@ -55,5 +56,18 @@ describe('early-game pacing', () => {
       expect(s.minutes, s.type).toBeGreaterThanOrEqual(5);
       expect(s.minutes, s.type).toBeLessThanOrEqual(40);
     }
+  });
+
+  // T8: groundworks come up as a goal once you have the tractor. Their labour should cost about
+  // what a trailer load earns, so building one is a choice, not a week's savings.
+  it('groundworks cost no more than about one good trailer load', () => {
+    const load = tier('tractor').capacity * TOPSOIL; // a full trailer of clean topsoil
+    const cost = (mode, length) => worksCost(data, mode, length * data.works.modes[mode].width.default);
+    const rows = [['road', 20], ['ramp', 15], ['level', 8]].map(([mode, length]) => ({ mode, length, cost: cost(mode, length) }));
+    console.table(rows.map((r) => ({ ...r, loads: +(r.cost / load).toFixed(2) })));
+    for (const r of rows) expect(r.cost, r.mode).toBeLessThanOrEqual(load);
+    // The goal's reward pays back a small level area.
+    const reward = data.objectives.steps.find((s) => s.id === 'buildWorks').reward;
+    expect(reward).toBeGreaterThanOrEqual(cost('level', 8) * 0.8);
   });
 });

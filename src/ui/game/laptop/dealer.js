@@ -8,6 +8,7 @@ import {
   describeStats, getStats, tierName, machinesAt, machineName, isTierUnlocked, modsFor, resaleValue,
 } from '../../../machinery/index.js';
 import { lineIcon } from './icons.js';
+import { dealerPrice } from '../../../career/index.js';
 
 const CATEGORIES = [
   { id: 'diggers', label: 'Diggers', icon: 'digger' },
@@ -18,6 +19,8 @@ const CATEGORIES = [
 ];
 
 export function dealerApp({ game, feedback, photos, setHead }) {
+  // What you pay here (a trade account, from a milestone, takes a little off the list price).
+  const pay = (list) => dealerPrice(game.ctx, list);
   const { data } = game;
   const ctx = game.ctx;
   let cat = 'diggers';
@@ -86,7 +89,7 @@ export function dealerApp({ game, feedback, photos, setHead }) {
             el('div', { class: 'lt-tile-title' }, el('span', {}, t.name), tierPill(tier)),
             el('div', { class: 'lt-tile-specs' }, lines.slice(0, 2).map((l) => `${l.label} ${statValue(l)}`).join('  ·  ')),
             el('div', { class: 'lt-tile-foot' },
-              el('span', { class: 'lt-price' }, unlocked ? money(td.price) : 'Locked'),
+              el('span', { class: 'lt-price' }, unlocked ? money(pay(td.price)) : 'Locked'),
               count ? el('span', { class: 'lt-owned' }, `You own ${count}`) : null))));
       }
     }
@@ -125,8 +128,8 @@ export function dealerApp({ game, feedback, photos, setHead }) {
           el('div', { class: 'lt-detail-title' }, el('h3', {}, t.name), tierPill(tier)),
           t.blurb ? el('p', { class: 'lt-blurb' }, t.blurb) : null,
           el('div', { class: 'lt-buy-row' },
-            el('div', {}, el('div', { class: 'lt-buy-label' }, unlocked ? 'Price, delivered' : 'Not available yet'), el('div', { class: 'lt-buy-price' }, money(td.price))),
-            unlocked ? buyButton(td.price, () => buyMachine(type, tier)) : el('span', { class: 'muted small' }, 'Needs research')),
+            el('div', {}, el('div', { class: 'lt-buy-label' }, unlocked ? (pay(td.price) < td.price ? `Trade price (list ${money(td.price)})` : 'Price, delivered') : 'Not available yet'), el('div', { class: 'lt-buy-price' }, money(pay(td.price)))),
+            unlocked ? buyButton(pay(td.price), () => buyMachine(type, tier)) : el('span', { class: 'muted small' }, 'Needs research')),
           el('div', { class: 'lt-specs' }, specRows),
           el('div', { class: 'lt-facts' }, facts.map(([k, v]) => el('div', {}, el('span', {}, k), el('b', {}, v))))))));
   }
@@ -140,7 +143,7 @@ export function dealerApp({ game, feedback, photos, setHead }) {
         el('div', { class: 'lt-row-main' }, el('b', {}, mod.name), el('span', {}, mod.description)),
         mod.fitted
           ? el('span', { class: 'lt-fitted' }, lineIcon('check'), 'Fitted')
-          : el('div', { class: 'lt-row-buy' }, el('span', { class: 'lt-price' }, money(mod.price)), buyButton(mod.price, () => {
+          : el('div', { class: 'lt-row-buy' }, el('span', { class: 'lt-price' }, money(pay(mod.price))), buyButton(pay(mod.price), () => {
             const before = describeStats(data, m.type, getStats(data, m));
             const r = game.actions.buyMod(m.id, mod.id);
             if (!r.ok) return feedback.message(r.reason, 'warn');
@@ -159,7 +162,7 @@ export function dealerApp({ game, feedback, photos, setHead }) {
       el('div', { class: 'lt-row-main' }, el('b', {}, cfg.name), el('span', {}, cfg.description)),
       ownsBuilding(ctx, id)
         ? el('span', { class: 'lt-fitted' }, lineIcon('check'), 'In use')
-        : el('div', { class: 'lt-row-buy' }, el('span', { class: 'lt-price' }, money(cfg.price)), buyButton(cfg.price, () => {
+        : el('div', { class: 'lt-row-buy' }, el('span', { class: 'lt-price' }, money(pay(cfg.price))), buyButton(pay(cfg.price), () => {
           const r = game.actions.buyBuilding(id);
           feedback.message(r.ok ? `${cfg.name}: done` : r.reason, r.ok ? 'good' : 'warn');
         }))));

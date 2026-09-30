@@ -28,6 +28,8 @@ import { createHeadSway } from './headSway.js';
 import { MAP, inRect } from './map.js';
 import { createGuideBeacon } from './guideBeacon.js';
 import { currentObjective } from '../progression/index.js';
+import { contractsState } from '../contracts/index.js';
+import { dealerPrice } from '../career/index.js';
 import { barrowFill } from '../handtools/index.js';
 import { keyLabel } from '../input/index.js';
 import { pileTotal } from '../quarry/index.js';
@@ -614,7 +616,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const bay = MAP.depot.bays.find((b) => b.id === bayId) ?? MAP.depot.bays.find((b) => b.id === data.depot.mixedProduct);
       return at((bay.x0 + bay.x1) / 2, (MAP.depot.bayZ.z0 + MAP.depot.bayZ.z1) / 2, `${data.depot.bays[bay.id].name} bay`, 5);
     };
-    const affordable = (type) => game.state.money >= (data.machines.types[type]?.tiers.rusty.price ?? Infinity);
+    const affordable = (type) => game.state.money >= dealerPrice(game.ctx, data.machines.types[type]?.tiers.rusty.price ?? Infinity);
     const loadedRoad = () => (v?.road && pileTotal(currentMachine().load) >= data.depot.minLoad ? v : null);
     switch (o.id) {
       case 'firstShovel': return field();
@@ -635,6 +637,11 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       case 'buyExcavator': return affordable('excavator') ? office('Buy the excavator') : null;
       case 'buyTruck': return affordable('truck') ? office('Buy the truck') : null;
       case 'usedMachine': return null;
+      case 'buildWorks': return v ? null : field();
+      case 'firstJob': return contractsState(game.ctx).active.length ? null : office('Take a job (office laptop: Jobs board)');
+      case 'yardBuilding': return office('Yard buildings (office laptop: Plant dealer)');
+      case 'goodName': return contractsState(game.ctx).active.length ? null : office('Take another job (office laptop)');
+      case 'usedFleet': return office('Buy a Used machine');
       case 'firstScoop': return v?.type === 'miniDigger' ? field() : onMachine(vehicleOf('miniDigger'), 'Your mini digger');
       case 'sellTrailer':
       case 'sell': {

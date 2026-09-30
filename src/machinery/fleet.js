@@ -3,6 +3,7 @@ import { canAfford, spendMoney, addMoney, isInDebt, chargeFuel } from '../econom
 import { pileTotal, addToPile, takeProportional } from '../quarry/index.js';
 import { tierData, typeName, tierName, getStats, isDigger } from './stats.js';
 import { applyWear } from './wear.js';
+import { dealerPrice } from '../career/index.js';
 
 export function createMachine(state, data, type, tier, siteId) {
   const td = tierData(data, type, tier);
@@ -54,10 +55,11 @@ export function buyMachine(ctx, type, tier) {
   if (!td) return { ok: false, reason: 'Unknown machine' };
   if (ctx.data.machines.types[type].shop === false) return { ok: false, reason: 'Not for sale' };
   if (!isTierUnlocked(ctx, type, tier)) return { ok: false, reason: 'Not unlocked yet' };
-  if (!canAfford(ctx, td.price)) return { ok: false, reason: notAffordable(ctx) };
-  spendMoney(ctx, td.price, 'machine');
+  const price = dealerPrice(ctx, td.price);
+  if (!canAfford(ctx, price)) return { ok: false, reason: notAffordable(ctx) };
+  spendMoney(ctx, price, 'machine');
   const machine = createMachine(ctx.state, ctx.data, type, tier, ctx.state.currentSiteId);
-  ctx.events.emit('machineBought', { machineId: machine.id, type, tier, price: td.price });
+  ctx.events.emit('machineBought', { machineId: machine.id, type, tier, price });
   return { ok: true, machine };
 }
 
@@ -100,10 +102,11 @@ export function buyMod(ctx, machineId, modId) {
   if (!m || !mod) return { ok: false, reason: 'Unknown machine or upgrade' };
   if (mod.machineType !== m.type) return { ok: false, reason: 'Does not fit this machine' };
   if (m.mods.includes(modId)) return { ok: false, reason: 'Already fitted' };
-  if (!canAfford(ctx, mod.price)) return { ok: false, reason: notAffordable(ctx) };
-  spendMoney(ctx, mod.price, 'mod');
+  const price = dealerPrice(ctx, mod.price);
+  if (!canAfford(ctx, price)) return { ok: false, reason: notAffordable(ctx) };
+  spendMoney(ctx, price, 'mod');
   m.mods.push(modId);
-  ctx.events.emit('modBought', { machineId, modId, price: mod.price });
+  ctx.events.emit('modBought', { machineId, modId, price });
   return { ok: true };
 }
 

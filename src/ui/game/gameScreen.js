@@ -137,6 +137,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
   const offSounds = [
     game.events.on('productSold', () => app.audio?.play('coin', { bus: 'ui', gain: 0.8 })),
     game.events.on('objectiveCompleted', () => app.audio?.play('chime', { bus: 'ui', gain: 0.8 })),
+    game.events.on('milestoneReached', () => app.audio?.play('chime', { bus: 'ui', gain: 0.75, rate: 1.12 })),
     game.events.on('machineBought', () => app.audio?.play('coin', { bus: 'ui', gain: 0.5, rate: 0.8 })),
     // The jobs board and the office: say so in the game, not only on the laptop.
     game.events.on('contractCompleted', (e) => {

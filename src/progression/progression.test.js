@@ -3,6 +3,10 @@ import { createGame } from '../game/index.js';
 import { currentObjective, markIntroSeen } from './index.js';
 import { tickJobs } from '../machinery/index.js';
 import { pileTotal } from '../quarry/index.js';
+import { sellLoad } from '../economy/index.js';
+import { contractsState, acceptContract } from '../contracts/index.js';
+import { buyBuilding } from '../buildings/index.js';
+import { careerMetric } from '../career/index.js';
 
 function finish(ctx, m) {
   for (let i = 0; i < 10000 && m.job; i++) tickJobs(ctx, 0.1);
@@ -81,6 +85,12 @@ describe('getting-started goals', () => {
     actions.weighIn(tractor.id);
     expect(actions.tip(tractor.id, { bay: 'topsoil' }).ok).toBe(true);
     finish(ctx, tractor);
+    expect(step()).toBe('buildWorks');
+
+    // Groundworks: a level area needs no gravel, so it's the one anyone can build.
+    ctx.state.money += 300;
+    const level = actions.buildWorks({ mode: 'level', ax: 30, az: 120, bx: 38, bz: 120, width: 8 });
+    expect(level.ok, level.reason).toBe(true);
     expect(step()).toBe('buyExcavator');
 
     // The big machines: buying the truck first still works.
@@ -101,6 +111,56 @@ describe('getting-started goals', () => {
     ctx.state.stats.totalEarned = 3000;
     actions.selectMachine(pickup.id); // any event re-checks the goal
     expect(step()).toBe('usedMachine');
+  });
+
+  it('carries on after the first Used machine: jobs, the yard, clean loads, a name, a Used fleet', () => {
+    const game = createGame({ seed: 5 });
+    const { ctx, actions } = game;
+    const step = () => currentObjective(ctx)?.id;
+    const pickup = game.state.machines.find((m) => m.type === 'pickup');
+    const sell = (load) => {
+      pickup.load = { ...load };
+      actions.weighIn(pickup.id);
+      pickup.load = {};
+      return sellLoad(ctx, pickup.id, Object.keys(load)[0], load);
+    };
+    game.state.objectives.index = game.data.objectives.steps.findIndex((s) => s.id === 'usedMachine');
+    game.state.money = 20000;
+    actions.buyMachine('excavator', 'used');
+    expect(step()).toBe('firstJob');
+
+    // A job from the board, delivered clean.
+    const offer = contractsState(ctx).offers[0];
+    expect(acceptContract(ctx, offer.id).ok).toBe(true);
+    expect(currentObjective(ctx).progress).toBe(0);
+    sell({ [offer.material]: offer.tonnes / 2 });
+    expect(currentObjective(ctx).progress).toBeGreaterThan(0.3);
+    sell({ [offer.material]: offer.tonnes });
+    expect(step()).toBe('yardBuilding');
+    expect(buyBuilding(ctx, 'fuelTank').ok).toBe(true);
+    expect(step()).toBe('cleanTonnes');
+
+    // Clean tonnes: mixed loads don't count (the job's loads were clean, so they do).
+    const soFar = careerMetric(ctx, 'cleanTonnes');
+    sell({ gravel: 200 });
+    sell({ gravel: 60, clay: 60 });
+    expect(currentObjective(ctx).progress).toBeCloseTo((soFar + 200) / 300, 2);
+    sell({ sand: 100 });
+    expect(step()).toBe('goodName');
+
+    // A name: reputation from jobs done on time.
+    for (let i = 0; i < 10 && step() === 'goodName'; i++) {
+      const o = contractsState(ctx).offers[0] ?? (game.dev.skipDays(1), contractsState(ctx).offers[0]);
+      acceptContract(ctx, o.id);
+      sell({ [o.material]: o.tonnes });
+    }
+    expect(step()).toBe('usedFleet');
+    expect(currentObjective(ctx).progress).toBe(0.5); // the Used excavator counts, a road vehicle doesn't yet
+    actions.buyMachine('truck', 'used');
+    expect(step()).toBe('earnBig');
+    game.state.stats.totalEarned = 15000;
+    actions.selectMachine(pickup.id);
+    expect(currentObjective(ctx)).toBeNull();
   });
 
   it('shows how far you are with saving up for the next machine', () => {
