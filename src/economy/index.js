@@ -9,3 +9,4 @@ export {
   bankState, recordMoney, dailyPayment, owed, creditLimit, loanOffers, takeLoan, repayLoan, bankDaily,
 } from './bank.js';
 export { weeklyInsurance, overheadsDaily } from './overheads.js';
+export { newsState, newsMultiplier, activeNews, newsDaily } from './news.js';

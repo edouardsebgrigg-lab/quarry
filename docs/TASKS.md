@@ -60,7 +60,9 @@ don't duplicate them): the laptop (B and M now open its dealer and prices apps; 
 per-machine work, daily summaries and messages (`src/game/logbook.js`), a jobs board of
 delivery contracts (`src/contracts/`, `data/contracts.json`), a mobile mechanic call-out
 (`src/machinery/mechanic.js`), decals on the machines (`src/world3d/decals.js`) and site-plant
-reversing alarms. For T6 (stockpiles): a load tipped into a bay is not a sale, so it shouldn't
+reversing alarms, weather with a forecast (`src/weather/`), a weekly report, and market news
+(`src/economy/news.js`: local stories push one material's price up or down for a few days;
+`currentPrice` and `quoteSale` include it, so anything pricing a load already follows it). For T6 (stockpiles): a load tipped into a bay is not a sale, so it shouldn't
 emit `productSold` (contracts count sales).
 
 ## State of the game (Claude's review, 30 September 2026)

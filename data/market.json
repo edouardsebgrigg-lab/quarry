@@ -8,5 +8,29 @@
     "topsoil": { "saturationPerTonne": 0.006 },
     "clay": { "saturationPerTonne": 0.006 },
     "mixed": { "saturationPerTonne": 0.004 }
+  },
+  "news": {
+    "chancePerDay": 0.45,
+    "maxActive": 2,
+    "stories": [
+      { "id": "roadworks", "product": "gravel", "change": 0.2, "days": [3, 5], "source": "Wolds Gazette",
+        "headline": "County Highways start resurfacing the B1248. Contractors are after sub-base gravel." },
+      { "id": "farmTracks", "product": "gravel", "change": 0.12, "days": [2, 4], "source": "Wolds Farm News",
+        "headline": "Farms mend their tracks before the harvest traffic: gravel is wanted." },
+      { "id": "housing", "product": "sand", "change": 0.18, "days": [3, 6], "source": "Wolds Gazette",
+        "headline": "Work starts on 40 new houses at Kirby Grange. Builders' merchants want sand." },
+      { "id": "sandImport", "product": "sand", "change": -0.15, "days": [2, 4], "source": "Aggregates Trade News",
+        "headline": "A cheap barge load of sand lands at the port. Depot prices are down." },
+      { "id": "gardenShow", "product": "topsoil", "change": 0.22, "days": [2, 4], "source": "Wolds Gazette",
+        "headline": "The county garden show is this week. Landscapers are buying topsoil." },
+      { "id": "wetSpell", "product": "topsoil", "change": -0.18, "days": [2, 4], "source": "Weather Desk",
+        "headline": "A wet week ahead: landscapers stop work and topsoil sits unsold." },
+      { "id": "pondLining", "product": "clay", "change": 0.25, "days": [2, 5], "source": "Wolds Gazette",
+        "headline": "The water board is relining the reservoir banks. Clay is in demand." },
+      { "id": "fillSurplus", "product": "mixed", "change": -0.2, "days": [2, 4], "source": "Aggregates Trade News",
+        "headline": "The bypass cutting has flooded the market with spoil. Fill is worth even less." },
+      { "id": "landfill", "product": "mixed", "change": 0.3, "days": [2, 4], "source": "Wolds Gazette",
+        "headline": "The old landfill site is being capped. They'll take all the fill they can get." }
+    ]
   }
 }

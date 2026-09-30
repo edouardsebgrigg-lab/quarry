@@ -1,6 +1,8 @@
-// Market prices: base price x trend x saturation.
+// Market prices: base price x trend x news x saturation.
 // Trend: slow random swings with momentum, pulled back toward 1.
+// News: local stories that push one material's demand up or down for a few days (news.js).
 // Saturation: grows as you sell a product, lowers its price, recovers hourly.
+import { newsMultiplier } from './news.js';
 
 export function createMarketState(data) {
   const products = {};
@@ -46,7 +48,7 @@ export function integrateMultiplier(k, min, a, b) {
 // Current market price per tonne (before delivery cost).
 export function currentPrice(ctx, productId) {
   const p = productState(ctx, productId);
-  return basePrice(ctx.data, productId) * p.trend * saturationMultiplier(ctx.data, productId, p.saturation);
+  return basePrice(ctx.data, productId) * p.trend * newsMultiplier(ctx, productId) * saturationMultiplier(ctx.data, productId, p.saturation);
 }
 
 // What selling `tonnes` right now would earn (gross), accounting for the price
@@ -56,7 +58,7 @@ export function quoteSale(ctx, productId, tonnes) {
   const k = ctx.data.market.products[productId].saturationPerTonne;
   const min = ctx.data.market.saturation.minMultiplier;
   const area = integrateMultiplier(k, min, p.saturation, p.saturation + tonnes);
-  return basePrice(ctx.data, productId) * p.trend * area;
+  return basePrice(ctx.data, productId) * p.trend * newsMultiplier(ctx, productId) * area;
 }
 
 export function applySaleToMarket(ctx, productId, tonnes) {

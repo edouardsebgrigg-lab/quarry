@@ -148,6 +148,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     }),
     game.events.on('contractFailed', (e) => feedback.message(`${e.client} gave up waiting: job lost`, 'warn')),
     game.events.on('dailyReport', (r) => feedback.message(`Day ${r.day}: ${r.profit >= 0 ? 'profit' : 'loss'} of $${Math.abs(Math.round(r.profit))} (laptop: Messages)`, r.profit >= 0 ? 'good' : 'warn')),
+    game.events.on('marketNews', (e) => feedback.message(`${e.source}: ${game.data.materials[e.product]?.name ?? e.product} ${e.change > 0 ? 'up' : 'down'} ${Math.round(Math.abs(e.change) * 100)}% for ${e.days} days (laptop: Prices)`, e.change > 0 ? 'good' : 'warn')),
     game.events.on('weeklyReport', (r) => feedback.message(`Week ${r.week} report is in: ${r.profit >= 0 ? 'profit' : 'loss'} of $${Math.abs(Math.round(r.profit))} (laptop: Messages)`, r.profit >= 0 ? 'good' : 'warn')),
   ];
   const offAutosave = game.events.on('dayStarted', () => {

@@ -163,7 +163,16 @@ export function logbookOnEvent(ctx, type, e) {
       }
       break;
     }
-    case 'overheadsCharged': {
+    case 'marketNews': {
+      const lb = logbook(ctx);
+      const { day, hour, minute } = getDate(ctx.state, ctx.data);
+      const what = ctx.data.materials[e.product]?.name ?? e.product;
+      const pct = `${e.change > 0 ? 'up' : 'down'} ${Math.round(Math.abs(e.change) * 100)}%`;
+      lb.messages.push({ day, hour, minute, from: e.source, kind: 'news', text: `${e.headline} (${what} ${pct} at the depot for ${e.days} days.)` });
+      trim(lb);
+      break;
+    }
+        case 'overheadsCharged': {
       const lb = logbook(ctx);
       const { day, hour, minute } = getDate(ctx.state, ctx.data);
       lb.messages.push({ day, hour, minute, from: 'Office', kind: 'tip', text: `This week's machine insurance: $${e.amount.toFixed(2)} for ${e.machines} machine${e.machines === 1 ? '' : 's'}. It's taken each week; selling machines you don't use brings it down.` });
