@@ -24,8 +24,6 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       scale with wear, rubber stays dark, trailer hitched properly in product photos, decals
       (model lettering, hazard chevrons, warning stickers, number plates). Next: check the
       decals on every machine and fix placement
-- [ ] U5 HUD: cleaner top bar (money, date and time, speed) and goal card, in the laptop's style;
-      the message log sometimes shows the same line twice
 - [ ] S2 Sound: listen-free checks only so far. Done: turbo whistle (used excavator, truck),
       load layers in the engine note, gravel crunch under tracks, relief-valve squeal and engine
       bog when a digger's lever is held at the end of its stroke (with a clunk as it bottoms out),
@@ -36,11 +34,10 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       grass; re-shoot (weather.mjs now jumps straight to the rain) and judge
 - [ ] M2 Blender: the biggest remaining model issues from the studio shots (the used truck and
       excavator look too clean and toy-like up close: panel gaps, grime in recesses)
-- [ ] M3 Scraped bare-steel floors in the tipper beds (truck, dumper skip, trailer) as decals:
-      check them in the studio shots and from the digger cab when loading
-- [ ] V1 Countryside: the hedgerow trees read as small round blobs at a distance; the far hills
-      are smooth green domes. Taller, more varied trees and field boundaries
-- [ ] U9 Laptop: a proper look at the Prices app with news (laptop3.mjs) and the weekly report
+- [ ] V1 Countryside: hedges done (one continuous hedge with oaks). Next: the far hills are
+      smooth green domes (field patterns, hedge lines up their sides), and a few farm buildings
+- [ ] U10 Laptop: feedback toasts sit on top of the laptop's header; move them down or into
+      the laptop's own taskbar while it's open
 
 ## Done
 
@@ -68,5 +65,13 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       day, top earner, bank balance) — `c38af33`, `0df1066`
 - [x] D6 Market news: local stories move one material's price for a few days (tested), in
       Messages, the Prices app and a ticker on the laptop home — `eeae0b3`
+- [x] M3 Scraped bare-steel floors in the tipper beds (truck, dumper skip, trailer), rust on
+      the old ones — checked from above in studio shots
+- [x] Tractor wheel discs were see-through on the left; truck tipping ram poked through the bed
+      floor (fixed in the model files and blender/truck.py); lamps look off by day; quarry dust
+      on everything facing up
+- [x] U5 HUD: money, place, date and weather (with an icon) in one panel top right, goal card
+      folds away fully, repeated messages merge (×N); checked in hud.mjs shot
+- [x] U9 Prices app with news, laptop home ticker, weekly report: checked in laptop3.mjs shots
 - [x] Product photos pose the diggers (boom up, rams lined up) instead of the straight-out
       export pose with rams pointing the wrong way
