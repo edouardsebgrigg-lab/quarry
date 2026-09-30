@@ -237,3 +237,26 @@ notes are historical; that approval resolves the publication block.
 Destination is only `codex/vehicle-model-integration` in
 `edouardsebgrigg-lab/quarry`. No main/Claude branch update, force-push, PR creation
   or message to Claude. Claude and other sessions can fetch this branch for review.
+
+## T11 — coordinated takeover, 30 September 2026
+
+### Ready for review
+
+- **T11 — coordination sync at `e0aad07179f11946c8ea27abe28ffef53e2e2ae5`:**
+  started from published `0db19b6d6c17373d894317ae822387b69ea0ee11` in a separate
+  clean cloud checkout, ran `git fetch origin`, then
+  `git merge origin/claude/coordination` (conflict-free fast-forward). The refined
+  fleet and current laptop, bank, contracts, logbook, weather and news systems
+  are on the working branch. `docs/TASKS.md` is unchanged from coordination.
+- Actually run on the synchronized source: `npm ci --ignore-scripts`, `npm test`
+  (195 tests passing in 30 files), `npm run build` (passed). No browser gameplay
+  was run. The existing QA checkout and server remain untouched.
+- Publication is pending at this checkpoint; the normal own-branch publication
+  will be verified before T9 starts. T11 is a sync task and does not count toward
+  the three-task limit.
+
+### Missing historical local delta
+
+Unpublished `ddc8394` remains unavailable; no recovery is claimed. T9 will be
+implemented against the current coordinated source. Preserve Claude's current
+completed T10 weathering.
