@@ -9,12 +9,16 @@ import { homeApp } from './home.js';
 import { dealerApp } from './dealer.js';
 import { pricesApp } from './prices.js';
 import { bankApp } from './bank.js';
+import { fleetApp } from './fleet.js';
+import { messagesApp } from './messages.js';
 
 const APPS = [
   { id: 'home', label: 'Home', icon: 'home', make: homeApp },
   { id: 'dealer', label: 'Plant dealer', icon: 'digger', make: dealerApp },
   { id: 'prices', label: 'Depot prices', icon: 'chart', make: pricesApp },
+  { id: 'fleet', label: 'Fleet', icon: 'truck', make: fleetApp },
   { id: 'bank', label: 'Bank', icon: 'bank', make: bankApp },
+  { id: 'messages', label: 'Messages', icon: 'mail', make: messagesApp },
 ];
 
 let openLaptopState = null; // { show(appId), current() } while the laptop is open
