@@ -6,6 +6,7 @@ import { getDate } from '../../core/index.js';
 import { getSiteData } from '../../quarry/index.js';
 import { keyLabel } from '../../input/index.js';
 import { currentObjective } from '../../progression/index.js';
+import { contractsState } from '../../contracts/index.js';
 
 const DETAIL_TIME = 9; // seconds a new goal stays expanded
 
@@ -45,7 +46,14 @@ export function createHud({ game, runtime, settings }) {
   let detailT = 0;
   let pinned = false;
 
-  const node = el('div', { class: 'hud' }, goal, status);
+  // The most urgent job from the jobs board, under the goal.
+  const jobText = el('span', { class: 'job-text' });
+  const jobFill = el('div', { class: 'goal-fill' });
+  const job = el('div', { class: 'hud-job' }, el('div', { class: 'goal-line' }, el('span', { class: 'job-tag' }, 'Job'), jobText),
+    el('div', { class: 'goal-track' }, jobFill));
+  let jobKey = '';
+
+  const node = el('div', { class: 'hud' }, el('div', { class: 'hud-left' }, goal, job), status);
   let shownMoney = game.state.money;
 
   return {
@@ -66,6 +74,22 @@ export function createHud({ game, runtime, settings }) {
       setText(dateText, clockTime(getDate(game.state, game.data)));
       setText(siteText, getSiteData(game.data, game.state.currentSiteId).name);
       for (const b of speedButtons) b.node.classList.toggle('active', b.isActive());
+
+      const jobs = contractsState(game.ctx).active;
+      const soonest = [...jobs].sort((a, b) => a.deadline - b.deadline)[0];
+      job.style.display = soonest ? '' : 'none';
+      if (soonest) {
+        const today = getDate(game.state, game.data).day;
+        const due = soonest.deadline <= today ? 'due today' : `due day ${soonest.deadline}`;
+        const k = `${soonest.id}:${soonest.delivered}:${due}:${jobs.length}`;
+        if (k !== jobKey) {
+          jobKey = k;
+          const mat = game.data.materials[soonest.material]?.name.toLowerCase() ?? soonest.material;
+          setText(jobText, `${soonest.delivered.toFixed(1)} / ${soonest.tonnes.toFixed(1)} t clean ${mat} · ${soonest.client} · ${due}${jobs.length > 1 ? ` · +${jobs.length - 1} more` : ''}`);
+          jobFill.style.width = `${Math.round(Math.min(1, soonest.delivered / soonest.tonnes) * 100)}%`;
+          job.classList.toggle('urgent', soonest.deadline <= today);
+        }
+      }
 
       const o = currentObjective(game.ctx);
       goal.style.display = o ? '' : 'none';

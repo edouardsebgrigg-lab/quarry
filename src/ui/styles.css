@@ -865,3 +865,11 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .text-input:focus { border-color: var(--accent); }
 .lt-brand b { max-width: 9.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lt-brand { flex-wrap: wrap; }
+.hud-left { display: flex; flex-direction: column; gap: 0.55rem; align-items: flex-start; }
+.hud-job { max-width: 24rem; padding: 0.35rem 0.6rem 0.4rem; margin-left: -0.6rem; border-radius: 8px; background: rgba(10, 11, 13, 0.38); }
+.hud-job .goal-track { display: block; width: 12rem; margin-left: 2.4rem; }
+.hud-job .goal-fill { background: var(--good); }
+.job-tag { font-size: 0.56rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-ink); background: var(--good);
+  border-radius: 3px; padding: 0.08rem 0.35rem; flex: none; }
+.job-text { font-size: 0.74rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.hud-job.urgent .job-tag { background: var(--warn); }
