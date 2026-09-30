@@ -12,13 +12,76 @@
     "St Mary's Church (new car park)"
   ],
   "materials": {
-    "topsoil": { "tonnes": [1.2, 3], "weight": 3 },
-    "sand": { "tonnes": [1.5, 4], "weight": 2 },
-    "gravel": { "tonnes": [1.5, 4], "weight": 2 },
-    "clay": { "tonnes": [2, 5], "weight": 1 }
+    "topsoil": {
+      "tonnes": [
+        1.2,
+        3
+      ],
+      "weight": 3
+    },
+    "sand": {
+      "tonnes": [
+        1.5,
+        4
+      ],
+      "weight": 2
+    },
+    "gravel": {
+      "tonnes": [
+        1.5,
+        4
+      ],
+      "weight": 2
+    },
+    "clay": {
+      "tonnes": [
+        2,
+        5
+      ],
+      "weight": 1
+    }
   },
   "tonnesPerEarned": 0.004,
   "maxTonnes": 60,
-  "days": [2, 5],
-  "bonusRate": [0.35, 0.6]
+  "days": [
+    2,
+    5
+  ],
+  "bonusRate": [
+    0.35,
+    0.6
+  ],
+  "reputation": {
+    "max": 10,
+    "perJob": 1,
+    "perFailure": 2,
+    "bonusPerLevel": 0.04,
+    "offersAt": [
+      [
+        0,
+        3
+      ],
+      [
+        3,
+        4
+      ],
+      [
+        6,
+        5
+      ]
+    ],
+    "names": [
+      "Unknown",
+      "New face",
+      "Getting known",
+      "Reliable",
+      "Trusted",
+      "Well known",
+      "Respected",
+      "Go-to supplier",
+      "Local name",
+      "Local legend",
+      "The best around"
+    ]
+  }
 }

@@ -853,3 +853,9 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .lt-msg.bad .lt-avatar { background: var(--bad); color: #fff; }
 .lt-badge { margin-left: auto; min-width: 1.2rem; height: 1.2rem; padding: 0 0.35rem; border-radius: 999px; background: var(--accent); color: var(--accent-ink);
   font-style: normal; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+.lt-rep { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0.3rem 1.4rem; }
+.lt-rep b { display: block; font-size: 1.05rem; margin-top: 0.2rem; }
+.lt-rep > span { grid-column: 1 / -1; color: var(--muted); font-size: 0.8rem; }
+.lt-rep-bar { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+.lt-rep-bar i { height: 8px; border-radius: 2px; background: rgba(255, 255, 255, 0.1); }
+.lt-rep-bar i.on { background: var(--accent); }

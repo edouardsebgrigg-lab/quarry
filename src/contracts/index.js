@@ -12,10 +12,26 @@ const round1 = (n) => Math.round(n * 10) / 10;
 export function contractsState(ctx) {
   // (its own random numbers, so the jobs board doesn't change any other luck in the game)
   ctx.state.contracts ??= { offers: [], active: [], done: 0, failed: 0, nextId: 1, rngState: ((ctx.state.seed ?? 1) * 2654435761) >>> 0 };
+  ctx.state.contracts.reputation ??= 0;
   return ctx.state.contracts;
 }
 
 const today = (ctx) => getDate(ctx.state, ctx.data).day;
+
+// Reputation (0 to 10): finishing jobs on time builds it, letting one down costs more. It pays:
+// bigger bonuses and more offers on the board.
+export function reputation(ctx) {
+  const r = ctx.data.contracts.reputation;
+  const level = Math.max(0, Math.min(r.max, contractsState(ctx).reputation));
+  return { level, name: r.names[Math.floor(level)] ?? r.names[r.names.length - 1], bonusBoost: level * r.bonusPerLevel };
+}
+function offerCount(ctx) {
+  const r = ctx.data.contracts.reputation;
+  const level = contractsState(ctx).reputation;
+  let n = ctx.data.contracts.maxOffers;
+  for (const [atLeast, count] of r.offersAt) if (level >= atLeast) n = count;
+  return n;
+}
 
 function makeOffer(ctx) {
   const cfg = ctx.data.contracts;
@@ -27,13 +43,12 @@ function makeOffer(ctx) {
   const grow = (ctx.state.stats.totalEarned ?? 0) * cfg.tonnesPerEarned;
   const tonnes = Math.min(cfg.maxTonnes, round1(rng.range(lo, hi) + grow * rng.range(0.6, 1)));
   const days = Math.round(rng.range(cfg.days[0], cfg.days[1]));
-  const bonus = Math.round(tonnes * basePrice(ctx.data, material) * rng.range(cfg.bonusRate[0], cfg.bonusRate[1]));
+  const bonus = Math.round(tonnes * basePrice(ctx.data, material) * (rng.range(cfg.bonusRate[0], cfg.bonusRate[1]) + reputation(ctx).bonusBoost));
   return { id: c.nextId++, client: rng.pick(cfg.clients), material, tonnes, days, bonus, expires: today(ctx) + cfg.offerDays };
 }
 
 // Top the board up to its size, dropping stale offers and failing contracts past their deadline.
 export function contractsDaily(ctx) {
-  const cfg = ctx.data.contracts;
   const c = contractsState(ctx);
   const day = today(ctx);
   c.offers = c.offers.filter((o) => o.expires >= day);
@@ -41,10 +56,11 @@ export function contractsDaily(ctx) {
     if (day > a.deadline) {
       c.active = c.active.filter((x) => x !== a);
       c.failed += 1;
+      c.reputation = Math.max(0, c.reputation - ctx.data.contracts.reputation.perFailure);
       ctx.events.emit('contractFailed', { id: a.id, client: a.client, material: a.material, delivered: a.delivered, tonnes: a.tonnes });
     }
   }
-  while (c.offers.length < cfg.maxOffers) c.offers.push(makeOffer(ctx));
+  while (c.offers.length < offerCount(ctx)) c.offers.push(makeOffer(ctx));
 }
 
 export function acceptContract(ctx, offerId) {
@@ -73,6 +89,7 @@ export function contractsOnSale(ctx, sale) {
   if (job.delivered + 1e-9 >= job.tonnes) {
     c.active = c.active.filter((a) => a !== job);
     c.done += 1;
+    c.reputation = Math.min(ctx.data.contracts.reputation.max, c.reputation + ctx.data.contracts.reputation.perJob);
     addMoney(ctx, job.bonus, 'contract');
     ctx.events.emit('contractCompleted', { id: job.id, client: job.client, material: job.material, bonus: job.bonus });
   }

@@ -59,3 +59,26 @@ describe('the jobs board', () => {
     expect(contractsState(g2.ctx).offers.map((o) => o.id)).toEqual(contractsState(game.ctx).offers.map((o) => o.id));
   });
 });
+
+describe('reputation', () => {
+  it('grows with jobs done on time, falls faster for jobs let down, and brings bigger bonuses and more offers', async () => {
+    const { reputation } = await import('./index.js');
+    const game = createGame({ seed: 8 });
+    const c = contractsState(game.ctx);
+    expect(reputation(game.ctx).level).toBe(0);
+    for (let i = 0; i < 4; i++) {
+      const o = c.offers[0];
+      game.actions.acceptContract(o.id);
+      sale(game, o.material, o.tonnes + 0.1);
+      game.dev.skipDays(1); // (the board fills up again each morning)
+    }
+    expect(reputation(game.ctx).level).toBe(4);
+    game.dev.skipDays(3);
+    expect(c.offers.length).toBeGreaterThan(game.data.contracts.maxOffers);
+    expect(reputation(game.ctx).bonusBoost).toBeGreaterThan(0);
+    const o = c.offers[0];
+    game.actions.acceptContract(o.id);
+    game.dev.skipDays(o.days + 1);
+    expect(reputation(game.ctx).level).toBe(2);
+  });
+});

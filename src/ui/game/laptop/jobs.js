@@ -2,11 +2,14 @@
 import { el, setText } from '../../dom.js';
 import { money, tonnes } from '../../format.js';
 import { getDate } from '../../../core/index.js';
-import { contractsState } from '../../../contracts/index.js';
+import { contractsState, reputation } from '../../../contracts/index.js';
 
 export function jobsApp({ game, feedback, setHead }) {
   const { data } = game;
   setHead('Jobs board', 'Local customers pay a bonus on top of the depot price for clean material, delivered on time');
+  const repName = el('b');
+  const repBar = el('div', { class: 'lt-rep-bar' });
+  const repNote = el('span');
   const activeBox = el('div', { class: 'lt-jobs' });
   const offersBox = el('div', { class: 'lt-jobs' });
   let key = '';
@@ -20,6 +23,10 @@ export function jobsApp({ game, feedback, setHead }) {
 
   function refresh() {
     const c = contractsState(game.ctx);
+    const rep = reputation(game.ctx);
+    setText(repName, `${rep.name} · ${Math.floor(rep.level)}/10`);
+    repBar.replaceChildren(...Array.from({ length: 10 }, (_, i) => el('i', { class: i < Math.floor(rep.level) ? 'on' : '' })));
+    setText(repNote, rep.level > 0 ? `Bonuses +${Math.round(rep.bonusBoost * 100)}% · ${c.done} done, ${c.failed} let down` : 'Finish jobs on time to build a name: bigger bonuses and more offers');
     const k = JSON.stringify([c.offers.map((o) => o.id), c.active.map((a) => [a.id, a.delivered]), getDate(game.state, data).day]);
     if (k === key) return;
     key = k;
@@ -52,6 +59,7 @@ export function jobsApp({ game, feedback, setHead }) {
   refresh();
 
   const node = el('div', { class: 'lt-home' },
+    el('div', { class: 'lt-card lt-rep' }, el('div', {}, el('div', { class: 'lt-card-label' }, 'Your reputation'), repName), repBar, repNote),
     el('div', { class: 'lt-card' }, el('div', { class: 'lt-card-label' }, 'On the go'), activeBox),
     el('div', {}, el('div', { class: 'lt-card-label lt-offers-label' }, 'Offers'), offersBox),
     el('p', { class: 'lt-note' }, 'Weigh in at the depot and tip in the right bay as usual: you’re paid for each load, and a load that’s clean counts toward the job. The bonus comes when the last tonne is in. New offers turn up every morning.'));
