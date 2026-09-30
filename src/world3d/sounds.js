@@ -45,6 +45,7 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
         }
         : {
           tracks: audio.loopVoice('tracks'), crunch: audio.loopVoice('gravel'), hyd: audio.loopVoice('hydraulic'), scrape: audio.loopVoice('scrape'), pump: audio.whineVoice(),
+          relief: v.digger ? audio.whineVoice() : null, // the relief valve squealing
           // Site plant warns people nearby when it moves: the dumper when it reverses, a used
           // digger whenever it tracks (a modern broadband alarm). The rusty dumper still has
           // its old beeper; the rusty digger's alarm died years ago.
@@ -150,12 +151,14 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
     const pos = engineLife(m, v, dt, v.takeEngineEvents());
     // Working revs, bogging a little under load; drops to auto-idle after a few seconds.
     const on = f.running;
-    const rpm = (on ? (f.autoIdle ? 950 : 1700 - f.work * 170 - (f.digging ? 90 : 0)) : 800) * m.rpmScale;
-    m.engine?.set({ rpm, load: on ? 0.2 + f.work * 0.8 : 0, level: m.level, inside, pos });
+    // (a blowing relief valve loads the pump flat out: the engine bogs down)
+    const rpm = (on ? (f.autoIdle ? 950 : 1700 - f.work * 170 - (f.digging ? 90 : 0) - (f.relief ? 160 : 0)) : 800) * m.rpmScale;
+    m.engine?.set({ rpm, load: on ? (f.relief ? 1 : 0.2 + f.work * 0.8) : 0, level: m.level, inside, pos });
     const housePos = v3(v.position().add(new THREE.Vector3(0, 1.5, 0)));
     // Hydraulics: pump whine and oil rushing through the valves.
     m.extra.pump?.set({ freq: (rpm / 60) * 9, gain: on ? 0.015 + f.work * 0.07 : 0, pos: housePos });
     m.extra.hyd?.set({ gain: on ? f.work * 0.28 : 0, rate: 0.8 + f.work * 0.4, pos: housePos, cutoff: inside ? 4000 : 16000 });
+    m.extra.relief?.set({ freq: 520 + Math.sin(performance.now() * 0.023) * 12, gain: f.relief ? 0.05 : 0, pos: housePos });
     // Tracks clanking round.
     m.extra.tracks?.set({ gain: Math.min(1, f.travel / 1.2) * 0.8, rate: 0.35 + f.travel * 0.9, pos: v3(v.position()) });
     // Stone crushing under the track shoes: slower and duller than tyres.

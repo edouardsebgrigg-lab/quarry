@@ -11,12 +11,24 @@ import { currentWeather } from '../../weather/index.js';
 
 const DETAIL_TIME = 9; // seconds a new goal stays expanded
 
+// Small line icons for the weather (24-unit box).
+const SUN = '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/>';
+const CLOUD = '<path d="M7 18.5h10.2a4 4 0 0 0 .4-8 5.6 5.6 0 0 0-10.8 1.3A3.4 3.4 0 0 0 7 18.5z"/>';
+const RAIN = '<path d="M7 14.5h10.2a4 4 0 0 0 .4-8 5.6 5.6 0 0 0-10.8 1.3A3.4 3.4 0 0 0 7 14.5z"/><path d="M8.5 17.5l-1 3M12.5 17.5l-1 3M16.5 17.5l-1 3"/>';
+const WEATHER_ICONS = { sunny: SUN, cloudy: CLOUD, showers: RAIN, rain: RAIN };
+function weatherIcon(id) {
+  const span = el('span', { class: 'hs-wicon' });
+  span.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WEATHER_ICONS[id] ?? SUN}</svg>`;
+  return span;
+}
+
 export function createHud({ game, runtime, settings }) {
   const moneyText = el('div', { class: 'hs-money' });
   const debtTag = el('span', { class: 'hs-debt' }, 'DEBT');
   const dateText = el('span', { class: 'hs-date' });
   const siteText = el('span', { class: 'hs-site' });
   const weatherText = el('span', { class: 'hs-weather' });
+  let weatherId = '';
 
   const speedButtons = [
     { content: icon('pause'), title: 'Pause time', onClick: () => runtime.togglePause(), isActive: () => runtime.isUserPaused() },
@@ -43,7 +55,7 @@ export function createHud({ game, runtime, settings }) {
   const goal = el('div', { class: 'hud-goal' },
     el('div', { class: 'goal-line' }, el('span', { class: 'goal-dot' }), goalTitle, goalCount, goalReward),
     el('div', { class: 'goal-track' }, goalFill),
-    el('div', { class: 'goal-details' }, goalText, goalKey));
+    el('div', { class: 'goal-details' }, el('div', {}, goalText, goalKey))); // (one row, so it folds away completely)
   let currentGoal = '';
   let detailT = 0;
   let pinned = false;
@@ -76,8 +88,11 @@ export function createHud({ game, runtime, settings }) {
       setText(dateText, clockTime(getDate(game.state, game.data)));
       setText(siteText, getSiteData(game.data, game.state.currentSiteId).name);
       const w = currentWeather(game.ctx);
-      setText(weatherText, w.name);
-      weatherText.classList.toggle('wet', w.rain > 0);
+      if (w.kind !== weatherId) {
+        weatherId = w.kind;
+        weatherText.replaceChildren(weatherIcon(w.kind), w.name);
+        weatherText.classList.toggle('wet', w.rain > 0);
+      }
       for (const b of speedButtons) b.node.classList.toggle('active', b.isActive());
 
       const jobs = contractsState(game.ctx).active;

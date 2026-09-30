@@ -3,7 +3,7 @@
 // transparent background. Uses its own small renderer; call dispose() when the laptop closes.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { modelScene } from './glbModels.js';
+import { modelScene, poseDigger } from './glbModels.js';
 
 // Which model files make up each machine type (the tractor comes with its trailer).
 const FILES = {
@@ -15,6 +15,8 @@ const FILES = {
   pickup: ['vehicle_pickup'], // (one model for every tier)
 };
 const TRAILER_OFFSET = -1.32 - 3.3; // the trailer's origin (its axle) sits this far behind the tractor's
+// Diggers pose like a dealer's photo: boom up, stick in, bucket curled (the game's carry pose).
+const DIGGER_POSE = [0.55, -1.6, -1.3];
 
 const photos = new Map(); // "truck_used" -> data URL (kept between laptop visits)
 
@@ -61,6 +63,7 @@ export function createThumbnails({ width = 480, height = 300 } = {}) {
     // A trailer hangs off the tractor's hitch by its towing eye, as in the game (glbModels.js:
     // the hitch is 1.32 m behind the tractor's origin, the eye 3.3 m ahead of the trailer's).
     if (parts[1]) parts[1].position.x = TRAILER_OFFSET;
+    if (parts[0] && (type === 'miniDigger' || type === 'excavator')) poseDigger(parts[0], DIGGER_POSE);
     if (!group.children.length) return null;
     group.traverse((o) => {
       if (o.isMesh) {

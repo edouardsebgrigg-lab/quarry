@@ -157,6 +157,42 @@ export function glbPickup(rideHeight) {
   };
 }
 
+// A digger's bucket link turns with the bucket, at this share of its angle.
+export const LINK_RATIO = 0.55;
+export const LINK_OFFSET = 1.9;
+
+// Points each ram's barrel and rod at each other, so they follow the arm (they turn on their
+// pins). Call with the model's world matrices up to date.
+export function aimRams(rams) {
+  const a = new THREE.Vector3();
+  const b = new THREE.Vector3();
+  for (const { barrel, rod } of rams) {
+    for (const [obj, other] of [[barrel, rod], [rod, barrel]]) {
+      other.getWorldPosition(a);
+      obj.parent.worldToLocal(b.copy(a));
+      obj.rotation.z = Math.atan2(b.y - obj.position.y, b.x - obj.position.x);
+    }
+  }
+}
+
+const diggerRams = (root) => ['BoomRam', 'StickRam', 'BucketRam']
+  .map((n) => ({ barrel: root.getObjectByName(n), rod: root.getObjectByName(`${n}Rod`) }))
+  .filter((r) => r.barrel && r.rod);
+
+// Sets a digger model's arm to joint angles [boom, stick, bucket] with its rams lined up
+// (for photos: the models are saved with the arm straight out).
+export function poseDigger(root, [boom, stick, bucket]) {
+  const boomPivot = root.getObjectByName('Boom');
+  if (!boomPivot) return;
+  boomPivot.rotation.z = boom;
+  root.getObjectByName('Stick').rotation.z = stick;
+  root.getObjectByName('Bucket').rotation.z = bucket;
+  const link = root.getObjectByName('BucketLink');
+  if (link) link.rotation.z = LINK_RATIO * bucket + LINK_OFFSET;
+  root.updateMatrixWorld(true);
+  aimRams(diggerRams(root));
+}
+
 // The diggers (excavator, mini digger) share their parts: House, Boom, Stick, Bucket and the rams.
 function diggerFromFile(name, { cabSeat, scoop }) {
   const root = instance(name);
@@ -168,9 +204,7 @@ function diggerFromFile(name, { cabSeat, scoop }) {
   heap.visible = false;
   bucketPivot.add(heap);
   const opt = (n) => root.getObjectByName(n) ?? null;
-  const rams = ['BoomRam', 'StickRam', 'BucketRam']
-    .map((n) => ({ barrel: opt(n), rod: opt(`${n}Rod`) }))
-    .filter((r) => r.barrel && r.rod);
+  const rams = diggerRams(root);
   let shoeMesh = null;
   opt('TrackShoe')?.traverse((o) => { if (o.isMesh && !shoeMesh) shoeMesh = o; });
   return {

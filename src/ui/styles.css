@@ -322,12 +322,13 @@ h3 {
   padding: 0.85rem 1rem; pointer-events: none; z-index: 12; text-shadow: var(--hud-shadow); }
 
 /* Money, site and date: top right */
-.hud-status { display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem; pointer-events: auto; }
+.hud-status { display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; pointer-events: auto;
+  padding: 0.45rem 0.65rem 0.5rem; margin: -0.4rem -0.6rem 0 0; border-radius: 10px; background: rgba(10, 11, 13, 0.4); }
 .hs-top { display: flex; align-items: center; gap: 0.45rem; }
 .hs-money { font-family: var(--display); font-weight: 700; font-size: 1.55rem; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
 .hs-money.negative { color: var(--bad); }
 .hs-debt { font-size: 0.56rem; font-weight: 800; letter-spacing: 0.1em; color: #fff; background: var(--bad); padding: 0.1rem 0.3rem; border-radius: 3px; text-shadow: none; }
-.hs-meta { font-size: 0.7rem; color: rgba(236, 238, 241, 0.78); display: flex; gap: 0.35rem; white-space: nowrap; }
+.hs-meta { font-size: 0.7rem; color: rgba(236, 238, 241, 0.82); display: flex; align-items: center; gap: 0.35rem; white-space: nowrap; }
 .hs-meta .sep { color: rgba(236, 238, 241, 0.4); }
 .hs-date { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--text); }
 .hs-speed { display: flex; gap: 1px; margin-top: 0.25rem; border-radius: 5px; overflow: hidden; background: rgba(10, 11, 13, 0.45); }
@@ -882,6 +883,33 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .lt-movers { font-size: 0.8rem; color: var(--muted); display: flex; gap: 0.8rem; flex-wrap: wrap; }
 .lt-movers .up { color: var(--good); font-weight: 600; }
 .lt-movers .down { color: #ff9a8a; font-weight: 600; }
+.hs-weather { display: inline-flex; align-items: center; gap: 0.22rem; }
+.hs-wicon { display: inline-flex; }
+.hs-wicon svg { width: 0.85rem; height: 0.85rem; }
 .hs-weather.wet { color: #9fd0ff; }
 .lt-badge:empty { display: none; }
 .lt-home .lt-shortcuts { grid-template-columns: repeat(4, 1fr); }
+
+/* Prices app: the news moving prices, above the board */
+.lt-prices { display: flex; flex-direction: column; gap: 1rem; }
+.lt-news { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 0.7rem; }
+.lt-news > .lt-card-label, .lt-news > .lt-muted-row { grid-column: 1 / -1; }
+.lt-news-item { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.8rem 0.95rem; border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.06); border-left: 3px solid var(--good); }
+.lt-news-item.down { border-left-color: #ff9a8a; }
+.lt-news-src { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.lt-news-text { font-size: 0.86rem; line-height: 1.4; color: #dfe3e8; }
+.lt-news-foot { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; font-size: 0.74rem; color: var(--muted); }
+.lt-chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.15rem 0.5rem; border-radius: 999px; background: rgba(255, 255, 255, 0.06); color: var(--text); }
+.lt-chip .dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; }
+.lt-news-item.up .lt-chip b { color: var(--good); }
+.lt-news-item.down .lt-chip b { color: #ff9a8a; }
+.lt-msg.news .lt-avatar { background: #c9d1db; }
+.lt-ticker { display: flex; align-items: center; gap: 0.8rem; width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer;
+  padding: 0.6rem 0.9rem; border-radius: 10px; background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.06); }
+.lt-ticker:hover { background: rgba(255, 255, 255, 0.06); }
+.lt-ticker-src { flex: none; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.lt-ticker-text { flex: 1; min-width: 0; font-size: 0.84rem; color: #dfe3e8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lt-ticker b { flex: none; font-size: 0.84rem; }
+.lt-ticker b.up { color: var(--good); }
+.lt-ticker b.down { color: #ff9a8a; }

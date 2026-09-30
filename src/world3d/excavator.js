@@ -13,11 +13,10 @@ import * as THREE from 'three';
 import { makeArm, ARM, MINI_ARM, createJoints } from './excavatorArm.js';
 import { buildExcavatorModel, buildMiniDiggerModel } from './models.js';
 import { createEngineLife } from './engineLife.js';
+import { aimRams, LINK_RATIO, LINK_OFFSET } from './glbModels.js';
 import { createTrackDrive, TRACKS } from './trackDrive.js';
 
 const DUMP_TIME = 1.7;
-const LINK_RATIO = 0.55; // bucket link turns at this share of the bucket angle
-const LINK_OFFSET = 1.9;
 const CARRY = [0.55, -1.6, -1.3];
 const LEAD = 0.35; // how far ahead of a joint its Direct target may run (rad)
 export const POUR_ANGLE = -0.45; // absolute bucket angle beyond which the load runs out
@@ -153,33 +152,29 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
   // Direct control: turn this frame's control inputs into target angles for the joints. The
   // targets never run far ahead of the joints (so the arm answers at once when you let go),
   // and the teeth can't be pushed deeper into ground they can't dig (a full bucket, rock).
+  // Holding a lever against a ram at the end of its stroke, or the teeth against ground they
+  // can't dig, blows the relief valve (s.relief: the squeal and the engine bogging).
   function directTargets(bucketFull) {
+    let relief = false;
     for (let i = 0; i < 3; i++) {
       const now = joints.angle[i];
       let t = now + direct.axis[i] * LEAD + direct.delta[i];
       t = clamp(t, now - LEAD, now + LEAD);
       direct.target[i] = clamp(t, limits[i][0], limits[i][1]);
       direct.delta[i] = 0;
+      if ((direct.axis[i] > 0 && now >= limits[i][1] - 0.01) || (direct.axis[i] < 0 && now <= limits[i][0] + 0.01)) relief = true;
     }
     const cand = teethAtAngles(direct.target);
     const under = cand.y < terrain.heightAt(cand.x, cand.z) - 0.02;
     if (under) {
       const deeper = cand.y < teethAtAngles(joints.angle).y - 1e-4;
       const undiggable = bucketFull || direct.stuck || (canDigAt ? !canDigAt(cand.x, cand.z) : false);
-      if (deeper && undiggable) for (let i = 0; i < 3; i++) direct.target[i] = joints.angle[i];
-    }
-  }
-
-  function aimRams() {
-    const a = new THREE.Vector3();
-    const b = new THREE.Vector3();
-    for (const { barrel, rod } of model.rams) {
-      for (const [obj, other] of [[barrel, rod], [rod, barrel]]) {
-        other.getWorldPosition(a);
-        obj.parent.worldToLocal(b.copy(a));
-        obj.rotation.z = Math.atan2(b.y - obj.position.y, b.x - obj.position.x);
+      if (deeper && undiggable) {
+        for (let i = 0; i < 3; i++) direct.target[i] = joints.angle[i];
+        if (direct.axis.some((a) => a !== 0)) relief = true;
       }
     }
+    s.relief = relief;
   }
 
   function update(dt, { job, bucketFull, bucketColor, occupied }) {
@@ -204,6 +199,7 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
 
     // ---- arm
     if (direct.on && !job && s.dumpT === 0) directTargets(bucketFull);
+    else s.relief = false;
     const goal = armGoal(job);
     const armWork = joints.step(goal.angles, dt, Math.max(0.05, speedScale) * 1.6);
     if (goal.phase !== s.lastPhase) {
@@ -241,7 +237,7 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
     if (model.bucketLink) model.bucketLink.rotation.z = LINK_RATIO * b3 + LINK_OFFSET;
     if (model.rams.length) {
       model.root.updateMatrixWorld(true);
-      aimRams();
+      aimRams(model.rams);
     }
     // The game empties the bucket the moment you click; the model keeps the load until it tips.
     if (bucketColor) s.lastColor = bucketColor;
@@ -325,6 +321,7 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
         reversing: (s.vL + s.vR) / 2 < -0.05,
         swing: Math.abs(s.houseVel),
         digging: s.digging,
+        relief: !!s.relief && engine.running(),
         pour: s.pour,
         phase: s.lastPhase,
         size: Math.min(1, (stats().mass ?? 8000) / 10000),
