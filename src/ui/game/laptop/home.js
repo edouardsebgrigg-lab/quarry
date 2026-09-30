@@ -52,6 +52,7 @@ export function homeApp({ game, openApp, setHead }) {
     el('div', { class: 'lt-card lt-goal' }, el('div', { class: 'lt-card-label' }, 'Current goal'), goalTitle, goalText),
     el('div', { class: 'lt-shortcuts' },
       shortcut('digger', 'Plant dealer', 'Machines, upgrades, yard buildings', 'dealer'),
+      shortcut('clipboard', 'Jobs board', 'Bonuses for clean loads, on time', 'jobs'),
       shortcut('chart', 'Depot prices', 'What each material sells for today', 'prices'),
       shortcut('bank', 'Bank', 'Your statement, and loans to grow faster', 'bank')));
   return { node, refresh, headSet: true };

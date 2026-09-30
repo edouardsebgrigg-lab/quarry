@@ -28,7 +28,7 @@ export function messagesApp({ game, setHead }) {
             el('div', {}, el('span', {}, 'Loads sold'), el('b', {}, `${r.loads} (${tonnes(r.tonnesSold)})`)),
             el('div', {}, el('span', {}, 'Dug'), el('b', {}, tonnes(r.tonnesDug))))));
       } else {
-        list.append(el('div', { class: `lt-msg ${m.kind === 'tip' ? 'tip' : ''}` },
+        list.append(el('div', { class: `lt-msg ${m.kind ?? ''}` },
           el('div', { class: 'lt-avatar' }, (m.from ?? '?')[0]),
           el('div', { class: 'lt-bubble' },
             el('div', { class: 'lt-msg-head' }, el('b', {}, m.from), el('span', {}, when(m))),

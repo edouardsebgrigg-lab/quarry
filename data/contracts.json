@@ -1,0 +1,24 @@
+{
+  "maxOffers": 3,
+  "maxActive": 2,
+  "offerDays": 2,
+  "clients": [
+    "Mill Lane Landscapes",
+    "Ashby Builders",
+    "Wolds Garden Centre",
+    "County Highways",
+    "Hilltop Farm",
+    "Greenway Groundworks",
+    "St Mary's Church (new car park)"
+  ],
+  "materials": {
+    "topsoil": { "tonnes": [1.2, 3], "weight": 3 },
+    "sand": { "tonnes": [1.5, 4], "weight": 2 },
+    "gravel": { "tonnes": [1.5, 4], "weight": 2 },
+    "clay": { "tonnes": [2, 5], "weight": 1 }
+  },
+  "tonnesPerEarned": 0.004,
+  "maxTonnes": 60,
+  "days": [2, 5],
+  "bonusRate": [0.35, 0.6]
+}

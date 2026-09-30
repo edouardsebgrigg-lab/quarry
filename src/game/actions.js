@@ -8,6 +8,7 @@ import {
 import { shovelDig, shovelDump, tipBarrow } from '../handtools/index.js';
 import { buyBuilding } from '../buildings/index.js';
 import { planEarthworks, buildEarthworks } from '../earthworks/index.js';
+import { acceptContract } from '../contracts/index.js';
 
 export function createActions(ctx) {
   const site = () => ctx.state.currentSiteId;
@@ -83,6 +84,9 @@ export function createActions(ctx) {
     // A mobile mechanic, booked from the laptop: services or repairs a machine where it is.
     mechanicQuote: (machineId) => mechanicQuote(ctx, machineId),
     callMechanic: (machineId) => callMechanic(ctx, machineId),
+
+    // The jobs board: take on one of the offers.
+    acceptContract: (offerId) => acceptContract(ctx, offerId),
 
     buyMachine: (type, tier) => fleetBuyMachine(ctx, type, tier),
     sellMachine: (id) => fleetSellMachine(ctx, id),

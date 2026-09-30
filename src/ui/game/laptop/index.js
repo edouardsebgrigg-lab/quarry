@@ -11,10 +11,12 @@ import { pricesApp } from './prices.js';
 import { bankApp } from './bank.js';
 import { fleetApp } from './fleet.js';
 import { messagesApp } from './messages.js';
+import { jobsApp } from './jobs.js';
 
 const APPS = [
   { id: 'home', label: 'Home', icon: 'home', make: homeApp },
   { id: 'dealer', label: 'Plant dealer', icon: 'digger', make: dealerApp },
+  { id: 'jobs', label: 'Jobs board', icon: 'clipboard', make: jobsApp },
   { id: 'prices', label: 'Depot prices', icon: 'chart', make: pricesApp },
   { id: 'fleet', label: 'Fleet', icon: 'truck', make: fleetApp },
   { id: 'bank', label: 'Bank', icon: 'bank', make: bankApp },

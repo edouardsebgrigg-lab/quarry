@@ -71,6 +71,18 @@ export function logbookOnEvent(ctx, type, e) {
       if (lb.messages.length > MAX_MESSAGES) lb.messages.splice(0, lb.messages.length - MAX_MESSAGES);
       break;
     }
+    case 'contractCompleted':
+    case 'contractFailed': {
+      const lb = logbook(ctx);
+      const { day, hour, minute } = getDate(ctx.state, ctx.data);
+      const what = ctx.data.materials[e.material]?.name.toLowerCase() ?? e.material;
+      const text = type === 'contractCompleted'
+        ? `That's the last of the ${what}, thanks. Your bonus of $${e.bonus} is on its way.`
+        : `We couldn't wait any longer for the rest of the ${what}, so we've gone elsewhere. Maybe next time.`;
+      lb.messages.push({ day, hour, minute, from: e.client, text, kind: type === 'contractCompleted' ? 'good' : 'bad' });
+      if (lb.messages.length > MAX_MESSAGES) lb.messages.splice(0, lb.messages.length - MAX_MESSAGES);
+      break;
+    }
     case 'dayStarted': {
       const lb = logbook(ctx);
       const { day } = getDate(ctx.state, ctx.data);

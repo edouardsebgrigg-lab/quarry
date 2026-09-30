@@ -835,3 +835,19 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .lt-call { min-width: 10.5rem; white-space: nowrap; }
 .log-line.log-bump { animation: log-bump 0.3s ease-out; }
 @keyframes log-bump { from { transform: scale(1.06); } to { transform: none; } }
+
+/* laptop: jobs board */
+.lt-jobs { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 0.8rem; margin-top: 0.6rem; }
+.lt-job { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.9rem 1rem; border-radius: 12px; background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.06); }
+.lt-job.active { border-color: rgba(245, 184, 46, 0.35); background: rgba(245, 184, 46, 0.05); }
+.lt-job-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.6rem; }
+.lt-job-bonus { font-family: var(--display); font-size: 1.3rem; font-weight: 700; color: var(--good); }
+.lt-job-what { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+.lt-job-what .dot { width: 0.7rem; height: 0.7rem; border-radius: 50%; flex: none; }
+.lt-job-foot { display: flex; justify-content: space-between; gap: 0.6rem; font-size: 0.76rem; color: var(--muted); }
+.lt-job-bar { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+.lt-job-bar i { display: block; height: 100%; background: var(--accent); }
+.lt-job .lt-buy { width: 100%; margin-top: 0.3rem; }
+.lt-offers-label { margin: 0.4rem 0 0; }
+.lt-msg.good .lt-avatar { background: var(--good); }
+.lt-msg.bad .lt-avatar { background: var(--bad); color: #fff; }
