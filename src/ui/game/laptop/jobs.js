@@ -18,7 +18,7 @@ export function jobsApp({ game, feedback, setHead }) {
   const matName = (m) => data.materials[m]?.name ?? m;
   const dueText = (deadline) => {
     const left = deadline - getDate(game.state, data).day;
-    return left <= 0 ? 'Due by the end of today' : `Due by the end of day ${deadline} (${left + 1} days)`;
+    return left <= 0 ? 'Due today' : `Due day ${deadline} · ${left + 1} days left`;
   };
 
   function refresh() {
@@ -38,7 +38,7 @@ export function jobsApp({ game, feedback, setHead }) {
         el('div', { class: 'lt-job-head' }, el('b', {}, a.client), el('span', { class: 'lt-job-bonus' }, `+${money(a.bonus)}`)),
         el('div', { class: 'lt-job-what' }, dot(a.material), `${tonnes(a.tonnes)} of clean ${matName(a.material).toLowerCase()}`),
         el('div', { class: 'lt-job-bar' }, el('i', { style: { width: `${Math.round(f * 100)}%` } })),
-        el('div', { class: 'lt-job-foot' }, el('span', {}, `${tonnes(a.delivered)} delivered`), el('span', {}, dueText(a.deadline)))));
+        el('div', { class: 'lt-job-foot' }, el('span', {}, `${tonnes(a.delivered)} of ${tonnes(a.tonnes)} in`), el('span', {}, dueText(a.deadline)))));
     }
     offersBox.replaceChildren();
     const full = c.active.length >= data.contracts.maxActive;
