@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createHeap } from './piles.js';
 import { weatherModel } from './weathering.js';
+import { addDecals } from './decals.js';
 
 const cache = new Map(); // "truck_used" -> THREE.Object3D (the loaded scene)
 
@@ -35,6 +36,7 @@ export async function preloadModels({ onProgress } = {}) {
         }
       });
       weatherModel(gltf.scene, name); // machines only: rust, chips, fade and mud by tier
+      addDecals(gltf.scene, name); // lettering, hazard chevrons, warning stickers, number plates
       cache.set(name, gltf.scene);
     } catch (err) {
       console.warn(`Could not load model ${name}:`, err);

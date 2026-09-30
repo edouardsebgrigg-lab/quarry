@@ -39,7 +39,8 @@ export function materialRole(name) {
   const plain = name.replace(/\.\d+/g, '');
   const baked = plain.startsWith('Review_');
   const key = baked ? plain.slice('Review_'.length).split('_')[0] : plain;
-  const role = ROLES[key] ?? null;
+  // (hydraulic rams: painted barrels and chrome rods take dirt, not chipped paint and rust)
+  const role = /Ram$/.test(plain) ? 'metal' : ROLES[key] ?? null;
   return role ? { role, baked } : null;
 }
 
@@ -99,7 +100,8 @@ const FRAGMENT = /* glsl */ `
     c = mix(c, faded, uWeather.y * up * (0.55 + 0.45 * mid));
     // Chips on edges and corners, down to dark primer.
     float chip = smoothstep(0.7, 0.74, fine * 0.55 + mid * 0.2 + edge * (0.35 + 0.45 * wear) + big * 0.1 * wear);
-    c = mix(c, wLin(vec3(0.2, 0.19, 0.18)), chip * step(0.01, wear));
+    // (a cared-for machine has the odd chip; a worn one is covered in them)
+    c = mix(c, wLin(vec3(0.2, 0.19, 0.18)), chip * smoothstep(0.05, 0.6, wear));
     // Rust: starts on edges and low down, spreads in patches; flaky orange-brown.
     // Years of grime: a heavily worn machine's paint is darker and dirtier all over, unevenly.
     c *= mix(vec3(1.0), vec3(0.8, 0.74, 0.66), wear * (0.35 + 0.35 * big));
@@ -141,7 +143,7 @@ export function weatherModel(scene, name) {
       const r = materialRole(m.name);
       if (!r) return m;
       any = true;
-      if (!made.has(m)) made.set(m, weathered(m, r.role, (r.baked ? BAKED_TIERS : TIERS)[tierName], ground));
+      if (!made.has(m)) made.set(m, weathered(m, r.role, (r.baked ? BAKED_TIERS : TIERS)[tierName], ground, r.baked));
       return made.get(m);
     });
     if (!any) return;
@@ -169,9 +171,10 @@ function bakeRest(mesh) {
   geo.setAttribute('aRest', new BufferAttribute(out, 3));
 }
 
-function weathered(src, role, tier, ground) {
+function weathered(src, role, tier, ground, baked = false) {
   const m = src.clone();
-  const k = ROLE_SCALE[role];
+  // (the refined fleet's rubber already has dirt painted in: keep it dark)
+  const k = baked && role === 'mud' ? { ...ROLE_SCALE.mud, mud: 0.45 } : ROLE_SCALE[role];
   const u = {
     uWeather: { value: [tier.wear * k.wear, tier.fade * k.fade, tier.mud * k.mud] },
     uGround: { value: ground },

@@ -56,13 +56,19 @@ export function createThumbnails({ width = 480, height = 300 } = {}) {
     const files = FILES[type];
     if (!files) return null;
     const group = new THREE.Group();
-    files.forEach((f, i) => {
-      const src = modelScene(f.startsWith('vehicle_') ? f : `${f}_${tier}`);
-      if (!src) return;
-      const part = src.clone(true);
-      if (i === 1) part.position.x = TRAILER_OFFSET;
-      group.add(part);
-    });
+    const parts = files.map((f) => modelScene(f.startsWith('vehicle_') ? f : `${f}_${tier}`)?.clone(true) ?? null);
+    parts.forEach((part) => part && group.add(part));
+    // A trailer hangs off the tractor's hitch by its towing eye, as it does in the game.
+    if (parts[1] && parts[0]) {
+      group.updateMatrixWorld(true);
+      const hitch = parts[0].getObjectByName('Hitch');
+      const eye = parts[1].getObjectByName('Eye');
+      if (hitch && eye) {
+        const a = hitch.getWorldPosition(new THREE.Vector3());
+        const b = eye.getWorldPosition(new THREE.Vector3());
+        parts[1].position.add(a.sub(b).setY(0));
+      } else parts[1].position.x = TRAILER_OFFSET;
+    }
     if (!group.children.length) return null;
     group.traverse((o) => {
       if (o.isMesh) {
