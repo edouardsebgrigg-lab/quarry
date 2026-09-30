@@ -171,10 +171,13 @@ the first machine, and any point where a new player would get stuck.
 **Done when:** times recorded in your checkpoint, or the exact blocker with steps to reproduce if
 software rendering makes it impractical. Fix any defect that blocks the loop.
 
-### T10: Rusty and used look different: CLAIMED BY CLAUDE, skip it
-Claude is doing this together with a general graphics pass on `claude/coordination`. Don't change
-models, textures, `src/world3d/weathering.js`, `environment.js` or `groundMaterial.js` meanwhile,
-to avoid conflicts.
+### T10: Rusty and used look different: DONE BY CLAUDE (ready to judge)
+The weathering shader now recognises the refined fleet's `Review_` materials and adds a lighter
+layer on top of their painted wear (`src/world3d/weathering.js`, `BAKED_TIERS`): rusty machines
+get grime, broad rust patches, streaks and chips; used ones a light fade and dirt; tyres stay
+dark. In-game shots on "high" are in `docs/handover/screenshots/graphics/`. Edouard and Claude
+judge by eye; tune the numbers in `BAKED_TIERS` rather than the textures. Don't change the
+weathering, renderer or ground material files without a task.
 
 ### T6: Step 8b: stockpile bays at the home yard
 The design's "hold or sell" choice (`docs/design-spec.md`: yard stockpile with a limit).
