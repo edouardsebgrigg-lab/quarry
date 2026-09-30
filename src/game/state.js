@@ -17,6 +17,7 @@ export function createNewState(data, seed) {
     market: createMarketState(data),
     currentSiteId: data.game.startSite,
     sites: createSitesState(data),
+    buildings: {},
     machines: [],
     nextMachineId: 1,
     counters: {},

@@ -1,11 +1,13 @@
-// Step 7: the tractor with its trailer and the mini digger on built ramps out of a pit.
-// drive across both, save, reload, and check it all persisted. Real DOM key / mouse events on the
-// game canvas, with the pointer lock itself under the test's control (headless Chrome can't grant it
-// reliably) and the aim set by setting the look angles. Frame-counted, bounded.
-import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
+// Step 7: tractor/trailer and mini digger on built ramps out of a pit. No save/load check here.
+// ONLY_MINI=1 skips the tractor phases; run that mode with timeout 1200 for task T3.
+// Real canvas confirmation events, stubbed pointer lock, code-set aim and held-key debug hook.
+// Frame-counted; slow track travel has a larger budget than road vehicles.
+import assert from 'node:assert/strict';
+const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const ONLY_MINI = process.env.ONLY_MINI === '1';
 const OUT = process.env.OUT;
 const W = 320, H = 180;
-setTimeout(() => { console.log('TIMEOUT: overall bound hit'); process.exit(2); }, 14 * 60 * 1000);
+setTimeout(() => { console.log('TIMEOUT: overall bound hit'); process.exit(2); }, (ONLY_MINI ? 20 : 14) * 60 * 1000).unref();
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: W, height: H } });
 page.setDefaultTimeout(240000);
@@ -53,8 +55,9 @@ const aim = async (x, z) => { await q(([x, z]) => window.__quarry.world.debug.ai
 const stand = async (x, z) => { await q(([x, z]) => window.__quarry.world.debug.teleportPlayer(x, z, 0), [x, z]); await frames(3); };
 const pl = () => q(() => { const s = window.__quarry.world.debug.planner.state; return { active: s.active, mode: s.mode, width: s.width, a: s.a, b: s.b, ok: s.plan?.ok ?? null, reason: s.plan?.reason ?? null, cost: s.plan?.cost ?? null }; });
 
+try {
 // ---- start
-await page.goto('http://localhost:5174/');
+await page.goto(process.env.QUARRY_URL || 'http://localhost:5174/');
 await page.getByText('New Game').click();
 await page.waitForFunction(() => window.__quarry?.world, null, { timeout: 240000 });
 await page.getByText("Let's get to work").click();
@@ -74,6 +77,7 @@ const drive = async (vid, x0, z0, yaw, done, maxFrames = 200) => {
     t.x = +m.x.toFixed(2); t.z = +m.z.toFixed(2); t.frames = i + 8;
     const y = await q(([x, z]) => window.__quarry.world.debug.land.heightAt(x, z), [m.x, m.z]);
     t.y = +y.toFixed(2); t.minY = Math.min(t.minY, t.y); t.maxY = Math.max(t.maxY, t.y);
+    if (ONLY_MINI && (i + 8) % 40 === 0) out('mini drive progress', t);
     if (done(m)) { t.reached = true; break; }
   }
   await q(() => window.__quarry.world.debug.setKeys(['back']));
@@ -105,16 +109,25 @@ await build('T0 gentle ramp', 'ramp', { x: 100, z: 60 }, { x: 122, z: 60 }, 5);
 await build('T0 steep ramp', 'ramp', { x: 100, z: 60 }, { x: 92, z: 60 }, 5);
 await q(() => window.__quarry.world.debug.planner.cancel());
 const buy = (type) => q((type) => { const r = window.__quarry.game.actions.buyMachine(type, 'rusty'); return r.ok ? r.machine.id : null; }, type);
-const tractor = await buy('tractor');
+const tractor = ONLY_MINI ? null : await buy('tractor');
 const digger = await buy('miniDigger');
 out('T0 bought', { tractor, digger });
 await frames(6);
-out('T1 tractor + trailer up the gentle ramp', await drive(tractor, 99, 60, 0, (m) => m.x >= 121, 200));
-out('T1 trailer', await q((id) => { const v = window.__quarry.world.debug.vehicle?.(id); return v?.trailerState?.() ?? null; }, tractor));
-out('T2 tractor + trailer up the steep ramp', await drive(tractor, 101, 60, Math.PI, (m) => m.x <= 93, 200));
-out('T3 mini digger up the steep ramp', await drive(digger, 101, 60, Math.PI, (m) => m.x <= 93, 200));
-out('T4 mini digger up the gentle ramp', await drive(digger, 99, 60, 0, (m) => m.x >= 121, 240));
-await stand(110, 68); await aim(104, 60); await frames(4);
-await shot('ramps-machines');
+if (!ONLY_MINI) {
+  out('T1 tractor + trailer up the gentle ramp', await drive(tractor, 99, 60, 0, (m) => m.x >= 121, 200));
+  out('T1 trailer', await q((id) => { const v = window.__quarry.world.debug.vehicle?.(id); return v?.trailerState?.() ?? null; }, tractor));
+  out('T2 tractor + trailer up the steep ramp', await drive(tractor, 101, 60, Math.PI, (m) => m.x <= 93, 200));
+}
+const steep = await drive(digger, 101, 60, Math.PI, (m) => m.x <= 93, 400);
+out('T3 mini digger up the steep ramp', steep);
+assert.equal(steep.reached, true, JSON.stringify(steep));
+const gentle = await drive(digger, 99, 60, 0, (m) => m.x >= 121, 720);
+out('T4 mini digger up the gentle ramp', gentle);
+assert.equal(gentle.reached, true, JSON.stringify(gentle));
+if (!ONLY_MINI) {
+  await stand(110, 68); await aim(104, 60); await frames(4);
+  await shot('ramps-machines');
+}
 out('errors', errors.join('\n') || '(none)');
-await browser.close();
+assert.deepEqual(errors, []);
+} finally { await browser.close(); }

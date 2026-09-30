@@ -1,4 +1,5 @@
 // Shop: buy machines, fit upgrades (mods), sell machines.
+import { ownsBuilding } from '../../buildings/index.js';
 import { el, clear } from '../dom.js';
 import { money, statValue } from '../format.js';
 import { canAfford } from '../../economy/index.js';
@@ -10,6 +11,7 @@ import {
 const TABS = [
   { id: 'machines', label: 'Machines' },
   { id: 'mods', label: 'Upgrades' },
+  { id: 'buildings', label: 'Yard buildings' },
   { id: 'sell', label: 'Sell machines' },
 ];
 
@@ -110,6 +112,22 @@ export function openShop(overlays, { game, feedback }) {
         }
       }
 
+      function renderBuildings() {
+        const row = el('div', { class: 'cards' });
+        for (const [id, cfg] of Object.entries(data.buildings)) {
+          row.append(el('div', { class: 'card' },
+            el('div', { class: 'card-head' }, cfg.name),
+            el('div', { class: 'card-desc' }, cfg.description),
+            ownsBuilding(ctx, id)
+              ? el('div', { class: 'card-foot' }, '✓ Commissioned')
+              : buyFoot(cfg.price, () => {
+                const r = game.actions.buyBuilding(id);
+                feedback.message(r.ok ? `${cfg.name} commissioned` : r.reason, r.ok ? 'good' : 'warn');
+              })));
+        }
+        body.append(row);
+      }
+
       function renderSell() {
         const list = el('div', { class: 'sell-list' });
         for (const m of machinesAt(ctx, game.state.currentSiteId)) {
@@ -141,6 +159,7 @@ export function openShop(overlays, { game, feedback }) {
         clear(body);
         if (tab === 'machines') renderMachines();
         else if (tab === 'mods') renderMods();
+        else if (tab === 'buildings') renderBuildings();
         else renderSell();
         refreshButtons();
       }
@@ -154,7 +173,7 @@ export function openShop(overlays, { game, feedback }) {
         }
       }
 
-      offs = ['machineBought', 'machineSold', 'modBought', 'unlocksChanged']
+      offs = ['machineBought', 'machineSold', 'modBought', 'buildingBought', 'unlocksChanged']
         .map((t) => game.events.on(t, render));
       let acc = 0;
       entry.update = (dt) => {

@@ -1,0 +1,145 @@
+{
+  "variants": [
+    {
+      "name": "pickup",
+      "hasPBR": true,
+      "hasTrailer": false
+    },
+    {
+      "name": "miniDigger_rusty",
+      "hasPBR": true,
+      "hasTrailer": false
+    },
+    {
+      "name": "dumper_rusty",
+      "hasPBR": true,
+      "hasTrailer": false
+    },
+    {
+      "name": "tractor_rusty",
+      "hasPBR": true,
+      "hasTrailer": true
+    },
+    {
+      "name": "excavator_rusty",
+      "hasPBR": true,
+      "hasTrailer": false
+    },
+    {
+      "name": "truck_rusty",
+      "hasPBR": true,
+      "hasTrailer": false
+    },
+    {
+      "name": "miniDigger_used",
+      "hasPBR": true,
+      "hasTrailer": false
+    },
+    {
+      "name": "dumper_used",
+      "hasPBR": true,
+      "hasTrailer": false
+    },
+    {
+      "name": "tractor_used",
+      "hasPBR": true,
+      "hasTrailer": true
+    },
+    {
+      "name": "excavator_used",
+      "hasPBR": true,
+      "hasTrailer": false
+    },
+    {
+      "name": "truck_used",
+      "hasPBR": true,
+      "hasTrailer": false
+    }
+  ],
+  "driving": [
+    {
+      "name": "pickup",
+      "distance": 1.2425179700110398,
+      "speed": 3.596022129058838,
+      "engine": "running"
+    },
+    {
+      "name": "miniDigger_rusty",
+      "distance": 0.7733868919999907,
+      "speed": 1.1,
+      "engine": "running"
+    },
+    {
+      "name": "dumper_rusty",
+      "distance": 0.38204002800002,
+      "speed": 1.1100600000000211,
+      "engine": "running"
+    },
+    {
+      "name": "tractor_rusty",
+      "distance": 0.0861475528594821,
+      "speed": -0.35500389337539673,
+      "engine": "running"
+    },
+    {
+      "name": "excavator_rusty",
+      "distance": 0.568067013000018,
+      "speed": 0.9450000000000001,
+      "engine": "running"
+    },
+    {
+      "name": "truck_rusty",
+      "distance": 6.285517180564073,
+      "speed": -10.17820930480957,
+      "engine": "running"
+    }
+  ],
+  "articulation": [
+    {
+      "name": "miniDigger_rusty",
+      "previous": [
+        0.55,
+        -1.6,
+        -1.3
+      ],
+      "angles": [
+        1.0128930931778828,
+        -1.6,
+        -1.3
+      ]
+    },
+    {
+      "name": "excavator_rusty",
+      "previous": [
+        0.55,
+        -1.6,
+        -1.3
+      ],
+      "angles": [
+        1.024515960604986,
+        -1.6,
+        -1.3
+      ]
+    }
+  ],
+  "limitations": "Software WebGL; development money, code placement and controls; stubbed pointer lock. No pacing or new save-format change.",
+  "tipping": [
+    {
+      "name": "pickup",
+      "angle": 1.5
+    },
+    {
+      "name": "dumper_rusty",
+      "angle": -0.55
+    },
+    {
+      "name": "tractor_rusty",
+      "angle": 0.4
+    },
+    {
+      "name": "truck_rusty",
+      "angle": 0.45
+    }
+  ],
+  "pageErrors": []
+}
