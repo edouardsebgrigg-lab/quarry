@@ -45,6 +45,40 @@ Scripts are in `docs/handover/browser-checks/` (`common.mjs` has the shared setu
 command line that contains the pattern kills your own shell. Say in reports that the pointer
 lock is stubbed and aim is set by code.
 
+## State of the game (Claude's review, 30 September 2026)
+
+**Built and working:** the hand-dig start (shovel, barrow, pickup), real deformable ground with
+layers and slumping, selling at the depot over the weighbridge, five machine types in two tiers
+with Assisted and Direct digger controls, a tractor and trailer that behaves like one, the
+mentor and guide markers, a time gate that only runs the clock while you're playing, haul
+roads, ramps and level areas that conserve material, and the first two yard buildings. 165
+unit tests, a clean build, and a set of bounded browser checks.
+
+**The biggest gaps, in order:**
+1. Nobody has measured the opening loop with normal money (T5). It's the first ten minutes of
+   the game and the most important thing to get right.
+2. The game has never been played with a real mouse and pointer lock by the checks; everything
+   automated uses a stubbed pointer lock. Edouard playing a session and noting friction is worth
+   more than another automated check.
+3. Yard buildings (Step 8) are only started: stockpiles and the home weighbridge are the ones
+   that change how you play.
+4. Balance: works prices, building prices and machine prices are provisional (T8).
+5. Download: 37 MB of models plus a 5 MB script. Fine on broadband; slow on mobile data.
+
+**Code health:** good. Logic is separate from the 3D, balance lives in `data/`, every module
+is used, and tests cover the rules. Keep it that way: new systems need tests, data files and a
+line in `docs/modules.md`.
+
+**Done by Claude in this pass (on `claude/coordination`):**
+- T12: textures re-encoded, models 72 MB to 37 MB, with a size-budget test
+- The 3D code loads after the menu (menu script 120 KB instead of 5.2 MB), fetched in the
+  background; the loading card shows download progress
+- Graphics: soft shadows (medium and up), ambient occlusion on high and ultra (skipping
+  see-through things so grass and glass don't cast boxes), a clearer sky, and the weathering
+  shader now applies to the new models (rusty: rust patches, chips, grime; used: light fade
+  and dirt). T10 is in progress with Claude: see its entry below
+- Clean-up: an unused helper removed, docs updated
+
 ## Review notes on `fbf0885` (VEH1, the new vehicle models)
 
 VEH1 was a batch Edouard asked for directly, so doing it before the queue was right, and
@@ -123,8 +157,10 @@ and push. Keep working on `codex/step-7-safety-and-yard-buildings`.
 another spot (or refuse), a machine on a heap isn't undermined, and a refused build changes
 nothing. Material still conserved.
 
-### T12: Shrink the vehicle textures: CLAIMED BY CLAUDE, skip it
-Claude is doing this on `claude/coordination`; it arrives with your next merge.
+### T12: Shrink the vehicle textures: DONE BY CLAUDE
+Models went from 72 MB to 37 MB (`blender/compress_textures.py`, test in
+`src/world3d/assetBudget.test.js`). It arrives with your next merge. Run the script after any
+model rebuild.
 
 ### T5: The opening loop with real controls and normal money
 The fresh-save loop has never been measured: dig by hand, fill the barrow, load the pickup,

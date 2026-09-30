@@ -7,12 +7,13 @@ import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { createGroundMaterial, paintGround } from './groundMaterial.js';
 
-// ao: ambient occlusion (soft contact shadows where things meet); softShadows: blurred shadow edges.
+// ao: ambient occlusion (soft contact shadows where things meet), worked out at half or full
+// resolution; softShadows: blurred shadow edges.
 const QUALITY = {
   low: { pixelRatio: 0.75, shadows: false, shadowMap: 1024, softShadows: false, ao: false },
   medium: { pixelRatio: 1, shadows: true, shadowMap: 1024, softShadows: true, ao: false },
-  high: { pixelRatio: 1.5, shadows: true, shadowMap: 2048, softShadows: true, ao: true },
-  ultra: { pixelRatio: 2, shadows: true, shadowMap: 4096, softShadows: true, ao: true },
+  high: { pixelRatio: 1.5, shadows: true, shadowMap: 2048, softShadows: true, ao: 'half' },
+  ultra: { pixelRatio: 2, shadows: true, shadowMap: 4096, softShadows: true, ao: 'full' },
 };
 
 export function createRenderer(canvas, quality) {
@@ -38,6 +39,7 @@ export function createFrameRenderer(renderer, scene, camera, q) {
   const composer = new EffectComposer(renderer, target);
   composer.addPass(new RenderPass(scene, camera));
   const ao = new ContactAOPass(scene, camera, 1, 1);
+  ao.scale = q.ao === 'half' ? 0.5 : 1;
   ao.updateGtaoMaterial({ radius: 0.7, distanceExponent: 1.5, thickness: 1.2, distanceFallOff: 1, scale: 1, samples: 12 });
   ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 5, rings: 2, samples: 12 });
   ao.blendIntensity = 0.85;
@@ -58,6 +60,12 @@ export function createFrameRenderer(renderer, scene, camera, q) {
 // GTAO, minus anything see-through: its depth and normal pass draws every mesh as solid, so
 // grass cards, leaves, glass and effects would otherwise cast dark rectangles.
 class ContactAOPass extends GTAOPass {
+  // (at half resolution on "high": a quarter of the work, and the blur hides the difference)
+  setSize(width, height) {
+    const k = this.scale ?? 1;
+    super.setSize(Math.max(1, Math.round(width * k)), Math.max(1, Math.round(height * k)));
+  }
+
   _overrideVisibility() {
     super._overrideVisibility();
     const cache = this._visibilityCache;

@@ -101,8 +101,10 @@ const FRAGMENT = /* glsl */ `
     float chip = smoothstep(0.7, 0.74, fine * 0.55 + mid * 0.2 + edge * (0.35 + 0.45 * wear) + big * 0.1 * wear);
     c = mix(c, wLin(vec3(0.2, 0.19, 0.18)), chip * step(0.01, wear));
     // Rust: starts on edges and low down, spreads in patches; flaky orange-brown.
+    // Years of grime: a heavily worn machine's paint is darker and dirtier all over, unevenly.
+    c *= mix(vec3(1.0), vec3(0.8, 0.74, 0.66), wear * (0.35 + 0.35 * big));
     // (a heavily worn machine gets broad patches you can see from across the field)
-    float rustAmt = big * 0.55 + mid * 0.35 + edge * 0.35 + low * 0.22 + fine * 0.08 - (1.0 - wear) * 0.55 + wear * 0.1;
+    float rustAmt = big * 0.55 + mid * 0.35 + edge * 0.35 + low * 0.22 + fine * 0.08 - (1.0 - wear) * 0.55 + wear * 0.22;
     float rust = smoothstep(0.8, 0.86, rustAmt) * step(0.01, wear);
     vec3 rustC = mix(wLin(vec3(0.24, 0.1, 0.05)), wLin(vec3(0.56, 0.26, 0.1)), smoothstep(0.2, 0.8, fine * 0.6 + mid * 0.4));
     c = mix(c, rustC, rust);
