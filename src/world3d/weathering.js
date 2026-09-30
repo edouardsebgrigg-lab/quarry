@@ -5,7 +5,8 @@
 //    across panels (more on a rusty machine, hardly any on a used one);
 //  - paint chipped off corners and edges, showing dark primer;
 //  - sun-faded tops (bonnet, roof, arm);
-//  - dried mud splashed up from the ground, thickest at the bottom.
+//  - dried mud splashed up from the ground, thickest at the bottom;
+//  - quarry dust settled on everything that faces up (a working machine is never showroom clean).
 // Everything is worked out once when a model loads (its rest-pose shape, "baked" into a vertex
 // attribute so the patterns stick to each part as it moves) and in a light shader addition:
 // three octaves of value noise and the surface curvature from screen-space derivatives, which
@@ -23,15 +24,15 @@ const ROLES = {
 
 // How hard each tier has been used.
 const TIERS = {
-  rusty: { wear: 1.0, fade: 0.85, mud: 1.0 },
-  used: { wear: 0.18, fade: 0.2, mud: 0.5 },
+  rusty: { wear: 1.0, fade: 0.85, mud: 1.0, dust: 0.3 },
+  used: { wear: 0.18, fade: 0.2, mud: 0.5, dust: 0.55 },
 };
 // The refined fleet (materials named "Review_…") already has wear painted into its textures, so
 // it gets a lighter hand: enough that a Rusty machine reads as rusty and a Used one as cared-for,
 // with tyres and tracks kept dark.
 const BAKED_TIERS = {
-  rusty: { wear: 0.92, fade: 0.55, mud: 0.45 },
-  used: { wear: 0.1, fade: 0.12, mud: 0.22 },
+  rusty: { wear: 0.92, fade: 0.55, mud: 0.45, dust: 0.3 },
+  used: { wear: 0.1, fade: 0.12, mud: 0.22, dust: 0.55 },
 };
 
 // Which role a material plays: "Paint.001" -> Paint; "Review_PaintDark_BoomRam.002" -> PaintDark.
@@ -48,16 +49,16 @@ export function materialRole(name) {
 const GROUND = { truck: -1.3 };
 
 const ROLE_SCALE = {
-  body: { wear: 1, fade: 1, mud: 1 },
-  dark: { wear: 0.6, fade: 0.35, mud: 1 },
-  metal: { wear: 0, fade: 0, mud: 0.8 },
-  mud: { wear: 0, fade: 0, mud: 1.1 },
+  body: { wear: 1, fade: 1, mud: 1, dust: 1 },
+  dark: { wear: 0.6, fade: 0.35, mud: 1, dust: 1.1 },
+  metal: { wear: 0, fade: 0, mud: 0.8, dust: 0.8 },
+  mud: { wear: 0, fade: 0, mud: 1.1, dust: 0.7 },
 };
 
 const NOISE = /* glsl */ `
 varying vec3 vRest;
 varying vec3 vWN;
-uniform vec3 uWeather; // wear, fade, mud
+uniform vec4 uWeather; // wear, fade, mud, dust
 uniform float uGround;
 uniform float uRole; // 0 body, 1 dark, 2 metal/rubber
 float wHash(vec3 p) {
@@ -121,8 +122,12 @@ const FRAGMENT = /* glsl */ `
   float fleck = smoothstep(0.86, 0.9, fine * 0.7 + mid * 0.3) * (1.0 - smoothstep(uGround + 0.6, uGround + 1.8, P.y)) * uWeather.z;
   vec3 mudC = mix(wLin(vec3(0.33, 0.27, 0.2)), wLin(vec3(0.52, 0.45, 0.35)), fine);
   c = mix(c, mudC, max(mud * 0.9, fleck * 0.8));
+  // Quarry dust: a pale film on everything facing up, patchy, and a faint one on the sides.
+  float dust = uWeather.w * (up * (0.3 + 0.55 * mid) + 0.07) * (1.0 - mud);
+  vec3 dustC = wLin(vec3(0.66, 0.61, 0.53));
+  c = mix(c, dustC, clamp(dust, 0.0, 0.5));
   diffuseColor.rgb = c;
-  wRough = max(rough, max(mud, fleck));
+  wRough = max(max(rough, max(mud, fleck)), dust * 0.9);
 }
 `;
 
@@ -186,7 +191,7 @@ function weathered(src, role, tier, ground, baked = false) {
   // (the refined fleet's rubber already has dirt painted in: keep it dark)
   const k = baked && role === 'mud' ? { ...ROLE_SCALE.mud, mud: 0.45 } : ROLE_SCALE[role];
   const u = {
-    uWeather: { value: [tier.wear * k.wear, tier.fade * k.fade, tier.mud * k.mud] },
+    uWeather: { value: [tier.wear * k.wear, tier.fade * k.fade, tier.mud * k.mud, (tier.dust ?? 0) * (k.dust ?? 0)] },
     uGround: { value: ground },
     uRole: { value: role === 'body' ? 0 : role === 'dark' ? 1 : 2 },
   };

@@ -140,18 +140,20 @@ function scrape(g, c, rusty) {
   c.height = 512;
   let s = rusty ? 777 : 4242;
   const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
-  g.fillStyle = rusty ? '#5a3a24' : '#8c8f90';
+  g.fillStyle = rusty ? '#5b341c' : '#85898b';
   g.fillRect(0, 0, c.width, c.height);
-  // Streaks: scratched lines the length of the floor, light and dark.
-  for (let i = 0; i < 420; i++) {
+  // Streaks: scratched lines the length of the floor, light and dark. (An old floor is mostly
+  // rust, with the odd bright line where the last loads slid.)
+  const n = rusty ? 170 : 260;
+  for (let i = 0; i < n; i++) {
     const x = rnd() * c.width;
     const y = rnd() * c.height * 0.6;
     const len = c.height * (0.2 + rnd() * 0.8);
-    const light = rnd() < 0.55;
+    const light = rnd() < (rusty ? 0.3 : 0.5);
     g.strokeStyle = rusty
-      ? (light ? `rgba(150, 140, 128, ${0.15 + rnd() * 0.35})` : `rgba(96, 46, 18, ${0.2 + rnd() * 0.5})`)
-      : (light ? `rgba(200, 204, 206, ${0.12 + rnd() * 0.35})` : `rgba(70, 64, 58, ${0.12 + rnd() * 0.3})`);
-    g.lineWidth = 0.6 + rnd() * 2.2;
+      ? (light ? `rgba(150, 138, 122, ${0.08 + rnd() * 0.22})` : `rgba(88, 40, 14, ${0.25 + rnd() * 0.5})`)
+      : (light ? `rgba(196, 200, 202, ${0.1 + rnd() * 0.3})` : `rgba(70, 64, 58, ${0.12 + rnd() * 0.3})`);
+    g.lineWidth = 0.6 + rnd() * 1.8;
     g.beginPath();
     g.moveTo(x, y);
     g.lineTo(x + (rnd() - 0.5) * 6, y + len);
