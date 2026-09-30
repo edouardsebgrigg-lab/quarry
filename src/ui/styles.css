@@ -804,6 +804,11 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .lt-msg-text { font-size: 0.88rem; line-height: 1.45; color: #d4d8de; }
 .lt-msg.report { flex-direction: column; gap: 0.5rem; padding: 0.9rem 1.1rem; border-radius: 12px; background: rgba(107, 217, 138, 0.06); border: 1px solid rgba(107, 217, 138, 0.2); }
 .lt-msg.report .lt-msg-head { width: 100%; }
+.lt-msg-head .lt-msg-sub { margin-right: auto; }
+.lt-msg.report.week { background: rgba(245, 184, 46, 0.06); border-color: rgba(245, 184, 46, 0.3); }
+.lt-week-lines { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.82rem; color: #c4c9d0; }
+.lt-week-lines b.pos { color: var(--good); }
+.lt-week-lines b.neg { color: var(--bad); }
 .lt-report { display: grid; grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr)); gap: 0.6rem; width: 100%; }
 .lt-report div { display: flex; flex-direction: column; gap: 0.1rem; }
 .lt-report span { font-size: 0.66rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }

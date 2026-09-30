@@ -1,11 +1,12 @@
 // The yard's logbook: what each machine has done, a summary of each day, and every message
 // Ray has sent. Built from game events; saved with the game (state.logbook). The laptop's fleet
 // and messages apps read it. At the start of each day it sends a `dailyReport` event with the
-// day before.
+// day before, and every seven days a `weeklyReport` with the week's totals.
 import { getDate } from '../core/index.js';
 
 const MAX_MESSAGES = 80;
 const MAX_DAYS = 30;
+const WEEK = 7;
 const round2 = (n) => Math.round(n * 100) / 100;
 // (money movements that aren't trading: borrowing and paying back)
 const NOT_TRADE = new Set(['loan', 'loanPayment', 'loanRepaid', 'dev']);
@@ -53,12 +54,51 @@ function trim(lb) {
   lb.read = Math.max(0, (lb.read ?? 0) - extra);
 }
 
+// Where the week started: the day, the bank balance and what each machine had earned.
+function weekStart(ctx, day) {
+  const lb = logbook(ctx);
+  const earned = Object.fromEntries(Object.entries(lb.machines).map(([id, m]) => [id, m.earned]));
+  lb.week = { startDay: day, money: round2(ctx.state.money), earned };
+  return lb.week;
+}
+
+function weeklyReport(ctx, lb, day) {
+  const w = lb.week;
+  const days = lb.days.filter((d) => d.day >= w.startDay && d.day < day);
+  const sum = (k) => round2(days.reduce((t, d) => t + (d[k] ?? 0), 0));
+  const best = days.map((d) => ({ day: d.day, profit: round2(d.income - d.spending) })).sort((a, b) => b.profit - a.profit)[0] ?? null;
+  const top = Object.entries(lb.machines)
+    .map(([id, m]) => ({ id, earned: round2(m.earned - (w.earned[id] ?? 0)) }))
+    .filter((m) => m.earned > 0)
+    .sort((a, b) => b.earned - a.earned)[0] ?? null;
+  const income = sum('income');
+  const spending = sum('spending');
+  return {
+    week: Math.floor((w.startDay - 1) / WEEK) + 1,
+    fromDay: w.startDay,
+    toDay: day - 1,
+    income,
+    spending,
+    profit: round2(income - spending),
+    invested: sum('invested'),
+    loads: sum('loads'),
+    tonnesSold: sum('tonnesSold'),
+    tonnesDug: sum('tonnesDug'),
+    jobsDone: sum('jobsDone'),
+    bestDay: best && best.profit > 0 ? best : null,
+    topMachine: top,
+    moneyFrom: w.money,
+    moneyTo: round2(ctx.state.money),
+  };
+}
+
 function today(ctx) {
   const lb = logbook(ctx);
   const { day } = getDate(ctx.state, ctx.data);
+  if (!lb.week) weekStart(ctx, day);
   let d = lb.days[lb.days.length - 1];
   if (!d || d.day !== day) {
-    d = { day, income: 0, spending: 0, invested: 0, tonnesSold: 0, tonnesDug: 0, loads: 0 };
+    d = { day, income: 0, spending: 0, invested: 0, tonnesSold: 0, tonnesDug: 0, loads: 0, jobsDone: 0 };
     lb.days.push(d);
     if (lb.days.length > MAX_DAYS) lb.days.splice(0, lb.days.length - MAX_DAYS);
   }
@@ -117,6 +157,10 @@ export function logbookOnEvent(ctx, type, e) {
         : `We couldn't wait any longer for the rest of the ${what}, so we've gone elsewhere. Maybe next time.`;
       lb.messages.push({ day, hour, minute, from: e.client, text, kind: type === 'contractCompleted' ? 'good' : 'bad' });
       trim(lb);
+      if (type === 'contractCompleted') {
+        const d = today(ctx);
+        d.jobsDone = (d.jobsDone ?? 0) + 1;
+      }
       break;
     }
     case 'overheadsCharged': {
@@ -129,13 +173,20 @@ export function logbookOnEvent(ctx, type, e) {
     case 'dayStarted': {
       const lb = logbook(ctx);
       const { day } = getDate(ctx.state, ctx.data);
-      const prev = lb.days.find((d) => d.day === day - 1);
-      if (!prev) break;
-      const report = { ...prev, profit: round2(prev.income - prev.spending), movers: priceMovers(ctx) };
       const { hour, minute } = getDate(ctx.state, ctx.data);
-      lb.messages.push({ day, hour, minute, from: 'Office', kind: 'report', report });
+      const prev = lb.days.find((d) => d.day === day - 1);
+      if (prev) {
+        const report = { ...prev, profit: round2(prev.income - prev.spending), movers: priceMovers(ctx) };
+        lb.messages.push({ day, hour, minute, from: 'Office', kind: 'report', report });
+        ctx.events.emit('dailyReport', report);
+      }
+      if (lb.week && day - lb.week.startDay >= WEEK) {
+        const report = weeklyReport(ctx, lb, day);
+        lb.messages.push({ day, hour, minute, from: 'Office', kind: 'week', report });
+        ctx.events.emit('weeklyReport', report);
+        weekStart(ctx, day);
+      }
       trim(lb);
-      ctx.events.emit('dailyReport', report);
       break;
     }
     default:

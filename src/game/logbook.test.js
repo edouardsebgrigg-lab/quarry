@@ -64,3 +64,27 @@ describe('the daily summary', () => {
     expect(reports[0]).toMatchObject({ spending: 5, invested: 240, profit: -5 });
   });
 });
+
+describe('the weekly report', () => {
+  it('adds up the week every seven days: profit, best day, top machine, bank balance', () => {
+    const game = createGame({ seed: 5 });
+    const weeks = [];
+    game.events.on('weeklyReport', (r) => weeks.push(r));
+    game.events.emit('moneyChanged', { amount: 100, reason: 'sale', money: 300 });
+    game.events.emit('productSold', { machineId: 'm1', tonnes: 2, revenue: 100 });
+    game.dev.skipDays(2);
+    game.events.emit('moneyChanged', { amount: 40, reason: 'sale', money: 340 });
+    game.events.emit('moneyChanged', { amount: -30, reason: 'machine', money: 310 });
+    game.dev.skipDays(4);
+    expect(weeks).toHaveLength(0);
+    game.dev.skipDays(1);
+    expect(weeks).toHaveLength(1);
+    expect(weeks[0]).toMatchObject({ week: 1, fromDay: 1, toDay: 7, income: 140, profit: 140, invested: 30, loads: 1 });
+    expect(weeks[0].bestDay).toMatchObject({ day: 1 });
+    expect(weeks[0].topMachine).toMatchObject({ id: 'm1', earned: 100 });
+    expect(typeof weeks[0].moneyTo).toBe('number');
+    game.dev.skipDays(7);
+    expect(weeks).toHaveLength(2);
+    expect(weeks[1]).toMatchObject({ week: 2, fromDay: 8, toDay: 14, income: 0, topMachine: null });
+  });
+});
