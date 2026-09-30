@@ -221,7 +221,7 @@ export function createVegetation({ scene, quality, surfaceAt, blocked }) {
 const TREES = [
   { name: 'oak', size: 16 },
   { name: 'poplar', size: 15 },
-  { name: 'hawthorn', size: 7.5 },
+  { name: 'hawthorn', size: 7.5, wide: 1.35 }, // (spread wider than tall, so a hedge closes up)
 ];
 
 // Farmland: hedgerows (hawthorn with the odd oak) along the given lines, copses, rows of
@@ -240,10 +240,11 @@ export function createTrees({ scene, quality, plan, keepClear, groundHeight }) {
     placed[kind].push([x, z, scale * (0.8 + random() * 0.4)]);
   };
 
-  // Hedgerows.
+  // Hedgerows: hawthorn close enough to grow into one another, with an oak standing out of it
+  // every so often.
   const hedge = (x0, z0, x1, z1) => {
     const len = Math.hypot(x1 - x0, z1 - z0);
-    const step = 3.2 / density;
+    const step = 2.3 / density;
     for (let d = 0; d < len; d += step * (0.7 + random() * 0.6)) {
       if (random() < 0.05) {
         d += 6; // a gap
@@ -252,7 +253,8 @@ export function createTrees({ scene, quality, plan, keepClear, groundHeight }) {
       const t = d / len;
       const x = x0 + (x1 - x0) * t + (random() - 0.5) * 1.2;
       const z = z0 + (z1 - z0) * t + (random() - 0.5) * 1.2;
-      add(random() < 0.08 ? 0 : 2, x, z);
+      if (random() < 0.07) add(0, x, z, 1.15);
+      else add(2, x, z, 0.85 + random() * 0.4);
     }
   };
   for (const line of plan.hedges ?? []) {
@@ -295,7 +297,7 @@ export function createTrees({ scene, quality, plan, keepClear, groundHeight }) {
     mesh.count = list.length;
     list.forEach(([x, z, s], j) => {
       const size = tree.size * s;
-      sc.set(size, size, size);
+      sc.set(size * (tree.wide ?? 1), size, size * (tree.wide ?? 1));
       q.setFromAxisAngle(up, random() * Math.PI);
       pos.set(x, groundHeight(x, z) - 0.05, z);
       m.compose(pos, q, sc);

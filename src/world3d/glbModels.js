@@ -8,6 +8,21 @@ import { addDecals } from './decals.js';
 
 const OPEN_SURFACE = /(^|_)Rims$/; // materials on open (one-sided) surfaces
 
+// Lamps are exported glowing; by day they're switched off: a clear lens over a silver
+// reflector, a dark red tail lens, and the beacon (it turns while the machine works) a bit less
+// blinding.
+const LAMPS = { Headlight: { color: 0xd8dcdf, emissive: 0.06, metalness: 0.55, roughness: 0.06 }, TailLight: { emissive: 0.18 }, Beacon: { emissive: 0.6 } };
+function daylightLamp(material) {
+  const kind = /(?:^|_)(Headlight|TailLight|Beacon)$/.exec(material?.name ?? '')?.[1];
+  const lamp = kind && LAMPS[kind];
+  if (!lamp || material.userData.daylight) return;
+  material.userData.daylight = true;
+  if (lamp.color !== undefined) material.color.setHex(lamp.color);
+  material.emissiveIntensity *= lamp.emissive;
+  if (lamp.metalness !== undefined) material.metalness = lamp.metalness;
+  if (lamp.roughness !== undefined) material.roughness = lamp.roughness;
+}
+
 const cache = new Map(); // "truck_used" -> THREE.Object3D (the loaded scene)
 
 // onProgress(fraction 0..1) follows the downloads, for the loading card.
@@ -38,6 +53,7 @@ export async function preloadModels({ onProgress } = {}) {
           // The tractor's wheel discs are open surfaces facing inward on one side: draw both
           // sides, or you see straight through the left-hand wheels.
           if (OPEN_SURFACE.test(o.material?.name ?? '')) o.material.side = THREE.DoubleSide;
+          daylightLamp(o.material);
         }
       });
       weatherModel(gltf.scene, name); // machines only: rust, chips, fade and mud by tier
