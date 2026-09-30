@@ -82,6 +82,15 @@ blender --background --python blender/build_models.py -- truck   # just one
 
 or Blender as a Python module (`pip install bpy` with Python 3.11) and run `python blender/build_models.py truck`. To rebuild only some props: `python blender/build_models.py prop:gate,fence`. Add `--no-preview` to skip the preview renders (they take a few minutes).
 
+**After any rebuild, shrink the textures** (no Blender needed, just Pillow):
+
+```bash
+python3 blender/compress_textures.py            # every model in assets/models
+python3 blender/compress_textures.py assets/models/truck_rusty.glb
+```
+
+It re-saves embedded textures as JPEG where nothing is see-through (PNG only where a transparent material uses the alpha), stores identical images once and caps them at 1024 px. Geometry, rigs and materials are untouched, and it only rewrites a file if it gets noticeably smaller. It took the fleet from 72 MB to 37 MB with no visible change (median texture PSNR 45.7 dB; the worst, about 29 dB, are grainy roughness maps). `src/world3d/assetBudget.test.js` fails if `assets/models` goes over 40 MB or an opaque texture is stored as PNG.
+
 The scripts:
 - `lib.py`: shape helpers (boxes, rounded boxes, cylinders, extruded profiles, lathe, lofted bodies from cross-sections, flat panels for glass), bevels with weighted normals, subdivision, UVs, grime vertex colours, materials, export and preview rendering.
 - `textures.py`: generates the tileable textures (worn paint, rust, grimy steel, rubber, concrete, cladding, weathered wood, plastic, brick, slate, roof tiles, render, checker plate).
