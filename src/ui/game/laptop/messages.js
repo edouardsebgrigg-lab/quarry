@@ -1,7 +1,7 @@
 // Messages: Ray's texts and the office's summary of each day, newest first.
 import { el } from '../../dom.js';
 import { money, tonnes } from '../../format.js';
-import { logbook } from '../../../game/logbook.js';
+import { logbook, markMessagesRead } from '../../../game/logbook.js';
 
 const when = (m) => `Day ${m.day}, ${String(m.hour).padStart(2, '0')}:${String(m.minute ?? 0).padStart(2, '0')}`;
 
@@ -12,6 +12,7 @@ export function messagesApp({ game, setHead }) {
 
   function refresh() {
     const msgs = logbook(game.ctx).messages;
+    markMessagesRead(game.ctx);
     if (msgs.length === shown) return;
     shown = msgs.length;
     list.replaceChildren();

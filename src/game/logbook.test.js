@@ -37,3 +37,17 @@ describe('the logbook', () => {
     expect(logbook(g2.ctx).messages.at(-1)).toMatchObject({ from: 'Ray', text: 'Morning!' });
   });
 });
+
+describe('unread messages', () => {
+  it('counts messages you have not opened, and opening them clears the count', async () => {
+    const { unreadMessages, markMessagesRead } = await import('./logbook.js');
+    const game = createGame({ seed: 5 });
+    game.events.emit('mentorMessage', { from: 'Ray', text: 'One', kind: 'tip' });
+    game.events.emit('mentorMessage', { from: 'Ray', text: 'Two', kind: 'tip' });
+    expect(unreadMessages(game.ctx)).toBeGreaterThanOrEqual(2);
+    markMessagesRead(game.ctx);
+    expect(unreadMessages(game.ctx)).toBe(0);
+    game.events.emit('mentorMessage', { from: 'Ray', text: 'Three', kind: 'tip' });
+    expect(unreadMessages(game.ctx)).toBe(1);
+  });
+});

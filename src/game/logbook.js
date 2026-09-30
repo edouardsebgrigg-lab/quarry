@@ -11,14 +11,31 @@ const round2 = (n) => Math.round(n * 100) / 100;
 const NOT_TRADE = new Set(['loan', 'loanPayment', 'loanRepaid', 'dev']);
 
 export function logbook(ctx) {
-  ctx.state.logbook ??= { machines: {}, days: [], messages: [] };
+  ctx.state.logbook ??= { machines: {}, days: [], messages: [], read: 0 };
   return ctx.state.logbook;
+}
+
+// Messages you haven't opened yet (the Messages app marks them read).
+export function unreadMessages(ctx) {
+  const lb = logbook(ctx);
+  return Math.max(0, lb.messages.length - (lb.read ?? 0));
+}
+export function markMessagesRead(ctx) {
+  const lb = logbook(ctx);
+  lb.read = lb.messages.length;
 }
 
 export function machineLog(ctx, id) {
   const lb = logbook(ctx);
   lb.machines[id] ??= { tonnesDug: 0, loads: 0, tonnesDelivered: 0, earned: 0, breakdowns: 0, services: 0, repairs: 0 };
   return lb.machines[id];
+}
+
+function trim(lb) {
+  const extra = lb.messages.length - MAX_MESSAGES;
+  if (extra <= 0) return;
+  lb.messages.splice(0, extra);
+  lb.read = Math.max(0, (lb.read ?? 0) - extra);
 }
 
 function today(ctx) {
@@ -68,7 +85,7 @@ export function logbookOnEvent(ctx, type, e) {
       const lb = logbook(ctx);
       const { day, hour, minute } = getDate(ctx.state, ctx.data);
       lb.messages.push({ day, hour, minute, from: e.from, text: e.text, kind: e.kind });
-      if (lb.messages.length > MAX_MESSAGES) lb.messages.splice(0, lb.messages.length - MAX_MESSAGES);
+      trim(lb);
       break;
     }
     case 'contractCompleted':
@@ -80,7 +97,7 @@ export function logbookOnEvent(ctx, type, e) {
         ? `That's the last of the ${what}, thanks. Your bonus of $${e.bonus} is on its way.`
         : `We couldn't wait any longer for the rest of the ${what}, so we've gone elsewhere. Maybe next time.`;
       lb.messages.push({ day, hour, minute, from: e.client, text, kind: type === 'contractCompleted' ? 'good' : 'bad' });
-      if (lb.messages.length > MAX_MESSAGES) lb.messages.splice(0, lb.messages.length - MAX_MESSAGES);
+      trim(lb);
       break;
     }
     case 'dayStarted': {
@@ -91,7 +108,7 @@ export function logbookOnEvent(ctx, type, e) {
       const report = { ...prev, profit: round2(prev.income - prev.spending) };
       const { hour, minute } = getDate(ctx.state, ctx.data);
       lb.messages.push({ day, hour, minute, from: 'Office', kind: 'report', report });
-      if (lb.messages.length > MAX_MESSAGES) lb.messages.splice(0, lb.messages.length - MAX_MESSAGES);
+      trim(lb);
       ctx.events.emit('dailyReport', report);
       break;
     }

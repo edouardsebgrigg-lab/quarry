@@ -851,3 +851,5 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .lt-offers-label { margin: 0.4rem 0 0; }
 .lt-msg.good .lt-avatar { background: var(--good); }
 .lt-msg.bad .lt-avatar { background: var(--bad); color: #fff; }
+.lt-badge { margin-left: auto; min-width: 1.2rem; height: 1.2rem; padding: 0 0.35rem; border-radius: 999px; background: var(--accent); color: var(--accent-ink);
+  font-style: normal; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }

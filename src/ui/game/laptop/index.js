@@ -5,6 +5,8 @@ import { el, clear, setText, kbd } from '../../dom.js';
 import { money } from '../../format.js';
 import { getDate } from '../../../core/index.js';
 import { lineIcon } from './icons.js';
+import { unreadMessages } from '../../../game/logbook.js';
+import { contractsState } from '../../../contracts/index.js';
 import { homeApp } from './home.js';
 import { dealerApp } from './dealer.js';
 import { pricesApp } from './prices.js';
@@ -51,8 +53,11 @@ export function openLaptop(overlays, { game, feedback, world, app = 'home' }) {
       const balance = el('span', { class: 'lt-balance' });
 
       const buttons = new Map();
+      const badges = new Map();
       for (const a of APPS) {
-        const b = el('button', { class: 'lt-dock-app', onClick: () => show(a.id) }, lineIcon(a.icon), el('span', {}, a.label));
+        const badge = el('i', { class: 'lt-badge' });
+        badges.set(a.id, badge);
+        const b = el('button', { class: 'lt-dock-app', onClick: () => show(a.id) }, lineIcon(a.icon), el('span', {}, a.label), badge);
         buttons.set(a.id, b);
         dock.append(b);
       }
@@ -83,6 +88,15 @@ export function openLaptop(overlays, { game, feedback, world, app = 'home' }) {
         const d = getDate(game.state, game.data);
         setText(clock, `Day ${d.day}  ${String(d.hour).padStart(2, '0')}:${String(d.minute).padStart(2, '0')}`);
         setText(balance, money(game.state.money));
+        // Badges: unread messages, and new offers on the jobs board when you have room for one.
+        const unread = active?.id === 'messages' ? 0 : unreadMessages(game.ctx);
+        const c = contractsState(game.ctx);
+        const offers = c.active.length < game.data.contracts.maxActive ? c.offers.length : 0;
+        for (const [id, n] of [['messages', unread], ['jobs', offers]]) {
+          const bdg = badges.get(id);
+          setText(bdg, n ? String(n) : '');
+          bdg.style.display = n ? '' : 'none';
+        }
         balance.classList.toggle('neg', game.state.money < 0);
       }
 

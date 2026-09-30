@@ -138,6 +138,16 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     game.events.on('productSold', () => app.audio?.play('coin', { bus: 'ui', gain: 0.8 })),
     game.events.on('objectiveCompleted', () => app.audio?.play('chime', { bus: 'ui', gain: 0.8 })),
     game.events.on('machineBought', () => app.audio?.play('coin', { bus: 'ui', gain: 0.5, rate: 0.8 })),
+    // The jobs board and the office: say so in the game, not only on the laptop.
+    game.events.on('contractCompleted', (e) => {
+      app.audio?.play('chime', { bus: 'ui', gain: 0.7 });
+      feedback.message(`Job done for ${e.client}: bonus of $${e.bonus} paid`, 'good');
+    }),
+    game.events.on('contractProgress', (e) => {
+      if (e.delivered < e.tonnes) feedback.message(`Job: ${e.delivered.toFixed(1)} of ${e.tonnes.toFixed(1)} t delivered`, 'info');
+    }),
+    game.events.on('contractFailed', (e) => feedback.message(`${e.client} gave up waiting: job lost`, 'warn')),
+    game.events.on('dailyReport', (r) => feedback.message(`Day ${r.day}: ${r.profit >= 0 ? 'profit' : 'loss'} of $${Math.abs(Math.round(r.profit))} (laptop: Messages)`, r.profit >= 0 ? 'good' : 'warn')),
   ];
   const offAutosave = game.events.on('dayStarted', () => {
     if (settings.autosave) app.saveTo('autosave', { silent: true });
