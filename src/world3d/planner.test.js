@@ -20,7 +20,7 @@ function setup(money = 500) {
     camera.updateMatrixWorld(true);
   };
   const step = (o = {}) => planner.update(0.1, o);
-  return { game, ground, planner, notes, tot, aim, step };
+  return { game, ground, planner, notes, tot, aim, step, camera: () => camera };
 }
 
 describe('the earthworks planner', () => {
@@ -97,6 +97,20 @@ describe('the earthworks planner', () => {
     const hud = planner.hud(() => 'F');
     expect(hud.card.level).toBe('bad');
     expect(hud.prompts[0].text).toMatch(/can't build/i);
+  });
+
+  it('says to aim at the ground when a click to set an end misses it, and builds once both ends are set wherever you look', () => {
+    const { game, planner, aim, step, notes, camera } = setup();
+    planner.toggle();
+    const sky2 = () => { camera().position.set(50, 30, 50); camera().lookAt(50, 60, 90); camera().updateMatrixWorld(true); };
+    sky2(); step({ clicked: true });
+    expect(planner.state.a).toBe(null);
+    expect(notes.at(-1)[0]).toMatch(/aim at the ground/i);
+    aim(40, 60); step({ clicked: true });
+    aim(60, 60); step({ clicked: true });
+    const cost = planner.state.plan.cost;
+    sky2(); step({ clicked: true }); // looking at the sky: still builds
+    expect(game.state.money).toBe(500 - cost);
   });
 
   it('cycles road, ramp and level with their own widths, and shows the price on the prompt when it is valid', () => {

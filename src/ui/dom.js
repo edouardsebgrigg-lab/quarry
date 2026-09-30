@@ -29,19 +29,6 @@ export function setText(node, text) {
   if (node.textContent !== s) node.textContent = s;
 }
 
-export function progressBar(cls = '') {
-  const fill = el('div', { class: 'bar-fill' });
-  const bar = el('div', { class: `bar ${cls}` }, fill);
-  return {
-    node: bar,
-    set(fraction, color) {
-      const pct = `${Math.max(0, Math.min(1, fraction)) * 100}%`;
-      if (fill.style.width !== pct) fill.style.width = pct;
-      if (color && fill.style.background !== color) fill.style.background = color;
-    },
-  };
-}
-
 // A keycap, e.g. kbd('E'). Mouse buttons get their own look.
 export function kbd(label) {
   const mouse = /mouse|LMB|RMB/i.test(label);

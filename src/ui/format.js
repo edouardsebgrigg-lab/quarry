@@ -29,7 +29,8 @@ export function clockTime({ day, hour, minute }) {
 
 export function statValue(line) {
   const v = line.value;
-  const digits = Number.isInteger(v) ? 0 : v < 10 ? 1 : 0;
+  // (small values like fuel per bucket keep two places, so 0.03 L isn't shown as 0.0 L)
+  const digits = Number.isInteger(v) ? 0 : Math.abs(v) < 1 ? 2 : v < 10 ? 1 : 0;
   return `${v.toFixed(digits)}${line.unit ? ` ${line.unit}` : ''}`;
 }
 

@@ -179,5 +179,7 @@ export function startApp(root, { data, storage, isDev }) {
 
   const app = { overlays, openPauseMenu: openPause, saveTo, audio, saveSettings: () => saveSettings(storage, settings) };
   showMainMenu();
+  // Fetch the 3D world's code in the background while the menu is up, so starting a game is quick.
+  setTimeout(() => import('../world3d/index.js').catch(() => {}), 500);
   return app;
 }

@@ -56,11 +56,26 @@ export function createFeedback({ game, getMoneyNode }) {
     later(3700, () => t.remove());
   }
 
+  // (the same message again while the last one is still showing just counts up: "… ×3")
+  let last = null;
   function message(text, level = 'info') {
+    if (last && last.text === text && last.level === level && !last.line.classList.contains('log-old') && last.line.isConnected) {
+      last.count += 1;
+      last.line.textContent = `${text}  ×${last.count}`;
+      last.line.classList.remove('log-bump');
+      void last.line.offsetWidth;
+      last.line.classList.add('log-bump');
+      const mine = last;
+      later(8000, () => { if (last === mine && mine.count === mine.expect) mine.line.classList.add('log-old'); });
+      mine.expect = mine.count;
+      return;
+    }
     const line = el('div', { class: `log-line log-${level}` }, text);
     log.append(line);
     while (log.children.length > LOG_MAX) log.firstChild.remove();
-    later(8000, () => line.classList.add('log-old'));
+    last = { text, level, line, count: 1, expect: 1 };
+    const mine = last;
+    later(8000, () => { if (mine.count === mine.expect) line.classList.add('log-old'); });
   }
 
   // before/after: stat lines from describeStats (before may be null for a first machine).

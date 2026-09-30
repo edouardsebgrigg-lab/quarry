@@ -1,15 +1,21 @@
 // Player actions. Buttons, hotkeys and 3D driving/digging all call these.
 // Every action returns { ok, reason? }.
-import { weighIn as depotWeighIn } from '../economy/index.js';
+import { weighIn as depotWeighIn, takeLoan as bankTakeLoan, repayLoan as bankRepayLoan, loanOffers as bankLoanOffers, creditLimit as bankCreditLimit } from '../economy/index.js';
 import {
   getMachine, machinesAt, startJob, buyMachine as fleetBuyMachine,
-  sellMachine as fleetSellMachine, buyMod as fleetBuyMod, dumpBucket as fleetDumpBucket, bucketCut as fleetBucketCut,
+  sellMachine as fleetSellMachine, resaleValue, mechanicQuote, callMechanic, buyMod as fleetBuyMod, dumpBucket as fleetDumpBucket, bucketCut as fleetBucketCut,
 } from '../machinery/index.js';
 import { shovelDig, shovelDump, tipBarrow } from '../handtools/index.js';
+import { buyBuilding } from '../buildings/index.js';
 import { planEarthworks, buildEarthworks } from '../earthworks/index.js';
+import { acceptContract } from '../contracts/index.js';
+
+export const DEFAULT_COMPANY = 'Wolds Quarry Co.';
 
 export function createActions(ctx) {
   const site = () => ctx.state.currentSiteId;
+  // (what the bank counts as security: what your machines would fetch)
+  const fleetValue = () => ctx.state.machines.reduce((a, m) => a + resaleValue(ctx, m), 0);
 
   return {
     // Broken machines come first: repairs the selected machine if broken,
@@ -68,6 +74,30 @@ export function createActions(ctx) {
     // planWorks only says what would happen and what it costs; buildWorks does it and charges.
     planWorks: (input) => planEarthworks(ctx, input),
     buildWorks: (input) => buildEarthworks(ctx, input),
+
+    buyBuilding: (id) => buyBuilding(ctx, id),
+
+    // The bank: what you could borrow, take a loan ({ amount, days } from the offers), pay one off.
+    loanOffers: () => bankLoanOffers(ctx, fleetValue()),
+    creditLimit: () => bankCreditLimit(ctx, fleetValue()),
+    takeLoan: (amount, days) => bankTakeLoan(ctx, amount, days, fleetValue()),
+    repayLoan: (loanId) => bankRepayLoan(ctx, loanId),
+
+    // A mobile mechanic, booked from the laptop: services or repairs a machine where it is.
+    mechanicQuote: (machineId) => mechanicQuote(ctx, machineId),
+    callMechanic: (machineId) => callMechanic(ctx, machineId),
+
+    // Your company's name (from the intro card; shown on the laptop, the bank and reports).
+    setCompanyName(name) {
+      const clean = String(name ?? '').replace(/\s+/g, ' ').trim().slice(0, 32);
+      ctx.state.company = { name: clean || DEFAULT_COMPANY };
+      ctx.events.emit('companyNamed', { name: ctx.state.company.name });
+      return { ok: true, name: ctx.state.company.name };
+    },
+    companyName: () => ctx.state.company?.name ?? DEFAULT_COMPANY,
+
+    // The jobs board: take on one of the offers.
+    acceptContract: (offerId) => acceptContract(ctx, offerId),
 
     buyMachine: (type, tier) => fleetBuyMachine(ctx, type, tier),
     sellMachine: (id) => fleetSellMachine(ctx, id),

@@ -3,8 +3,9 @@
 // actions the rest of the game uses.
 import * as THREE from 'three';
 import { createPhysics } from './physics.js';
-import { createRenderer, createEnvironment } from './environment.js';
+import { createRenderer, createEnvironment, createFrameRenderer } from './environment.js';
 import { createCountryside, planWorld, preloadCountryside } from './countryside.js';
+import { ownsBuilding } from '../buildings/index.js';
 import { buildPlaces } from './places.js';
 import { createParticles } from './particles.js';
 import { createPlayer } from './player.js';
@@ -19,6 +20,10 @@ import { createWorldSounds } from './sounds.js';
 import { createGroundView } from './groundChunks.js';
 import { createHandTools } from './handTools.js';
 import { createPlanner } from './planner.js';
+import { createThumbnails } from './thumbnails.js';
+import { createRain } from './rain.js';
+import { groundWeather } from './groundMaterial.js';
+import { currentWeather } from '../weather/index.js';
 import { createHeadSway } from './headSway.js';
 import { MAP, inRect } from './map.js';
 import { createGuideBeacon } from './guideBeacon.js';
@@ -45,7 +50,7 @@ const PLOT_SURFACE = {
   rock: { grass: 0, dirt: 0, gravel: 0, rock: 1 },
 };
 
-export async function createWorld3D({ container, game, settings, audio = null, notify, onPointerLockLost, onUseOffice }) {
+export async function createWorld3D({ container, game, settings, audio = null, notify, onPointerLockLost, onUseOffice, onLoadProgress }) {
   const { data } = game;
   const siteId = game.state.currentSiteId;
   const home = MAP.home;
@@ -55,10 +60,11 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   canvas.className = 'world-canvas';
   container.append(canvas);
   const { renderer, q } = createRenderer(canvas, settings.graphics);
-  const [physics] = await Promise.all([createPhysics(), preloadModels(), preloadGround(renderer), preloadVegetation(renderer), preloadCountryside(renderer)]);
+  const [physics] = await Promise.all([createPhysics(), preloadModels({ onProgress: onLoadProgress }), preloadGround(renderer), preloadVegetation(renderer), preloadCountryside(renderer)]);
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 5000);
   camera.rotation.order = 'YXZ';
+  const frameRenderer = createFrameRenderer(renderer, scene, camera, q);
 
   // ---- the land
   const plan = planWorld(MAP);
@@ -84,7 +90,12 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   const bayNames = Object.fromEntries(Object.entries(data.depot.bays).map(([id, b]) => [id, b.name]));
   const places = buildPlaces({ scene, physics, plan, heightAt, materials: data.materials, bayNames });
+  for (const id of Object.keys(data.buildings)) places.setBuilding(id, ownsBuilding(game.ctx, id, siteId));
   const particles = createParticles(scene);
+  const rain = createRain(scene);
+  let weatherGrip = 1; // (rain makes everything slippery)
+  let rainFelt = 0;
+  let weatherSettle = false;
 
   // ---- plants: grass around you, trees along hedges, roads and in copses
   const houseRects = [...plan.houses, plan.pub].map((h) => ({ x0: h.x - 8, x1: h.x + 8, z0: h.z - 8, z1: h.z + 8 }));
@@ -137,7 +148,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   };
   const ASPHALT = { grip: 1.0, roll: 0.012, name: 'asphalt' };
   function groundSurface(x, z) {
-    if (!onPlot(x, z) && land.onRoad(x, z)) return ASPHALT;
+    if (!onPlot(x, z) && land.onRoad(x, z)) return weatherGrip < 1 ? { ...ASPHALT, grip: ASPHALT.grip * (0.5 + 0.5 * weatherGrip) } : ASPHALT;
     const s = surfaceAt(x, z);
     let grip = 0;
     let roll = 0;
@@ -152,7 +163,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         name = k;
       }
     }
-    return { grip: grip || 0.7, roll: roll || 0.035, name };
+    return { grip: (grip || 0.7) * weatherGrip, roll: roll || 0.035, name };
   }
 
   const sounds = audio ? createWorldSounds({ audio, carRoute: laneRoute(plan, heightAt), groundSurface }) : null;
@@ -538,6 +549,15 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   // ---- game events -> effects ----
   const offs = [
+    game.events.on('worksBuilt', e => {
+      const feet = player.feet();
+      if (mode.kind === 'foot' && e.touchesChangedCell(feet)) {
+        player.teleport(feet.x, heightAt(feet.x, feet.z) + 0.1, feet.z);
+      }
+    }),
+    game.events.on('buildingBought', e => {
+      if (e.siteId === siteId) places.setBuilding(e.buildingId, true);
+    }),
     game.events.on('rockDug', (e) => {
       const v = vehicles.get(e.machineId);
       if (v?.digger && !e.direct) {
@@ -690,6 +710,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const resizeObserver = new ResizeObserver(() => {
     const r = container.getBoundingClientRect();
     renderer.setSize(r.width, r.height, false);
+    frameRenderer.setSize(r.width, r.height);
     camera.aspect = r.width / Math.max(1, r.height);
     camera.updateProjectionMatrix();
   });
@@ -822,11 +843,21 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     } else marker.visible = false;
 
     particles.update(dt);
+    // The weather: sky, light and fog ease toward it; rain falls around you and wets the ground.
+    const w = currentWeather(game.ctx);
+    const settle = weatherSettle; // (debug: jump straight to the weather, for screenshots)
+    weatherSettle = false;
+    const felt = env.weather(paused ? 0 : settle ? 10 : dt, w);
+    weatherGrip = w.grip;
+    groundWeather.wet.value += ((felt.rain > 0.05 ? Math.min(1, felt.rain * 1.3) : 0) - groundWeather.wet.value) * (settle ? 1 : Math.min(1, dt * (felt.rain > 0.05 ? 0.08 : 0.02)));
+    rain.update(paused ? 0 : dt, camera, felt.rain);
+    rainFelt = paused ? 0 : felt.rain;
     const here = v ? v.position() : player.feet();
     vegetation.update(dt, here);
     trees.update(dt);
     placeCamera(dt);
     sounds?.update(dt, {
+      rain: rainFelt,
       camera,
       vehicles,
       current: v,
@@ -836,7 +867,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     });
     updateGuide(dt);
     env.follow(here);
-    renderer.render(scene, camera);
+    frameRenderer.render();
   }
 
   // What the HUD should show right now. `prompt` is { key, text } (key may be null) or a list
@@ -991,6 +1022,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   // For automated play tests and the dev console.
   const debug = {
+    settleWeather() { weatherSettle = true; },
     hands,
     places,
     land,
@@ -1071,6 +1103,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     lockMouse: () => mouse.lock(),
     unlockMouse: () => mouse.unlock(),
     isMouseLocked: () => mouse.locked(),
+    // Product photos of the machines (for the laptop); dispose() the result when done.
+    createProductPhotos: (opts) => createThumbnails(opts),
     destroy() {
       offs.forEach((off) => off());
       resizeObserver.disconnect();
@@ -1082,6 +1116,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       for (const veh of vehicles.values()) veh.destroy();
       player.destroy();
       land.dispose();
+      rain.dispose();
+      frameRenderer.dispose();
       renderer.dispose();
       physics.destroy();
       canvas.remove();

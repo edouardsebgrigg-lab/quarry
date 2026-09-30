@@ -5,3 +5,8 @@ export {
 } from './market.js';
 export { fuelPrice, chargeFuel, fuelDaily } from './fuel.js';
 export { weighIn, hasTicket, quoteDelivery, sellLoad } from './depot.js';
+export {
+  bankState, recordMoney, dailyPayment, owed, creditLimit, loanOffers, takeLoan, repayLoan, bankDaily,
+} from './bank.js';
+export { weeklyInsurance, overheadsDaily } from './overheads.js';
+export { newsState, newsMultiplier, activeNews, newsDaily } from './news.js';

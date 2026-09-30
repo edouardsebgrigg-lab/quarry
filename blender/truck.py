@@ -139,7 +139,7 @@ def build(tier):
         parts.append(bm_box((0.9, 0.1, 0.1), (x, 0.42, -0.62)))  # leaf springs
         parts.append(bm_box((0.9, 0.1, 0.1), (x, -0.42, -0.62)))
     # Tipping ram (sits under the bed).
-    parts.append(bm_cylinder(0.11, 1.0, 'Z', 16, (0.9, 0, -0.05)))
+    parts.append(bm_cylinder(0.11, 0.43, 'Z', 16, (0.9, 0, -0.335)))  # (top stays under the bed floor)
     chassis = mesh_object('Chassis', merge(*parts), mats['steel'], root)
     bumper = [lib.rounded_box((0.26, 2.4, 0.28), (3.33, 0, -0.3), 0.06),
               lib.rounded_box((0.1, 0.5, 0.1), (3.47, 0.75, -0.36), 0.03),   # towing eyes

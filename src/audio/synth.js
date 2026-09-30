@@ -159,6 +159,9 @@ export const ENGINES = {
   pickupOld: { cylinders: 6, bore: 0.72, clatter: 0.3, rough: 0.07, seed: 63 },
   tractorOld: { cylinders: 4, bore: 1.05, clatter: 1.3, rough: 0.1, seed: 71 },
   miniDiesel: { cylinders: 3, bore: 0.55, clatter: 1.0, rough: 0.08, seed: 83 },
+  // (a cared-for engine: smoother and quieter at the valves than the worn ones above)
+  miniDieselUsed: { cylinders: 3, bore: 0.58, clatter: 0.7, rough: 0.045, seed: 89 },
+  excavatorTurbo: { cylinders: 4, bore: 0.95, clatter: 0.75, rough: 0.035, seed: 41 },
 };
 
 // One seamless loop of a running diesel at `rpm`, under `load` (0 = coasting, 1 = flat out).
@@ -430,6 +433,23 @@ export function beeper(sr) {
   return normalize(out, 0.6);
 }
 
+// A modern "broadband" reversing alarm: bursts of shaped noise (shhh-shhh) rather than a
+// beep, easy to place and less piercing. Loops at 0.9 s like the tonal beeper.
+export function broadbandAlarm(sr, seed = 21) {
+  const n = Math.round(0.9 * sr);
+  const on = Math.round(0.42 * sr);
+  const r = rng(seed);
+  const noise = new Float32Array(n);
+  for (let i = 0; i < on; i++) noise[i] = r() * 2 - 1;
+  // three bands, like the real ones, so it sounds like a hiss with a bit of "voice" in it
+  const out = mix([filter(noise, 'bandpass', 1100, 1.4, sr), 1], [filter(noise, 'bandpass', 2400, 1.6, sr), 0.8], [filter(noise, 'bandpass', 4800, 1.8, sr), 0.5]);
+  for (let i = 0; i < n; i++) {
+    const env = i < on ? Math.min(1, i / (0.02 * sr), (on - i) / (0.03 * sr)) : 0;
+    out[i] *= env;
+  }
+  return normalize(out, 0.55);
+}
+
 // Hydraulic oil rushing through valves (loop, filtered live by how hard the rams work).
 export function hydraulicHiss(sr, seconds = 1.5, seed = 15) {
   const n = Math.round(seconds * sr);
@@ -452,6 +472,22 @@ export function wind(sr, seconds = 8, seed = 16) {
   }
   const whistle = filter(white(n + fade, r), 'bandpass', 900, 6, sr);
   return normalize(loopify(mix([gust, 1], [normalize(whistle, 0.03), 1]), fade), 0.7);
+}
+
+// Steady rain: a wide hiss of many tiny drops, plus the odd bigger drop pattering nearby. Loops.
+export function rain(sr, seconds = 6, seed = 19) {
+  const n = Math.round(seconds * sr);
+  const fade = Math.round(0.6 * sr);
+  const r = rng(seed);
+  const hiss = filter(filter(white(n + fade, r), 'highpass', 900, 0.7, sr), 'lowpass', 7000, 0.7, sr);
+  const drops = new Float32Array(n + fade);
+  for (let k = 0; k < seconds * 60; k++) {
+    const at = Math.floor(r() * (n + fade - 400));
+    const f = 1800 + r() * 3500;
+    const amp = 0.15 + r() * 0.35;
+    for (let i = 0; i < 360; i++) drops[at + i] += Math.sin((2 * Math.PI * f * i) / sr) * amp * Math.exp(-i / 55);
+  }
+  return normalize(loopify(mix([normalize(hiss, 0.5), 1], [normalize(drops, 0.35), 1]), fade), 0.7);
 }
 
 // One footstep on gravel or grass.

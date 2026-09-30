@@ -26,8 +26,8 @@ You can change any of these and reload the game. No code changes are needed.
 | `src/core` | Game clock (ticks, days, hours), event bus, seeded random numbers, save slots with version upgrades |
 | `src/economy` | Money and debt, market prices, fuel, and the depot: weighbridge tickets, grading a load by purity, paying for it |
 | `src/quarry` | Which sites you own, and helpers for loads (a load is `{ material: tonnes }`) |
-| `src/ground` | The real, diggable ground: a grid of soil columns with layers; digging carves bowls and returns tonnes by material, dumped material piles up and slumps to its natural slope, undercut walls cave in; `planWorks` / `buildWorks` grade a strip (road, ramp, level) with side batters, conserving every tonne: cut first, then fill, then a gravel surface, then loose heaps within reach for what's missing, and the rest heaped beside; built cells are firm (no slumping) until dug; saves only the chunks that changed |
-| `src/earthworks` | Building with material: what a road, ramp or level area may be (slope, length, width, price by area from `data/works.json`), the plan (what it costs and needs, changing nothing) and the build (charges the labour and asks the ground to do it) |
+| `src/ground` | The real, diggable ground: a grid of soil columns with layers; digging carves bowls and returns tonnes by material, dumped material piles up and slumps to its natural slope, undercut walls cave in; `planWorks` / `buildWorks` grade a strip (road, ramp, level) with side batters, conserving every tonne: cut first, then fill, then a gravel surface, then loose heaps within reach for what's missing, and the rest heaped beside; plans expose `touchesChangedCell({x,z,r})` over the actual grading jobs (including batters); built cells are firm (no slumping) until dug; saves only the chunks that changed |
+| `src/earthworks` | Building with material: what a road, ramp or level area may be (slope, length, width, price by area from `data/works.json`), the plan (what it costs and needs, changing nothing) and the build (checks machine/barrow circles against grading cells with the configured margin, charges the labour and asks the ground to do it); `worksBuilt` carries the footprint query so the world puts player feet on the new surface |
 | `src/handtools` | Your shovel and wheelbarrow: digging a shovelful out of the real ground, tipping it into the barrow, the pickup's or a truck's bed or onto the ground, and tipping the barrow as a pile or into a bed. Loads are dug material measured by loose volume |
 | `src/machinery` | Machine stats and mods (a machine's `kind` decides which jobs it can do), buying and selling machines, Direct-mode bucket cutting and pouring, timed jobs (dig a bucket out of the real ground, tip or unload a road vehicle at the depot or on your land, service, repair), wear and breakdowns |
 | `src/progression` | The step-by-step goals for a new game (which one is current, checking them against game events, paying rewards), the mentor's texts and tips (`mentor.js`), and a pacing check of the machine ladder (`pacing.test.js`) |
@@ -54,7 +54,7 @@ You can change any of these and reload the game. No code changes are needed.
 | `planner.js` | The earthworks planner (F, on foot): aims at the ground, keeps the start, end, width and kind, re-plans as they change, draws the coloured strip and posts, and feeds the HUD card. Only the last click builds |
 | `groundChunks.js`, `groundMaterial.js` | Your diggable field: its chunked mesh and colliders that follow the real ground, and the shader that blends the ground textures |
 | `vegetation.js` | Grass tufts and weeds (streamed in around you), hedgerows, copses and lone trees |
-| `environment.js` | Sky, sun, fog and the hills on the horizon |
+| `environment.js` | The renderer and its quality levels (low: no shadows; medium: soft shadows; high and ultra: soft shadows plus ambient occlusion, drawn through a small post-processing chain that leaves out see-through things like grass and glass), sky, sun, fog and the hills on the horizon |
 | `player.js`, `headSway.js`, `handTools.js` | You on foot, head bob, the shovel in your hands and the wheelbarrow |
 | `truck.js`, `truckPhysics.js` | Road vehicles (the pickup, the tipper truck and the tractor): the model, bed or tailgate, and Rapier ray-cast vehicle physics with an engine, gearbox, brakes and grip by surface (the pickup and the tractor have their own shape and engine) |
 | `trailer.js` | The tractor's tipping trailer: it hangs off the hitch and follows it with the one-axle pursuit maths (`trailerYawStep`, tested), sits on the ground, and has a kinematic collider |
@@ -69,5 +69,21 @@ You can change any of these and reload the game. No code changes are needed.
 ## Models
 `blender/` has the Python scripts that build the 3D models in Blender; `assets/models/` has the exported `.glb` files. See `docs/models.md`.
 
+The approved 14-asset fleet uses `blender/review_models.py` to refine the original
+builders while retaining their named rigs. Embedded PBR maps and `Review_` materials
+carry their own painted wear; `weathering.js` adds a lighter layer on top (rust and chips on
+the Rusty tier, light fade and dirt on Used) so the two tiers read differently in the game. `blender/fleet-rigs.json`
+records the protected animation hierarchy and rest transforms for export checks.
+
 ## Tests
 Unit tests sit next to the code (`*.test.js`). Run them with `npm test`.
+
+## Yard facilities (Step 8, first batch)
+
+`src/buildings/index.js` owns commissioning and per-site benefits; `data/buildings.json` owns
+prices and multipliers. `state.buildings[siteId][buildingId]` stores ownership. Missing state
+from older saves means no facilities; the first purchase initialises it. Actions reject unknown,
+duplicate and unaffordable purchases. `buildingBought` refreshes the shop and the fixed yard signs.
+The workshop modifies service/repair quotes when jobs begin. Bulk fuel modifies fuel charges
+for timed jobs and Direct bucket cuts; other sites retain their original prices. Neither feature
+places a new footprint, creates free material or changes existing collision shapes.

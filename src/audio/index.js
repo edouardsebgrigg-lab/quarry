@@ -65,6 +65,8 @@ export function createAudio({ volume = 0.8 } = {}) {
       hydraulic: toBuffer(S.hydraulicHiss(sr)),
       wind: toBuffer(S.wind(sr)),
       beeper: toBuffer(S.beeper(sr)),
+      alarm: toBuffer(S.broadbandAlarm(sr)),
+      rain: toBuffer(S.rain(sr)),
     });
     Object.assign(b.oneShots, {
       starter: [toBuffer(S.starter(sr))],
@@ -169,7 +171,7 @@ export function createAudio({ volume = 0.8 } = {}) {
       return { src, g };
     }));
     let turbo = null;
-    if (kind === 'truckTurbo') { // turbocharger whistle
+    if (kind.endsWith('Turbo')) { // turbocharger whistle
       const osc = ctx.createOscillator();
       osc.type = 'sine';
       const tg = ctx.createGain();

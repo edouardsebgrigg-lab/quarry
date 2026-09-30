@@ -1,13 +1,11 @@
 // The in-game screen: 3D world, HUD, and the real-time loop that drives the game clock.
 import { el } from '../dom.js';
 import { getDate } from '../../core/index.js';
-import { createWorld3D } from '../../world3d/index.js';
 import { createHud } from './hud.js';
 import { createHud3d } from './hud3d.js';
 import { createFeedback } from './feedback.js';
 import { createDevPanel } from './devPanel.js';
-import { openShop } from './shop.js';
-import { openMarket } from './market.js';
+import { openLaptop } from './laptop/index.js';
 import { toggleMap } from './mapOverlay.js';
 import { openIntro } from '../screens/intro.js';
 import { markIntroSeen, mentorForStep } from '../../progression/index.js';
@@ -66,13 +64,15 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     devPanel?.node,
   );
 
-  createWorld3D({
+  // (the 3D world, three.js and the physics engine load on demand, so the menus appear quickly)
+  import('../../world3d/index.js').then(({ createWorld3D }) => createWorld3D({
     container: viewport,
     game,
     settings,
     audio: app.audio,
     notify: (text, level) => feedback.message(text, level),
-    onUseOffice: () => openOverlay(() => openShop(app.overlays, { game, feedback })),
+    onLoadProgress: (f) => hud3d.setLoading(true, f),
+    onUseOffice: () => openOverlay(() => openLaptop(app.overlays, { game, feedback, world, app: 'home' })),
     // Esc (or alt-tab) released the mouse: show the pause menu, like any PC game.
     onPointerLockLost: () => {
       if (expectUnlock) {
@@ -81,7 +81,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
       }
       if (app.overlays.count() === 0) app.openPauseMenu({ fromLockLoss: true });
     },
-  }).then((w) => {
+  })).then((w) => {
     if (destroyed) {
       w.destroy();
       return;
@@ -100,8 +100,8 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
       case 'speed1': runtime.setSpeed(0); break;
       case 'speed2': runtime.setSpeed(1); break;
       case 'speed3': runtime.setSpeed(2); break;
-      case 'shop': openOverlay(() => openShop(app.overlays, { game, feedback })); break;
-      case 'market': openOverlay(() => openMarket(app.overlays, { game, feedback })); break;
+      case 'shop': openOverlay(() => openLaptop(app.overlays, { game, feedback, world, app: 'dealer' })); break;
+      case 'market': openOverlay(() => openLaptop(app.overlays, { game, feedback, world, app: 'prices' })); break;
       case 'map': openOverlay(() => toggleMap(app.overlays, { game, world })); break;
       case 'hints': hud3d.toggleHints(); break;
       case 'controls':
@@ -138,6 +138,18 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     game.events.on('productSold', () => app.audio?.play('coin', { bus: 'ui', gain: 0.8 })),
     game.events.on('objectiveCompleted', () => app.audio?.play('chime', { bus: 'ui', gain: 0.8 })),
     game.events.on('machineBought', () => app.audio?.play('coin', { bus: 'ui', gain: 0.5, rate: 0.8 })),
+    // The jobs board and the office: say so in the game, not only on the laptop.
+    game.events.on('contractCompleted', (e) => {
+      app.audio?.play('chime', { bus: 'ui', gain: 0.7 });
+      feedback.message(`Job done for ${e.client}: bonus of $${e.bonus} paid`, 'good');
+    }),
+    game.events.on('contractProgress', (e) => {
+      if (e.delivered < e.tonnes) feedback.message(`Job: ${e.delivered.toFixed(1)} of ${e.tonnes.toFixed(1)} t delivered`, 'info');
+    }),
+    game.events.on('contractFailed', (e) => feedback.message(`${e.client} gave up waiting: job lost`, 'warn')),
+    game.events.on('dailyReport', (r) => feedback.message(`Day ${r.day}: ${r.profit >= 0 ? 'profit' : 'loss'} of $${Math.abs(Math.round(r.profit))} (laptop: Messages)`, r.profit >= 0 ? 'good' : 'warn')),
+    game.events.on('marketNews', (e) => feedback.message(`${e.source}: ${game.data.materials[e.product]?.name ?? e.product} ${e.change > 0 ? 'up' : 'down'} ${Math.round(Math.abs(e.change) * 100)}% for ${e.days} days (laptop: Prices)`, e.change > 0 ? 'good' : 'warn')),
+    game.events.on('weeklyReport', (r) => feedback.message(`Week ${r.week} report is in: ${r.profit >= 0 ? 'profit' : 'loss'} of $${Math.abs(Math.round(r.profit))} (laptop: Messages)`, r.profit >= 0 ? 'good' : 'warn')),
   ];
   const offAutosave = game.events.on('dayStarted', () => {
     if (settings.autosave) app.saveTo('autosave', { silent: true });

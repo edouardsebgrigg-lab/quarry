@@ -146,6 +146,18 @@ export function buildPlaces({ scene, physics, plan, heightAt, materials, bayName
   if (place('tyres', cx - 4.6, cz + 1.5)) collider(0.55, 0.7, 0.55, cx - 4.6, y0 + 0.7, cz + 1.5);
   place('pallets', cx + 3.8, cz - 2.2, 0.3);
   if (place('portaloo', off.x + 6.5, off.z + 4, -Math.PI / 2)) collider(0.6, 1.2, 0.6, off.x + 6.5, y0 + 1.2, off.z + 4);
+  // Commissioning reuses the existing container and tank footprints and colliders.
+  const facilitySigns = {};
+  for (const [id, x, z, text] of [
+    ['workshop', cx, cz + 1.35, 'WORKSHOP'],
+    ['fuelTank', off.x + 8, off.z + 2.35, 'BULK FUEL'],
+  ]) {
+    const sign = addBoard(scene, { x, y: y0 + 0.9, z, w: 2.2, h: 0.55, lift: 0,
+      tex: boardTexture([{ text, size: 100 }], { bg: '#294a36', fg: '#f0ead8', weather: 0.2 }) });
+    sign.name = `facility-${id}`;
+    sign.visible = false;
+    facilitySigns[id] = sign;
+  }
   // Cones along the yard's edge by the field.
   for (const z of [-4, 4, 24, 32]) place('cone', home.yard.x0 + 1.2, z, 0);
 
@@ -354,6 +366,7 @@ export function buildPlaces({ scene, physics, plan, heightAt, materials, bayName
   }
 
   return {
+    setBuilding(id, owned) { if (facilitySigns[id]) facilitySigns[id].visible = owned; },
     officeDoor: { x: off.x + 0.5, z: off.z + 2.6 },
     dealerDoor: dl.door,
     weighbridge: wb,

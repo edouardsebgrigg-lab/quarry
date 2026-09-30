@@ -1,0 +1,15 @@
+{
+  "workshop": {
+    "name": "Container workshop",
+    "price": 450,
+    "description": "Fit out the yard's old container. Service and repair jobs for machines at this site cost 25% less and finish 30% sooner. Jobs already started keep their quote.",
+    "maintenanceCostMultiplier": 0.75,
+    "maintenanceTimeMultiplier": 0.7
+  },
+  "fuelTank": {
+    "name": "Bulk fuel supply",
+    "price": 300,
+    "description": "Commission the yard tank with a bulk delivery contract. Machine job fuel at this site costs 15% less. No free fuel or storage inventory is created.",
+    "fuelCostMultiplier": 0.85
+  }
+}

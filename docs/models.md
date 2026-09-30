@@ -28,6 +28,34 @@ All models are made in **Blender** by Python scripts in `blender/`, exported as 
 
 Previews for all of them are in `docs/images/models/`.
 
+## Refined fleet
+
+The drivable pickup, wheelbarrow and both Rusty/Used variants of the mini digger,
+dumper, tractor, excavator, truck and trailer use the approved Blender fleet revision.
+These 14 exports have embedded colour, normal and roughness maps, darker rubber and
+steel, tier-specific paint wear, hydraulic hoses, and cab apertures with transparent
+glazing. Their moving-part names, parents and rest transforms retain the original
+rig contract. The parked pickup prop remains the separate jerrycan variant.
+
+The refined materials have a `Review_` prefix. They already contain baked wear, so
+the legacy runtime weathering shader does not process them a second time. The
+legacy shader still treats unchanged models. No saved state or vehicle handling
+changes are required.
+
+`blender/review_models.py` reproduces the refined exports from the original builders:
+
+```bash
+blender --background --python blender/review_models.py -- --out /tmp/quarry-fleet
+python3 blender/check_review_exports.py /tmp/quarry-fleet --production /path/to/original-glbs
+```
+
+Each output subdirectory contains its GLB, editable packed Blender scene, two
+renders and rig report. Copy the approved GLBs into `assets/models/` after checking
+them; leave `manifest.json` unchanged. The classic `build_models.py` commands below
+generate the original base models, so run the refinement stage afterwards for
+these 14 assets. `blender/fleet-rigs.json` records their original protected rigs.
+Actual before/after comparisons are in `docs/handover/screenshots/models/`.
+
 ## Ground and plant textures
 
 These are also made in Blender, from real geometry rather than painted by hand:
@@ -53,6 +81,15 @@ blender --background --python blender/build_models.py -- truck   # just one
 ```
 
 or Blender as a Python module (`pip install bpy` with Python 3.11) and run `python blender/build_models.py truck`. To rebuild only some props: `python blender/build_models.py prop:gate,fence`. Add `--no-preview` to skip the preview renders (they take a few minutes).
+
+**After any rebuild, shrink the textures** (no Blender needed, just Pillow):
+
+```bash
+python3 blender/compress_textures.py            # every model in assets/models
+python3 blender/compress_textures.py assets/models/truck_rusty.glb
+```
+
+It re-saves embedded textures as JPEG where nothing is see-through (PNG only where a transparent material uses the alpha), stores identical images once and caps them at 1024 px. Geometry, rigs and materials are untouched, and it only rewrites a file if it gets noticeably smaller. It took the fleet from 72 MB to 37 MB with no visible change (median texture PSNR 45.7 dB; the worst, about 29 dB, are grainy roughness maps). `src/world3d/assetBudget.test.js` fails if `assets/models` goes over 40 MB or an opaque texture is stored as PNG.
 
 The scripts:
 - `lib.py`: shape helpers (boxes, rounded boxes, cylinders, extruded profiles, lathe, lofted bodies from cross-sections, flat panels for glass), bevels with weighted normals, subdivision, UVs, grime vertex colours, materials, export and preview rendering.

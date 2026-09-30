@@ -1,7 +1,7 @@
-// The depot's price board (M): prices, trends and price history.
+// The depot's price board (in the laptop's prices app, M): prices, trends and price history.
 import { el, setText } from '../dom.js';
 import { price } from '../format.js';
-import { currentPrice, priceTrendDirection, fuelPrice } from '../../economy/index.js';
+import { currentPrice, priceTrendDirection, fuelPrice, newsMultiplier } from '../../economy/index.js';
 
 function drawSparkline(canvas, history, color) {
   const g = canvas.getContext('2d');
@@ -32,64 +32,59 @@ function drawSparkline(canvas, history, color) {
 
 // Ashby Aggregates' price board: what each bay pays per tonne today, how prices are moving,
 // and how mixed loads are graded. You sell by delivering: weigh in, then unload in the bay.
-export function openMarket(overlays, { game }) {
+// Returns { node, refresh }; the laptop's prices app shows it.
+export function priceBoard(game) {
   const { data } = game;
   const ctx = game.ctx;
-  overlays.toggle({
-    id: 'market',
-    title: `${data.depot.name}: prices`,
-    pauses: false,
-    className: 'overlay-wide',
-    build: ({ entry }) => {
-      const grades = data.depot.grades;
-      const slight = grades[1];
-      const rows = Object.keys(data.depot.bays).map((id) => {
-        const cells = {
-          price: el('td', { class: 'price-big' }),
-          slight: el('td'),
-          trend: el('td', { class: 'trend' }),
-          spark: el('canvas', { width: 160, height: 36, class: 'spark' }),
-        };
-        const product = data.materials[id];
-        const tr = el('tr', {},
-          el('td', { class: 'product' }, el('span', { class: 'dot', style: { background: product.color } }), data.depot.bays[id].name),
-          cells.price, cells.slight, cells.trend, el('td', {}, cells.spark));
-        return { id, tr, cells };
-      });
-      const fuelText = el('span');
-
-      function refresh() {
-        setText(fuelText, `Diesel: ${price(fuelPrice(ctx))}/L`);
-        for (const { id, cells } of rows) {
-          const p = currentPrice(ctx, id);
-          setText(cells.price, price(p));
-          setText(cells.slight, id === data.depot.mixedProduct ? '—' : price(p * slight.factor));
-          const dir = priceTrendDirection(ctx, id);
-          setText(cells.trend, dir > 0 ? '▲ Rising' : dir < 0 ? '▼ Falling' : '— Steady');
-          cells.trend.className = `trend trend-${dir > 0 ? 'up' : dir < 0 ? 'down' : 'flat'}`;
-          drawSparkline(cells.spark, game.state.market.products[id].history, dir > 0 ? '#6bd98a' : dir < 0 ? '#ff6b6b' : '#98a0ab');
-        }
-      }
-
-      let acc = 0;
-      entry.update = (dt) => {
-        acc += dt;
-        if (acc > 0.25) { acc = 0; refresh(); }
-      };
-      refresh();
-
-      const pctOf = (x) => `${Math.round(x * 100)}%`;
-      return el('div', { class: 'market' },
-        el('table', { class: 'market-table' },
-          el('thead', {}, el('tr', {},
-            ['Bay', 'Clean, per tonne', `Slightly mixed (×${slight.factor})`, 'Trend', 'Last 3 days'].map((h) => el('th', {}, h)))),
-          el('tbody', {}, rows.map((r) => r.tr))),
-        el('div', { class: 'market-footer' }, fuelText),
-        el('p', { class: 'foot-note' },
-          `Stop on the weighbridge at the gate to weigh in, then back into the bay for what you're carrying and unload. `
-          + `A load that's at least ${pctOf(grades[0].minPurity)} one material is clean; ${pctOf(slight.minPurity)} or more is slightly mixed and paid less; `
-          + 'anything more mixed is paid as mixed fill. Selling a lot of one thing pushes its price down for a while.'),
-      );
-    },
+  const grades = data.depot.grades;
+  const slight = grades[1];
+  const rows = Object.keys(data.depot.bays).map((id) => {
+    const cells = {
+      price: el('td', { class: 'price-big' }),
+      slight: el('td'),
+      trend: el('td', { class: 'trend' }),
+      spark: el('canvas', { width: 160, height: 36, class: 'spark' }),
+    };
+    const product = data.materials[id];
+    const tr = el('tr', {},
+      el('td', { class: 'product' }, el('span', { class: 'dot', style: { background: product.color } }), data.depot.bays[id].name),
+      cells.price, cells.slight, cells.trend, el('td', {}, cells.spark));
+    return { id, tr, cells };
   });
+  const fuelText = el('span');
+
+  function refresh() {
+    setText(fuelText, `Diesel: ${price(fuelPrice(ctx))}/L`);
+    for (const { id, cells } of rows) {
+      const p = currentPrice(ctx, id);
+      setText(cells.price, price(p));
+      setText(cells.slight, id === data.depot.mixedProduct ? '—' : price(p * slight.factor));
+      const dir = priceTrendDirection(ctx, id);
+      const news = newsMultiplier(ctx, id) - 1;
+      const newsText = Math.abs(news) > 0.005 ? `${news > 0 ? '+' : '−'}${Math.round(Math.abs(news) * 100)}% news` : '';
+      const trendKey = `${dir}|${newsText}`;
+      if (cells.trend.dataset.key !== trendKey) {
+        cells.trend.dataset.key = trendKey;
+        cells.trend.replaceChildren(dir > 0 ? '▲ Rising' : dir < 0 ? '▼ Falling' : '— Steady',
+          newsText ? el('span', { class: `trend-news ${news > 0 ? 'up' : 'down'}` }, newsText) : null);
+      }
+      cells.trend.className = `trend trend-${dir > 0 ? 'up' : dir < 0 ? 'down' : 'flat'}`;
+      drawSparkline(cells.spark, game.state.market.products[id].history, dir > 0 ? '#6bd98a' : dir < 0 ? '#ff6b6b' : '#98a0ab');
+    }
+  }
+  refresh();
+
+  const pctOf = (x) => `${Math.round(x * 100)}%`;
+  const node = el('div', { class: 'market' },
+    el('table', { class: 'market-table' },
+      el('thead', {}, el('tr', {},
+        ['Bay', 'Clean, per tonne', `Slightly mixed (×${slight.factor})`, 'Trend', 'Last 3 days'].map((h) => el('th', {}, h)))),
+      el('tbody', {}, rows.map((r) => r.tr))),
+    el('div', { class: 'market-footer' }, fuelText),
+    el('p', { class: 'foot-note' },
+      `Stop on the weighbridge at the gate to weigh in, then back into the bay for what you're carrying and unload. `
+      + `A load that's at least ${pctOf(grades[0].minPurity)} one material is clean; ${pctOf(slight.minPurity)} or more is slightly mixed and paid less; `
+      + 'anything more mixed is paid as mixed fill. Selling a lot of one thing pushes its price down for a while.'),
+  );
+  return { node, refresh };
 }

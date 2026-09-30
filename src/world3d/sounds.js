@@ -7,9 +7,9 @@ import * as THREE from 'three';
 const ENGINE_KIND = {
   truck: { rusty: 'truckOld', used: 'truckTurbo' },
   pickup: { rusty: 'pickupOld' },
-  excavator: { rusty: 'excavator', used: 'excavator' },
-  miniDigger: { rusty: 'miniDiesel', used: 'miniDiesel' },
-  dumper: { rusty: 'miniDiesel', used: 'miniDiesel' },
+  excavator: { rusty: 'excavator', used: 'excavatorTurbo' },
+  miniDigger: { rusty: 'miniDiesel', used: 'miniDieselUsed' },
+  dumper: { rusty: 'miniDiesel', used: 'miniDieselUsed' },
   tractor: { rusty: 'tractorOld', used: 'tractorOld' },
 };
 const v3 = (p) => ({ x: p.x, y: p.y, z: p.z });
@@ -43,7 +43,15 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
           beeper: v.type === 'truck' ? audio.loopVoice('beeper') : null,
           ram: v.type === 'truck' || v.type === 'tractor' ? audio.whineVoice() : null,
         }
-        : { tracks: audio.loopVoice('tracks'), hyd: audio.loopVoice('hydraulic'), scrape: audio.loopVoice('scrape'), pump: audio.whineVoice() },
+        : {
+          tracks: audio.loopVoice('tracks'), crunch: audio.loopVoice('gravel'), hyd: audio.loopVoice('hydraulic'), scrape: audio.loopVoice('scrape'), pump: audio.whineVoice(),
+          relief: v.digger ? audio.whineVoice() : null, // the relief valve squealing
+          // Site plant warns people nearby when it moves: the dumper when it reverses, a used
+          // digger whenever it tracks (a modern broadband alarm). The rusty dumper still has
+          // its old beeper; the rusty digger's alarm died years ago.
+          alarm: v.type === 'dumper' ? audio.loopVoice(tier === 'rusty' ? 'beeper' : 'alarm')
+            : v.digger && tier !== 'rusty' ? audio.loopVoice('alarm') : null,
+        },
       shifted: 0,
       braking: false,
       bumpCool: 0,
@@ -143,14 +151,25 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
     const pos = engineLife(m, v, dt, v.takeEngineEvents());
     // Working revs, bogging a little under load; drops to auto-idle after a few seconds.
     const on = f.running;
-    const rpm = (on ? (f.autoIdle ? 950 : 1700 - f.work * 170 - (f.digging ? 90 : 0)) : 800) * m.rpmScale;
-    m.engine?.set({ rpm, load: on ? 0.2 + f.work * 0.8 : 0, level: m.level, inside, pos });
+    // (a blowing relief valve loads the pump flat out: the engine bogs down)
+    const rpm = (on ? (f.autoIdle ? 950 : 1700 - f.work * 170 - (f.digging ? 90 : 0) - (f.relief ? 160 : 0)) : 800) * m.rpmScale;
+    m.engine?.set({ rpm, load: on ? (f.relief ? 1 : 0.2 + f.work * 0.8) : 0, level: m.level, inside, pos });
     const housePos = v3(v.position().add(new THREE.Vector3(0, 1.5, 0)));
     // Hydraulics: pump whine and oil rushing through the valves.
     m.extra.pump?.set({ freq: (rpm / 60) * 9, gain: on ? 0.015 + f.work * 0.07 : 0, pos: housePos });
     m.extra.hyd?.set({ gain: on ? f.work * 0.28 : 0, rate: 0.8 + f.work * 0.4, pos: housePos, cutoff: inside ? 4000 : 16000 });
+    m.extra.relief?.set({ freq: 520 + Math.sin(performance.now() * 0.023) * 12, gain: f.relief ? 0.05 : 0, pos: housePos });
+    // (the moment it bottoms out or the teeth hit rock: a clunk through the arm)
+    if (f.relief && !m.reliefWas) audio.play('clunk', { pos: v3(v.teethWorld ? v.teethWorld() : v.position()), gain: 0.55, rate: 0.8 + Math.random() * 0.15 });
+    m.reliefWas = !!f.relief;
     // Tracks clanking round.
     m.extra.tracks?.set({ gain: Math.min(1, f.travel / 1.2) * 0.8, rate: 0.35 + f.travel * 0.9, pos: v3(v.position()) });
+    // Stone crushing under the track shoes: slower and duller than tyres.
+    m.extra.crunch?.set({ gain: Math.min(1, f.travel / 1.5) * (inside ? 0.2 : 0.35), rate: 0.4 + f.travel * 0.35, pos: v3(v.position()), cutoff: inside ? 1800 : 5000 });
+    if (m.extra.alarm) {
+      const moving = v.type === 'dumper' ? f.reversing : f.travel > 0.08;
+      m.extra.alarm.set({ gain: moving && m.level > 0.5 ? 0.3 : 0, pos: v3(v.position()) });
+    }
     // Teeth grinding through gravel.
     const teeth = v3(v.teethWorld ? v.teethWorld() : v.position());
     m.extra.scrape?.set({ gain: f.digging ? 0.7 : 0, rate: 0.9 + Math.random() * 0.05, pos: teeth });
@@ -179,12 +198,18 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
     }
   }
 
-  function ambience(dt, listener, inCab) {
+  let rainVoice = null;
+  function ambience(dt, listener, inCab, rainAmount = 0) {
     if (!wind) wind = audio.loopVoice('wind', 'ambient');
+    // Rain: a hiss outside, a muffled drumming from inside a cab.
+    if (rainAmount > 0.02 && !rainVoice) rainVoice = audio.loopVoice('rain', 'ambient');
+    rainVoice?.set({ gain: rainAmount * (inCab ? 0.3 : 0.45), rate: 1, cutoff: inCab ? 1400 : 16000 });
     const gust = 0.75 + 0.25 * Math.sin(t * 0.13) * Math.sin(t * 0.37 + 1);
-    wind?.set({ gain: (inCab ? 0.1 : 0.32) * gust, rate: 0.9 + 0.1 * gust, cutoff: inCab ? 700 : 16000 });
-    // Birds singing somewhere around you.
+    const blow = 1 + rainAmount * 0.6; // (rain comes with a stronger wind)
+    wind?.set({ gain: (inCab ? 0.1 : 0.32) * gust * blow, rate: 0.9 + 0.1 * gust + rainAmount * 0.1, cutoff: inCab ? 700 : 16000 });
+    // Birds singing somewhere around you (they go quiet in the rain).
     birdT -= dt;
+    if (birdT <= 0 && rainAmount > 0.25) birdT = 4;
     if (birdT <= 0) {
       birdT = 2 + Math.random() * 7;
       const a = Math.random() * Math.PI * 2;
@@ -259,7 +284,7 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
   }
 
   return {
-    update(dt, { camera, vehicles, current, player, jobOf, tierOf }) {
+    update(dt, { camera, vehicles, current, player, jobOf, tierOf, rain = 0 }) {
       if (!audio.ready()) return;
       t += dt;
       camera.getWorldDirection(fwd);
@@ -282,7 +307,7 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
           machines.delete(id);
         }
       }
-      ambience(dt, L, !!current);
+      ambience(dt, L, !!current, rain);
       footsteps(dt, current ? null : player);
     },
     // UI sounds.
@@ -294,6 +319,7 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
       }
       machines.clear();
       wind?.stop();
+      rainVoice?.stop();
       car?.engine?.stop();
       car?.tyres?.stop();
     },

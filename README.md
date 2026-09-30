@@ -4,6 +4,9 @@ A first-person quarry mining game for PC. Start with a shovel, a wheelbarrow and
 
 Built with plain JavaScript, [Three.js](https://threejs.org) (3D) and [Rapier](https://rapier.rs) (physics). The game logic is separate from the 3D, so balancing and rules live in `data/` and `src/` modules that know nothing about graphics.
 
+The fleet includes refined Blender models with transparent cab glazing, worn paint
+and distinct rubber/steel materials. See [model rebuilding and rig contracts](docs/models.md).
+
 ## Run it
 
 You need [Node.js](https://nodejs.org) (version 20 or newer).
@@ -144,7 +147,16 @@ The field is real ground you can dig anywhere: topsoil on top, then clay, sand a
 
 Press **F** on foot to plan works on your field: a **haul road**, a **ramp** (steeper, for getting out of a pit) or a **level area** (flattens a patch, filling holes). Aim at the ground and click where it starts and where it ends; a coloured strip shows the finished surface (green: you can build it, amber: you can't afford it yet, red: it can't be built, with the reason on the card). The card says the slope, the price (labour, per square metre) and the material: what has to be dug out, the gravel for the surface and where it comes from.
 
-Nothing is made from nothing. The strip is cut or filled to the planned grade, gravel for the surface and any fill still needed are taken from **loose heaps within 30 m** of it (tip gravel there first: off the truck, the dumper, the barrow or a bucket), and whatever the cut left over is heaped beside the road, never lost. Roads and ramps are topped with a loose gravel surface (vehicles use the game's gravel driving behaviour: it rolls easier than dirt or grass); a built strip is firm, so it doesn't slump, but digging into it breaks it up again. Roads can be up to 10% slope, ramps 18%. You can't build under a machine, on rock, or at the edge of your land. Built ground is saved with the game.
+Nothing is made from nothing. The strip is cut or filled to the planned grade, gravel for the surface and any fill still needed are taken from **loose heaps within 30 m** of it (tip gravel there first: off the truck, the dumper, the barrow or a bucket), and whatever the cut left over is heaped beside the road, never lost. Roads and ramps are topped with a loose gravel surface (vehicles use the game's gravel driving behaviour: it rolls easier than dirt or grass); a built strip is firm, so it doesn't slump, but digging into it breaks it up again. Roads can be up to 10% slope, ramps 18%. Move machines and the wheelbarrow clear of the cells being graded, including the side slopes (with a 0.5 m safety margin). You can stand at the start post to build: your feet are placed on the new surface. You can't build on rock or at the edge of your land. Built ground is saved with the game.
+
+## Yard facilities
+
+Open the shop (**B**) and choose **Yard buildings**. The first facilities commission structures
+already in your yard: a **Container workshop** ($450) cuts service/repair prices by 25% and
+times by 30%; **Bulk fuel supply** ($300) cuts machine-job fuel charges by 15%. Benefits apply
+to machines at this site, including Direct digging. Existing maintenance jobs keep their quoted
+price and duration. Ownership is saved, and signs appear on commissioned structures. Prices
+are an initial balance pass. These are fixed upgrades; they do not place new buildings.
 
 ## The loop with machines
 
@@ -161,3 +173,7 @@ Site machines (mini digger, excavator, dumper) can't leave your land; the pickup
 - `docs/implementation-plan.md`: milestones
 - `docs/modules.md`: a short guide to the code
 - `docs/models.md`: the 3D models, how to rebuild them in Blender, and how to make your own
+- `docs/TASKS.md`: the current work queue (Claude plans and reviews on `claude/coordination`; Codex implements on its own branch)
+- `docs/CODEX-CHECKPOINT.md`: Codex's progress reports, with what was actually run
+- `docs/HANDOVER.md`: the Step 7 handover and its verification record
+- `docs/handover/browser-checks/`: bounded headless-browser checks (software rendering is slow; see `docs/TASKS.md` for how to run them)

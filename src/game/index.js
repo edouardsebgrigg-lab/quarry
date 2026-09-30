@@ -3,12 +3,15 @@
 import {
   loadData, createEventBus, createRng, advanceClock, tickSeconds, ticksPerDay, ticksPerHour,
 } from '../core/index.js';
-import { marketHourly, chargeDailyInterest, fuelDaily, addMoney } from '../economy/index.js';
+import { marketHourly, chargeDailyInterest, fuelDaily, addMoney, recordMoney, bankDaily, overheadsDaily, newsDaily } from '../economy/index.js';
 import { tickJobs, fixAllMachines } from '../machinery/index.js';
 import { createNewState } from './state.js';
 import { createActions } from './actions.js';
 import { objectivesOnEvent, mentorOnEvent } from '../progression/index.js';
 import { createGround } from '../ground/index.js';
+import { logbookOnEvent } from './logbook.js';
+import { contractsOnEvent, contractsDaily } from '../contracts/index.js';
+import { weatherOnEvent, weatherState } from '../weather/index.js';
 
 export function createGame({ data = loadData(), seed = Math.floor(Math.random() * 2 ** 31), state } = {}) {
   const events = createEventBus();
@@ -25,10 +28,19 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
   events.on('hourPassed', () => marketHourly(ctx));
   events.on('*', (type, payload) => objectivesOnEvent(ctx, type, payload));
   events.on('*', (type, payload) => mentorOnEvent(ctx, type, payload));
+  events.on('*', (type, payload) => logbookOnEvent(ctx, type, payload));
+  events.on('*', (type, payload) => contractsOnEvent(ctx, type, payload));
+  events.on('*', (type) => weatherOnEvent(ctx, type));
+  weatherState(ctx);
+  if (!ctx.state.contracts) contractsDaily(ctx); // (a new game, or an old save: fill the board)
   events.on('dayStarted', () => {
+    bankDaily(ctx);
+    overheadsDaily(ctx);
     chargeDailyInterest(ctx);
     fuelDaily(ctx);
+    newsDaily(ctx);
   });
+  events.on('moneyChanged', (e) => recordMoney(ctx, e));
 
   function tick() {
     tickJobs(ctx, tickSeconds(data));

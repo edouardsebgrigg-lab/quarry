@@ -1,0 +1,2710 @@
+{
+  "dumper_rusty": {
+    "Interior": {
+      "parent": "Dumper",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "SkipPivot": {
+      "parent": "Dumper",
+      "translation": [
+        1.1200000047683716,
+        0.6000000238418579,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackBand": {
+      "parent": "Dumper",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackShoe": {
+      "parent": "Dumper",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelL0": {
+      "parent": "Dumper",
+      "translation": [
+        -0.6200000047683716,
+        0.18000000715255737,
+        -0.36000001430511475
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelL1": {
+      "parent": "Dumper",
+      "translation": [
+        0.6200000047683716,
+        0.18000000715255737,
+        -0.36000001430511475
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelR0": {
+      "parent": "Dumper",
+      "translation": [
+        -0.6200000047683716,
+        0.18000000715255737,
+        0.36000001430511475
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelR1": {
+      "parent": "Dumper",
+      "translation": [
+        0.6200000047683716,
+        0.18000000715255737,
+        0.36000001430511475
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    }
+  },
+  "dumper_used": {
+    "Interior": {
+      "parent": "Dumper",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "SkipPivot": {
+      "parent": "Dumper",
+      "translation": [
+        1.1200000047683716,
+        0.6000000238418579,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackBand": {
+      "parent": "Dumper",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackShoe": {
+      "parent": "Dumper",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelL0": {
+      "parent": "Dumper",
+      "translation": [
+        -0.6200000047683716,
+        0.18000000715255737,
+        -0.36000001430511475
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelL1": {
+      "parent": "Dumper",
+      "translation": [
+        0.6200000047683716,
+        0.18000000715255737,
+        -0.36000001430511475
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelR0": {
+      "parent": "Dumper",
+      "translation": [
+        -0.6200000047683716,
+        0.18000000715255737,
+        0.36000001430511475
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelR1": {
+      "parent": "Dumper",
+      "translation": [
+        0.6200000047683716,
+        0.18000000715255737,
+        0.36000001430511475
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    }
+  },
+  "excavator_rusty": {
+    "Blade": {
+      "parent": "Excavator",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BoomRamRod": {
+      "parent": "Boom",
+      "translation": [
+        2.4000000953674316,
+        -0.11999988555908203,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Bucket": {
+      "parent": "Stick",
+      "translation": [
+        2.5999999046325684,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BucketRamRod": {
+      "parent": "BucketLink",
+      "translation": [
+        0.4500002861022949,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BucketLink": {
+      "parent": "Stick",
+      "translation": [
+        2.5999999046325684,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0.8134155869483948,
+        0.5816831588745117
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BucketRam": {
+      "parent": "Stick",
+      "translation": [
+        0.25,
+        0.38000011444091797,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "StickRamRod": {
+      "parent": "Stick",
+      "translation": [
+        -0.4499998092651367,
+        0.4200000762939453,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Stick": {
+      "parent": "Boom",
+      "translation": [
+        3.5999999046325684,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "StickRam": {
+      "parent": "Boom",
+      "translation": [
+        1,
+        0.7400000095367432,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Boom": {
+      "parent": "House",
+      "translation": [
+        0.8999999761581421,
+        1.1000001430511475,
+        0.3499999940395355
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BoomRam": {
+      "parent": "House",
+      "translation": [
+        1.100000023841858,
+        0.5,
+        0.3499999940395355
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Interior": {
+      "parent": "House",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "House": {
+      "parent": "Excavator",
+      "translation": [
+        0,
+        1.0499999523162842,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Tracks": {
+      "parent": "Excavator",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackShoe": {
+      "parent": "Excavator",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelL0": {
+      "parent": "Excavator",
+      "translation": [
+        -1.75,
+        0.41999998688697815,
+        -1.2000000476837158
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelL1": {
+      "parent": "Excavator",
+      "translation": [
+        1.75,
+        0.41999998688697815,
+        -1.2000000476837158
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelR0": {
+      "parent": "Excavator",
+      "translation": [
+        -1.75,
+        0.41999998688697815,
+        1.2000000476837158
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelR1": {
+      "parent": "Excavator",
+      "translation": [
+        1.75,
+        0.41999998688697815,
+        1.2000000476837158
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    }
+  },
+  "excavator_used": {
+    "Blade": {
+      "parent": "Excavator",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BoomRamRod": {
+      "parent": "Boom",
+      "translation": [
+        2.4000000953674316,
+        -0.11999988555908203,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Bucket": {
+      "parent": "Stick",
+      "translation": [
+        2.5999999046325684,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BucketRamRod": {
+      "parent": "BucketLink",
+      "translation": [
+        0.4500002861022949,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BucketLink": {
+      "parent": "Stick",
+      "translation": [
+        2.5999999046325684,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0.8134155869483948,
+        0.5816831588745117
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BucketRam": {
+      "parent": "Stick",
+      "translation": [
+        0.25,
+        0.38000011444091797,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "StickRamRod": {
+      "parent": "Stick",
+      "translation": [
+        -0.4499998092651367,
+        0.4200000762939453,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Stick": {
+      "parent": "Boom",
+      "translation": [
+        3.5999999046325684,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "StickRam": {
+      "parent": "Boom",
+      "translation": [
+        1,
+        0.7400000095367432,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Boom": {
+      "parent": "House",
+      "translation": [
+        0.8999999761581421,
+        1.1000001430511475,
+        0.3499999940395355
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BoomRam": {
+      "parent": "House",
+      "translation": [
+        1.100000023841858,
+        0.5,
+        0.3499999940395355
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Interior": {
+      "parent": "House",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "House": {
+      "parent": "Excavator",
+      "translation": [
+        0,
+        1.0499999523162842,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Tracks": {
+      "parent": "Excavator",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackShoe": {
+      "parent": "Excavator",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelL0": {
+      "parent": "Excavator",
+      "translation": [
+        -1.75,
+        0.41999998688697815,
+        -1.2000000476837158
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelL1": {
+      "parent": "Excavator",
+      "translation": [
+        1.75,
+        0.41999998688697815,
+        -1.2000000476837158
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelR0": {
+      "parent": "Excavator",
+      "translation": [
+        -1.75,
+        0.41999998688697815,
+        1.2000000476837158
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelR1": {
+      "parent": "Excavator",
+      "translation": [
+        1.75,
+        0.41999998688697815,
+        1.2000000476837158
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    }
+  },
+  "minidigger_rusty": {
+    "Blade": {
+      "parent": "MiniDigger",
+      "translation": [
+        0.3799999952316284,
+        0.30000001192092896,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BoomRamRod": {
+      "parent": "Boom",
+      "translation": [
+        1.1699999570846558,
+        -0.06000000238418579,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Bucket": {
+      "parent": "Stick",
+      "translation": [
+        1.0999999046325684,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BucketRamRod": {
+      "parent": "BucketLink",
+      "translation": [
+        0.1899999976158142,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BucketLink": {
+      "parent": "Stick",
+      "translation": [
+        1.0999999046325684,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0.8134155869483948,
+        0.5816831588745117
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BucketRam": {
+      "parent": "Stick",
+      "translation": [
+        0.10599994659423828,
+        0.15999996662139893,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "StickRamRod": {
+      "parent": "Stick",
+      "translation": [
+        -0.19000005722045898,
+        0.18000000715255737,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Stick": {
+      "parent": "Boom",
+      "translation": [
+        1.75,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "StickRam": {
+      "parent": "Boom",
+      "translation": [
+        0.49000000953674316,
+        0.36000001430511475,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Boom": {
+      "parent": "House",
+      "translation": [
+        0.5,
+        0.30000004172325134,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BoomRam": {
+      "parent": "House",
+      "translation": [
+        0.6000000238418579,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Interior": {
+      "parent": "House",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "House": {
+      "parent": "MiniDigger",
+      "translation": [
+        0,
+        0.41999998688697815,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackBand": {
+      "parent": "MiniDigger",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackShoe": {
+      "parent": "MiniDigger",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelL0": {
+      "parent": "MiniDigger",
+      "translation": [
+        -0.5799999833106995,
+        0.20000000298023224,
+        -0.4300000071525574
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelL1": {
+      "parent": "MiniDigger",
+      "translation": [
+        0.5799999833106995,
+        0.20000000298023224,
+        -0.4300000071525574
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelR0": {
+      "parent": "MiniDigger",
+      "translation": [
+        -0.5799999833106995,
+        0.20000000298023224,
+        0.4300000071525574
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelR1": {
+      "parent": "MiniDigger",
+      "translation": [
+        0.5799999833106995,
+        0.20000000298023224,
+        0.4300000071525574
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    }
+  },
+  "minidigger_used": {
+    "Blade": {
+      "parent": "MiniDigger",
+      "translation": [
+        0.3799999952316284,
+        0.30000001192092896,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BoomRamRod": {
+      "parent": "Boom",
+      "translation": [
+        1.1699999570846558,
+        -0.06000000238418579,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Bucket": {
+      "parent": "Stick",
+      "translation": [
+        1.0999999046325684,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BucketRamRod": {
+      "parent": "BucketLink",
+      "translation": [
+        0.1899999976158142,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BucketLink": {
+      "parent": "Stick",
+      "translation": [
+        1.0999999046325684,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0.8134155869483948,
+        0.5816831588745117
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BucketRam": {
+      "parent": "Stick",
+      "translation": [
+        0.10599994659423828,
+        0.15999996662139893,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "StickRamRod": {
+      "parent": "Stick",
+      "translation": [
+        -0.19000005722045898,
+        0.18000000715255737,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Stick": {
+      "parent": "Boom",
+      "translation": [
+        1.75,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "StickRam": {
+      "parent": "Boom",
+      "translation": [
+        0.49000000953674316,
+        0.36000001430511475,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Boom": {
+      "parent": "House",
+      "translation": [
+        0.5,
+        0.30000004172325134,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BoomRam": {
+      "parent": "House",
+      "translation": [
+        0.6000000238418579,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Interior": {
+      "parent": "House",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "House": {
+      "parent": "MiniDigger",
+      "translation": [
+        0,
+        0.41999998688697815,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackBand": {
+      "parent": "MiniDigger",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackShoe": {
+      "parent": "MiniDigger",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelL0": {
+      "parent": "MiniDigger",
+      "translation": [
+        -0.5799999833106995,
+        0.20000000298023224,
+        -0.4300000071525574
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelL1": {
+      "parent": "MiniDigger",
+      "translation": [
+        0.5799999833106995,
+        0.20000000298023224,
+        -0.4300000071525574
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelR0": {
+      "parent": "MiniDigger",
+      "translation": [
+        -0.5799999833106995,
+        0.20000000298023224,
+        0.4300000071525574
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TrackWheelR1": {
+      "parent": "MiniDigger",
+      "translation": [
+        0.5799999833106995,
+        0.20000000298023224,
+        0.4300000071525574
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    }
+  },
+  "prop_wheelbarrow": {
+    "Wheel": {
+      "parent": "Wheelbarrow",
+      "translation": [
+        0.5600000023841858,
+        0.1899999976158142,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    }
+  },
+  "tractor_rusty": {
+    "SteeringWheel": {
+      "parent": "Interior",
+      "translation": [
+        -0.4399999976158142,
+        1.6799999475479126,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0.27154698967933655,
+        0.9624252915382385
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Interior": {
+      "parent": "Tractor",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel0": {
+      "parent": "Tractor",
+      "translation": [
+        0.9300000071525574,
+        0.36000001430511475,
+        -0.6299999952316284
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel1": {
+      "parent": "Tractor",
+      "translation": [
+        0.9300000071525574,
+        0.36000001430511475,
+        0.6299999952316284
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel2": {
+      "parent": "Tractor",
+      "translation": [
+        -0.8999999761581421,
+        0.6499999761581421,
+        -0.6800000071525574
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel3": {
+      "parent": "Tractor",
+      "translation": [
+        -0.8999999761581421,
+        0.6499999761581421,
+        0.6800000071525574
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    }
+  },
+  "tractor_used": {
+    "SteeringWheel": {
+      "parent": "Interior",
+      "translation": [
+        -0.4399999976158142,
+        1.6799999475479126,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0.27154698967933655,
+        0.9624252915382385
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Interior": {
+      "parent": "Tractor",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel0": {
+      "parent": "Tractor",
+      "translation": [
+        0.9300000071525574,
+        0.36000001430511475,
+        -0.6299999952316284
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel1": {
+      "parent": "Tractor",
+      "translation": [
+        0.9300000071525574,
+        0.36000001430511475,
+        0.6299999952316284
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel2": {
+      "parent": "Tractor",
+      "translation": [
+        -0.8999999761581421,
+        0.6499999761581421,
+        -0.6800000071525574
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel3": {
+      "parent": "Tractor",
+      "translation": [
+        -0.8999999761581421,
+        0.6499999761581421,
+        0.6800000071525574
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    }
+  },
+  "trailer_rusty": {
+    "TailgatePivot": {
+      "parent": "BedPivot",
+      "translation": [
+        0,
+        0.6000000238418579,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BedPivot": {
+      "parent": "Trailer",
+      "translation": [
+        -1.7000000476837158,
+        1,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel0": {
+      "parent": "Trailer",
+      "translation": [
+        0,
+        0.44999998807907104,
+        -0.800000011920929
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel1": {
+      "parent": "Trailer",
+      "translation": [
+        0,
+        0.44999998807907104,
+        0.800000011920929
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    }
+  },
+  "trailer_used": {
+    "TailgatePivot": {
+      "parent": "BedPivot",
+      "translation": [
+        0,
+        0.6000000238418579,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "BedPivot": {
+      "parent": "Trailer",
+      "translation": [
+        -1.7000000476837158,
+        1,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel0": {
+      "parent": "Trailer",
+      "translation": [
+        0,
+        0.44999998807907104,
+        -0.800000011920929
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel1": {
+      "parent": "Trailer",
+      "translation": [
+        0,
+        0.44999998807907104,
+        0.800000011920929
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    }
+  },
+  "truck_rusty": {
+    "BedPivot": {
+      "parent": "Truck",
+      "translation": [
+        -3.0999999046325684,
+        0.05000000074505806,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "SteeringWheel": {
+      "parent": "Interior",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Interior": {
+      "parent": "Truck",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel0": {
+      "parent": "Truck",
+      "translation": [
+        2.0999999046325684,
+        -0.75,
+        -1.0499999523162842
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel1": {
+      "parent": "Truck",
+      "translation": [
+        2.0999999046325684,
+        -0.75,
+        1.0499999523162842
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel2": {
+      "parent": "Truck",
+      "translation": [
+        -2,
+        -0.75,
+        -1.0499999523162842
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel3": {
+      "parent": "Truck",
+      "translation": [
+        -2,
+        -0.75,
+        1.0499999523162842
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    }
+  },
+  "truck_used": {
+    "BedPivot": {
+      "parent": "Truck",
+      "translation": [
+        -3.0999999046325684,
+        0.05000000074505806,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "SteeringWheel": {
+      "parent": "Interior",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Interior": {
+      "parent": "Truck",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel0": {
+      "parent": "Truck",
+      "translation": [
+        2.0999999046325684,
+        -0.75,
+        -1.0499999523162842
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel1": {
+      "parent": "Truck",
+      "translation": [
+        2.0999999046325684,
+        -0.75,
+        1.0499999523162842
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel2": {
+      "parent": "Truck",
+      "translation": [
+        -2,
+        -0.75,
+        -1.0499999523162842
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel3": {
+      "parent": "Truck",
+      "translation": [
+        -2,
+        -0.75,
+        1.0499999523162842
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    }
+  },
+  "vehicle_pickup": {
+    "SteeringWheel": {
+      "parent": "Interior",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Interior": {
+      "parent": "Pickup",
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "TailgatePivot": {
+      "parent": "Pickup",
+      "translation": [
+        -2.6649999618530273,
+        0.6000000238418579,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel0": {
+      "parent": "Pickup",
+      "translation": [
+        1.5499999523162842,
+        0.36000001430511475,
+        -0.7599999904632568
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel1": {
+      "parent": "Pickup",
+      "translation": [
+        1.5499999523162842,
+        0.36000001430511475,
+        0.7599999904632568
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel2": {
+      "parent": "Pickup",
+      "translation": [
+        -1.5499999523162842,
+        0.36000001430511475,
+        -0.7599999904632568
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    },
+    "Wheel3": {
+      "parent": "Pickup",
+      "translation": [
+        -1.5499999523162842,
+        0.36000001430511475,
+        0.7599999904632568
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "matrix": null
+    }
+  }
+}

@@ -1,13 +1,19 @@
 // Renderer, sky, sunlight, fog, and scenery outside the quarry (grass, hills, trees).
 import * as THREE from 'three';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { createGroundMaterial, paintGround } from './groundMaterial.js';
 
+// ao: ambient occlusion (soft contact shadows where things meet), worked out at half or full
+// resolution; softShadows: blurred shadow edges.
 const QUALITY = {
-  low: { pixelRatio: 0.75, shadows: false, shadowMap: 1024 },
-  medium: { pixelRatio: 1, shadows: true, shadowMap: 1024 },
-  high: { pixelRatio: 1.5, shadows: true, shadowMap: 2048 },
-  ultra: { pixelRatio: 2, shadows: true, shadowMap: 4096 },
+  low: { pixelRatio: 0.75, shadows: false, shadowMap: 1024, softShadows: false, ao: false },
+  medium: { pixelRatio: 1, shadows: true, shadowMap: 1024, softShadows: true, ao: false },
+  high: { pixelRatio: 1.5, shadows: true, shadowMap: 2048, softShadows: true, ao: 'half' },
+  ultra: { pixelRatio: 2, shadows: true, shadowMap: 4096, softShadows: true, ao: 'full' },
 };
 
 export function createRenderer(canvas, quality) {
@@ -18,9 +24,61 @@ export function createRenderer(canvas, quality) {
   renderer.toneMappingExposure = 0.9;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = q.shadows;
-  renderer.shadowMap.type = THREE.PCFShadowMap;
+  renderer.shadowMap.type = q.softShadows ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
   return { renderer, q };
 }
+
+// Draws each frame: straight to the screen, or (with ambient occlusion) through a small
+// post-processing chain: the scene into an anti-aliased HDR target, GTAO, then tone mapping.
+export function createFrameRenderer(renderer, scene, camera, q) {
+  if (!q.ao) {
+    return { render: () => renderer.render(scene, camera), setSize() {}, dispose() {} };
+  }
+  const size = renderer.getSize(new THREE.Vector2());
+  const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
+  const composer = new EffectComposer(renderer, target);
+  composer.addPass(new RenderPass(scene, camera));
+  const ao = new ContactAOPass(scene, camera, 1, 1);
+  ao.scale = q.ao === 'half' ? 0.5 : 1;
+  ao.updateGtaoMaterial({ radius: 0.7, distanceExponent: 1.5, thickness: 1.2, distanceFallOff: 1, scale: 1, samples: 12 });
+  ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 5, rings: 2, samples: 12 });
+  ao.blendIntensity = 0.85;
+  composer.addPass(ao);
+  composer.addPass(new OutputPass());
+  composer.setSize(Math.max(1, size.x), Math.max(1, size.y));
+  return {
+    render: () => composer.render(),
+    // (CSS size; the composer applies the renderer's pixel ratio)
+    setSize: (w, h) => composer.setSize(Math.max(1, w), Math.max(1, h)),
+    dispose() {
+      composer.dispose();
+      ao.dispose();
+    },
+  };
+}
+
+// GTAO, minus anything see-through: its depth and normal pass draws every mesh as solid, so
+// grass cards, leaves, glass and effects would otherwise cast dark rectangles.
+class ContactAOPass extends GTAOPass {
+  // (at half resolution on "high": a quarter of the work, and the blur hides the difference)
+  setSize(width, height) {
+    const k = this.scale ?? 1;
+    super.setSize(Math.max(1, Math.round(width * k)), Math.max(1, Math.round(height * k)));
+  }
+
+  _overrideVisibility() {
+    super._overrideVisibility();
+    const cache = this._visibilityCache;
+    this.scene.traverse((o) => {
+      if (!o.visible || o.isPoints || o.isLine || o.isLine2) return;
+      if (o.userData.noAO || (o.material && seeThrough(o.material))) {
+        o.visible = false;
+        cache.push(o);
+      }
+    });
+  }
+}
+const seeThrough = (m) => (Array.isArray(m) ? m.some(seeThrough) : m.transparent || m.alphaTest > 0 || m.isShaderMaterial);
 
 // `site` is the rectangle covered by the map's own terrain ({ x0, x1, z0, z1 }); beyond it
 // there's flat farmland (at `outsideY`) running out to hills on the horizon.
@@ -31,10 +89,11 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
   const sky = new Sky();
   sky.scale.setScalar(10000);
   const u = sky.material.uniforms;
-  u.turbidity.value = 6;
-  u.rayleigh.value = 1.4;
-  u.mieCoefficient.value = 0.004;
-  u.mieDirectionalG.value = 0.85;
+  // (a clear English summer day: blue overhead, a light haze on the horizon, not a milky sky)
+  u.turbidity.value = 2.6;
+  u.rayleigh.value = 1.1;
+  u.mieCoefficient.value = 0.003;
+  u.mieDirectionalG.value = 0.82;
   u.sunPosition.value.copy(sunDir);
   scene.add(sky);
 
@@ -61,7 +120,7 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
   scene.add(sun, sun.target);
 
   // Grass beyond the map: four strips around it.
-  const ground = createGroundMaterial();
+  const ground = createGroundMaterial({ fields: true });
   const R = Math.max(1500, hillDistance[1] * 1.6);
   const s0 = site;
   for (const [x0, x1, z0, z1] of [
@@ -75,7 +134,60 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
 
   const hills = addHills(scene, ground, hillDistance, outsideY, Math.max(Math.abs(s0.x0), s0.x1, Math.abs(s0.z0), s0.z1) + 60);
 
+  // Overcast: a grey dome over the sky that fades in with the cloud. It's the fog's colour at the
+  // horizon (so distant hills melt into it) and darker overhead, under the rain clouds. The sky
+  // shader alone can't go grey.
+  const overcastMat = new THREE.ShaderMaterial({
+    uniforms: { uAmount: { value: 0 }, uHorizon: { value: new THREE.Color() } },
+    vertexShader: `varying vec3 vDir;
+      void main() {
+        vDir = normalize(position);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        gl_Position.z = gl_Position.w; // (always at the back, like the sky)
+      }`,
+    fragmentShader: `uniform float uAmount; uniform vec3 uHorizon; varying vec3 vDir;
+      void main() {
+        float up = smoothstep(-0.02, 0.6, vDir.y);
+        gl_FragColor = vec4(uHorizon * mix(1.0, 0.72, up), uAmount);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`,
+    side: THREE.BackSide, transparent: true, depthWrite: false, fog: false,
+  });
+  const overcast = new THREE.Mesh(new THREE.SphereGeometry(9000, 32, 16), overcastMat);
+  overcast.renderOrder = -1;
+  overcast.frustumCulled = false;
+  overcast.visible = false;
+  overcast.userData.noAO = true;
+  scene.add(overcast);
+
+  // The weather eases in: { cloud 0..1, rain 0..1 } targets, followed a little each frame.
+  const clear = { turbidity: u.turbidity.value, rayleigh: u.rayleigh.value, mie: u.mieCoefficient.value, sun: sun.intensity, hemi: hemi.intensity, env: scene.environmentIntensity, fogNear: scene.fog.near, fogFar: scene.fog.far };
+  const fogClear = scene.fog.color.clone();
+  const fogGrey = new THREE.Color(0x9ba4ad);
+  const now = { cloud: 0, rain: 0 };
+
   return {
+    weather(dt, { cloud = 0, rain = 0 }) {
+      const k = Math.min(1, dt * 0.25);
+      now.cloud += (cloud - now.cloud) * k;
+      now.rain += (rain - now.rain) * k;
+      const c = now.cloud;
+      const r = now.rain;
+      u.turbidity.value = clear.turbidity + c * 7;
+      u.rayleigh.value = clear.rayleigh + c * 1.6;
+      u.mieCoefficient.value = clear.mie + c * 0.012;
+      sun.intensity = clear.sun * (1 - 0.72 * c);
+      hemi.intensity = clear.hemi * (1 + 0.6 * c);
+      scene.environmentIntensity = clear.env * (1 - 0.3 * c);
+      scene.fog.color.copy(fogClear).lerp(fogGrey, c);
+      overcastMat.uniforms.uAmount.value = Math.min(1, c * 1.05);
+      overcastMat.uniforms.uHorizon.value.copy(scene.fog.color);
+      overcast.visible = c > 0.02;
+      scene.fog.near = clear.fogNear * (1 - 0.65 * r);
+      scene.fog.far = clear.fogFar * (1 - 0.55 * r);
+      return now;
+    },
     // Height of the countryside outside the site (grass level, or up a hill).
     groundHeight(x, z) {
       let h = -0.3;

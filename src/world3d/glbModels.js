@@ -4,10 +4,29 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createHeap } from './piles.js';
 import { weatherModel } from './weathering.js';
+import { addDecals } from './decals.js';
+
+const OPEN_SURFACE = /(^|_)Rims$/; // materials on open (one-sided) surfaces
+
+// Lamps are exported glowing; by day they're switched off: a clear lens over a silver
+// reflector, a dark red tail lens, and the beacon (it turns while the machine works) a bit less
+// blinding.
+const LAMPS = { Headlight: { color: 0xd8dcdf, emissive: 0.06, metalness: 0.55, roughness: 0.06 }, TailLight: { emissive: 0.18 }, Beacon: { emissive: 0.6 } };
+function daylightLamp(material) {
+  const kind = /(?:^|_)(Headlight|TailLight|Beacon)$/.exec(material?.name ?? '')?.[1];
+  const lamp = kind && LAMPS[kind];
+  if (!lamp || material.userData.daylight) return;
+  material.userData.daylight = true;
+  if (lamp.color !== undefined) material.color.setHex(lamp.color);
+  material.emissiveIntensity *= lamp.emissive;
+  if (lamp.metalness !== undefined) material.metalness = lamp.metalness;
+  if (lamp.roughness !== undefined) material.roughness = lamp.roughness;
+}
 
 const cache = new Map(); // "truck_used" -> THREE.Object3D (the loaded scene)
 
-export async function preloadModels() {
+// onProgress(fraction 0..1) follows the downloads, for the loading card.
+export async function preloadModels({ onProgress } = {}) {
   let names = [];
   try {
     const res = await fetch('models/manifest.json');
@@ -16,22 +35,40 @@ export async function preloadModels() {
     return; // no models yet: placeholders are used
   }
   const loader = new GLTFLoader();
-  await Promise.all(names.filter((n) => !cache.has(n)).map(async (name) => {
+  const todo = names.filter((n) => !cache.has(n));
+  const part = new Map(todo.map((n) => [n, 0])); // how much of each file has arrived
+  const report = () => onProgress?.([...part.values()].reduce((a, b) => a + b, 0) / Math.max(1, todo.length));
+  await Promise.all(todo.map(async (name) => {
     try {
-      const gltf = await loader.loadAsync(`models/${name}.glb`);
+      const gltf = await loader.loadAsync(`models/${name}.glb`, (e) => {
+        if (e.total > 0) {
+          part.set(name, Math.min(0.99, e.loaded / e.total));
+          report();
+        }
+      });
       gltf.scene.traverse((o) => {
         if (o.isMesh) {
           o.castShadow = true;
           o.receiveShadow = true;
+          // The tractor's wheel discs are open surfaces facing inward on one side: draw both
+          // sides, or you see straight through the left-hand wheels.
+          if (OPEN_SURFACE.test(o.material?.name ?? '')) o.material.side = THREE.DoubleSide;
+          daylightLamp(o.material);
         }
       });
       weatherModel(gltf.scene, name); // machines only: rust, chips, fade and mud by tier
+      addDecals(gltf.scene, name); // lettering, hazard chevrons, warning stickers, number plates
       cache.set(name, gltf.scene);
     } catch (err) {
       console.warn(`Could not load model ${name}:`, err);
     }
+    part.set(name, 1);
+    report();
   }));
 }
+
+// The loaded scene for a model file name (e.g. "truck_used"), or null. (Shared: clone it.)
+export const modelScene = (name) => cache.get(name) ?? null;
 
 function instance(name) {
   const scene = cache.get(name);
@@ -141,6 +178,42 @@ export function glbPickup(rideHeight) {
   };
 }
 
+// A digger's bucket link turns with the bucket, at this share of its angle.
+export const LINK_RATIO = 0.55;
+export const LINK_OFFSET = 1.9;
+
+// Points each ram's barrel and rod at each other, so they follow the arm (they turn on their
+// pins). Call with the model's world matrices up to date.
+export function aimRams(rams) {
+  const a = new THREE.Vector3();
+  const b = new THREE.Vector3();
+  for (const { barrel, rod } of rams) {
+    for (const [obj, other] of [[barrel, rod], [rod, barrel]]) {
+      other.getWorldPosition(a);
+      obj.parent.worldToLocal(b.copy(a));
+      obj.rotation.z = Math.atan2(b.y - obj.position.y, b.x - obj.position.x);
+    }
+  }
+}
+
+const diggerRams = (root) => ['BoomRam', 'StickRam', 'BucketRam']
+  .map((n) => ({ barrel: root.getObjectByName(n), rod: root.getObjectByName(`${n}Rod`) }))
+  .filter((r) => r.barrel && r.rod);
+
+// Sets a digger model's arm to joint angles [boom, stick, bucket] with its rams lined up
+// (for photos: the models are saved with the arm straight out).
+export function poseDigger(root, [boom, stick, bucket]) {
+  const boomPivot = root.getObjectByName('Boom');
+  if (!boomPivot) return;
+  boomPivot.rotation.z = boom;
+  root.getObjectByName('Stick').rotation.z = stick;
+  root.getObjectByName('Bucket').rotation.z = bucket;
+  const link = root.getObjectByName('BucketLink');
+  if (link) link.rotation.z = LINK_RATIO * bucket + LINK_OFFSET;
+  root.updateMatrixWorld(true);
+  aimRams(diggerRams(root));
+}
+
 // The diggers (excavator, mini digger) share their parts: House, Boom, Stick, Bucket and the rams.
 function diggerFromFile(name, { cabSeat, scoop }) {
   const root = instance(name);
@@ -152,9 +225,7 @@ function diggerFromFile(name, { cabSeat, scoop }) {
   heap.visible = false;
   bucketPivot.add(heap);
   const opt = (n) => root.getObjectByName(n) ?? null;
-  const rams = ['BoomRam', 'StickRam', 'BucketRam']
-    .map((n) => ({ barrel: opt(n), rod: opt(`${n}Rod`) }))
-    .filter((r) => r.barrel && r.rod);
+  const rams = diggerRams(root);
   let shoeMesh = null;
   opt('TrackShoe')?.traverse((o) => { if (o.isMesh && !shoeMesh) shoeMesh = o; });
   return {

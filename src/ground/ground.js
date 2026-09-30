@@ -379,7 +379,12 @@ export function createGround(groundData, plotId, opts = {}) {
     const fillFromHeaps = Math.max(0, fillBank - poolBank);
     // (heaps inside the works are already part of the cut, so they can't be used twice)
     const inWorks = new Set(cells.map((c) => c.k));
-    const src = gatherLoose(centre, radius, { gravel: sm >= 0 ? { m: sm, vol: gravelFromHeaps } : null, bank: fillFromHeaps, exclude: inWorks }, commit);
+    const src = gatherLoose(centre, radius, { gravel: sm >= 0 ? { m: sm, vol: gravelFromHeaps } : null, bank: fillFromHeaps, exclude: inWorks, eligible(k) {
+      const x = x0 + (k % nx + 0.5) * cell;
+      const z = z0 + (Math.floor(k / nx) + 0.5) * cell;
+      const along = Math.max(0, Math.min(L, (x - ax) * ux + (z - az) * uz));
+      return Math.hypot(x - ax - ux * along, z - az - uz * along) <= sourceRadius;
+    } }, commit);
     // What there will be to build with, and what's left over: the cut (less the surface's gravel)
     // plus the heaps' fill, of which the fill takes what it needs.
     const availPlan = pool.slice();
@@ -388,8 +393,25 @@ export function createGround(groundData, plotId, opts = {}) {
     const availBankPlan = availPlan.reduce((a, v, m) => a + v / bankDensity[m], 0);
     const usePlan = availBankPlan > 0 ? Math.min(1, fillBank / availBankPlan) : 0;
     const availTonnes = availPlan.reduce((a, v) => a + v, 0);
+    // Query the actual grading jobs, including side batters, rather than the maximum
+    // search reach. Only visit cells under the circle's bounding box on each query.
+    const changedCells = new Set(jobs.map(({ k }) => k));
+    const touchesChangedCell = ({ x, z, r = 0 }) => {
+      const imin = Math.max(0, Math.floor((x - r - x0) / cell) - 1);
+      const imax = Math.min(nx - 1, Math.floor((x + r - x0) / cell));
+      const jmin = Math.max(0, Math.floor((z - r - z0) / cell) - 1);
+      const jmax = Math.min(nz - 1, Math.floor((z + r - z0) / cell));
+      for (let j = jmin; j <= jmax; j++) for (let i = imin; i <= imax; i++) {
+        if (!changedCells.has(idx(i, j))) continue;
+        const dx = Math.max(x0 + i * cell - x, 0, x - (x0 + (i + 1) * cell));
+        const dz = Math.max(z0 + j * cell - z, 0, z - (z0 + (j + 1) * cell));
+        if (dx * dx + dz * dz <= r * r) return true;
+      }
+      return false;
+    };
     const plan = {
       ok: true, mode, length: L, width, grade, pA, pB, cells: jobs.length, coreArea: core * area,
+      touchesChangedCell,
       cutBank, fillBank, surfaceLoose, cutTonnes: pool.reduce((a, v) => a + v, 0),
       heapGravelNeeded: gravelFromHeaps, heapFillNeeded: fillFromHeaps,
       heapGravelFound: src.gravelFound, heapFillFound: src.bankFound,
@@ -472,7 +494,7 @@ export function createGround(groundData, plotId, opts = {}) {
     const found = { gravelFound: 0, bankFound: 0, tonnes: new Float64Array(M), gravelTonnes: 0, take() {} };
     const list = [];
     cellsInRadius(centre.x, centre.z, radius, (k, d) => {
-      if (loose[k] > 1e-4 && !(disturbed[k] & 2) && !need.exclude?.has(k)) list.push([k, d]);
+      if (loose[k] > 1e-4 && !(disturbed[k] & 2) && !need.exclude?.has(k) && (!need.eligible || need.eligible(k))) list.push([k, d]);
     });
     list.sort((p, q) => p[1] - q[1]);
     const takes = [];

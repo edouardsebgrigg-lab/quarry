@@ -40,7 +40,8 @@ export function createHud3d({ settings }) {
   const clickToPlay = el('div', { class: 'click-to-play' },
     el('div', { class: 'ctp-card' }, ctpTitle,
       el('div', { class: 'ctp-sub' }, 'Mouse to look', el('span', { class: 'sep' }, '·'), kbd('Esc'), 'menu')));
-  const loading = el('div', { class: 'click-to-play' }, el('div', { class: 'ctp-card' }, el('div', { class: 'ctp-title' }, 'Loading…')));
+  const loadingTitle = el('div', { class: 'ctp-title' }, 'Loading…');
+  const loading = el('div', { class: 'click-to-play' }, el('div', { class: 'ctp-card' }, loadingTitle));
 
   // Where the goal wants you: an arrow, what's there and how far.
   const guideArrow = el('div', { class: 'guide-arrow' });
@@ -86,7 +87,7 @@ export function createHud3d({ settings }) {
         [['LMB'], 'Dig / tip the shovel'], [[k('interact')], 'Use / get in / take barrow'], [[k('repair')], 'Service / repair'],
         [[k('works')], 'Plan a road, ramp or level area']];
     }
-    return [...rows, null, [[k('shop')], 'Shop'], [[k('market')], 'Prices'], [[k('map')], 'Map'], [[k('goal')], 'Goal']];
+    return [...rows, null, [[k('shop')], 'Dealer'], [[k('market')], 'Prices'], [[k('map')], 'Map'], [[k('goal')], 'Goal']];
   }
 
   let helpKey = '';
@@ -97,11 +98,13 @@ export function createHud3d({ settings }) {
 
   return {
     node,
-    setLoading(on) {
+    // fraction: how much has downloaded (0..1), if known
+    setLoading(on, fraction) {
       loading.style.display = on ? '' : 'none';
+      if (on) setText(loadingTitle, fraction === undefined ? 'Loading…' : `Loading… ${Math.round(fraction * 100)}%`);
     },
     showError(text) {
-      setText(loading.querySelector('.ctp-title'), text);
+      setText(loadingTitle, text);
       loading.style.display = '';
     },
     toggleHints() {

@@ -271,12 +271,13 @@ export function createPlanner({ scene, camera, game, heightAt, notify, obstacles
         else if (st.a) st.a = null;
         else close();
       }
-      if (st.active && clicked && st.hover) {
-        if (!st.a) st.a = { x: st.hover.x, z: st.hover.z };
-        else if (!st.b) {
-          if (Math.hypot(st.hover.x - st.a.x, st.hover.z - st.a.z) < 0.5) notify('Pick a different spot for the end', 'warn');
-          else st.b = { x: st.hover.x, z: st.hover.z };
-        } else confirm();
+      if (st.active && clicked) {
+        // (with both ends set, the click builds wherever you're looking; setting an end needs the ground)
+        if (st.a && st.b) confirm();
+        else if (!st.hover) notify('Aim at the ground to set the end points', 'warn');
+        else if (!st.a) st.a = { x: st.hover.x, z: st.hover.z };
+        else if (Math.hypot(st.hover.x - st.a.x, st.hover.z - st.a.z) < 0.5) notify('Pick a different spot for the end', 'warn');
+        else st.b = { x: st.hover.x, z: st.hover.z };
       }
       if (st.active) {
         replan();

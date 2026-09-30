@@ -40,42 +40,34 @@ export const worksCost = (data, mode, area) => {
   return Math.round(cfg.flat + cfg.ratePerM2 * area);
 };
 
-// Distance from a point to the segment a-b.
-function distToSegment(px, pz, ax, az, bx, bz) {
-  const dx = bx - ax;
-  const dz = bz - az;
-  const len2 = dx * dx + dz * dz;
-  const t = len2 > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / len2)) : 0;
-  return Math.hypot(px - (ax + dx * t), pz - (az + dz * t));
-}
-
 // Says what would happen, changing nothing. Returns:
 //  { ok, reason?, affordable, cost, ...the ground's numbers (length, grade, tonnes, ...) }
 // `ok` means it can be built right now (valid and paid for). `input.obstacles` is a list of
-// { x, z, r, label } (machines, you, the barrow) that mustn't be under the works.
+// { x, z, r, label } (machines and the barrow) that mustn't be under the works.
+// The player is repositioned by the world after worksBuilt, and does not block.
 export function planEarthworks(ctx, input) {
   const { data, ground } = ctx;
   const cfg = worksConfig(data, input.mode);
   const bad = (reason, extra = {}) => ({ ok: false, valid: false, affordable: false, cost: 0, reason, mode: input.mode, ...extra });
   if (!ground) return bad('There is no ground of yours to build on here');
   if (!cfg) return bad('Unknown kind of works');
+  if (input.width !== undefined && !Number.isFinite(input.width)) return bad('Pick a finite width');
   if ([input.ax, input.az, input.bx, input.bz].some((v) => !Number.isFinite(v))) return bad('Pick where it starts and ends');
   const length = Math.hypot(input.bx - input.ax, input.bz - input.az);
   if (length < data.works.minLength) return bad(`Too short: at least ${data.works.minLength} m`, { length });
   if (length > data.works.maxLength) return bad(`Too long: at most ${data.works.maxLength} m at a time`, { length });
   const spec = worksSpec(data, input);
-  const half = spec.width / 2 + data.works.clearance;
-  for (const o of input.obstacles ?? []) {
-    if (distToSegment(o.x, o.z, spec.ax, spec.az, spec.bx, spec.bz) < half + (o.r ?? 0)) {
-      return bad(`${o.label ?? 'Something'} is in the way: move it first`, { length });
-    }
-  }
   const p = ground.planWorks(spec);
   const cost = p.coreArea ? worksCost(data, input.mode, p.coreArea) : 0;
   const out = { ...p, mode: input.mode, name: cfg.name, valid: p.ok, cost, affordable: false };
   if (!p.ok) {
     out.reason = worksReason(p, cfg, data);
     return out;
+  }
+  for (const o of input.obstacles ?? []) {
+    if (p.touchesChangedCell({ x: o.x, z: o.z, r: (o.r ?? 0) + data.works.clearance })) {
+      return { ...out, ok: false, valid: false, reason: `Move ${o.label ?? 'the obstacle'} out of the works first` };
+    }
   }
   out.affordable = ctx.state.money >= cost && ctx.state.money >= 0;
   if (!out.affordable) {
@@ -112,6 +104,7 @@ export function buildEarthworks(ctx, input) {
   stats[input.mode] = (stats[input.mode] ?? 0) + 1;
   ctx.events.emit('worksBuilt', {
     mode: input.mode, length: done.length, width: done.width, cost: plan.cost, spoilTonnes: done.spoilTonnes ?? 0,
+    touchesChangedCell: done.touchesChangedCell,
     at: { x: (input.ax + input.bx) / 2, z: (input.az + input.bz) / 2 },
   });
   return { ...plan, ...done, ok: true, cost: plan.cost };
