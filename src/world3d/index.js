@@ -3,7 +3,7 @@
 // actions the rest of the game uses.
 import * as THREE from 'three';
 import { createPhysics } from './physics.js';
-import { createRenderer, createEnvironment } from './environment.js';
+import { createRenderer, createEnvironment, createFrameRenderer } from './environment.js';
 import { createCountryside, planWorld, preloadCountryside } from './countryside.js';
 import { ownsBuilding } from '../buildings/index.js';
 import { buildPlaces } from './places.js';
@@ -60,6 +60,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 5000);
   camera.rotation.order = 'YXZ';
+  const frameRenderer = createFrameRenderer(renderer, scene, camera, q);
 
   // ---- the land
   const plan = planWorld(MAP);
@@ -701,6 +702,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const resizeObserver = new ResizeObserver(() => {
     const r = container.getBoundingClientRect();
     renderer.setSize(r.width, r.height, false);
+    frameRenderer.setSize(r.width, r.height);
     camera.aspect = r.width / Math.max(1, r.height);
     camera.updateProjectionMatrix();
   });
@@ -847,7 +849,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     });
     updateGuide(dt);
     env.follow(here);
-    renderer.render(scene, camera);
+    frameRenderer.render();
   }
 
   // What the HUD should show right now. `prompt` is { key, text } (key may be null) or a list
@@ -1093,6 +1095,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       for (const veh of vehicles.values()) veh.destroy();
       player.destroy();
       land.dispose();
+      frameRenderer.dispose();
       renderer.dispose();
       physics.destroy();
       canvas.remove();

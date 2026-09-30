@@ -17,6 +17,8 @@ const ROLES = {
   Paint: 'body', TractorPaint: 'body', PickupPaint: 'body', PickupFaded: 'body', Toolbox: 'body',
   PaintDark: 'dark', Canopy: 'dark', Frame: 'dark', Chassis: 'dark', Castings: 'dark', Rims: 'dark', RimPaint: 'dark',
   Steel: 'metal', Rubber: 'mud', RubberTrack: 'mud',
+  // (names used by the refined fleet, after "Review_")
+  BarrowPaint: 'body', FramePaint: 'dark', WornSteel: 'metal',
 };
 
 // How hard each tier has been used.
@@ -24,6 +26,23 @@ const TIERS = {
   rusty: { wear: 1.0, fade: 0.85, mud: 1.0 },
   used: { wear: 0.18, fade: 0.2, mud: 0.5 },
 };
+// The refined fleet (materials named "Review_…") already has wear painted into its textures, so
+// it gets a lighter hand: enough that a Rusty machine reads as rusty and a Used one as cared-for,
+// with tyres and tracks kept dark.
+const BAKED_TIERS = {
+  rusty: { wear: 0.92, fade: 0.55, mud: 0.45 },
+  used: { wear: 0.1, fade: 0.12, mud: 0.22 },
+};
+
+// Which role a material plays: "Paint.001" -> Paint; "Review_PaintDark_BoomRam.002" -> PaintDark.
+export function materialRole(name) {
+  const plain = name.replace(/\.\d+/g, '');
+  const baked = plain.startsWith('Review_');
+  const key = baked ? plain.slice('Review_'.length).split('_')[0] : plain;
+  const role = ROLES[key] ?? null;
+  return role ? { role, baked } : null;
+}
+
 // Where the ground is in each model's own space (the truck's origin is its body centre).
 const GROUND = { truck: -1.3 };
 
@@ -106,8 +125,8 @@ const FRAGMENT = /* glsl */ `
 // `name` is the model file name, e.g. "excavator_rusty".
 export function weatherModel(scene, name) {
   const [type, tier] = name.split('_');
-  const t = TIERS[tier] ?? (type === 'vehicle' ? TIERS.rusty : null);
-  if (!t) return;
+  const tierName = TIERS[tier] ? tier : type === 'vehicle' ? 'rusty' : null;
+  if (!tierName) return;
   const ground = GROUND[type] ?? 0;
   scene.updateMatrixWorld(true);
   const made = new Map();
@@ -116,10 +135,10 @@ export function weatherModel(scene, name) {
     const mats = Array.isArray(o.material) ? o.material : [o.material];
     let any = false;
     const next = mats.map((m) => {
-      const role = ROLES[m.name.replace(/\.\d+$/, '')];
-      if (!role) return m;
+      const r = materialRole(m.name);
+      if (!r) return m;
       any = true;
-      if (!made.has(m)) made.set(m, weathered(m, role, t, ground));
+      if (!made.has(m)) made.set(m, weathered(m, r.role, (r.baked ? BAKED_TIERS : TIERS)[tierName], ground));
       return made.get(m);
     });
     if (!any) return;

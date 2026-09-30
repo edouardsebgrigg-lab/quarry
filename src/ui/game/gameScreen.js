@@ -1,7 +1,6 @@
 // The in-game screen: 3D world, HUD, and the real-time loop that drives the game clock.
 import { el } from '../dom.js';
 import { getDate } from '../../core/index.js';
-import { createWorld3D } from '../../world3d/index.js';
 import { createHud } from './hud.js';
 import { createHud3d } from './hud3d.js';
 import { createFeedback } from './feedback.js';
@@ -66,7 +65,8 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     devPanel?.node,
   );
 
-  createWorld3D({
+  // (the 3D world, three.js and the physics engine load on demand, so the menus appear quickly)
+  import('../../world3d/index.js').then(({ createWorld3D }) => createWorld3D({
     container: viewport,
     game,
     settings,
@@ -81,7 +81,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
       }
       if (app.overlays.count() === 0) app.openPauseMenu({ fromLockLoss: true });
     },
-  }).then((w) => {
+  })).then((w) => {
     if (destroyed) {
       w.destroy();
       return;

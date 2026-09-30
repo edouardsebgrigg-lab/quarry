@@ -1,13 +1,18 @@
 // Renderer, sky, sunlight, fog, and scenery outside the quarry (grass, hills, trees).
 import * as THREE from 'three';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { createGroundMaterial, paintGround } from './groundMaterial.js';
 
+// ao: ambient occlusion (soft contact shadows where things meet); softShadows: blurred shadow edges.
 const QUALITY = {
-  low: { pixelRatio: 0.75, shadows: false, shadowMap: 1024 },
-  medium: { pixelRatio: 1, shadows: true, shadowMap: 1024 },
-  high: { pixelRatio: 1.5, shadows: true, shadowMap: 2048 },
-  ultra: { pixelRatio: 2, shadows: true, shadowMap: 4096 },
+  low: { pixelRatio: 0.75, shadows: false, shadowMap: 1024, softShadows: false, ao: false },
+  medium: { pixelRatio: 1, shadows: true, shadowMap: 1024, softShadows: true, ao: false },
+  high: { pixelRatio: 1.5, shadows: true, shadowMap: 2048, softShadows: true, ao: true },
+  ultra: { pixelRatio: 2, shadows: true, shadowMap: 4096, softShadows: true, ao: true },
 };
 
 export function createRenderer(canvas, quality) {
@@ -18,9 +23,54 @@ export function createRenderer(canvas, quality) {
   renderer.toneMappingExposure = 0.9;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = q.shadows;
-  renderer.shadowMap.type = THREE.PCFShadowMap;
+  renderer.shadowMap.type = q.softShadows ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
   return { renderer, q };
 }
+
+// Draws each frame: straight to the screen, or (with ambient occlusion) through a small
+// post-processing chain: the scene into an anti-aliased HDR target, GTAO, then tone mapping.
+export function createFrameRenderer(renderer, scene, camera, q) {
+  if (!q.ao) {
+    return { render: () => renderer.render(scene, camera), setSize() {}, dispose() {} };
+  }
+  const size = renderer.getSize(new THREE.Vector2());
+  const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
+  const composer = new EffectComposer(renderer, target);
+  composer.addPass(new RenderPass(scene, camera));
+  const ao = new ContactAOPass(scene, camera, 1, 1);
+  ao.updateGtaoMaterial({ radius: 0.7, distanceExponent: 1.5, thickness: 1.2, distanceFallOff: 1, scale: 1, samples: 12 });
+  ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 5, rings: 2, samples: 12 });
+  ao.blendIntensity = 0.85;
+  composer.addPass(ao);
+  composer.addPass(new OutputPass());
+  composer.setSize(Math.max(1, size.x), Math.max(1, size.y));
+  return {
+    render: () => composer.render(),
+    // (CSS size; the composer applies the renderer's pixel ratio)
+    setSize: (w, h) => composer.setSize(Math.max(1, w), Math.max(1, h)),
+    dispose() {
+      composer.dispose();
+      ao.dispose();
+    },
+  };
+}
+
+// GTAO, minus anything see-through: its depth and normal pass draws every mesh as solid, so
+// grass cards, leaves, glass and effects would otherwise cast dark rectangles.
+class ContactAOPass extends GTAOPass {
+  _overrideVisibility() {
+    super._overrideVisibility();
+    const cache = this._visibilityCache;
+    this.scene.traverse((o) => {
+      if (!o.visible || o.isPoints || o.isLine || o.isLine2) return;
+      if (o.userData.noAO || (o.material && seeThrough(o.material))) {
+        o.visible = false;
+        cache.push(o);
+      }
+    });
+  }
+}
+const seeThrough = (m) => (Array.isArray(m) ? m.some(seeThrough) : m.transparent || m.alphaTest > 0 || m.isShaderMaterial);
 
 // `site` is the rectangle covered by the map's own terrain ({ x0, x1, z0, z1 }); beyond it
 // there's flat farmland (at `outsideY`) running out to hills on the horizon.
