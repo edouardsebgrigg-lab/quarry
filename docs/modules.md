@@ -69,6 +69,11 @@ You can change any of these and reload the game. No code changes are needed.
 ## Models
 `blender/` has the Python scripts that build the 3D models in Blender; `assets/models/` has the exported `.glb` files. See `docs/models.md`.
 
+The approved 14-asset fleet uses `blender/review_models.py` to refine the original
+builders while retaining their named rigs. Embedded PBR maps and `Review_` materials
+carry the wear directly, bypassing legacy shader weathering. `blender/fleet-rigs.json`
+records the protected animation hierarchy and rest transforms for export checks.
+
 ## Tests
 Unit tests sit next to the code (`*.test.js`). Run them with `npm test`.
 

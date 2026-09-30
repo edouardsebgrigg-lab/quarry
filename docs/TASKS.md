@@ -4,8 +4,8 @@ Claude plans and reviews; Codex implements. **Claude is the only one who edits t
 the branch `claude/coordination`. Codex reports progress in `docs/CODEX-CHECKPOINT.md` on its own
 branch.
 
-- **Queue updated:** 30 September 2026
-- **Last Codex commit reviewed:** `d0b4e15` on `codex/step-7-safety-and-yard-buildings`
+- **Queue updated:** 30 September 2026 (second review)
+- **Last Codex commit reviewed:** `0db19b6` on `codex/step-7-safety-and-yard-buildings`
 - **Codex works on:** `codex/step-7-safety-and-yard-buildings` (keep using it)
 
 ## How to work the queue
@@ -13,7 +13,7 @@ branch.
 1. At the start of every session: `git fetch origin`, then `git merge origin/claude/coordination`
    into your branch. It only carries this queue, review notes, test scripts and small reviewed
    fixes. If it ever conflicts, keep both sides' intent and say so in your checkpoint.
-2. Take the **first task not marked done** in your checkpoint, in order. Finish it before
+2. Take the **first task under "Tasks"** that isn't done, in the order listed (IDs aren't always in number order). Finish it before
    starting the next. If a task is unclear, choose the simplest sensible reading, note the choice
    in your checkpoint, and carry on. Don't stop to ask.
 3. One commit per task at least, with the task ID first in the message, e.g.
@@ -45,64 +45,53 @@ Scripts are in `docs/handover/browser-checks/` (`common.mjs` has the shared setu
 command line that contains the pattern kills your own shell. Say in reports that the pointer
 lock is stubbed and aim is set by code.
 
-## Review notes on `d0b4e15`
+## Review notes on `0db19b6` (T1 to T4)
 
-Good: the heap-distance fix (`eligible` in `gatherLoose`), the finite-width check, site-scoped
-fuel and maintenance multipliers, re-checking obstacles on confirm, and the honest checkpoint.
+Checked by Claude: read the diff and your checkpoint, `npm test` (147 passing in 20 files) and
+`npm run build` (passed) on `0db19b6`, and looked at the paint shots side by side. No browser
+rerun by Claude this time. Stopping after T4 as the rules say was right.
 
-**R1 (must fix, T2):** the player now counts as an obstacle and `clearance` went from 3 to 6 m,
-so you must stand more than about 8.4 m from a 4 m road's centre line before it can be built.
-People plan standing at the start post, so almost every build shows red, and the message reads
-"You is in the way: move it first". The 6 m clearance also blocks machines that a flat road's
-real edits never reach (on flat ground the side batter is only a fraction of a metre wide).
+Good: T1 clean. T2 is the right design (obstacles tested against the cells the grading really
+changes, player lifted onto the new surface, better wording) with good tests and a browser
+check. T3 found no game defect and made the script isolate phases; fine. The checkpoint is
+honest and specific. Keep reporting like this.
 
-**Already done on `claude/step7-verification` (merged by T1):** browser save and reload with
-Continue, level area, clock on blur and hidden window, pickup on a reloaded ramp, dumper and
-tractor with trailer up both ramps, and a planner fix (the build click works wherever you
-look). See the "Verification pass" in `docs/HANDOVER.md`. Remove those from your "outstanding"
-list after merging.
+**R2 (must fix, T9):** spoil and heap sourcing still ignore obstacles. The leftover spoil is
+dropped 9.5 m beside the strip (or beyond an end) without checking what is there, so a parked
+machine, the barrow or the player can end up buried in a heap; taking gravel from a heap can
+also lower the ground under a machine parked on it.
+
+**R3 (must fix, T10):** the paint pass went the wrong way for the rusty tier. In
+`after-rusty-close.png` the rusty dumper's skip is pale cream and the trailer pale mint: they
+read cleaner and newer than before, not rustier. Tyres and tracks everywhere are washed-out grey
+instead of dark rubber and steel. The used tier barely changed. The original complaint was
+machines looking like "one colour all the way round"; the aim is visible wear, not paler paint.
+
+**Minor (do it while in the code, no separate task):** the `worksBuilt` event now carries a
+function (`touchesChangedCell`). Events should stay plain data. Emit the changed cells' bounding
+box or list instead, or have the world re-seat the player when the ground height under their
+feet changed.
+
+## Done
+
+- T1 sync (`6cb0c6d`, `1f73751`)
+- T2 earthworks obstacles by real footprint (`5645f29`, `69af721`)
+- T3 mini digger on the ramps (`a13bb10`, `fbd0f06`): both ramps climbed in the browser
+- T4 paint before and after (`fc33266`, `0db19b6`): shots in, but see R3 and T10
 
 ## Tasks
 
-### T1: Sync with the coordination branch
-Merge `origin/claude/coordination` into your branch. (Claude trial-merged the verification work
-into `d0b4e15`: clean, 145 tests passing.) Update the outstanding list in your checkpoint.
-**Done when:** merged, `npm test` and `npm run build` pass, pushed.
-
-### T2: Earthworks obstacles by real footprint (R1)
-- The ground's plan should say which cells it changes (it already builds a job list). Expose a
-  cheap way to ask whether a circle `{ x, z, r }` touches any changed cell, and check obstacles
-  against that, not against `width / 2 + clearance`. Remove or shrink `clearance` in
-  `data/works.json` to a small margin (for example 0.5 m).
-- Machines and the barrow still block when they touch changed cells.
-- The player does **not** block. After a build, if the player's feet are over changed cells,
-  put them back on the new surface (`player.teleport(x, heightAt(x, z) + 0.1, z)`) so they're
-  never left inside raised ground.
-- Fix the wording: no "You is in the way" anywhere.
-**Done when:** unit tests show (a) standing 1 m from a 4 m road's edge doesn't block it, (b) a
-machine parked 3 m from a flat road's edge doesn't block, (c) a machine on a cell the build
-changes does block, and (d) a refused build changes no money or material. A bounded browser
-check builds a road while standing at its start post, and the player ends on the surface.
-
-### T3: Mini digger on the ramps
-`docs/handover/browser-checks/ramps.mjs` phases T3 and T4 never finished: the 600 s limit hit
-during the mini digger's first drive up the 17% ramp, which was far slower than the dumper,
-pickup and tractor. Find out why. It may be the digger's track speed or slope handling, or the
-test driving it the wrong way (`setKeys` with the digger in Assisted mode, or the yaw
-convention). Run just those phases with a longer limit.
-**Done when:** the mini digger climbs both ramps in the browser, or the cause is found and
-fixed with a unit test. If it's a genuine limit (too steep for a mini digger), make the game
-say so rather than crawl, and document it.
-
-### T4: Paint before and after
-The "before" shots are in `docs/handover/screenshots/paint/`. They were taken just before the
-paint pass (commit `b16c01e`) with `docs/handover/browser-checks/capture.mjs` (`TAG=before`).
-Run the same script with `TAG=after` on your current branch (same views, 960×540 shots) and
-commit the five `after-*.png` files next to them. Add a short note in your checkpoint: what
-differs, and anything that looks wrong (flat single colour, too pale, too dark, missing
-texture).
-**Done when:** ten images side by side in that folder and the note written. Don't change the
-paint in this task.
+### T9: Spoil and heap sourcing respect obstacles (R2)
+- Check the spoil spot's footprint (the heap's radius) against the same obstacles (machines,
+  barrow) before choosing it. Try the other candidate spots in order; if none is clear,
+  refuse the plan with a clear reason ("No room for the spare spoil: move <machine>").
+- Don't take heap material from cells under a machine (skip them when gathering).
+- If spoil lands where the player stands, lift them onto the new surface as T2 does.
+- The plan, the card and the build must agree: the preview shows the spoil spot the build
+  will use (a small marker is enough).
+**Done when:** unit tests show a machine parked on the first spoil spot makes the build use
+another spot (or refuse), a machine on a heap isn't undermined, and a refused build changes
+nothing. Material still conserved.
 
 ### T5: The opening loop with real controls and normal money
 The fresh-save loop has never been measured: dig by hand, fill the barrow, load the pickup,
@@ -112,6 +101,19 @@ forced shortcuts except those the script marks. Record game-clock times to the f
 the first machine, and any point where a new player would get stuck.
 **Done when:** times recorded in your checkpoint, or the exact blocker with steps to reproduce if
 software rendering makes it impractical. Fix any defect that blocks the loop.
+
+### T10: Make the weathering read as wear, not paler paint (R3)
+Work in `src/world3d/weathering.js` (the shader tiers) and, only if needed, the base paint in
+`blender/lib.py` (then rebuild the affected models with the Blender scripts).
+- Rusty tier: keep each machine's colour but clearly worn: darker, faded base; orange-brown
+  rust patches and streaks visible at 10 to 15 m (edges, bottoms of panels, around bolts);
+  chipped paint showing dark metal. It must not look lighter or cleaner than before the pass.
+- Used tier: the same idea, much subtler (sun-faded tops, light dirt low down, a few chips).
+- Tyres and tracks: dark rubber and steel, with mud only on the lower part and treads.
+- All numbers for the look stay in one place (the tier table), easy to tune.
+**Done when:** a fresh `TAG=after2` capture of the five views is committed next to the others,
+with a short note on each view. Claude and Edouard judge it by eye; don't mark it passed
+yourself, mark it "ready to judge".
 
 ### T6: Step 8b: stockpile bays at the home yard
 The design's "hold or sell" choice (`docs/design-spec.md`: yard stockpile with a limit).

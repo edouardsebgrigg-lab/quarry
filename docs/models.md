@@ -28,6 +28,34 @@ All models are made in **Blender** by Python scripts in `blender/`, exported as 
 
 Previews for all of them are in `docs/images/models/`.
 
+## Refined fleet
+
+The drivable pickup, wheelbarrow and both Rusty/Used variants of the mini digger,
+dumper, tractor, excavator, truck and trailer use the approved Blender fleet revision.
+These 14 exports have embedded colour, normal and roughness maps, darker rubber and
+steel, tier-specific paint wear, hydraulic hoses, and cab apertures with transparent
+glazing. Their moving-part names, parents and rest transforms retain the original
+rig contract. The parked pickup prop remains the separate jerrycan variant.
+
+The refined materials have a `Review_` prefix. They already contain baked wear, so
+the legacy runtime weathering shader does not process them a second time. The
+legacy shader still treats unchanged models. No saved state or vehicle handling
+changes are required.
+
+`blender/review_models.py` reproduces the refined exports from the original builders:
+
+```bash
+blender --background --python blender/review_models.py -- --out /tmp/quarry-fleet
+python3 blender/check_review_exports.py /tmp/quarry-fleet --production /path/to/original-glbs
+```
+
+Each output subdirectory contains its GLB, editable packed Blender scene, two
+renders and rig report. Copy the approved GLBs into `assets/models/` after checking
+them; leave `manifest.json` unchanged. The classic `build_models.py` commands below
+generate the original base models, so run the refinement stage afterwards for
+these 14 assets. `blender/fleet-rigs.json` records their original protected rigs.
+Actual before/after comparisons are in `docs/handover/screenshots/models/`.
+
 ## Ground and plant textures
 
 These are also made in Blender, from real geometry rather than painted by hand:
