@@ -66,8 +66,11 @@ export async function preloadGround(renderer) {
   await Promise.all(jobs);
 }
 
-export function createGroundMaterial() {
+// `fields`: farmland beyond the map (the far strips and hills): a patchwork of fields in
+// different crops with dark hedge lines between them, the way English hills look from afar.
+export function createGroundMaterial({ fields = false } = {}) {
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.94, metalness: 0, envMapIntensity: 0.7 });
+  if (fields) mat.defines = { ...mat.defines, FIELDS: '' };
   const uniforms = {};
   for (const name of LAYERS) {
     uniforms[`t_${name}A`] = { value: textures[`${name}A`] ?? placeholder([140, 128, 110, 255]) };
@@ -159,6 +162,23 @@ export function createGroundMaterial() {
         vec4 albedo = gA * b.x + dA * b.y + vA * b.z + rA * b.w;
         // Large-scale colour and brightness variation.
         albedo.rgb *= mix(0.86, 1.1, mac.r) * mix(vec3(1.0), vec3(1.04, 1.0, 0.94), mac.g);
+        #ifdef FIELDS
+        {
+          // Fields about 260 m across with wobbly edges; each one grass, barley, a darker
+          // pasture, oilseed or plough; a hedge (about 6 m of dark green) along every edge.
+          vec2 fp = vWPos.xz / 260.0 + vec2(sin(vWPos.z / 310.0), cos(vWPos.x / 290.0)) * 0.35;
+          vec2 cell = floor(fp);
+          vec2 f = fract(fp);
+          float fh = fract(sin(dot(cell, vec2(127.1, 311.7))) * 43758.5453);
+          vec3 crop = fh < 0.42 ? vec3(1.0) : fh < 0.6 ? vec3(1.14, 1.08, 0.7) : fh < 0.76 ? vec3(0.84, 0.98, 0.78)
+            : fh < 0.86 ? vec3(1.28, 1.12, 0.55) : vec3(0.8, 0.66, 0.5);
+          albedo.rgb *= crop;
+          float edgeM = min(min(f.x, 1.0 - f.x), min(f.y, 1.0 - f.y)) * 260.0;
+          float aa = fwidth(edgeM) + 0.5;
+          float hedgeLine = 1.0 - smoothstep(3.0 - aa, 3.0 + aa, edgeM);
+          albedo.rgb = mix(albedo.rgb, vec3(0.035, 0.06, 0.025), hedgeLine * 0.9);
+        }
+        #endif
         diffuseColor *= vec4(albedo.rgb, 1.0);
         diffuseColor.rgb *= mix(1.0, mix(0.68, 0.84, b.x), uWet);
 
@@ -171,7 +191,7 @@ export function createGroundMaterial() {
         normal = normalize((viewMatrix * vec4(groundWN, 0.0)).xyz);
       `);
   };
-  mat.customProgramCacheKey = () => 'quarry-ground-v3';
+  mat.customProgramCacheKey = () => `quarry-ground-v3${fields ? '-fields' : ''}`;
   return mat;
 }
 

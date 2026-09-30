@@ -120,7 +120,7 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
   scene.add(sun, sun.target);
 
   // Grass beyond the map: four strips around it.
-  const ground = createGroundMaterial();
+  const ground = createGroundMaterial({ fields: true });
   const R = Math.max(1500, hillDistance[1] * 1.6);
   const s0 = site;
   for (const [x0, x1, z0, z1] of [
