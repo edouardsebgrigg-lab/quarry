@@ -105,9 +105,10 @@ feet changed.
 ## Tasks
 
 ### T11: One working branch
-Merge `origin/codex/vehicle-model-integration` into `codex/step-7-safety-and-yard-buildings`
-(it already contains everything else), run `npm test` and `npm run build`, and push. From now on
-all work goes on `codex/step-7-safety-and-yard-buildings`; leave the vehicle branch as it is.
+`claude/coordination` now includes `codex/vehicle-model-integration` (merged by Claude), so the
+normal start-of-session merge of `origin/claude/coordination` brings the new models into
+`codex/step-7-safety-and-yard-buildings`. Just do that merge, run `npm test` and `npm run build`,
+and push. Keep working on `codex/step-7-safety-and-yard-buildings`.
 **Done when:** merged, both pass, pushed. (A sync task: it doesn't count toward the three.)
 
 ### T9: Spoil and heap sourcing respect obstacles (R2)
@@ -122,18 +123,8 @@ all work goes on `codex/step-7-safety-and-yard-buildings`; leave the vehicle bra
 another spot (or refuse), a machine on a heap isn't undermined, and a refused build changes
 nothing. Material still conserved.
 
-### T12: Shrink the vehicle textures (R4)
-- Re-encode the embedded textures: colour maps as WebP or JPEG (three.js's `GLTFLoader` reads
-  `EXT_texture_webp`), normal and roughness maps as WebP too if they survive it; 1024 px at most,
-  512 for small parts.
-- Share identical images between the rusty and used models where they're the same (tyres,
-  glass, steel, decals), or at least within a model.
-- Keep it reproducible: a script in `blender/` that does the conversion, documented in
-  `docs/models.md`.
-- Add a test that fails if `assets/models` grows past a budget (start at 40 MB).
-**Done when:** all models together are 40 MB or less, the review comparison sheets rebuilt from
-the new files show no visible loss, the rig tests still pass, and the game loads them (a
-bounded browser check that instantiates every machine without errors).
+### T12: Shrink the vehicle textures: CLAIMED BY CLAUDE, skip it
+Claude is doing this on `claude/coordination`; it arrives with your next merge.
 
 ### T5: The opening loop with real controls and normal money
 The fresh-save loop has never been measured: dig by hand, fill the barrow, load the pickup,
@@ -144,17 +135,10 @@ the first machine, and any point where a new player would get stuck.
 **Done when:** times recorded in your checkpoint, or the exact blocker with steps to reproduce if
 software rendering makes it impractical. Fix any defect that blocks the loop.
 
-### T10: Rusty and used must look different in the game (R3, R5)
-The new models bake their own wear, and the shader weathering skips them, so the work is in the
-models' materials (and `blender/review_models.py`), not in `src/world3d/weathering.js`.
-- Rusty: clearly worn at 10 to 15 m: orange-brown rust patches and streaks on edges and the
-  bottoms of panels, chipped paint showing dark metal, faded base colour. Not lighter or cleaner
-  than the used one.
-- Used: the same machine, cleaner: sun-faded tops, light dirt low down, a few chips.
-- Keep tyres and tracks dark, with mud only low down.
-**Done when:** fresh in-game shots of the five paint views at 960×540 with `CLEAN_SHOTS=1`
-(`TAG=after2`), committed next to the others, with a short note per view. Mark it "ready to
-judge"; Claude and Edouard decide by eye.
+### T10: Rusty and used look different: CLAIMED BY CLAUDE, skip it
+Claude is doing this together with a general graphics pass on `claude/coordination`. Don't change
+models, textures, `src/world3d/weathering.js`, `environment.js` or `groundMaterial.js` meanwhile,
+to avoid conflicts.
 
 ### T6: Step 8b: stockpile bays at the home yard
 The design's "hold or sell" choice (`docs/design-spec.md`: yard stockpile with a limit).
