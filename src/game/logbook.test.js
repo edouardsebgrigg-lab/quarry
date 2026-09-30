@@ -27,6 +27,7 @@ describe('the logbook', () => {
     game.dev.skipDays(1);
     expect(reports).toHaveLength(1);
     expect(reports[0]).toMatchObject({ day: 1, income: 80, spending: 12, profit: 68, loads: 1, tonnesSold: 2 });
+    expect(Array.isArray(reports[0].movers)).toBe(true);
   });
 
   it('keeps Ray’s messages, and the logbook is saved with the game', () => {

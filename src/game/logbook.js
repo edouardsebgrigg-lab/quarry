@@ -31,6 +31,19 @@ export function machineLog(ctx, id) {
   return lb.machines[id];
 }
 
+// The depot prices that moved most over the last day (hourly history), biggest first.
+function priceMovers(ctx) {
+  const out = [];
+  for (const [id, p] of Object.entries(ctx.state.market?.products ?? {})) {
+    const h = p.history ?? [];
+    if (h.length < 2) continue;
+    const from = h[Math.max(0, h.length - 25)];
+    const to = h[h.length - 1];
+    if (from > 0) out.push({ id, change: Math.round(((to - from) / from) * 1000) / 1000 });
+  }
+  return out.filter((m) => Math.abs(m.change) >= 0.01).sort((a, b) => Math.abs(b.change) - Math.abs(a.change)).slice(0, 3);
+}
+
 function trim(lb) {
   const extra = lb.messages.length - MAX_MESSAGES;
   if (extra <= 0) return;
@@ -112,7 +125,7 @@ export function logbookOnEvent(ctx, type, e) {
       const { day } = getDate(ctx.state, ctx.data);
       const prev = lb.days.find((d) => d.day === day - 1);
       if (!prev) break;
-      const report = { ...prev, profit: round2(prev.income - prev.spending) };
+      const report = { ...prev, profit: round2(prev.income - prev.spending), movers: priceMovers(ctx) };
       const { hour, minute } = getDate(ctx.state, ctx.data);
       lb.messages.push({ day, hour, minute, from: 'Office', kind: 'report', report });
       trim(lb);

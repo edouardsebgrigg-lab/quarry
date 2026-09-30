@@ -874,3 +874,6 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .job-text { font-size: 0.74rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .hud-job.urgent .job-tag { background: var(--warn); }
 .lt-stats.four { grid-template-columns: repeat(4, 1fr); }
+.lt-movers { font-size: 0.8rem; color: var(--muted); display: flex; gap: 0.8rem; flex-wrap: wrap; }
+.lt-movers .up { color: var(--good); font-weight: 600; }
+.lt-movers .down { color: #ff9a8a; font-weight: 600; }
