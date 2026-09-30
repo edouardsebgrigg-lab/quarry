@@ -29,9 +29,6 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       bog when a digger's lever is held at the end of its stroke (with a clunk as it bottoms out),
       stronger wind and no birdsong in rain. Next: gear whine in the truck, the tractor's PTO
       and a proper tipper-ram sound
-- [ ] W1 Weather: first rain shot: the sky stayed blue and the wet grass looked frosted (sky
-      reflections). Fixed with a grey overcast dome in the fog's colour and far less sheen on
-      grass; re-shoot (weather.mjs now jumps straight to the rain) and judge
 - [ ] M2 Blender: the biggest remaining model issues from the studio shots (the used truck and
       excavator look too clean and toy-like up close: panel gaps, grime in recesses)
 - [ ] V1 Countryside: hedges done (one continuous hedge with oaks). Next: the far hills are
@@ -72,6 +69,9 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       on everything facing up
 - [x] U5 HUD: money, place, date and weather (with an icon) in one panel top right, goal card
       folds away fully, repeated messages merge (×N); checked in hud.mjs shot
+- [x] W1 Weather checked in the game: grey overcast (a dome in the fog's colour, tone-mapped
+      like the rest), hills melting into the mist, wet dark grass without the frosty sky
+      reflections, rain streaks; weather.mjs jumps straight to the rain
 - [x] U9 Prices app with news, laptop home ticker, weekly report: checked in laptop3.mjs shots
 - [x] Product photos pose the diggers (boom up, rams lined up) instead of the straight-out
       export pose with rams pointing the wrong way
