@@ -46,7 +46,7 @@ const PLOT_SURFACE = {
   rock: { grass: 0, dirt: 0, gravel: 0, rock: 1 },
 };
 
-export async function createWorld3D({ container, game, settings, audio = null, notify, onPointerLockLost, onUseOffice }) {
+export async function createWorld3D({ container, game, settings, audio = null, notify, onPointerLockLost, onUseOffice, onLoadProgress }) {
   const { data } = game;
   const siteId = game.state.currentSiteId;
   const home = MAP.home;
@@ -56,7 +56,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   canvas.className = 'world-canvas';
   container.append(canvas);
   const { renderer, q } = createRenderer(canvas, settings.graphics);
-  const [physics] = await Promise.all([createPhysics(), preloadModels(), preloadGround(renderer), preloadVegetation(renderer), preloadCountryside(renderer)]);
+  const [physics] = await Promise.all([createPhysics(), preloadModels({ onProgress: onLoadProgress }), preloadGround(renderer), preloadVegetation(renderer), preloadCountryside(renderer)]);
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 5000);
   camera.rotation.order = 'YXZ';

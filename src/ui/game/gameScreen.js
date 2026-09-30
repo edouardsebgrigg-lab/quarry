@@ -72,6 +72,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     settings,
     audio: app.audio,
     notify: (text, level) => feedback.message(text, level),
+    onLoadProgress: (f) => hud3d.setLoading(true, f),
     onUseOffice: () => openOverlay(() => openShop(app.overlays, { game, feedback })),
     // Esc (or alt-tab) released the mouse: show the pause menu, like any PC game.
     onPointerLockLost: () => {

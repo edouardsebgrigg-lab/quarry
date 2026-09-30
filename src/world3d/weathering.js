@@ -93,15 +93,16 @@ const FRAGMENT = /* glsl */ `
   vec3 c = diffuseColor.rgb;
   float rough = 0.0;
   if (uRole < 1.5) {
-    // Sun fade on upward faces: paler and greyer.
+    // Sun fade on upward faces: duller and a little chalky, but not pale (pale reads as new).
     float lum = dot(c, vec3(0.3, 0.59, 0.11));
-    vec3 faded = mix(c, vec3(lum) * 1.35 + 0.02, 0.55);
+    vec3 faded = mix(c, vec3(lum) * 1.08 + 0.01, 0.5);
     c = mix(c, faded, uWeather.y * up * (0.55 + 0.45 * mid));
     // Chips on edges and corners, down to dark primer.
     float chip = smoothstep(0.7, 0.74, fine * 0.55 + mid * 0.2 + edge * (0.35 + 0.45 * wear) + big * 0.1 * wear);
     c = mix(c, wLin(vec3(0.2, 0.19, 0.18)), chip * step(0.01, wear));
     // Rust: starts on edges and low down, spreads in patches; flaky orange-brown.
-    float rustAmt = big * 0.55 + mid * 0.35 + edge * 0.35 + low * 0.18 + fine * 0.08 - (1.0 - wear) * 0.55;
+    // (a heavily worn machine gets broad patches you can see from across the field)
+    float rustAmt = big * 0.55 + mid * 0.35 + edge * 0.35 + low * 0.22 + fine * 0.08 - (1.0 - wear) * 0.55 + wear * 0.1;
     float rust = smoothstep(0.8, 0.86, rustAmt) * step(0.01, wear);
     vec3 rustC = mix(wLin(vec3(0.24, 0.1, 0.05)), wLin(vec3(0.56, 0.26, 0.1)), smoothstep(0.2, 0.8, fine * 0.6 + mid * 0.4));
     c = mix(c, rustC, rust);

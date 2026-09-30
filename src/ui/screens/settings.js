@@ -57,7 +57,7 @@ export function openSettings(overlays, { settings, onChange, keyboard }) {
         el('div', { class: 'settings-section' },
           el('h3', {}, 'Display'),
           row('Graphics quality', select('graphics', [['low', 'Low'], ['medium', 'Medium'], ['high', 'High'], ['ultra', 'Ultra']]),
-            'Applies when a game starts'),
+            'Low: no shadows, for slow computers. Medium: soft shadows. High: adds contact shadows where things meet. Ultra: sharper shadows and a higher resolution. Applies when a game starts'),
           row('Interface size', select('uiScale', [0.85, 1, 1.15, 1.3, 1.5].map((v) => [v, `${Math.round(v * 100)}%`]), Number)),
           row('Full screen', toggle('fullscreen'))),
         el('div', { class: 'settings-section' },

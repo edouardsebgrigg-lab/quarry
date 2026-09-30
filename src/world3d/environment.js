@@ -81,10 +81,11 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
   const sky = new Sky();
   sky.scale.setScalar(10000);
   const u = sky.material.uniforms;
-  u.turbidity.value = 6;
-  u.rayleigh.value = 1.4;
-  u.mieCoefficient.value = 0.004;
-  u.mieDirectionalG.value = 0.85;
+  // (a clear English summer day: blue overhead, a light haze on the horizon, not a milky sky)
+  u.turbidity.value = 2.6;
+  u.rayleigh.value = 1.1;
+  u.mieCoefficient.value = 0.003;
+  u.mieDirectionalG.value = 0.82;
   u.sunPosition.value.copy(sunDir);
   scene.add(sky);
 

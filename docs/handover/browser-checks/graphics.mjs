@@ -30,8 +30,10 @@ await q((ids) => {
 }, ids);
 await frames(10);
 const view = async (name, fn, arg) => { await q(fn, arg); await frames(6); await shot(`${TAG}-${name}`); };
-await view('rusty-close', () => { const d = window.__quarry.world.debug; d.teleportPlayer(44, 90, -0.35); d.setFootPitch(-0.22); });
-await view('used-close', () => { const d = window.__quarry.world.debug; d.teleportPlayer(114, 90, -0.35); d.setFootPitch(-0.22); });
+// (standing about 9 m from the tractor and dumper, looking at them)
+const look = (x, z, tx, tz) => q(([x, z, tx, tz]) => { const d = window.__quarry.world.debug; d.teleportPlayer(x, z); d.aimAt(tx, tz); d.setFootPitch(-0.08); }, [x, z, tx, tz]);
+await look(41, 88, 44, 80); await frames(6); await shot(`${TAG}-rusty-close`);
+await look(111, 88, 114, 80); await frames(6); await shot(`${TAG}-used-close`);
 await view('field-wide', () => { const d = window.__quarry.world.debug; d.teleportPlayer(150, 30, 0.9); d.setFootPitch(-0.12); });
 await view('tractor-chase', (id) => { const d = window.__quarry.world.debug; d.enterVehicle(id); d.setCamMode('chase'); d.setLook(2.4, -0.15); }, ids.tractor_rusty);
 console.log('errors', errors.slice(0, 10).join('\n') || '(none)');

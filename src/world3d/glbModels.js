@@ -7,7 +7,8 @@ import { weatherModel } from './weathering.js';
 
 const cache = new Map(); // "truck_used" -> THREE.Object3D (the loaded scene)
 
-export async function preloadModels() {
+// onProgress(fraction 0..1) follows the downloads, for the loading card.
+export async function preloadModels({ onProgress } = {}) {
   let names = [];
   try {
     const res = await fetch('models/manifest.json');
@@ -16,9 +17,17 @@ export async function preloadModels() {
     return; // no models yet: placeholders are used
   }
   const loader = new GLTFLoader();
-  await Promise.all(names.filter((n) => !cache.has(n)).map(async (name) => {
+  const todo = names.filter((n) => !cache.has(n));
+  const part = new Map(todo.map((n) => [n, 0])); // how much of each file has arrived
+  const report = () => onProgress?.([...part.values()].reduce((a, b) => a + b, 0) / Math.max(1, todo.length));
+  await Promise.all(todo.map(async (name) => {
     try {
-      const gltf = await loader.loadAsync(`models/${name}.glb`);
+      const gltf = await loader.loadAsync(`models/${name}.glb`, (e) => {
+        if (e.total > 0) {
+          part.set(name, Math.min(0.99, e.loaded / e.total));
+          report();
+        }
+      });
       gltf.scene.traverse((o) => {
         if (o.isMesh) {
           o.castShadow = true;
@@ -30,6 +39,8 @@ export async function preloadModels() {
     } catch (err) {
       console.warn(`Could not load model ${name}:`, err);
     }
+    part.set(name, 1);
+    report();
   }));
 }
 
