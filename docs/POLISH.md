@@ -33,11 +33,12 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       excavator look too clean and toy-like up close: panel gaps, grime in recesses)
 - [ ] V1 Countryside: hedges done (one continuous hedge with oaks). Next: the far hills are
       smooth green domes (field patterns, hedge lines up their sides), and a few farm buildings
-- [ ] U10 Laptop: feedback toasts sit on top of the laptop's header; move them down or into
-      the laptop's own taskbar while it's open
 
 ## Done
 
+- [x] U10 Laptop open: notifications pop up bottom right above its taskbar — `89574af`
+- [x] N1 Milestones app on the laptop (summary, perks, groups with progress), dock badge,
+      one merged toast for a burst — `15274c2`
 - [x] U1 Laptop shell with apps (B dealer, M prices, office laptop home) — `3183757`
 - [x] U2 Plant dealer: categories, product photos rendered from the game's models, detail page
       with specs against yours, upgrades, yard buildings, two-click sell — `3183757`

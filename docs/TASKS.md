@@ -4,8 +4,8 @@ Claude plans and reviews; Codex implements. **Claude is the only one who edits t
 the branch `claude/coordination`. Codex reports progress in `docs/CODEX-CHECKPOINT.md` on its own
 branch.
 
-- **Queue updated:** 30 September 2026 (third review)
-- **Last Codex commit reviewed:** `fbf0885` on `codex/vehicle-model-integration` (and `0db19b6` on `codex/step-7-safety-and-yard-buildings`)
+- **Queue updated:** 1 October 2026 (overnight pass)
+- **Last Codex commit reviewed:** `7ddb43d` (T11) on `codex/step-7-safety-and-yard-buildings`
 - **Codex works on:** `codex/step-7-safety-and-yard-buildings`. After T11 that one branch holds everything; keep using it
 
 ## How to work the queue
@@ -99,6 +99,52 @@ line in `docs/modules.md`.
   and dirt). T10 is in progress with Claude: see its entry below
 - Clean-up: an unused helper removed, docs updated
 
+## Overnight pass (Claude, 1 October 2026)
+
+Built on `7ddb43d` (T11), so it has everything. Edouard asked for deeper, more rewarding
+gameplay and a better look while he slept.
+
+**Review of T11 (`7ddb43d`):** a clean sync, as asked. Nothing to fix.
+
+**Added (commit `15274c2`):**
+- **T8 done:** the goal "Build a ramp or a haul road" comes after the first trailer sale (any
+  works count, so a level area, which needs no gravel, is always possible). The price check is
+  in `pacing.test.js`: a 20 m road, a 15 m ramp and an 8 m level area cost $140, $140 and $58,
+  against $200 for a full trailer of clean topsoil. No change to `works.json` was needed.
+- **Goals, chapter 2:** after "Get a better machine", six more goals walk the player into
+  systems that were only on the laptop: a job from the jobs board, a yard building, 300 t of
+  clean material, reputation 3, a Used digger plus a Used road vehicle, and $15,000 earned.
+  22 goals in all now.
+- **Milestones and perks (`src/career/`, `data/milestones.json`):** 25 achievements in any
+  order (selling, digging, building, business), each paid once, with the counters nothing else
+  kept (clean loads in a row, gravel dug, road metres, rain loads, best day, loans cleared).
+  Three perks: depot account (+4% on clean loads), fuel card (-10% diesel), trade account (-5%
+  at the dealer). `perks.js` imports nothing; prices ask it (`dealerPrice`,
+  `fuelPerkMultiplier`, `cleanSaleBonus`). A Milestones app on the laptop, a toast, a chime and
+  a line in Messages. Old saves catch up on their first event.
+
+**For Codex:** after your next merge, tests that check exact money must turn milestones off
+(`data.milestones.list = []`), as the bank, planner and earthworks tests now do, or a reward
+lands mid-test. New buildings in `data/buildings.json` count toward the "Fitted out" milestone
+automatically. Loads tipped into a stockpile bay (T6) aren't sales, so they won't count toward
+milestones either, which is right.
+
+**Checked:** my own copy of the test runner (Vitest itself couldn't be installed where I
+worked): 200 tests pass; the 8 truck and pickup driving tests need the real Rapier, which I
+couldn't load, and that code is untouched. `npm run build` was **not** run, for the same
+reason; every changed file loads in the browser (`docs/handover/browser-checks/milestones.mjs`,
+screenshot checked, no page errors). **Codex: run `npm test` and `npm run build` after your merge
+and say in your checkpoint if anything fails.**
+
+**Still open from earlier reviews:** the `worksBuilt` event carries a function
+(`touchesChangedCell`); make it plain data when T9 is in that code. `main` still only has the
+first commit: that's Edouard's call (see "Needs Edouard" below).
+
+**Needs Edouard:**
+- Play the first ten minutes with a real mouse and say what felt wrong (the biggest gap, as before).
+- Decide when to merge the work into `main` (PR #1 is still open from the first branch).
+- Judge T10 (rusty vs used paint) in the game.
+
 ## Review notes on `fbf0885` (VEH1, the new vehicle models)
 
 VEH1 was a batch Edouard asked for directly, so doing it before the queue was right, and
@@ -155,15 +201,10 @@ feet changed.
 - T3 mini digger on the ramps (`a13bb10`, `fbd0f06`): both ramps climbed in the browser
 - T4 paint before and after (`fc33266`, `0db19b6`): shots in, but see R3 and T10
 - VEH1 new vehicle models (`38af7d1`, `fbf0885` on `codex/vehicle-model-integration`): see R4 and R5
+- T11 one working branch (`7ddb43d`)
+- T8 a goal for roads and ramps, and the price check: done by Claude (`15274c2`)
 
 ## Tasks
-
-### T11: One working branch
-`claude/coordination` now includes `codex/vehicle-model-integration` (merged by Claude), so the
-normal start-of-session merge of `origin/claude/coordination` brings the new models into
-`codex/step-7-safety-and-yard-buildings`. Just do that merge, run `npm test` and `npm run build`,
-and push. Keep working on `codex/step-7-safety-and-yard-buildings`.
-**Done when:** merged, both pass, pushed. (A sync task: it doesn't count toward the three.)
 
 ### T9: Spoil and heap sourcing respect obstacles (R2)
 - Check the spoil spot's footprint (the heap's radius) against the same obstacles (machines,
@@ -220,7 +261,7 @@ weigh at home.
 **Done when:** unit tests for ticket validity (one ticket per load; tipping on your field clears
 it), the shop entry, and a bounded browser check. Docs updated.
 
-### T8: A goal for roads and ramps, and a price check
+### T8: A goal for roads and ramps, and a price check: DONE BY CLAUDE (see the overnight pass)
 Add an objective after the first machine: build a haul road or ramp (the `worksBuilt` event
 exists). Check that works prices sit sensibly against early income, and adjust
 `data/works.json` if a 20 m road costs more than about one good load sells for. Extend
