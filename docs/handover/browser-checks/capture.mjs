@@ -1,8 +1,17 @@
 // Comparable views of the machines, rusty and used, for before/after looks. TAG=before|after.
+// CAPTURE_VIEWS=used-lineup (or comma-separated suffixes) isolates slow captures without
+// changing any camera/model placement. CLEAN_SHOTS=1 hides transient feedback for the photos.
+import assert from 'node:assert/strict';
 import { start } from './common.mjs';
 const TAG = process.env.TAG ?? 'before';
-const { browser, errors, q, frames, shot, newGame } = await start();
+const views = process.env.CAPTURE_VIEWS ? new Set(process.env.CAPTURE_VIEWS.split(',')) : null;
+const { browser, errors, q, frames, shot: captureShot, newGame } = await start();
+const shot = async (name) => {
+  if (!views || views.has(name.slice(TAG.length + 1))) await captureShot(name);
+};
+try {
 await newGame();
+if (process.env.CLEAN_SHOTS === '1') await q(() => { document.querySelector('.feedback').style.visibility = 'hidden'; });
 const ids = await q(() => {
   const g = window.__quarry.game;
   g.state.money = 1e6;
@@ -35,4 +44,5 @@ await q((ids) => { const d = window.__quarry.world.debug; d.enterVehicle(ids.tra
 await frames(6);
 await shot(`${TAG}-rusty-tractor-chase`);
 console.log('errors', errors.slice(0, 10).join('\n'));
-await browser.close();
+assert.deepEqual(errors, []);
+} finally { await browser.close(); }
