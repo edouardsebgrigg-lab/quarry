@@ -6,6 +6,8 @@ import { createHeap } from './piles.js';
 import { weatherModel } from './weathering.js';
 import { addDecals } from './decals.js';
 
+const OPEN_SURFACE = /(^|_)Rims$/; // materials on open (one-sided) surfaces
+
 const cache = new Map(); // "truck_used" -> THREE.Object3D (the loaded scene)
 
 // onProgress(fraction 0..1) follows the downloads, for the loading card.
@@ -33,6 +35,9 @@ export async function preloadModels({ onProgress } = {}) {
         if (o.isMesh) {
           o.castShadow = true;
           o.receiveShadow = true;
+          // The tractor's wheel discs are open surfaces facing inward on one side: draw both
+          // sides, or you see straight through the left-hand wheels.
+          if (OPEN_SURFACE.test(o.material?.name ?? '')) o.material.side = THREE.DoubleSide;
         }
       });
       weatherModel(gltf.scene, name); // machines only: rust, chips, fade and mud by tier
