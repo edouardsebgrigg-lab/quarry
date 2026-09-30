@@ -28,8 +28,9 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       the message log sometimes shows the same line twice
 - [ ] S2 Sound: listen-free checks only so far. Done: turbo whistle (used excavator, truck),
       load layers in the engine note, gravel crunch under tracks, relief-valve squeal and engine
-      bog when a digger's lever is held at the end of its stroke. Next: wind in the open, birds
-      on a fine morning, a distant road; metal clank when the bucket hits rock
+      bog when a digger's lever is held at the end of its stroke (with a clunk as it bottoms out),
+      stronger wind and no birdsong in rain. Next: gear whine in the truck, the tractor's PTO
+      and a proper tipper-ram sound
 - [ ] W1 Weather: first rain shot: the sky stayed blue and the wet grass looked frosted (sky
       reflections). Fixed with a grey overcast dome in the fog's colour and far less sheen on
       grass; re-shoot (weather.mjs now jumps straight to the rain) and judge
