@@ -148,6 +148,13 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
       if (e.delivered < e.tonnes) feedback.message(`Job: ${e.delivered.toFixed(1)} of ${e.tonnes.toFixed(1)} t delivered`, 'info');
     }),
     game.events.on('contractFailed', (e) => feedback.message(`${e.client} gave up waiting: job lost`, 'warn')),
+    game.events.on('inspectionAnnounced', (e) => feedback.message(`Site inspection on day ${e.day} at ${e.hour}:00: broken or badly worn machines are fined (laptop: Messages)`, 'warn')),
+    game.events.on('inspection', (e) => {
+      if (e.fine > 0) feedback.message(`Inspector's fine: $${e.fine} for ${e.poor.length} machine${e.poor.length > 1 ? 's' : ''} not fit to work`, 'bad');
+      else feedback.message(e.good ? 'Inspection passed: everything in good order (reputation up)' : 'Inspection passed', 'good');
+    }),
+    game.events.on('rushOrder', (e) => feedback.message(`Rush job from ${e.client}: $${e.bonus} bonus, today only (laptop: Jobs board)`, 'good')),
+    game.events.on('dealerOffer', (e) => feedback.message(`Ashby Plant: ${Math.round(e.discount * 100)}% off the ${game.data.machines.tiers[e.tier]?.name ?? e.tier} ${game.data.machines.types[e.type]?.name ?? e.type} until day ${e.until}`, 'good')),
     game.events.on('dailyReport', (r) => feedback.message(`Day ${r.day}: ${r.profit >= 0 ? 'profit' : 'loss'} of $${Math.abs(Math.round(r.profit))} (laptop: Messages)`, r.profit >= 0 ? 'good' : 'warn')),
     game.events.on('marketNews', (e) => feedback.message(`${e.source}: ${game.data.materials[e.product]?.name ?? e.product} ${e.change > 0 ? 'up' : 'down'} ${Math.round(Math.abs(e.change) * 100)}% for ${e.days} days (laptop: Prices)`, e.change > 0 ? 'good' : 'warn')),
     game.events.on('weeklyReport', (r) => feedback.message(`Week ${r.week} report is in: ${r.profit >= 0 ? 'profit' : 'loss'} of $${Math.abs(Math.round(r.profit))} (laptop: Messages)`, r.profit >= 0 ? 'good' : 'warn')),

@@ -15,8 +15,9 @@ import contracts from '../../data/contracts.json';
 import weather from '../../data/weather.json';
 import buildings from '../../data/buildings.json';
 import milestones from '../../data/milestones.json';
+import happenings from '../../data/happenings.json';
 
 export function loadData() {
   // Deep copy so tests can tweak numbers without affecting each other.
-  return structuredClone({ game, economy, materials, market, machines, mods, sites, objectives, ground, tools, depot, works, contracts, weather, buildings, milestones });
+  return structuredClone({ game, economy, materials, market, machines, mods, sites, objectives, ground, tools, depot, works, contracts, weather, buildings, milestones, happenings });
 }

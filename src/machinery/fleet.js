@@ -4,6 +4,7 @@ import { pileTotal, addToPile, takeProportional } from '../quarry/index.js';
 import { tierData, typeName, tierName, getStats, isDigger } from './stats.js';
 import { applyWear } from './wear.js';
 import { dealerPrice } from '../career/index.js';
+import { offerPrice } from '../happenings/index.js';
 
 export function createMachine(state, data, type, tier, siteId) {
   const td = tierData(data, type, tier);
@@ -50,12 +51,19 @@ function notAffordable(ctx) {
   return isInDebt(ctx) ? 'Pay off your debt first' : 'Not enough money';
 }
 
+// What the dealer charges for a machine now: the list price, less any offer on it this week,
+// less your trade account if you have one.
+export function machinePrice(ctx, type, tier) {
+  const td = tierData(ctx.data, type, tier);
+  return td ? dealerPrice(ctx, offerPrice(ctx, type, tier, td.price)) : Infinity;
+}
+
 export function buyMachine(ctx, type, tier) {
   const td = tierData(ctx.data, type, tier);
   if (!td) return { ok: false, reason: 'Unknown machine' };
   if (ctx.data.machines.types[type].shop === false) return { ok: false, reason: 'Not for sale' };
   if (!isTierUnlocked(ctx, type, tier)) return { ok: false, reason: 'Not unlocked yet' };
-  const price = dealerPrice(ctx, td.price);
+  const price = machinePrice(ctx, type, tier);
   if (!canAfford(ctx, price)) return { ok: false, reason: notAffordable(ctx) };
   spendMoney(ctx, price, 'machine');
   const machine = createMachine(ctx.state, ctx.data, type, tier, ctx.state.currentSiteId);

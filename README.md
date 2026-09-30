@@ -139,6 +139,16 @@ Alongside the goals, the office laptop's **Milestones** app lists 25 company ach
 
 The numbers are in `data/milestones.json`. An old save catches up the first time something happens: anything you've already done is paid out then.
 
+## Things that happen
+
+Every so often something comes up that asks for a decision:
+
+- **The site inspector:** once you have a few machines, the council's inspector visits every week or two. You get a message the day before (Ray explains the first time). At 10:00 on the day, every machine that's broken down or under 40% condition is a $60 fine; if they're all above 70%, your reputation goes up. Service your machines (**R**) before they arrive.
+- **Rush jobs:** once you've finished a job, a customer sometimes posts a rush order on the jobs board: fewer tonnes, due tomorrow, twice the bonus, and only open today.
+- **Dealer's offers:** Ashby Plant sometimes takes 15% off one machine you don't own yet, for three days. It's marked in the plant dealer.
+
+The numbers are in `data/happenings.json`.
+
 ## The map
 
 The map is 2 km across. Your land is the 150 m field and the yard next to it, on Mill Lane. The lane runs east and then north through **Ashby** (a village with a pub and the machine dealer, **Ashby Plant**). In the middle of the village **Quarry Road** turns off west to **Ashby Aggregates**, the depot where you sell. It's about 1.2 km from your gate by road, a couple of minutes in the pickup. Site machines (the excavator) aren't road-legal and stay on your land; the pickup and the tipper truck can go anywhere.

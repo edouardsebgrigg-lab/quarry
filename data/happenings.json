@@ -1,0 +1,27 @@
+{
+  "inspector": {
+    "name": "Council site inspector",
+    "firstDay": 6,
+    "everyDays": [8, 13],
+    "minMachines": 3,
+    "hour": 10,
+    "badCondition": 40,
+    "goodCondition": 70,
+    "finePerMachine": 60,
+    "reputationBonus": 0.5
+  },
+  "rushOrder": {
+    "chancePerDay": 0.15,
+    "minJobsDone": 1,
+    "days": 2,
+    "bonusMult": 2,
+    "tonnesMult": 0.8
+  },
+  "dealerOffer": {
+    "name": "Ashby Plant",
+    "firstDay": 4,
+    "chancePerDay": 0.12,
+    "discount": 0.15,
+    "days": 3
+  }
+}

@@ -35,7 +35,7 @@ export function jobsApp({ game, feedback, setHead }) {
     for (const a of c.active) {
       const f = Math.min(1, a.delivered / a.tonnes);
       activeBox.append(el('div', { class: 'lt-job active' },
-        el('div', { class: 'lt-job-head' }, el('b', {}, a.client), el('span', { class: 'lt-job-bonus' }, `+${money(a.bonus)}`)),
+        el('div', { class: 'lt-job-head' }, el('b', {}, a.client, a.rush ? el('span', { class: 'lt-rush' }, 'Rush') : null), el('span', { class: 'lt-job-bonus' }, `+${money(a.bonus)}`)),
         el('div', { class: 'lt-job-what' }, dot(a.material), `${tonnes(a.tonnes)} of clean ${matName(a.material).toLowerCase()}`),
         el('div', { class: 'lt-job-bar' }, el('i', { style: { width: `${Math.round(f * 100)}%` } })),
         el('div', { class: 'lt-job-foot' }, el('span', {}, `${tonnes(a.delivered)} of ${tonnes(a.tonnes)} in`), el('span', {}, dueText(a.deadline)))));
@@ -50,9 +50,9 @@ export function jobsApp({ game, feedback, setHead }) {
         refresh();
       } }, full ? 'Finish a job first' : 'Take the job');
       offersBox.append(el('div', { class: 'lt-job' },
-        el('div', { class: 'lt-job-head' }, el('b', {}, o.client), el('span', { class: 'lt-job-bonus' }, `+${money(o.bonus)}`)),
+        el('div', { class: `lt-job-head` }, el('b', {}, o.client, o.rush ? el('span', { class: 'lt-rush' }, 'Rush') : null), el('span', { class: 'lt-job-bonus' }, `+${money(o.bonus)}`)),
         el('div', { class: 'lt-job-what' }, dot(o.material), `${tonnes(o.tonnes)} of clean ${matName(o.material).toLowerCase()}`),
-        el('div', { class: 'lt-job-foot' }, el('span', {}, `${o.days} day${o.days > 1 ? 's' : ''} to deliver`), el('span', {}, `Offer open until day ${o.expires}`)),
+        el('div', { class: 'lt-job-foot' }, el('span', {}, `${o.days} day${o.days > 1 ? 's' : ''} to deliver`), el('span', {}, o.rush ? 'Today only' : `Offer open until day ${o.expires}`)),
         take));
     }
   }

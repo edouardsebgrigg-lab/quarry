@@ -37,6 +37,9 @@ export function mentorOnEvent(ctx, type, payload) {
     case 'machineBrokeDown':
       tip(ctx, 'breakdown');
       break;
+    case 'inspectionAnnounced':
+      tip(ctx, 'inspector');
+      break;
     case 'productSold':
       if (payload.purity < 0.95 && payload.bayId !== ctx.data.depot.mixedProduct) tip(ctx, 'mixedLoad');
       break;

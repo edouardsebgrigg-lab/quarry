@@ -5,8 +5,9 @@ import { money, statValue } from '../../format.js';
 import { canAfford } from '../../../economy/index.js';
 import { ownsBuilding } from '../../../buildings/index.js';
 import {
-  describeStats, getStats, tierName, machinesAt, machineName, isTierUnlocked, modsFor, resaleValue,
+  describeStats, getStats, tierName, machinesAt, machineName, isTierUnlocked, modsFor, resaleValue, machinePrice,
 } from '../../../machinery/index.js';
+import { dealerOffer } from '../../../happenings/index.js';
 import { lineIcon } from './icons.js';
 import { dealerPrice } from '../../../career/index.js';
 
@@ -21,6 +22,8 @@ const CATEGORIES = [
 export function dealerApp({ game, feedback, photos, setHead }) {
   // What you pay here (a trade account, from a milestone, takes a little off the list price).
   const pay = (list) => dealerPrice(game.ctx, list);
+  // An offer on this machine this week? { discount, until } or null.
+  const offerOn = (type, tier) => { const o = dealerOffer(game.ctx); return o && o.type === type && o.tier === tier ? o : null; };
   const { data } = game;
   const ctx = game.ctx;
   let cat = 'diggers';
@@ -86,10 +89,10 @@ export function dealerApp({ game, feedback, photos, setHead }) {
         grid.append(el('button', { class: `lt-tile ${unlocked ? '' : 'locked'}`, onClick: () => { detail = { type, tier }; render(); } },
           photo(type, tier),
           el('div', { class: 'lt-tile-body' },
-            el('div', { class: 'lt-tile-title' }, el('span', {}, t.name), tierPill(tier)),
+            el('div', { class: 'lt-tile-title' }, el('span', {}, t.name), offerOn(type, tier) ? el('span', { class: 'lt-offer' }, `−${Math.round(offerOn(type, tier).discount * 100)}%`) : null, tierPill(tier)),
             el('div', { class: 'lt-tile-specs' }, lines.slice(0, 2).map((l) => `${l.label} ${statValue(l)}`).join('  ·  ')),
             el('div', { class: 'lt-tile-foot' },
-              el('span', { class: 'lt-price' }, unlocked ? money(pay(td.price)) : 'Locked'),
+              el('span', { class: 'lt-price' }, unlocked ? money(machinePrice(ctx, type, tier)) : 'Locked'),
               count ? el('span', { class: 'lt-owned' }, `You own ${count}`) : null))));
       }
     }
@@ -128,8 +131,11 @@ export function dealerApp({ game, feedback, photos, setHead }) {
           el('div', { class: 'lt-detail-title' }, el('h3', {}, t.name), tierPill(tier)),
           t.blurb ? el('p', { class: 'lt-blurb' }, t.blurb) : null,
           el('div', { class: 'lt-buy-row' },
-            el('div', {}, el('div', { class: 'lt-buy-label' }, unlocked ? (pay(td.price) < td.price ? `Trade price (list ${money(td.price)})` : 'Price, delivered') : 'Not available yet'), el('div', { class: 'lt-buy-price' }, money(pay(td.price)))),
-            unlocked ? buyButton(pay(td.price), () => buyMachine(type, tier)) : el('span', { class: 'muted small' }, 'Needs research')),
+            el('div', {}, el('div', { class: 'lt-buy-label' }, !unlocked ? 'Not available yet'
+              : offerOn(type, tier) ? `Offer until day ${offerOn(type, tier).until} (list ${money(td.price)})`
+                : machinePrice(ctx, type, tier) < td.price ? `Trade price (list ${money(td.price)})` : 'Price, delivered'),
+            el('div', { class: 'lt-buy-price' }, money(machinePrice(ctx, type, tier)))),
+            unlocked ? buyButton(machinePrice(ctx, type, tier), () => buyMachine(type, tier)) : el('span', { class: 'muted small' }, 'Needs research')),
           el('div', { class: 'lt-specs' }, specRows),
           el('div', { class: 'lt-facts' }, facts.map(([k, v]) => el('div', {}, el('span', {}, k), el('b', {}, v))))))));
   }

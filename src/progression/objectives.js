@@ -1,7 +1,7 @@
 // The step-by-step goals that take a new player from a shovel to a working business.
 // Texts and rewards are in data/objectives.json; the checks for each step are here.
 import { addMoney } from '../economy/index.js';
-import { tierData } from '../machinery/index.js';
+import { machinePrice } from '../machinery/index.js';
 import { pileTotal } from '../quarry/index.js';
 import { barrowFill } from '../handtools/index.js';
 import { mentorForStep } from './mentor.js';
@@ -46,7 +46,7 @@ const CHECKS = {
 };
 
 // How far along the current step is (0..1), or null if it has no measurable progress.
-const saving = (ctx, type) => Math.min(1, Math.max(0, ctx.state.money) / dealerPrice(ctx, tierData(ctx.data, type, 'rusty').price));
+const saving = (ctx, type) => Math.min(1, Math.max(0, ctx.state.money) / machinePrice(ctx, type, 'rusty'));
 const PROGRESS = {
   fillBarrow: (ctx) => Math.min(1, barrowFill(ctx)),
   loadPickup: (ctx, step) => Math.min(1, pickupLoad(ctx) / step.target),

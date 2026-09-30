@@ -13,6 +13,7 @@ import { logbookOnEvent } from './logbook.js';
 import { contractsOnEvent, contractsDaily } from '../contracts/index.js';
 import { weatherOnEvent, weatherState } from '../weather/index.js';
 import { careerOnEvent, careerState } from '../career/index.js';
+import { happeningsDaily, happeningsHourly } from '../happenings/index.js';
 
 export function createGame({ data = loadData(), seed = Math.floor(Math.random() * 2 ** 31), state } = {}) {
   const events = createEventBus();
@@ -27,6 +28,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
   if (ctx.ground && ctx.state.ground) ctx.ground.load(ctx.state.ground);
 
   events.on('hourPassed', () => marketHourly(ctx));
+  events.on('hourPassed', (e) => happeningsHourly(ctx, e));
   careerState(ctx);
   events.on('*', (type, payload) => careerOnEvent(ctx, type, payload));
   events.on('*', (type, payload) => objectivesOnEvent(ctx, type, payload));
@@ -42,6 +44,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
     chargeDailyInterest(ctx);
     fuelDaily(ctx);
     newsDaily(ctx);
+    happeningsDaily(ctx);
   });
   events.on('moneyChanged', (e) => recordMoney(ctx, e));
 

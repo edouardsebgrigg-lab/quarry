@@ -29,12 +29,11 @@ import { MAP, inRect } from './map.js';
 import { createGuideBeacon } from './guideBeacon.js';
 import { currentObjective } from '../progression/index.js';
 import { contractsState } from '../contracts/index.js';
-import { dealerPrice } from '../career/index.js';
 import { barrowFill } from '../handtools/index.js';
 import { keyLabel } from '../input/index.js';
 import { pileTotal } from '../quarry/index.js';
 import {
-  getStats, machinesAt, machineName, getMachine, JOBS, jobProgress, isDigger, bucketRadius, typeName,
+  getStats, machinesAt, machineName, getMachine, JOBS, jobProgress, isDigger, bucketRadius, typeName, machinePrice,
 } from '../machinery/index.js';
 import { hasTicket, quoteDelivery } from '../economy/index.js';
 
@@ -616,7 +615,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const bay = MAP.depot.bays.find((b) => b.id === bayId) ?? MAP.depot.bays.find((b) => b.id === data.depot.mixedProduct);
       return at((bay.x0 + bay.x1) / 2, (MAP.depot.bayZ.z0 + MAP.depot.bayZ.z1) / 2, `${data.depot.bays[bay.id].name} bay`, 5);
     };
-    const affordable = (type) => game.state.money >= dealerPrice(game.ctx, data.machines.types[type]?.tiers.rusty.price ?? Infinity);
+    const affordable = (type) => game.state.money >= machinePrice(game.ctx, type, 'rusty');
     const loadedRoad = () => (v?.road && pileTotal(currentMachine().load) >= data.depot.minLoad ? v : null);
     switch (o.id) {
       case 'firstShovel': return field();

@@ -147,6 +147,32 @@ export function logbookOnEvent(ctx, type, e) {
       trim(lb);
       break;
     }
+    case 'inspectionAnnounced':
+    case 'inspection':
+    case 'rushOrder':
+    case 'dealerOffer': {
+      const lb = logbook(ctx);
+      const { day, hour, minute } = getDate(ctx.state, ctx.data);
+      const h = ctx.data.happenings;
+      const what = (m) => ctx.data.materials[m]?.name.toLowerCase() ?? m;
+      const machine = (t, tier) => `${ctx.data.machines.tiers[tier]?.name ?? tier} ${ctx.data.machines.types[t]?.name ?? t}`;
+      const n = (k) => (k === 1 ? 'one machine' : `${k} machines`);
+      let msg = null;
+      if (type === 'inspectionAnnounced') {
+        msg = { from: h.inspector.name, kind: 'news', text: `I'll be visiting your site on day ${e.day} at ${String(e.hour).padStart(2, '0')}:00. Any machine that's broken down or under ${h.inspector.badCondition}% is a $${e.finePerMachine} fine. As things stand that's ${e.poor.length ? n(e.poor.length) : 'none of them'}.` };
+      } else if (type === 'inspection') {
+        msg = e.fine > 0
+          ? { from: h.inspector.name, kind: 'bad', text: `Inspection done. I found ${n(e.poor.length)} not fit to work, so there's a fine of $${e.fine}. Keep them serviced.` }
+          : { from: h.inspector.name, kind: 'good', text: e.good ? 'Inspection done: everything in good order. I\'ll mention it to the people who ask about local suppliers.' : 'Inspection done: nothing to fine you for. Some of them could do with a service, mind.' };
+      } else if (type === 'rushOrder') {
+        msg = { from: e.client, kind: 'news', text: `Rush job, if you can: ${e.tonnes} t of clean ${what(e.material)} by ${e.days > 1 ? 'tomorrow' : 'tonight'}. There's a $${e.bonus} bonus in it. It's on your jobs board today only.` };
+      } else {
+        msg = { from: h.dealerOffer.name, kind: 'news', text: `This week only: the ${machine(e.type, e.tier)} for $${e.offerPrice.toLocaleString('en-US')} instead of $${e.price.toLocaleString('en-US')}. The offer ends on day ${e.until}.` };
+      }
+      lb.messages.push({ day, hour, minute, ...msg });
+      trim(lb);
+      break;
+    }
     case 'milestoneReached': {
       const lb = logbook(ctx);
       const { day, hour, minute } = getDate(ctx.state, ctx.data);

@@ -47,6 +47,21 @@ function makeOffer(ctx) {
   return { id: c.nextId++, client: rng.pick(cfg.clients), material, tonnes, days, bonus, expires: today(ctx) + cfg.offerDays };
 }
 
+// A rush order (from data/happenings.json): a normal offer, but smaller, due sooner, with a
+// bigger bonus, and only open today. It goes on the board on top of the usual offers.
+export function postRushOrder(ctx, { days, bonusMult, tonnesMult }) {
+  const c = contractsState(ctx);
+  const o = makeOffer(ctx);
+  o.tonnes = Math.max(0.5, round1(o.tonnes * tonnesMult));
+  o.days = days;
+  o.bonus = Math.round(o.bonus * bonusMult);
+  o.expires = today(ctx);
+  o.rush = true;
+  c.offers.unshift(o);
+  ctx.events.emit('rushOrder', { id: o.id, client: o.client, material: o.material, tonnes: o.tonnes, days: o.days, bonus: o.bonus });
+  return o;
+}
+
 // Top the board up to its size, dropping stale offers and failing contracts past their deadline.
 export function contractsDaily(ctx) {
   const c = contractsState(ctx);
