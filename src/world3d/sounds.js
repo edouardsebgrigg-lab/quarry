@@ -7,9 +7,9 @@ import * as THREE from 'three';
 const ENGINE_KIND = {
   truck: { rusty: 'truckOld', used: 'truckTurbo' },
   pickup: { rusty: 'pickupOld' },
-  excavator: { rusty: 'excavator', used: 'excavator' },
-  miniDigger: { rusty: 'miniDiesel', used: 'miniDiesel' },
-  dumper: { rusty: 'miniDiesel', used: 'miniDiesel' },
+  excavator: { rusty: 'excavator', used: 'excavatorTurbo' },
+  miniDigger: { rusty: 'miniDiesel', used: 'miniDieselUsed' },
+  dumper: { rusty: 'miniDiesel', used: 'miniDieselUsed' },
   tractor: { rusty: 'tractorOld', used: 'tractorOld' },
 };
 const v3 = (p) => ({ x: p.x, y: p.y, z: p.z });

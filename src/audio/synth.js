@@ -159,6 +159,9 @@ export const ENGINES = {
   pickupOld: { cylinders: 6, bore: 0.72, clatter: 0.3, rough: 0.07, seed: 63 },
   tractorOld: { cylinders: 4, bore: 1.05, clatter: 1.3, rough: 0.1, seed: 71 },
   miniDiesel: { cylinders: 3, bore: 0.55, clatter: 1.0, rough: 0.08, seed: 83 },
+  // (a cared-for engine: smoother and quieter at the valves than the worn ones above)
+  miniDieselUsed: { cylinders: 3, bore: 0.58, clatter: 0.7, rough: 0.045, seed: 89 },
+  excavatorTurbo: { cylinders: 4, bore: 0.95, clatter: 0.75, rough: 0.035, seed: 41 },
 };
 
 // One seamless loop of a running diesel at `rpm`, under `load` (0 = coasting, 1 = flat out).

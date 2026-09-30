@@ -170,7 +170,7 @@ export function createAudio({ volume = 0.8 } = {}) {
       return { src, g };
     }));
     let turbo = null;
-    if (kind === 'truckTurbo') { // turbocharger whistle
+    if (kind.endsWith('Turbo')) { // turbocharger whistle
       const osc = ctx.createOscillator();
       osc.type = 'sine';
       const tg = ctx.createGain();
