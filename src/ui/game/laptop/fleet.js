@@ -4,7 +4,7 @@ import { money } from '../../format.js';
 import { machinesAt, machineName, resaleValue } from '../../../machinery/index.js';
 import { machineLog } from '../../../game/logbook.js';
 
-export function fleetApp({ game, photos, openApp, setHead }) {
+export function fleetApp({ game, feedback, photos, openApp, setHead }) {
   const { data } = game;
   const ctx = game.ctx;
   setHead('Your fleet', 'Every machine in the yard, how it’s holding up and what it’s done');
@@ -23,7 +23,12 @@ export function fleetApp({ game, photos, openApp, setHead }) {
     const condT = el('span', { class: 'lt-fl-cond-t' });
     const status = el('span', { class: 'lt-fl-status' });
     const value = el('b');
-    cells.push({ m, cond, condT, status, value });
+    const call = el('button', { class: 'btn btn-small lt-call', onClick: () => {
+      const r = game.actions.callMechanic(m.id);
+      feedback.message(r.ok ? `Mechanic on the way: ${r.kind === 'repair' ? 'repair' : 'service'} for ${money(r.total)}` : r.reason, r.ok ? 'good' : 'warn');
+      refresh();
+    } });
+    cells.push({ m, cond, condT, status, value, call });
     const log = machineLog(ctx, m.id);
     const t = data.machines.types[m.type];
     const work = t.kind === 'digger'
@@ -36,7 +41,8 @@ export function fleetApp({ game, photos, openApp, setHead }) {
         el('span', {}, `${work}${log.breakdowns ? ` · broke down ${log.breakdowns}×` : ''}`)),
       el('div', { class: 'lt-fl-col' }, status),
       el('div', { class: 'lt-fl-col' }, el('div', { class: 'lt-cond' }, cond), condT),
-      el('div', { class: 'lt-fl-col lt-fl-val' }, el('span', {}, 'Worth'), value));
+      el('div', { class: 'lt-fl-col lt-fl-val' }, el('span', {}, 'Worth'), value),
+      call);
   });
 
   function refresh() {
@@ -52,10 +58,17 @@ export function fleetApp({ game, photos, openApp, setHead }) {
       setText(c.status, s);
       c.status.className = `lt-fl-status ${c.m.broken ? 'bad' : c.m.condition < 40 ? 'warn' : c.m.job ? 'busy' : 'ok'}`;
       if (c.m.broken || c.m.condition < 40) attention += 1;
+      const q = game.actions.mechanicQuote(c.m.id);
+      c.call.style.visibility = q.reason ? 'hidden' : '';
+      if (!q.reason) {
+        setText(c.call, `${q.kind === 'repair' ? 'Repair' : 'Service'} here · ${money(q.total)}`);
+        c.call.disabled = game.state.money < q.total;
+        c.call.title = `Includes a ${money(q.fee)} call-out fee`;
+      }
     }
     setText(totalV, money(total));
     setText(attnV, String(attention));
-    setText(attnN, attention ? 'Walk up to them and press R to service or repair' : 'Nothing needs looking at');
+    setText(attnN, attention ? 'Press R beside them, or call a mechanic out from here' : 'Nothing needs looking at');
   }
   refresh();
 

@@ -10,3 +10,4 @@ export {
 export {
   JOBS, startJob, tickJobs, whyCannotStart, playerJob, isPlayerBusy, jobProgress, bucketRadius,
 } from './jobs.js';
+export { mechanicQuote, callMechanic } from './mechanic.js';

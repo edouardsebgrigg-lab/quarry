@@ -3,7 +3,7 @@
 import { weighIn as depotWeighIn, takeLoan as bankTakeLoan, repayLoan as bankRepayLoan, loanOffers as bankLoanOffers, creditLimit as bankCreditLimit } from '../economy/index.js';
 import {
   getMachine, machinesAt, startJob, buyMachine as fleetBuyMachine,
-  sellMachine as fleetSellMachine, resaleValue, buyMod as fleetBuyMod, dumpBucket as fleetDumpBucket, bucketCut as fleetBucketCut,
+  sellMachine as fleetSellMachine, resaleValue, mechanicQuote, callMechanic, buyMod as fleetBuyMod, dumpBucket as fleetDumpBucket, bucketCut as fleetBucketCut,
 } from '../machinery/index.js';
 import { shovelDig, shovelDump, tipBarrow } from '../handtools/index.js';
 import { buyBuilding } from '../buildings/index.js';
@@ -79,6 +79,10 @@ export function createActions(ctx) {
     creditLimit: () => bankCreditLimit(ctx, fleetValue()),
     takeLoan: (amount, days) => bankTakeLoan(ctx, amount, days, fleetValue()),
     repayLoan: (loanId) => bankRepayLoan(ctx, loanId),
+
+    // A mobile mechanic, booked from the laptop: services or repairs a machine where it is.
+    mechanicQuote: (machineId) => mechanicQuote(ctx, machineId),
+    callMechanic: (machineId) => callMechanic(ctx, machineId),
 
     buyMachine: (type, tier) => fleetBuyMachine(ctx, type, tier),
     sellMachine: (id) => fleetSellMachine(ctx, id),

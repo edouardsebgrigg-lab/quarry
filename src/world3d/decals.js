@@ -21,8 +21,8 @@ const SPECS = {
     { part: 'HouseBody', sides: ['back'], u: 0.5, v: 0.6, h: 0.09, art: ['warning'] },
   ],
   excavator: [
-    { part: 'HouseBody', sides: ['left', 'right'], u: 0.62, v: 0.55, h: 0.22, art: ['model', 'QX 75'] },
-    { part: 'BoomBody', sides: ['left', 'right'], u: 0.33, v: 0.55, h: 0.2, art: ['model', 'QX 75'] },
+    { part: 'HouseBody', sides: ['left', 'right'], u: 0.4, v: 0.5, h: 0.24, art: ['model', 'QX 75'] },
+    { part: 'BoomBody', sides: ['left', 'right'], u: 0.33, v: 0.55, h: 0.26, art: ['model', 'QX 75'] },
     { part: 'Counterweight', sides: ['back'], u: 0.5, v: 0.45, h: 0.2, wFit: 0.85, art: ['hazard'] },
     { part: 'HouseBody', sides: ['left'], u: 0.35, v: 0.6, h: 0.12, art: ['warning'] },
   ],
@@ -165,6 +165,33 @@ function partMeshes(scene, name) {
   return out;
 }
 
+// Drop the triangles of a decal that don't face the way it was projected (so lettering on one
+// side of a thin panel doesn't show through, mirrored, on the other).
+function keepFacing(geo, normal) {
+  const pos = geo.attributes.position;
+  const keep = [];
+  const a = new THREE.Vector3();
+  const b = new THREE.Vector3();
+  const c = new THREE.Vector3();
+  const tri = new THREE.Vector3();
+  for (let i = 0; i + 2 < pos.count; i += 3) {
+    a.fromBufferAttribute(pos, i);
+    b.fromBufferAttribute(pos, i + 1);
+    c.fromBufferAttribute(pos, i + 2);
+    tri.subVectors(c, b).cross(a.clone().sub(b)).normalize();
+    if (tri.dot(normal) > 0.25) keep.push(i);
+  }
+  if (keep.length * 3 === pos.count) return;
+  for (const name of Object.keys(geo.attributes)) {
+    const attr = geo.attributes[name];
+    const out = new Float32Array(keep.length * 3 * attr.itemSize);
+    keep.forEach((i, k) => {
+      for (let v = 0; v < 3; v++) for (let d = 0; d < attr.itemSize; d++) out[(k * 3 + v) * attr.itemSize + d] = attr.array[(i + v) * attr.itemSize + d];
+    });
+    geo.setAttribute(name, new THREE.BufferAttribute(out, attr.itemSize));
+  }
+}
+
 const ray = new THREE.Raycaster();
 const helper = new THREE.Object3D();
 
@@ -206,6 +233,7 @@ export function addDecals(scene, name) {
       if (spec.wFit) w = (along === 'z' ? size.z : size.x) * spec.wFit;
       const target = hit.object;
       const geo = new DecalGeometry(target, hit.point, helper.rotation.clone(), new THREE.Vector3(w, h, 0.4));
+      keepFacing(geo, normal);
       if (!geo.attributes.position?.count) continue;
       // (into the part's own space, so the decal moves with it)
       geo.applyMatrix4(new THREE.Matrix4().copy(target.matrixWorld).invert());

@@ -16,6 +16,7 @@ const REASONS = {
   loan: 'Loan paid in',
   loanPayment: 'Loan repayment',
   loanRepaid: 'Loan paid off',
+  callout: 'Mechanic call-out',
   dev: 'Adjustment',
 };
 function describe(reason) {

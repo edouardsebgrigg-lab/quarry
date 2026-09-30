@@ -14,7 +14,7 @@ const FILES = {
   tractor: ['tractor', 'trailer'],
   pickup: ['vehicle_pickup'], // (one model for every tier)
 };
-const TRAILER_OFFSET = -1.32; // the trailer's origin sits this far behind the tractor's
+const TRAILER_OFFSET = -1.32 - 3.3; // the trailer's origin (its axle) sits this far behind the tractor's
 
 const photos = new Map(); // "truck_used" -> data URL (kept between laptop visits)
 
@@ -58,17 +58,9 @@ export function createThumbnails({ width = 480, height = 300 } = {}) {
     const group = new THREE.Group();
     const parts = files.map((f) => modelScene(f.startsWith('vehicle_') ? f : `${f}_${tier}`)?.clone(true) ?? null);
     parts.forEach((part) => part && group.add(part));
-    // A trailer hangs off the tractor's hitch by its towing eye, as it does in the game.
-    if (parts[1] && parts[0]) {
-      group.updateMatrixWorld(true);
-      const hitch = parts[0].getObjectByName('Hitch');
-      const eye = parts[1].getObjectByName('Eye');
-      if (hitch && eye) {
-        const a = hitch.getWorldPosition(new THREE.Vector3());
-        const b = eye.getWorldPosition(new THREE.Vector3());
-        parts[1].position.add(a.sub(b).setY(0));
-      } else parts[1].position.x = TRAILER_OFFSET;
-    }
+    // A trailer hangs off the tractor's hitch by its towing eye, as in the game (glbModels.js:
+    // the hitch is 1.32 m behind the tractor's origin, the eye 3.3 m ahead of the trailer's).
+    if (parts[1]) parts[1].position.x = TRAILER_OFFSET;
     if (!group.children.length) return null;
     group.traverse((o) => {
       if (o.isMesh) {

@@ -29,5 +29,6 @@
     "creditPerFleetValue": 0.5,
     "maxLoans": 3,
     "statementLength": 250
-  }
+  },
+  "mechanicCallOut": 35
 }

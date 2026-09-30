@@ -832,3 +832,4 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .binding-group:first-child { margin-top: 0; }
 .keys-head { align-items: center; margin-bottom: 0.4rem; }
 .settings-foot { justify-content: flex-end; margin-top: 1.2rem; }
+.lt-call { min-width: 10.5rem; white-space: nowrap; }
