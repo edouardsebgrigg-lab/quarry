@@ -1,6 +1,6 @@
 // Shared set-up for automated play checks: a fresh game in a headless browser.
-import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
-export async function start({ width = 480, height = 270 } = {}) {
+const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
+export async function start({ width = 320, height = 180 } = {}) {
   const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const page = await browser.newPage({ viewport: { width, height } });
   page.setDefaultTimeout(300000);
@@ -21,7 +21,7 @@ export async function start({ width = 480, height = 270 } = {}) {
   // force: keep game time running without a click (most checks need jobs to progress); the
   // time-gate check passes false to see the real waiting behaviour.
   async function newGame({ force = true } = {}) {
-    await page.goto('http://localhost:5174/');
+    await page.goto(process.env.QUARRY_URL || 'http://localhost:5174/');
     await page.getByText('New Game').click();
     await page.waitForFunction(() => window.__quarry?.world, null, { timeout: 300000 });
     await page.getByText("Let's get to work").click();

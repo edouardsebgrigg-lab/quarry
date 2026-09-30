@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createGame } from '../game/index.js';
+import { loadData } from '../core/index.js';
 import { WORKS_MODES, worksCost } from './index.js';
 
 const sum = (rec) => Object.values(rec).reduce((a, b) => a + b, 0);
@@ -7,8 +8,10 @@ const total = (g) => sum(g.totals());
 const road = (o = {}) => ({ mode: 'road', ax: 40, az: 60, bx: 60, bz: 60, width: 4, ...o });
 const heap = (g, x, z, tonnes = 60) => g.deposit({ x, z, tonnes: { gravel: tonnes }, radius: 2.5 });
 
-function setup(money = 500) {
-  const game = createGame({ seed: 3 });
+function setup(money = 500, flat = false) {
+  const data = structuredClone(loadData());
+  if (flat) data.ground.plots.home.surfaceRoll = 0;
+  const game = createGame({ seed: 3, data });
   game.state.money = money;
   const g = game.ctx.ground;
   return { game, g, a: game.actions };
@@ -83,26 +86,51 @@ describe('earthworks: what it costs and what it needs', () => {
     expect(a.planWorks(road({ ax: 2, bx: 20 })).reason).toMatch(/edge/i);
   });
 
-  it('won\'t build under a machine or you', () => {
+  it('won\'t build under a machine or barrow', () => {
     const { game, g, a } = setup();
     heap(g, 50, 82);
     const r = a.planWorks(road({ obstacles: [{ x: 50, z: 61, r: 1.5, label: 'The pickup' }] }));
     expect(r.ok).toBe(false);
-    expect(r.reason).toMatch(/pickup is in the way/i);
+    expect(r.reason).toMatch(/move the pickup/i);
+    expect(a.planWorks(road({ obstacles: [{ x: 50, z: 60, r: 1.2, label: 'The wheelbarrow' }] })).ok).toBe(false);
     expect(a.planWorks(road({ obstacles: [{ x: 50, z: 70, r: 1.5, label: 'The pickup' }] })).ok).toBe(true);
     expect(game.state.money).toBe(500);
   });
 
-  it('blocks the player and machinery beside the side batters without mutation', () => {
+  it('allows standing 1 m off a road edge and machinery 3 m off a flat road edge', () => {
+    const { g, a } = setup(500, true);
+    heap(g, 50, 82);
+    const plan = a.planWorks(road({ obstacles: [{ x: 50, z: 65, r: 1.5, label: 'The pickup' }] }));
+    expect(plan.ok, plan.reason).toBe(true);
+    expect(plan.touchesChangedCell({ x: 50, z: 63, r: 0.35 })).toBe(false);
+    expect(a.buildWorks(road({ obstacles: [{ x: 50, z: 65, r: 1.5, label: 'The pickup' }] })).ok).toBe(true);
+  });
+
+  it('refuses a machine on a changed cell without changing money, material or saved state', () => {
     const { game, g, a } = setup();
     heap(g, 50, 82);
     const before = JSON.stringify(game.snapshot());
-    for (const label of ['You', 'The pickup']) {
-      const r = a.buildWorks(road({ obstacles: [{ x: 50, z: 66, r: 0.35, label }] }));
-      expect(r.ok).toBe(false);
-      expect(r.reason).toMatch(/in the way/);
-    }
+    const r = a.buildWorks(road({ obstacles: [{ x: 50, z: 60, r: 0.35, label: 'The pickup' }] }));
+    expect(r.ok).toBe(false);
+    expect(r.reason).toMatch(/move the pickup/i);
     expect(JSON.stringify(game.snapshot())).toBe(before);
+  });
+
+  it('protects changed batter cells outside the road edge and emits the built footprint', () => {
+    const { game, g, a } = setup(1000, true);
+    // A raised start makes the road's side fill reach beyond its nominal width.
+    heap(g, 40, 60, 20);
+    heap(g, 50, 82, 1000);
+    const spec = road();
+    const p = a.planWorks(spec);
+    expect(p.ok, p.reason).toBe(true);
+    expect(p.touchesChangedCell({ x: 41, z: 62.25 })).toBe(true);
+    expect(a.buildWorks({ ...spec, obstacles: [{ x: 41, z: 62.25, r: 0.1 }] }).ok).toBe(false);
+    const events = [];
+    game.events.on('worksBuilt', e => events.push(e));
+    expect(a.buildWorks(spec).ok).toBe(true);
+    expect(events[0].touchesChangedCell({ x: 40, z: 60 })).toBe(true);
+    expect(events[0].touchesChangedCell({ x: 70, z: 70 })).toBe(false);
   });
 
   it('rejects nonfinite widths without mutation', () => {

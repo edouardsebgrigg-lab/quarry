@@ -192,8 +192,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   // ---- earthworks planner (on foot): plan a haul road, ramp or level area on your land
   const machineObstacles = () => {
-    const feet = player.feet();
-    const list = [{ x: feet.x, z: feet.z, r: 0.35, label: 'You' }];
+    const list = [];
     for (const veh of vehicles.values()) {
       const p = veh.position();
       list.push({ x: p.x, z: p.z, r: veh.radius, label: machineName(data, getMachine(game.ctx, veh.machineId)) });
@@ -541,6 +540,12 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   // ---- game events -> effects ----
   const offs = [
+    game.events.on('worksBuilt', e => {
+      const feet = player.feet();
+      if (mode.kind === 'foot' && e.touchesChangedCell(feet)) {
+        player.teleport(feet.x, heightAt(feet.x, feet.z) + 0.1, feet.z);
+      }
+    }),
     game.events.on('buildingBought', e => {
       if (e.siteId === siteId) places.setBuilding(e.buildingId, true);
     }),

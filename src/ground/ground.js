@@ -393,8 +393,25 @@ export function createGround(groundData, plotId, opts = {}) {
     const availBankPlan = availPlan.reduce((a, v, m) => a + v / bankDensity[m], 0);
     const usePlan = availBankPlan > 0 ? Math.min(1, fillBank / availBankPlan) : 0;
     const availTonnes = availPlan.reduce((a, v) => a + v, 0);
+    // Query the actual grading jobs, including side batters, rather than the maximum
+    // search reach. Only visit cells under the circle's bounding box on each query.
+    const changedCells = new Set(jobs.map(({ k }) => k));
+    const touchesChangedCell = ({ x, z, r = 0 }) => {
+      const imin = Math.max(0, Math.floor((x - r - x0) / cell) - 1);
+      const imax = Math.min(nx - 1, Math.floor((x + r - x0) / cell));
+      const jmin = Math.max(0, Math.floor((z - r - z0) / cell) - 1);
+      const jmax = Math.min(nz - 1, Math.floor((z + r - z0) / cell));
+      for (let j = jmin; j <= jmax; j++) for (let i = imin; i <= imax; i++) {
+        if (!changedCells.has(idx(i, j))) continue;
+        const dx = Math.max(x0 + i * cell - x, 0, x - (x0 + (i + 1) * cell));
+        const dz = Math.max(z0 + j * cell - z, 0, z - (z0 + (j + 1) * cell));
+        if (dx * dx + dz * dz <= r * r) return true;
+      }
+      return false;
+    };
     const plan = {
       ok: true, mode, length: L, width, grade, pA, pB, cells: jobs.length, coreArea: core * area,
+      touchesChangedCell,
       cutBank, fillBank, surfaceLoose, cutTonnes: pool.reduce((a, v) => a + v, 0),
       heapGravelNeeded: gravelFromHeaps, heapFillNeeded: fillFromHeaps,
       heapGravelFound: src.gravelFound, heapFillFound: src.bankFound,

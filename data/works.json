@@ -3,7 +3,7 @@
   "maxLength": 40,
   "sourceRadius": 30,
   "aimRange": 70,
-  "clearance": 6,
+  "clearance": 0.5,
   "modes": {
     "road": {
       "name": "Haul road",
