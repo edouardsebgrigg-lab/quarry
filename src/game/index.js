@@ -11,6 +11,7 @@ import { objectivesOnEvent, mentorOnEvent } from '../progression/index.js';
 import { createGround } from '../ground/index.js';
 import { logbookOnEvent } from './logbook.js';
 import { contractsOnEvent, contractsDaily } from '../contracts/index.js';
+import { weatherOnEvent, weatherState } from '../weather/index.js';
 
 export function createGame({ data = loadData(), seed = Math.floor(Math.random() * 2 ** 31), state } = {}) {
   const events = createEventBus();
@@ -29,6 +30,8 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
   events.on('*', (type, payload) => mentorOnEvent(ctx, type, payload));
   events.on('*', (type, payload) => logbookOnEvent(ctx, type, payload));
   events.on('*', (type, payload) => contractsOnEvent(ctx, type, payload));
+  events.on('*', (type) => weatherOnEvent(ctx, type));
+  weatherState(ctx);
   if (!ctx.state.contracts) contractsDaily(ctx); // (a new game, or an old save: fill the board)
   events.on('dayStarted', () => {
     bankDaily(ctx);

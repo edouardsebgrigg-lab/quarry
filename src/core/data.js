@@ -12,9 +12,10 @@ import tools from '../../data/tools.json';
 import depot from '../../data/depot.json';
 import works from '../../data/works.json';
 import contracts from '../../data/contracts.json';
+import weather from '../../data/weather.json';
 import buildings from '../../data/buildings.json';
 
 export function loadData() {
   // Deep copy so tests can tweak numbers without affecting each other.
-  return structuredClone({ game, economy, materials, market, machines, mods, sites, objectives, ground, tools, depot, works, contracts, buildings });
+  return structuredClone({ game, economy, materials, market, machines, mods, sites, objectives, ground, tools, depot, works, contracts, weather, buildings });
 }

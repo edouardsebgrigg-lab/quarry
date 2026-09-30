@@ -6,6 +6,7 @@ import { getDate } from '../../../core/index.js';
 import { currentPrice } from '../../../economy/index.js';
 import { machinesAt } from '../../../machinery/index.js';
 import { lineIcon } from './icons.js';
+import { forecast } from '../../../weather/index.js';
 
 export function homeApp({ game, openApp, setHead }) {
   const { data } = game;
@@ -22,7 +23,8 @@ export function homeApp({ game, openApp, setHead }) {
   };
   const bal = tile('Balance');
   const best = tile('Best price today', null, null, () => openApp('prices'));
-  const fleet = tile('Your machines', null, null, () => openApp('dealer'));
+  const fleet = tile('Your machines', null, null, () => openApp('fleet'));
+  const weather = tile('Weather');
   const goalTitle = el('div', { class: 'lt-goal-title' });
   const goalText = el('div', { class: 'lt-goal-text' });
 
@@ -38,6 +40,8 @@ export function homeApp({ game, openApp, setHead }) {
     const ms = machinesAt(ctx, game.state.currentSiteId);
     const tired = ms.filter((m) => m.broken || m.condition < 50).length;
     fleet.set(String(ms.length), tired ? `${tired} need${tired === 1 ? 's' : ''} a service or repair` : 'All in good order');
+    const f = forecast(ctx);
+    weather.set(f.today.name, `Tomorrow: ${f.tomorrow.name.toLowerCase()}${f.tomorrow.rain > 0 ? ' (slippery on the ramps)' : ''}`);
     const step = data.objectives.steps[game.state.objectives.index];
     setText(goalTitle, step ? step.title : 'All goals done');
     setText(goalText, step ? step.text : 'You’ve worked through every goal. Keep growing the quarry.');
@@ -48,7 +52,7 @@ export function homeApp({ game, openApp, setHead }) {
     lineIcon(icon), el('div', {}, el('b', {}, label), el('span', {}, sub)));
 
   const node = el('div', { class: 'lt-home' },
-    el('div', { class: 'lt-stats' }, bal.node, best.node, fleet.node),
+    el('div', { class: 'lt-stats four' }, bal.node, best.node, fleet.node, weather.node),
     el('div', { class: 'lt-card lt-goal' }, el('div', { class: 'lt-card-label' }, 'Current goal'), goalTitle, goalText),
     el('div', { class: 'lt-shortcuts' },
       shortcut('digger', 'Plant dealer', 'Machines, upgrades, yard buildings', 'dealer'),

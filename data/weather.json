@@ -1,0 +1,16 @@
+{
+  "kinds": {
+    "sunny": { "name": "Sunny", "grip": 1.0, "cloud": 0.0, "rain": 0.0 },
+    "cloudy": { "name": "Cloudy", "grip": 1.0, "cloud": 0.7, "rain": 0.0 },
+    "showers": { "name": "Showers", "grip": 0.88, "cloud": 0.85, "rain": 0.45 },
+    "rain": { "name": "Rain", "grip": 0.78, "cloud": 1.0, "rain": 1.0 }
+  },
+  "next": {
+    "sunny": { "sunny": 0.55, "cloudy": 0.3, "showers": 0.1, "rain": 0.05 },
+    "cloudy": { "sunny": 0.3, "cloudy": 0.35, "showers": 0.2, "rain": 0.15 },
+    "showers": { "sunny": 0.25, "cloudy": 0.3, "showers": 0.25, "rain": 0.2 },
+    "rain": { "sunny": 0.15, "cloudy": 0.35, "showers": 0.25, "rain": 0.25 }
+  },
+  "first": "sunny",
+  "changeHours": [9, 15]
+}

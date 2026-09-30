@@ -873,3 +873,4 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
   border-radius: 3px; padding: 0.08rem 0.35rem; flex: none; }
 .job-text { font-size: 0.74rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .hud-job.urgent .job-tag { background: var(--warn); }
+.lt-stats.four { grid-template-columns: repeat(4, 1fr); }

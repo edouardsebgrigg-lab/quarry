@@ -134,7 +134,30 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
 
   const hills = addHills(scene, ground, hillDistance, outsideY, Math.max(Math.abs(s0.x0), s0.x1, Math.abs(s0.z0), s0.z1) + 60);
 
+  // The weather eases in: { cloud 0..1, rain 0..1 } targets, followed a little each frame.
+  const clear = { turbidity: u.turbidity.value, rayleigh: u.rayleigh.value, mie: u.mieCoefficient.value, sun: sun.intensity, hemi: hemi.intensity, env: scene.environmentIntensity, fogNear: scene.fog.near, fogFar: scene.fog.far };
+  const fogClear = scene.fog.color.clone();
+  const fogGrey = new THREE.Color(0x9ba4ad);
+  const now = { cloud: 0, rain: 0 };
+
   return {
+    weather(dt, { cloud = 0, rain = 0 }) {
+      const k = Math.min(1, dt * 0.25);
+      now.cloud += (cloud - now.cloud) * k;
+      now.rain += (rain - now.rain) * k;
+      const c = now.cloud;
+      const r = now.rain;
+      u.turbidity.value = clear.turbidity + c * 7;
+      u.rayleigh.value = clear.rayleigh + c * 1.6;
+      u.mieCoefficient.value = clear.mie + c * 0.012;
+      sun.intensity = clear.sun * (1 - 0.72 * c);
+      hemi.intensity = clear.hemi * (1 + 0.6 * c);
+      scene.environmentIntensity = clear.env * (1 - 0.3 * c);
+      scene.fog.color.copy(fogClear).lerp(fogGrey, c);
+      scene.fog.near = clear.fogNear * (1 - 0.65 * r);
+      scene.fog.far = clear.fogFar * (1 - 0.55 * r);
+      return now;
+    },
     // Height of the countryside outside the site (grass level, or up a hill).
     groundHeight(x, z) {
       let h = -0.3;

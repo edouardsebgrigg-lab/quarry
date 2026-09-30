@@ -474,6 +474,22 @@ export function wind(sr, seconds = 8, seed = 16) {
   return normalize(loopify(mix([gust, 1], [normalize(whistle, 0.03), 1]), fade), 0.7);
 }
 
+// Steady rain: a wide hiss of many tiny drops, plus the odd bigger drop pattering nearby. Loops.
+export function rain(sr, seconds = 6, seed = 19) {
+  const n = Math.round(seconds * sr);
+  const fade = Math.round(0.6 * sr);
+  const r = rng(seed);
+  const hiss = filter(filter(white(n + fade, r), 'highpass', 900, 0.7, sr), 'lowpass', 7000, 0.7, sr);
+  const drops = new Float32Array(n + fade);
+  for (let k = 0; k < seconds * 60; k++) {
+    const at = Math.floor(r() * (n + fade - 400));
+    const f = 1800 + r() * 3500;
+    const amp = 0.15 + r() * 0.35;
+    for (let i = 0; i < 360; i++) drops[at + i] += Math.sin((2 * Math.PI * f * i) / sr) * amp * Math.exp(-i / 55);
+  }
+  return normalize(loopify(mix([normalize(hiss, 0.5), 1], [normalize(drops, 0.35), 1]), fade), 0.7);
+}
+
 // One footstep on gravel or grass.
 export function footstep(sr, { surface = 'gravel', seed = 17 } = {}) {
   const n = Math.round(0.25 * sr);

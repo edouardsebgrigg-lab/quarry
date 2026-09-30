@@ -74,3 +74,13 @@ describe('reversing alarms', () => {
     expect(off).toBe(0);
   });
 });
+
+describe('rain', () => {
+  it('loops without a click and is not silent', async () => {
+    const { rain, peak } = await import('./synth.js');
+    const sr = 22050;
+    const a = rain(sr, 3);
+    expect(peak(a)).toBeGreaterThan(0.3);
+    expect(Math.abs(a[0] - a[a.length - 1])).toBeLessThan(0.2);
+  });
+});
