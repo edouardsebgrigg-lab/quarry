@@ -878,3 +878,5 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .lt-movers .up { color: var(--good); font-weight: 600; }
 .lt-movers .down { color: #ff9a8a; font-weight: 600; }
 .hs-weather.wet { color: #9fd0ff; }
+.lt-badge:empty { display: none; }
+.lt-home .lt-shortcuts { grid-template-columns: repeat(4, 1fr); }
