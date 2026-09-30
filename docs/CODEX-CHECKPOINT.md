@@ -133,3 +133,107 @@ succeeded. Later task commits/checkpoints were fetched back, their exact trees
 and ancestry checked, and the local branch advanced to the published descendant.
 The task list blob remains `5c036898d1c0d96f2dd103e840b44e7b45f639a2`,
 unchanged from Claude's coordination branch. No PR or deployment created.
+
+
+## VEH1 — approved Blender fleet integration (user-directed batch)
+
+The user reviewed side-by-side exports and instructed "Alright implement". This
+explicit asset batch takes precedence over starting the next gameplay queue task.
+It stays on `codex/vehicle-model-integration`, leaving the safety branch untouched.
+Fetched all relevant branches, merged `origin/claude/coordination` and the current
+`origin/codex/step-7-safety-and-yard-buildings` into the isolated model branch.
+`docs/TASKS.md` remains exactly Claude's coordination blob
+`6246fe72df0ac7b3b0511f128fca3e73600ca3f9`; no task or review note was edited.
+T9, T5 and T10 are not marked completed by this batch.
+
+### Ready for review
+
+- **VEH1 — `b4bbee1e2989b723776947e142ef7066a57188bf` (local)**: installed the 14 approved
+  GLBs: pickup, wheelbarrow and Rusty/Used variants of six equipment families.
+  Embedded PBR maps, real cab apertures/glazing, darker rubber/steel, paint wear,
+  hoses and selected mechanical details. No physics, economy, controls or save
+  format changes. Original joint names, parents and rest transforms retained.
+  New contract fixtures and 14 tests guard rig and embedded-texture compatibility.
+  Included reproducible builder, export/browser check scripts and review images.
+- Actually ran on this integration branch: `npm test` (161 passing, 21 files),
+  `npm run build` (successful), `git diff --check`, export validation against
+  GLBs extracted from `0db19b6`, and `blender/check_review_browser.mjs` with
+  installed assets (all 14 constructors and WebGL renders; no browser errors).
+- First renderer check found test-server 403s for fonts in shared node_modules.
+  Corrected local Vite filesystem allowlist and reran successfully.
+- First in-world run instantiated all fleet variants and trailers, drove the
+  pickup 5.84 m and mini digger 1.16 m. Its arm assertion failed because the game
+  settings reselected Assisted mode. The check was corrected to select Direct
+  explicitly; the game controls did not change. Final run details follow below.
+
+### Publication and limits
+
+GitHub owner metadata confirms admin/push permission for the public repository.
+Automatic approval review rejected uploading the binary assets twice: the second
+response explicitly required user approval to disclose these files publicly. No
+GitHub blobs or refs were changed. Public branch publication is pending explicit
+approval; no PR, main merge, force-push or Claude message.
+
+The existing owner-only Sites preview was opened through the Sites workflow.
+Only the approved fleet and its asset checks/rebuild documentation were applied
+there; its existing gameplay source was preserved. That preview baseline runs
+158 passing tests (144 existing plus 14 asset checks), and its build passed.
+The private source was saved as `6c99c14eb93daba11774aae72b7a0567a742b49d`.
+The integration branch has the newer safety fixes, hence its 161-test total.
+
+The parked pickup prop retains its separate jerrycan model. Refined materials
+already carry baked wear and have `Review_` names, so legacy shader weathering
+does not double-process them. Classic builders still generate base geometry;
+run the documented refinement stage afterwards. Real hardware/GPU performance,
+normal-money progression and manual pointer-lock/mouse controls were not tested
+by this asset integration. The revised GLBs increase model download size.
+
+Private deployment `appgdep_6abc629c042c8191bbf1f8f9ccfb2f7a` succeeded, version
+`appgprj_6abc3ca8267081918f5cb9da9eb188f3~appgver_18626fdbe0608191befe1445ad09497e`.
+URL: https://edouards-quarry.edouardgrigg.chatgpt.site . Audience is unchanged
+(owner-only); this is not publication to the public GitHub repository.
+
+### Final bounded browser results
+
+`fleet.mjs` completed successfully after correcting the test settings. All machine
+variants and both attached trailer tiers instantiated with the approved maps.
+Movement smoke checks: pickup 1.24 m, mini digger 0.77 m, dumper 0.38 m, tractor
+0.086 m, excavator 0.57 m, truck 6.29 m. These are short checks in a crowded test
+layout, not forward-speed or handling benchmarks (tractor/truck final velocities
+were negative); normal driving, collision response and ramps were not re-audited.
+Both diggers' booms moved in Direct mode. Actual carrier controllers animated the
+pickup tailgate, dumper skip, tractor trailer bed and truck bed with synthetic tip
+jobs; this checks animation only, not an inventory/economy transaction. No browser
+page errors. Stubbed pointer lock, development money, code-set placement/inputs and
+controller engine warm-up were used. Images and machine-readable results are in
+`docs/handover/screenshots/models/runtime/`. All 14 installed/source/build GLBs in
+the private preview were also byte-compared with the approved integration assets.
+
+Source integration and private deployment are complete. The earlier public-upload
+block was subsequently resolved by explicit user approval; see the publication
+checkpoint below.
+
+
+## VEH1 public publication — 30 September 2026
+
+The user explicitly approved public GitHub publication of the implementation,
+including the 14 model files, after the disclosure question. Earlier rejection
+notes are historical; that approval resolves the publication block.
+
+### Ready for review
+
+- **VEH1 — `38af7d11f007ac3b0b048fca5cc60252b1399672` (GitHub source commit)**: the entire source
+  tree exactly matches tested local commit `b4bbee1e2989b723776947e142ef7066a57188bf`,
+  tree `a9d7dda1b37265b9f5fcba53555b17738a87de23`. This includes all 14 GLBs,
+  rig contracts, export/renderer/animation check scripts, review comparisons and
+  rebuilding documentation. GitHub commit metadata differs from the local commit;
+  file contents do not. The following checkpoint commit retains the in-world
+  screenshots, raw smoke-check results and this report.
+- Fresh pre-publication checks: `npm test` (161 tests, 21 files), `npm run build`
+  (successful). Browser checks were not unnecessarily repeated; their exact
+  earlier scope and limitations are above. All uploaded blobs matched local Git
+  blob hashes, and the full source tree matched the expected hash.
+
+Destination is only `codex/vehicle-model-integration` in
+`edouardsebgrigg-lab/quarry`. No main/Claude branch update, force-push, PR creation
+  or message to Claude. Claude and other sessions can fetch this branch for review.
