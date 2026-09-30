@@ -18,6 +18,7 @@ const REASONS = {
   loanRepaid: 'Loan paid off',
   callout: 'Mechanic call-out',
   contract: 'Job bonus',
+  insurance: 'Machine insurance (weekly)',
   dev: 'Adjustment',
 };
 function describe(reason) {

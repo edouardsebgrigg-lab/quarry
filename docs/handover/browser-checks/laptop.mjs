@@ -32,7 +32,7 @@ await shot('bank');
 await page.locator('.lt-bank .lt-buy').click();
 await frames(4);
 await shot('bank-loan');
-await q(() => { const g = window.__quarry.game; g.events.emit('mentorMessage', { from: 'Ray', text: 'Morning. Topsoil is up at the depot today: worth a run if you have a load ready.', kind: 'tip' }); g.events.emit('productSold', { machineId: 'm1', tonnes: 0.4, revenue: 19.5 }); g.dev.skipHours(24); });
+await q(() => { const g = window.__quarry.game; g.events.emit('mentorMessage', { from: 'Ray', text: 'Morning. Topsoil is up at the depot today: worth a run if you have a load ready.', kind: 'tip' }); g.events.emit('productSold', { machineId: 'm1', bayId: 'topsoil', productId: 'topsoil', tonnes: 0.4, revenue: 19.5, pricePerTonne: 48.75, grade: 'Clean', purity: 1 }); g.dev.skipHours(24); });
 await page.locator('.lt-dock-app', { hasText: 'Fleet' }).click();
 await frames(10);
 await shot('fleet');

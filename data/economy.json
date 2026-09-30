@@ -30,5 +30,9 @@
     "maxLoans": 3,
     "statementLength": 250
   },
-  "mechanicCallOut": 35
+  "mechanicCallOut": 35,
+  "insurance": {
+    "weeklyRate": 0.03,
+    "everyDays": 7
+  }
 }

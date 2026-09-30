@@ -115,6 +115,7 @@ export function dealerApp({ game, feedback, photos, setHead }) {
       td.enginePower ? ['Engine', `${Math.round(td.enginePower)} kW`] : null,
       td.mass ? ['Operating weight', `${(td.mass / 1000).toFixed(1)} t`] : null,
       ['On the road', t.roadLegal ? 'Road legal' : 'Site only (stays on your land)'],
+      ['Insurance', `${money(td.price * data.economy.insurance.weeklyRate)} a week`],
     ].filter(Boolean);
     body.append(el('div', { class: 'lt-detail' },
       el('button', { class: 'lt-back', onClick: () => { detail = null; render(); } }, lineIcon('back'), 'All machines'),

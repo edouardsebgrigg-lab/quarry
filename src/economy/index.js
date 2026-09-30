@@ -8,3 +8,4 @@ export { weighIn, hasTicket, quoteDelivery, sellLoad } from './depot.js';
 export {
   bankState, recordMoney, dailyPayment, owed, creditLimit, loanOffers, takeLoan, repayLoan, bankDaily,
 } from './bank.js';
+export { weeklyInsurance, overheadsDaily } from './overheads.js';

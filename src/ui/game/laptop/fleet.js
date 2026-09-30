@@ -3,6 +3,7 @@ import { el, setText } from '../../dom.js';
 import { money } from '../../format.js';
 import { machinesAt, machineName, resaleValue } from '../../../machinery/index.js';
 import { machineLog } from '../../../game/logbook.js';
+import { weeklyInsurance } from '../../../economy/index.js';
 
 export function fleetApp({ game, feedback, photos, openApp, setHead }) {
   const { data } = game;
@@ -76,7 +77,7 @@ export function fleetApp({ game, feedback, photos, openApp, setHead }) {
     el('div', { class: 'lt-stats' },
       el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Machines'), el('div', { class: 'lt-stat-value' }, String(ms.length)),
         el('div', { class: 'lt-stat-note' }, `${Object.keys(data.machines.types).filter((k) => ms.some((m) => m.type === k)).length} kinds`)),
-      el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Fleet value'), totalV, el('div', { class: 'lt-stat-note' }, 'What the dealer would pay today')),
+      el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Fleet value'), totalV, el('div', { class: 'lt-stat-note' }, `Insurance ${money(weeklyInsurance(ctx))} a week`)),
       el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Need attention'), attnV, attnN)),
     el('div', { class: 'lt-rows' }, rows),
     el('button', { class: 'lt-link', onClick: () => openApp('dealer') }, 'Buy, upgrade or sell machines at the plant dealer →'));

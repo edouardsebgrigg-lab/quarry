@@ -100,6 +100,13 @@ export function logbookOnEvent(ctx, type, e) {
       trim(lb);
       break;
     }
+    case 'overheadsCharged': {
+      const lb = logbook(ctx);
+      const { day, hour, minute } = getDate(ctx.state, ctx.data);
+      lb.messages.push({ day, hour, minute, from: 'Office', kind: 'tip', text: `This week's machine insurance: $${e.amount.toFixed(2)} for ${e.machines} machine${e.machines === 1 ? '' : 's'}. It's taken each week; selling machines you don't use brings it down.` });
+      trim(lb);
+      break;
+    }
     case 'dayStarted': {
       const lb = logbook(ctx);
       const { day } = getDate(ctx.state, ctx.data);

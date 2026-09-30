@@ -3,7 +3,7 @@
 import {
   loadData, createEventBus, createRng, advanceClock, tickSeconds, ticksPerDay, ticksPerHour,
 } from '../core/index.js';
-import { marketHourly, chargeDailyInterest, fuelDaily, addMoney, recordMoney, bankDaily } from '../economy/index.js';
+import { marketHourly, chargeDailyInterest, fuelDaily, addMoney, recordMoney, bankDaily, overheadsDaily } from '../economy/index.js';
 import { tickJobs, fixAllMachines } from '../machinery/index.js';
 import { createNewState } from './state.js';
 import { createActions } from './actions.js';
@@ -32,6 +32,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
   if (!ctx.state.contracts) contractsDaily(ctx); // (a new game, or an old save: fill the board)
   events.on('dayStarted', () => {
     bankDaily(ctx);
+    overheadsDaily(ctx);
     chargeDailyInterest(ctx);
     fuelDaily(ctx);
   });
