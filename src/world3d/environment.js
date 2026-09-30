@@ -134,6 +134,31 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
 
   const hills = addHills(scene, ground, hillDistance, outsideY, Math.max(Math.abs(s0.x0), s0.x1, Math.abs(s0.z0), s0.z1) + 60);
 
+  // Overcast: a grey dome over the sky that fades in with the cloud. It's the fog's colour at the
+  // horizon (written the same way the fog is, so distant hills melt into it) and a little
+  // darker overhead. The sky shader alone can't go grey.
+  const overcastMat = new THREE.ShaderMaterial({
+    uniforms: { uAmount: { value: 0 }, uHorizon: { value: new THREE.Color() } },
+    vertexShader: `varying vec3 vDir;
+      void main() {
+        vDir = normalize(position);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        gl_Position.z = gl_Position.w; // (always at the back, like the sky)
+      }`,
+    fragmentShader: `uniform float uAmount; uniform vec3 uHorizon; varying vec3 vDir;
+      void main() {
+        float up = smoothstep(-0.02, 0.6, vDir.y);
+        gl_FragColor = vec4(uHorizon * mix(1.0, 0.78, up), uAmount);
+      }`,
+    side: THREE.BackSide, transparent: true, depthWrite: false, fog: false, toneMapped: false,
+  });
+  const overcast = new THREE.Mesh(new THREE.SphereGeometry(9000, 32, 16), overcastMat);
+  overcast.renderOrder = -1;
+  overcast.frustumCulled = false;
+  overcast.visible = false;
+  overcast.userData.noAO = true;
+  scene.add(overcast);
+
   // The weather eases in: { cloud 0..1, rain 0..1 } targets, followed a little each frame.
   const clear = { turbidity: u.turbidity.value, rayleigh: u.rayleigh.value, mie: u.mieCoefficient.value, sun: sun.intensity, hemi: hemi.intensity, env: scene.environmentIntensity, fogNear: scene.fog.near, fogFar: scene.fog.far };
   const fogClear = scene.fog.color.clone();
@@ -154,6 +179,9 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
       hemi.intensity = clear.hemi * (1 + 0.6 * c);
       scene.environmentIntensity = clear.env * (1 - 0.3 * c);
       scene.fog.color.copy(fogClear).lerp(fogGrey, c);
+      overcastMat.uniforms.uAmount.value = Math.min(1, c * 1.05);
+      overcastMat.uniforms.uHorizon.value.copy(scene.fog.color);
+      overcast.visible = c > 0.02;
       scene.fog.near = clear.fogNear * (1 - 0.65 * r);
       scene.fog.far = clear.fogFar * (1 - 0.55 * r);
       return now;

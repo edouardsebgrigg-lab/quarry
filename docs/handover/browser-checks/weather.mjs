@@ -22,8 +22,8 @@ await q(() => {
 });
 await frames(8);
 await shot('dry');
-await q(() => { const w = window.__quarry.game.state.weather; w.today = 'rain'; w.current = 'rain'; });
-await frames(260); // (the sky, fog and wet ground ease in)
+await q(() => { const w = window.__quarry.game.state.weather; w.today = 'rain'; w.current = 'rain'; window.__quarry.world.debug.settleWeather(); });
+await frames(30); // (the sky, fog and wet ground jump to the rain; the drops need a few frames)
 await shot('rain');
 console.log('errors', errors.slice(0, 10).join('\n') || '(none)');
 await browser.close();

@@ -26,13 +26,20 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       decals on every machine and fix placement
 - [ ] U5 HUD: cleaner top bar (money, date and time, speed) and goal card, in the laptop's style;
       the message log sometimes shows the same line twice
-- [ ] S2 Sound: listen-free checks only so far. Next: a turbo whistle on the used excavator and
-      truck, exhaust note that follows load, gravel crunch under tracks
-- [ ] W1 Weather: check the rain in the game (docs/handover/browser-checks/weather.mjs) and tune the
-      overcast sky, fog, streaks and wet ground by eye
-- [ ] D5 Depth: the daily summary could say which prices are rising; a proper end-of-week report
+- [ ] S2 Sound: listen-free checks only so far. Done: turbo whistle (used excavator, truck),
+      load layers in the engine note, gravel crunch under tracks, relief-valve squeal and engine
+      bog when a digger's lever is held at the end of its stroke. Next: wind in the open, birds
+      on a fine morning, a distant road; metal clank when the bucket hits rock
+- [ ] W1 Weather: first rain shot: the sky stayed blue and the wet grass looked frosted (sky
+      reflections). Fixed with a grey overcast dome in the fog's colour and far less sheen on
+      grass; re-shoot (weather.mjs now jumps straight to the rain) and judge
 - [ ] M2 Blender: the biggest remaining model issues from the studio shots (the used truck and
       excavator look too clean and toy-like up close: panel gaps, grime in recesses)
+- [ ] M3 Scraped bare-steel floors in the tipper beds (truck, dumper skip, trailer) as decals:
+      check them in the studio shots and from the digger cab when loading
+- [ ] V1 Countryside: the hedgerow trees read as small round blobs at a distance; the far hills
+      are smooth green domes. Taller, more varied trees and field boundaries
+- [ ] U9 Laptop: a proper look at the Prices app with news (laptop3.mjs) and the weekly report
 
 ## Done
 
@@ -56,3 +63,9 @@ dealer, the bank, the depot's prices, your fleet, your messages).
 - [x] U5 (part) HUD job tracker under the goal card
 - [x] Used-tier paint gets a clear coat
 - [x] Weather: forecast, overcast sky, fog, rain streaks, wet ground, less grip, rain sound (logic tested; visual check is W1)
+- [x] D5 Daily summary names the prices that moved most; a weekly report every seven days (best
+      day, top earner, bank balance) — `c38af33`, `0df1066`
+- [x] D6 Market news: local stories move one material's price for a few days (tested), in
+      Messages, the Prices app and a ticker on the laptop home — `eeae0b3`
+- [x] Product photos pose the diggers (boom up, rams lined up) instead of the straight-out
+      export pose with rams pointing the wrong way

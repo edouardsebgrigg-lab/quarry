@@ -95,6 +95,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const rain = createRain(scene);
   let weatherGrip = 1; // (rain makes everything slippery)
   let rainFelt = 0;
+  let weatherSettle = false;
 
   // ---- plants: grass around you, trees along hedges, roads and in copses
   const houseRects = [...plan.houses, plan.pub].map((h) => ({ x0: h.x - 8, x1: h.x + 8, z0: h.z - 8, z1: h.z + 8 }));
@@ -844,9 +845,11 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     particles.update(dt);
     // The weather: sky, light and fog ease toward it; rain falls around you and wets the ground.
     const w = currentWeather(game.ctx);
-    const felt = env.weather(paused ? 0 : dt, w);
+    const settle = weatherSettle; // (debug: jump straight to the weather, for screenshots)
+    weatherSettle = false;
+    const felt = env.weather(paused ? 0 : settle ? 10 : dt, w);
     weatherGrip = w.grip;
-    groundWeather.wet.value += ((felt.rain > 0.05 ? Math.min(1, felt.rain * 1.3) : 0) - groundWeather.wet.value) * Math.min(1, dt * (felt.rain > 0.05 ? 0.08 : 0.02));
+    groundWeather.wet.value += ((felt.rain > 0.05 ? Math.min(1, felt.rain * 1.3) : 0) - groundWeather.wet.value) * (settle ? 1 : Math.min(1, dt * (felt.rain > 0.05 ? 0.08 : 0.02)));
     rain.update(paused ? 0 : dt, camera, felt.rain);
     rainFelt = paused ? 0 : felt.rain;
     const here = v ? v.position() : player.feet();
@@ -1019,6 +1022,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   // For automated play tests and the dev console.
   const debug = {
+    settleWeather() { weatherSettle = true; },
     hands,
     places,
     land,

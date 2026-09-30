@@ -21,10 +21,12 @@ const DAMP_SHEEN = `
 // How wet the ground is (0 dry .. 1 soaked), shared by every ground material: wet soil is darker
 // and shinier. The world eases it up when it rains and down again after.
 export const groundWeather = { wet: { value: 0 } };
+// (Grass doesn't pool water, so it only gets a little of the sheen: b.x is the grass share.)
 const WET = `
-  material.roughness = mix(material.roughness, 0.42, uWet);
-  material.specularColor *= 1.0 + uWet * 1.4;
-  material.specularF90 = mix(material.specularF90, 0.75, uWet);`;
+  float wetK = uWet * (1.0 - 0.8 * b.x);
+  material.roughness = mix(material.roughness, 0.42, wetK);
+  material.specularColor *= 1.0 + wetK * 1.4;
+  material.specularF90 = mix(material.specularF90, 0.75, wetK);`;
 
 // For other rough outdoor materials (road, driveway): same low sheen as the ground.
 export function dampSheen(material) {
@@ -158,7 +160,7 @@ export function createGroundMaterial() {
         // Large-scale colour and brightness variation.
         albedo.rgb *= mix(0.86, 1.1, mac.r) * mix(vec3(1.0), vec3(1.04, 1.0, 0.94), mac.g);
         diffuseColor *= vec4(albedo.rgb, 1.0);
-        diffuseColor.rgb *= mix(1.0, 0.68, uWet);
+        diffuseColor.rgb *= mix(1.0, mix(0.68, 0.84, b.x), uWet);
 
         vec2 topSlope = gN.xy * b.x + dN.xy * b.y + vN.xy * b.z;
         vec3 topWN = normalize(vec3(wn.x + topSlope.x, wn.y, wn.z + topSlope.y));
@@ -169,7 +171,7 @@ export function createGroundMaterial() {
         normal = normalize((viewMatrix * vec4(groundWN, 0.0)).xyz);
       `);
   };
-  mat.customProgramCacheKey = () => 'quarry-ground-v2';
+  mat.customProgramCacheKey = () => 'quarry-ground-v3';
   return mat;
 }
 
