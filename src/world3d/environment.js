@@ -135,8 +135,8 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
   const hills = addHills(scene, ground, hillDistance, outsideY, Math.max(Math.abs(s0.x0), s0.x1, Math.abs(s0.z0), s0.z1) + 60);
 
   // Overcast: a grey dome over the sky that fades in with the cloud. It's the fog's colour at the
-  // horizon (written the same way the fog is, so distant hills melt into it) and a little
-  // darker overhead. The sky shader alone can't go grey.
+  // horizon (so distant hills melt into it) and darker overhead, under the rain clouds. The sky
+  // shader alone can't go grey.
   const overcastMat = new THREE.ShaderMaterial({
     uniforms: { uAmount: { value: 0 }, uHorizon: { value: new THREE.Color() } },
     vertexShader: `varying vec3 vDir;
@@ -148,9 +148,11 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
     fragmentShader: `uniform float uAmount; uniform vec3 uHorizon; varying vec3 vDir;
       void main() {
         float up = smoothstep(-0.02, 0.6, vDir.y);
-        gl_FragColor = vec4(uHorizon * mix(1.0, 0.78, up), uAmount);
+        gl_FragColor = vec4(uHorizon * mix(1.0, 0.72, up), uAmount);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
       }`,
-    side: THREE.BackSide, transparent: true, depthWrite: false, fog: false, toneMapped: false,
+    side: THREE.BackSide, transparent: true, depthWrite: false, fog: false,
   });
   const overcast = new THREE.Mesh(new THREE.SphereGeometry(9000, 32, 16), overcastMat);
   overcast.renderOrder = -1;
