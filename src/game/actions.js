@@ -10,6 +10,8 @@ import { buyBuilding } from '../buildings/index.js';
 import { planEarthworks, buildEarthworks } from '../earthworks/index.js';
 import { acceptContract } from '../contracts/index.js';
 
+export const DEFAULT_COMPANY = 'Wolds Quarry Co.';
+
 export function createActions(ctx) {
   const site = () => ctx.state.currentSiteId;
   // (what the bank counts as security: what your machines would fetch)
@@ -84,6 +86,15 @@ export function createActions(ctx) {
     // A mobile mechanic, booked from the laptop: services or repairs a machine where it is.
     mechanicQuote: (machineId) => mechanicQuote(ctx, machineId),
     callMechanic: (machineId) => callMechanic(ctx, machineId),
+
+    // Your company's name (from the intro card; shown on the laptop, the bank and reports).
+    setCompanyName(name) {
+      const clean = String(name ?? '').replace(/\s+/g, ' ').trim().slice(0, 32);
+      ctx.state.company = { name: clean || DEFAULT_COMPANY };
+      ctx.events.emit('companyNamed', { name: ctx.state.company.name });
+      return { ok: true, name: ctx.state.company.name };
+    },
+    companyName: () => ctx.state.company?.name ?? DEFAULT_COMPANY,
 
     // The jobs board: take on one of the offers.
     acceptContract: (offerId) => acceptContract(ctx, offerId),

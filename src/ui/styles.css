@@ -859,3 +859,9 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .lt-rep-bar { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
 .lt-rep-bar i { height: 8px; border-radius: 2px; background: rgba(255, 255, 255, 0.1); }
 .lt-rep-bar i.on { background: var(--accent); }
+.intro-name { display: flex; flex-direction: column; gap: 0.35rem; margin: 1rem 0 0.4rem; font-size: 0.8rem; color: var(--muted); }
+.text-input { font: inherit; font-size: 1rem; color: var(--text); background: rgba(0, 0, 0, 0.3); border: 1px solid var(--line-strong);
+  border-radius: 8px; padding: 0.6rem 0.8rem; outline: none; }
+.text-input:focus { border-color: var(--accent); }
+.lt-brand b { max-width: 9.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lt-brand { flex-wrap: wrap; }

@@ -91,3 +91,14 @@ describe('game', () => {
     expect(pileTotal(a.state.machines.find((m) => m.type === 'truck').load)).toBe(0);
   });
 });
+
+describe('your company', () => {
+  it('has a name you choose, tidied up, with a sensible default', async () => {
+    const { createGame } = await import('./index.js');
+    const game = createGame({ seed: 1 });
+    expect(game.actions.companyName()).toBe('Wolds Quarry Co.');
+    expect(game.actions.setCompanyName('   Brady   &  Sons Aggregates  ').name).toBe('Brady & Sons Aggregates');
+    expect(game.actions.setCompanyName('').name).toBe('Wolds Quarry Co.');
+    expect(game.actions.setCompanyName('x'.repeat(50)).name).toHaveLength(32);
+  });
+});

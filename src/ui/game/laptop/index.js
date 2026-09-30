@@ -116,7 +116,7 @@ export function openLaptop(overlays, { game, feedback, world, app = 'home' }) {
 
       return el('div', { class: 'laptop' },
         el('div', { class: 'lt-screen' },
-          el('div', { class: 'lt-side' }, el('div', { class: 'lt-brand' }, el('b', {}, 'Quarry'), el('span', {}, 'Office')), dock),
+          el('div', { class: 'lt-side' }, el('div', { class: 'lt-brand' }, el('b', {}, game.actions.companyName()), el('span', {}, 'Office')), dock),
           el('section', { class: 'lt-main' }, head, body),
           el('footer', { class: 'lt-bar' },
             el('span', { class: 'lt-status' }, el('i', { class: 'lt-dot' }), 'Online'),

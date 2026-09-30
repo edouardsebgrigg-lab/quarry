@@ -31,7 +31,7 @@ const pctDay = (r) => `${(r * 100).toFixed(1)}% a day`;
 export function bankApp({ game, feedback, setHead }) {
   const { data } = game;
   const cfg = data.economy.bank;
-  setHead(cfg.name, 'Business current account');
+  setHead(cfg.name, `Business current account · ${game.actions.companyName()}`);
   let amount = cfg.amounts[0];
   let days = cfg.terms[1] ?? cfg.terms[0];
 
