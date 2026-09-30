@@ -28,9 +28,9 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       the message log sometimes shows the same line twice
 - [ ] S2 Sound: listen-free checks only so far. Next: a turbo whistle on the used excavator and
       truck, exhaust note that follows load, gravel crunch under tracks
-- [ ] D2 Fleet app: call out a mobile mechanic to service or repair a machine where it stands,
-      for a call-out fee (data in `data/machines.json`), with tests
-- [ ] U7 Main menu: same style as the laptop and settings
+- [ ] D4 More depth: fuel as stock in the bulk tank (buy diesel at a price, machines draw it),
+      a weekly running-costs bill (insurance, site rent), and a "company" name you choose
+- [ ] U8 Laptop: small notification badges on the dock (new messages, a job about to run out)
 - [ ] M2 Blender: the biggest remaining model issues from the studio shots (the used truck and
       excavator look too clean and toy-like up close: panel gaps, grime in recesses)
 
@@ -45,3 +45,7 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       Ray's texts; `src/game/logbook.js`, tested) — `9a23f58`
 - [x] U6 Settings rebuilt with tabs, value readouts, segmented choices, grouped keys — see git log
 - [x] S1 (part) Reversing and travel alarms on site plant — `2e3a52a`
+- [x] D2 Mobile mechanic call-out from the fleet app (quote, fee, tested) — `4204835`
+- [x] S2 (part) Used machines sound smoother; turbo excavator — `ea271cc`
+- [x] D3 Jobs board: delivery contracts with bonuses and deadlines (`src/contracts/`, tested) — `2e85ac2`
+- [x] U7 Main menu: checked; already clean, left as it is

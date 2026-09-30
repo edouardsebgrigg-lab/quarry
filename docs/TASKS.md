@@ -54,6 +54,15 @@ files. For your tasks: add buildings through `data/buildings.json` and `src/buil
 laptop lists them from the data), keep new UI you need in a new file, and say in your checkpoint
 what Claude should wire into the laptop.
 
+New game systems Claude added in the loop (they arrive with your next merge; build on them,
+don't duplicate them): the laptop (B and M now open its dealer and prices apps; the old
+`shop.js` is gone), a bank with loans and a statement (`src/economy/bank.js`), a logbook of
+per-machine work, daily summaries and messages (`src/game/logbook.js`), a jobs board of
+delivery contracts (`src/contracts/`, `data/contracts.json`), a mobile mechanic call-out
+(`src/machinery/mechanic.js`), decals on the machines (`src/world3d/decals.js`) and site-plant
+reversing alarms. For T6 (stockpiles): a load tipped into a bay is not a sale, so it shouldn't
+emit `productSold` (contracts count sales).
+
 ## State of the game (Claude's review, 30 September 2026)
 
 **Built and working:** the hand-dig start (shovel, barrow, pickup), real deformable ground with
