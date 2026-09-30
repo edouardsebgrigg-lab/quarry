@@ -3,7 +3,7 @@
 Written for Codex, who continues on a **separate branch**. Nothing here has been merged. No PR was created.
 
 - **Repository:** `edouardsebgrigg-lab/quarry`
-- **Branch worked on:** `claude/quarry-mining-brainstorm-0yq0ww` (pushed; the exact tip SHA is in the final report of the handover message and in `git log -1` of this branch; this file is committed as the last commit)
+- **Branch worked on:** `claude/quarry-mining-brainstorm-0yq0ww`; the verification pass below is on `claude/step7-verification` (branched from `a0fae6c`: docs, test scripts, and one small planner fix) (pushed; the exact tip SHA is in the final report of the handover message and in `git log -1` of this branch; this file is committed as the last commit)
 - **Step 7 code was first pushed in:** `be75555` ("Step 7: plan and build haul roads, ramps and level areas"), on top of `128fbdc` (ground earthworks) and `b40d2b5` (time gate + map labels)
 - **Plan:** `docs/implementation-plan.md` (Version 2). Steps 3–7 done. Next: step 8 (buildings). Machine tiers stay in Milestone 4
 
@@ -44,12 +44,33 @@ Browser smoke (headless Chromium, software rendering, **the pointer lock is stub
 | Steeper 16.9% ramp (points set directly, real confirm click), pickup climbs it | passed (y −1.13 → 0.16, reached the top) |
 | Screenshots | `docs/handover/screenshots/works-*.png` (preview strip and card, road built, ramp preview, ramps built) |
 
+### Verification pass (branch `claude/step7-verification`)
+
+A follow-up run of `docs/handover/browser-checks/verify.mjs` on this code (same stubbed pointer lock and code-set aim; builds confirmed with a real left-click event on the canvas; driving uses the dev hook `setKeys`, the same held-key path as the keyboard):
+
+| Check | Status |
+|---|---|
+| Build a road, a 6.1% ramp out of a pit, a 17.4% ramp and an 8 m level area, each confirmed with the click | passed: all four built, money taken = the planned price each time ($140, $196, $84, $68), total tonnes unchanged |
+| Level area is flat | passed: 0 m spread over 15 points on the pad |
+| Save to `slot1`, reload the page, Continue: money, heights, surfaces, built flags and works counts | passed within 1 mm: everything identical except one road height (−0.014 m before, −0.013 m after). Cause not confirmed: most likely a settle tick between the snapshot and the save (the clock was forced on) or Float32 rounding |
+| Clock on the loaded game: before the click / playing / window blurred / focus back / tab hidden / 5 s more hidden / first 2 frames back | passed: 0 / 6 / 0 / 7 / 0 / 0 / 2 ticks (no catch-up jump). Blur and hidden were simulated by overriding `document.hasFocus` and `document.hidden` |
+| Pickup up the gentle ramp in the reloaded game | passed: from the pit floor (−1.26 m) to the top (0.01 m) |
+| Screenshot | `docs/handover/screenshots/verify-after-load.png` (the reloaded game: the ramp, the dumper at its top, and the mentor tip) |
+| Tracked dumper up the steep ramp | passed: from the pit floor (−1.29 m) to the top (−0.07 m), reached the far end |
+
+| Tractor with its trailer up the 6% ramp out of a pit (`ramps.mjs`) | passed: pit floor (−1.29 m) to the top (−0.01 m), reached the far end. Only the tractor's position was measured, not the trailer's |
+| Tractor with its trailer up the 17% ramp | passed: −1.31 m to −0.11 m, reached the top |
+| Mini digger on the ramps (`ramps.mjs` phases T3, T4) | not recorded: the 600 s limit I put on the script stopped it during the mini digger's first drive (T3). That is my time limit, not a game error, but the drive was much slower than the others, so check it (the digger may be slow on the 17% slope, or `setKeys` may not drive it the way it drives the other machines) |
+| Paint before/after | not done: `capture.mjs` with `TAG=after` was queued after `ramps.mjs` but not reached. The "before" shots were taken earlier and are not in the repo |
+
+Also found by the test and **fixed** on this branch: the confirming click only counted while the crosshair was on the ground, so looking at the sky and clicking did nothing, silently. Now, once both ends are set, the click builds wherever you look, and a click that misses the ground while setting an end says "Aim at the ground to set the end points" (`src/world3d/planner.js`, test in `planner.test.js`; 136 tests pass).
+
 Not verified in a browser (the run was cut short after the ramp drives; the container session also ended):
 
-- **Save, reload and persistence of a built road/ramp in the browser** (only proven by unit tests: `works.test.js` and `earthworks.test.js` serialise/load and check height, gravel surface and built flag). `works2.mjs` phase S8 is the browser version; note it needs the save slot `slot1` (that is what "Continue" loads; the first `works.mjs` run used `works1` and could not continue)
-- The tracked dumper on a ramp (script phase R5, not reached; tracked machines follow the ground with no slope limit in `trackDrive.js`)
-- Tractor and trailer on a ramp; the mini digger on a ramp
-- Level area in a browser (unit-tested only)
+- ~~Save, reload and persistence in the browser~~: done in the verification pass above
+- ~~Level area in a browser~~: done in the verification pass above
+- ~~The tracked dumper on a ramp~~: done in the verification pass above
+- ~~Tractor and trailer on a ramp~~: done (verification pass above). The mini digger on a ramp is still not recorded
 - The planner UI at real 1080p (screenshots were 960×540); the message log is moved up while planning (`body:has(.hud3d.planning) .log`) which is untested on browsers without `:has`
 - Real pointer lock and real mouse aiming (the aim was set by code); the click that confirms is the third LMB, which is easy to double click by mistake
 - Whether the spoil heap position (9.5 m beside the strip, else the other side, else beyond an end) is always convenient: a 22 m ramp cut leaves about 133 t of spoil in one heap
@@ -58,7 +79,7 @@ Not verified in a browser (the run was cut short after the ramp drives; the cont
 
 - **Fresh-save opening loop with real controls and normal money** (dig, barrow, pickup, depot, sell): `docs/handover/browser-checks/opening.mjs` was written but **never run**. No measured time to first sale / first machine exists
 - **Vehicle paint before/after comparison**: `capture.mjs` (with `TAG=after`) never run; the weathering shader and darker base paint are in the code and were only judged from a few screenshots
-- Time gate: passed in a controlled browser test (`gate3.mjs`: no clock before the first click or after load, pause, lock loss, shop, map, resume, loaded game; no errors) and in unit tests (`timeGate.test.js`). Blur/hidden window is **unit-tested only**, not run in a browser
+- Time gate: passed in a controlled browser test (`gate3.mjs`: no clock before the first click or after load, pause, lock loss, shop, map, resume, loaded game; no errors) and in unit tests (`timeGate.test.js`). Blur/hidden window: now also passed in the browser (verification pass above, simulated with `document.hasFocus` / `document.hidden` overrides)
 - Map labels: checked by screenshots at default and zoomed views earlier; no automated check
 
 ## Known defects and risks
@@ -79,7 +100,7 @@ npx vite build
 
 For a quick manual try: dev panel (F1) adds money; tip some gravel on the field (the loose gravel must be within 30 m of the road), press F, click start and end, click again to build. The dev hooks `window.__quarry.world.debug.planner`, `.aimAt(x, z)` and `.teleportPlayer(x, z)` are what the smoke scripts use.
 
-Browser scripts (need Playwright with Chromium): start `npx vite --config docs/handover/browser-checks/vite.test.config.mjs` (edit the root path in it), then `OUT=/some/dir node docs/handover/browser-checks/works.mjs` and `works2.mjs`.
+Browser scripts (need Playwright with Chromium): start `npx vite --config docs/handover/browser-checks/vite.test.config.mjs` (edit the root path in it), then `OUT=/some/dir timeout 840 node docs/handover/browser-checks/verify.mjs` (the verification pass, about 10 minutes with software rendering), or `works.mjs` and `works2.mjs`.
 
 ## Next items (from `docs/implementation-plan.md`)
 
