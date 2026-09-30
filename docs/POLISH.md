@@ -28,9 +28,9 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       the message log sometimes shows the same line twice
 - [ ] S2 Sound: listen-free checks only so far. Next: a turbo whistle on the used excavator and
       truck, exhaust note that follows load, gravel crunch under tracks
-- [ ] D4 More depth: fuel as stock in the bulk tank (buy diesel at a price, machines draw it),
-      a weekly running-costs bill (insurance, site rent), and a "company" name you choose
-- [ ] U8 Laptop: small notification badges on the dock (new messages, a job about to run out)
+- [ ] W1 Weather: check the rain in the game (docs/handover/browser-checks/weather.mjs) and tune the
+      overcast sky, fog, streaks and wet ground by eye
+- [ ] D5 Depth: the daily summary could say which prices are rising; a proper end-of-week report
 - [ ] M2 Blender: the biggest remaining model issues from the studio shots (the used truck and
       excavator look too clean and toy-like up close: panel gaps, grime in recesses)
 
@@ -49,3 +49,10 @@ dealer, the bank, the depot's prices, your fleet, your messages).
 - [x] S2 (part) Used machines sound smoother; turbo excavator — `ea271cc`
 - [x] D3 Jobs board: delivery contracts with bonuses and deadlines (`src/contracts/`, tested) — `2e85ac2`
 - [x] U7 Main menu: checked; already clean, left as it is
+- [x] U8 Laptop dock badges (unread messages, open offers); in-game job and summary messages
+- [x] Jobs board reputation (bigger bonuses and more offers as you build a name)
+- [x] Company name on the intro card (laptop, bank)
+- [x] D4 (part) Weekly machine insurance, shown in the dealer and fleet apps
+- [x] U5 (part) HUD job tracker under the goal card
+- [x] Used-tier paint gets a clear coat
+- [x] Weather: forecast, overcast sky, fog, rain streaks, wet ground, less grip, rain sound (logic tested; visual check is W1)
