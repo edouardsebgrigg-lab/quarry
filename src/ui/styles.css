@@ -877,3 +877,4 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .lt-movers { font-size: 0.8rem; color: var(--muted); display: flex; gap: 0.8rem; flex-wrap: wrap; }
 .lt-movers .up { color: var(--good); font-weight: 600; }
 .lt-movers .down { color: #ff9a8a; font-weight: 600; }
+.hs-weather.wet { color: #9fd0ff; }

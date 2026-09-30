@@ -7,6 +7,7 @@ import { getSiteData } from '../../quarry/index.js';
 import { keyLabel } from '../../input/index.js';
 import { currentObjective } from '../../progression/index.js';
 import { contractsState } from '../../contracts/index.js';
+import { currentWeather } from '../../weather/index.js';
 
 const DETAIL_TIME = 9; // seconds a new goal stays expanded
 
@@ -15,6 +16,7 @@ export function createHud({ game, runtime, settings }) {
   const debtTag = el('span', { class: 'hs-debt' }, 'DEBT');
   const dateText = el('span', { class: 'hs-date' });
   const siteText = el('span', { class: 'hs-site' });
+  const weatherText = el('span', { class: 'hs-weather' });
 
   const speedButtons = [
     { content: icon('pause'), title: 'Pause time', onClick: () => runtime.togglePause(), isActive: () => runtime.isUserPaused() },
@@ -28,7 +30,7 @@ export function createHud({ game, runtime, settings }) {
 
   const status = el('div', { class: 'hud-status' },
     el('div', { class: 'hs-top' }, debtTag, moneyText),
-    el('div', { class: 'hs-meta' }, siteText, el('span', { class: 'sep' }, '·'), dateText),
+    el('div', { class: 'hs-meta' }, siteText, el('span', { class: 'sep' }, '·'), dateText, el('span', { class: 'sep' }, '·'), weatherText),
     el('div', { class: 'hs-speed' }, speedButtons.map((b) => b.node)));
 
   // Goal: one line, expands with details.
@@ -73,6 +75,9 @@ export function createHud({ game, runtime, settings }) {
       debtTag.style.display = target < 0 ? '' : 'none';
       setText(dateText, clockTime(getDate(game.state, game.data)));
       setText(siteText, getSiteData(game.data, game.state.currentSiteId).name);
+      const w = currentWeather(game.ctx);
+      setText(weatherText, w.name);
+      weatherText.classList.toggle('wet', w.rain > 0);
       for (const b of speedButtons) b.node.classList.toggle('active', b.isActive());
 
       const jobs = contractsState(game.ctx).active;
