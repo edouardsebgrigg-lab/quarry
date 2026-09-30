@@ -173,3 +173,7 @@ Site machines (mini digger, excavator, dumper) can't leave your land; the pickup
 - `docs/implementation-plan.md`: milestones
 - `docs/modules.md`: a short guide to the code
 - `docs/models.md`: the 3D models, how to rebuild them in Blender, and how to make your own
+- `docs/TASKS.md`: the current work queue (Claude plans and reviews on `claude/coordination`; Codex implements on its own branch)
+- `docs/CODEX-CHECKPOINT.md`: Codex's progress reports, with what was actually run
+- `docs/HANDOVER.md`: the Step 7 handover and its verification record
+- `docs/handover/browser-checks/`: bounded headless-browser checks (software rendering is slow; see `docs/TASKS.md` for how to run them)

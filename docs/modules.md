@@ -54,7 +54,7 @@ You can change any of these and reload the game. No code changes are needed.
 | `planner.js` | The earthworks planner (F, on foot): aims at the ground, keeps the start, end, width and kind, re-plans as they change, draws the coloured strip and posts, and feeds the HUD card. Only the last click builds |
 | `groundChunks.js`, `groundMaterial.js` | Your diggable field: its chunked mesh and colliders that follow the real ground, and the shader that blends the ground textures |
 | `vegetation.js` | Grass tufts and weeds (streamed in around you), hedgerows, copses and lone trees |
-| `environment.js` | Sky, sun, fog and the hills on the horizon |
+| `environment.js` | The renderer and its quality levels (low: no shadows; medium: soft shadows; high and ultra: soft shadows plus ambient occlusion, drawn through a small post-processing chain that leaves out see-through things like grass and glass), sky, sun, fog and the hills on the horizon |
 | `player.js`, `headSway.js`, `handTools.js` | You on foot, head bob, the shovel in your hands and the wheelbarrow |
 | `truck.js`, `truckPhysics.js` | Road vehicles (the pickup, the tipper truck and the tractor): the model, bed or tailgate, and Rapier ray-cast vehicle physics with an engine, gearbox, brakes and grip by surface (the pickup and the tractor have their own shape and engine) |
 | `trailer.js` | The tractor's tipping trailer: it hangs off the hitch and follows it with the one-axle pursuit maths (`trailerYawStep`, tested), sits on the ground, and has a kinematic collider |
@@ -71,7 +71,8 @@ You can change any of these and reload the game. No code changes are needed.
 
 The approved 14-asset fleet uses `blender/review_models.py` to refine the original
 builders while retaining their named rigs. Embedded PBR maps and `Review_` materials
-carry the wear directly, bypassing legacy shader weathering. `blender/fleet-rigs.json`
+carry their own painted wear; `weathering.js` adds a lighter layer on top (rust and chips on
+the Rusty tier, light fade and dirt on Used) so the two tiers read differently in the game. `blender/fleet-rigs.json`
 records the protected animation hierarchy and rest transforms for export checks.
 
 ## Tests
