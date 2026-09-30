@@ -1086,7 +1086,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     unlockMouse: () => mouse.unlock(),
     isMouseLocked: () => mouse.locked(),
     // Product photos of the machines (for the laptop); dispose() the result when done.
-    createProductPhotos: () => createThumbnails(),
+    createProductPhotos: (opts) => createThumbnails(opts),
     destroy() {
       offs.forEach((off) => off());
       resizeObserver.disconnect();

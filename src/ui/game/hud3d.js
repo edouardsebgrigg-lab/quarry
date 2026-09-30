@@ -87,7 +87,7 @@ export function createHud3d({ settings }) {
         [['LMB'], 'Dig / tip the shovel'], [[k('interact')], 'Use / get in / take barrow'], [[k('repair')], 'Service / repair'],
         [[k('works')], 'Plan a road, ramp or level area']];
     }
-    return [...rows, null, [[k('shop')], 'Shop'], [[k('market')], 'Prices'], [[k('map')], 'Map'], [[k('goal')], 'Goal']];
+    return [...rows, null, [[k('shop')], 'Dealer'], [[k('market')], 'Prices'], [[k('map')], 'Map'], [[k('goal')], 'Goal']];
   }
 
   let helpKey = '';

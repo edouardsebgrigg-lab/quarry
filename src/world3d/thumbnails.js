@@ -80,9 +80,10 @@ export function createThumbnails({ width = 480, height = 300 } = {}) {
   }
 
   return {
-    // A data URL for the machine, or null if its model isn't loaded.
-    photo(type, tier) {
-      const key = `${type}_${tier}`;
+    // A data URL for the machine, or null if its model isn't loaded. `view` (optional) turns the
+    // camera: { yaw (radians around the machine), pitch, zoom } — for model reviews.
+    photo(type, tier, view = null) {
+      const key = `${type}_${tier}${view ? JSON.stringify(view) : ''}`;
       if (photos.has(key)) return photos.get(key);
       const group = build(type, tier);
       if (!group) return null;
@@ -91,8 +92,10 @@ export function createThumbnails({ width = 480, height = 300 } = {}) {
       const box = new THREE.Box3().setFromObject(group);
       const sphere = box.getBoundingSphere(new THREE.Sphere());
       // Three-quarter view from the front left, a little above, filling most of the frame.
-      const dir = new THREE.Vector3(1, 0.42, 0.95).normalize();
-      const dist = sphere.radius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2)) * 0.7;
+      const yaw = view?.yaw ?? Math.atan2(0.95, 1);
+      const pitch = view?.pitch ?? 0.3;
+      const dir = new THREE.Vector3(Math.cos(yaw) * Math.cos(pitch), Math.sin(pitch), Math.sin(yaw) * Math.cos(pitch));
+      const dist = sphere.radius / Math.sin(THREE.MathUtils.degToRad(camera.fov / 2)) * 0.7 * (view?.zoom ?? 1);
       camera.position.copy(sphere.center).addScaledVector(dir, dist);
       camera.lookAt(sphere.center.x, sphere.center.y * 0.8, sphere.center.z);
       renderer.render(scene, camera);
