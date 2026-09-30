@@ -68,6 +68,7 @@ export function createDumper({ physics, scene, terrain, machine, spawn, stats, l
         work: s.work,
         autoIdle: s.idleT > 4,
         travel: (Math.abs(s.vL) + Math.abs(s.vR)) / 2,
+        reversing: (s.vL + s.vR) / 2 < -0.05,
         swing: 0,
         digging: false,
         pour: 0,

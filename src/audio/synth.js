@@ -430,6 +430,23 @@ export function beeper(sr) {
   return normalize(out, 0.6);
 }
 
+// A modern "broadband" reversing alarm: bursts of shaped noise (shhh-shhh) rather than a
+// beep, easy to place and less piercing. Loops at 0.9 s like the tonal beeper.
+export function broadbandAlarm(sr, seed = 21) {
+  const n = Math.round(0.9 * sr);
+  const on = Math.round(0.42 * sr);
+  const r = rng(seed);
+  const noise = new Float32Array(n);
+  for (let i = 0; i < on; i++) noise[i] = r() * 2 - 1;
+  // three bands, like the real ones, so it sounds like a hiss with a bit of "voice" in it
+  const out = mix([filter(noise, 'bandpass', 1100, 1.4, sr), 1], [filter(noise, 'bandpass', 2400, 1.6, sr), 0.8], [filter(noise, 'bandpass', 4800, 1.8, sr), 0.5]);
+  for (let i = 0; i < n; i++) {
+    const env = i < on ? Math.min(1, i / (0.02 * sr), (on - i) / (0.03 * sr)) : 0;
+    out[i] *= env;
+  }
+  return normalize(out, 0.55);
+}
+
 // Hydraulic oil rushing through valves (loop, filtered live by how hard the rams work).
 export function hydraulicHiss(sr, seconds = 1.5, seed = 15) {
   const n = Math.round(seconds * sr);

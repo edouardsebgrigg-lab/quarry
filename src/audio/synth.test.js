@@ -60,3 +60,17 @@ describe('sound synthesis', { timeout: 30000 }, () => {
     expect(S.birdCall(SR, 4)).toEqual(S.birdCall(SR, 4));
   });
 });
+
+describe('reversing alarms', () => {
+  it('the broadband alarm is a burst of noise then silence, and not too loud', async () => {
+    const { broadbandAlarm, peak } = await import('./synth.js');
+    const sr = 22050;
+    const a = broadbandAlarm(sr);
+    expect(a.length).toBe(Math.round(0.9 * sr));
+    expect(peak(a)).toBeLessThanOrEqual(0.56);
+    const on = a.slice(Math.round(0.1 * sr), Math.round(0.3 * sr)).reduce((x, v) => x + Math.abs(v), 0);
+    const off = a.slice(Math.round(0.6 * sr), Math.round(0.85 * sr)).reduce((x, v) => x + Math.abs(v), 0);
+    expect(on).toBeGreaterThan(100);
+    expect(off).toBe(0);
+  });
+});

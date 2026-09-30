@@ -322,6 +322,7 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
         work: s.work,
         autoIdle: s.idleT > 4,
         travel: (Math.abs(s.vL) + Math.abs(s.vR)) / 2,
+        reversing: (s.vL + s.vR) / 2 < -0.05,
         swing: Math.abs(s.houseVel),
         digging: s.digging,
         pour: s.pour,

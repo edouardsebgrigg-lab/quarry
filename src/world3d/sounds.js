@@ -43,7 +43,14 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
           beeper: v.type === 'truck' ? audio.loopVoice('beeper') : null,
           ram: v.type === 'truck' || v.type === 'tractor' ? audio.whineVoice() : null,
         }
-        : { tracks: audio.loopVoice('tracks'), hyd: audio.loopVoice('hydraulic'), scrape: audio.loopVoice('scrape'), pump: audio.whineVoice() },
+        : {
+          tracks: audio.loopVoice('tracks'), hyd: audio.loopVoice('hydraulic'), scrape: audio.loopVoice('scrape'), pump: audio.whineVoice(),
+          // Site plant warns people nearby when it moves: the dumper when it reverses, a used
+          // digger whenever it tracks (a modern broadband alarm). The rusty dumper still has
+          // its old beeper; the rusty digger's alarm died years ago.
+          alarm: v.type === 'dumper' ? audio.loopVoice(tier === 'rusty' ? 'beeper' : 'alarm')
+            : v.digger && tier !== 'rusty' ? audio.loopVoice('alarm') : null,
+        },
       shifted: 0,
       braking: false,
       bumpCool: 0,
@@ -151,6 +158,10 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
     m.extra.hyd?.set({ gain: on ? f.work * 0.28 : 0, rate: 0.8 + f.work * 0.4, pos: housePos, cutoff: inside ? 4000 : 16000 });
     // Tracks clanking round.
     m.extra.tracks?.set({ gain: Math.min(1, f.travel / 1.2) * 0.8, rate: 0.35 + f.travel * 0.9, pos: v3(v.position()) });
+    if (m.extra.alarm) {
+      const moving = v.type === 'dumper' ? f.reversing : f.travel > 0.08;
+      m.extra.alarm.set({ gain: moving && m.level > 0.5 ? 0.3 : 0, pos: v3(v.position()) });
+    }
     // Teeth grinding through gravel.
     const teeth = v3(v.teethWorld ? v.teethWorld() : v.position());
     m.extra.scrape?.set({ gain: f.digging ? 0.7 : 0, rate: 0.9 + Math.random() * 0.05, pos: teeth });

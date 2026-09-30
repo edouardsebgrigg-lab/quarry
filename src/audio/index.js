@@ -65,6 +65,7 @@ export function createAudio({ volume = 0.8 } = {}) {
       hydraulic: toBuffer(S.hydraulicHiss(sr)),
       wind: toBuffer(S.wind(sr)),
       beeper: toBuffer(S.beeper(sr)),
+      alarm: toBuffer(S.broadbandAlarm(sr)),
     });
     Object.assign(b.oneShots, {
       starter: [toBuffer(S.starter(sr))],
