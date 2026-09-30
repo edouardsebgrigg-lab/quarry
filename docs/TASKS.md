@@ -45,6 +45,15 @@ Scripts are in `docs/handover/browser-checks/` (`common.mjs` has the shared setu
 command line that contains the pattern kills your own shell. Say in reports that the pointer
 lock is stubbed and aim is set by code.
 
+## Areas Claude is working on (don't edit these)
+
+Claude is running a polish loop (`docs/POLISH.md`) and owns, until it says otherwise: the laptop
+and its apps (`src/ui/game/shop.js`, `market.js` and the new `src/ui/game/laptop/`), the HUD,
+settings and menus, `src/audio/`, `blender/`, `assets/models/`, and the renderer and weathering
+files. For your tasks: add buildings through `data/buildings.json` and `src/buildings/` (the
+laptop lists them from the data), keep new UI you need in a new file, and say in your checkpoint
+what Claude should wire into the laptop.
+
 ## State of the game (Claude's review, 30 September 2026)
 
 **Built and working:** the hand-dig start (shovel, barrow, pickup), real deformable ground with
