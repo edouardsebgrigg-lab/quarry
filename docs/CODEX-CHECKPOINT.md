@@ -30,6 +30,28 @@ Claude owns `docs/TASKS.md`; Codex has not edited it.
   An initial raised-road test fixture lacked fill material; supplying enough
   gravel corrected the fixture and the test passed. No defect was hidden.
 
+- **T3 — done, `a13bb10d9fa5f31639b11fba16cb324a8e3d4dd6`:** added
+  `ONLY_MINI=1` to isolate phases T3/T4 of `ramps.mjs`, portable module/URL
+  overrides, progress output, explicit reached/error assertions, larger frame
+  budgets, and browser cleanup. Gameplay, track speeds and slope limits unchanged.
+  Actually run: `ONLY_MINI=1 timeout 1200 node docs/handover/browser-checks/ramps.mjs`
+  using Playwright override and port 5184, 320×180 headless Chromium/SwiftShader.
+  Both ramps built with canvas confirmation clicks, exact labour prices ($240,
+  $100) and material conservation. Mini digger reached the 16.866% ramp's top
+  in 144 measured drive frames: (101,60) to (92.78,60), surface -1.22 to -0.02 m.
+  The 6.386% ramp took 216 measured drive frames: (99,60) to (121.06,60),
+  surface -1.22 to 0.10 m. No browser errors; process exited successfully.
+  `npm test` (147 passing), `npm run build`, `node --check` on the script and
+  `git diff --check` also passed before publication.
+  Explanation: isolated phases complete through the Assisted held-key path with
+  the expected yaw. Mini tracks are configured at 1.1 m/s; the prior report's
+  aggregate software-rendering timeout was not reproduced as a slope/control
+  defect. The original run's exact timing is unknown. Larger test budgets leave
+  margin, not a gameplay speed increase. Pointer lock stubbed, aim/placement set
+  by code, dev money and supplied material used. Not verified: Direct-mode
+  driving, manual controls, full tractor-plus-mini script or ramp save/reload
+  in this run. The script's "T4" phase is a ramp phase, not queue task T4.
+
 ## Decisions and session setup
 
 - CLI push failed for lack of credentials. The connected owner account has push
@@ -54,7 +76,6 @@ Codex did not independently rerun those checks this session.
 
 ## Outstanding checks and risks
 
-- T3: mini digger climbing both ramps.
 - T4: five matching paint after shots and visual comparison.
 - T5: normal-money fresh-save dig/haul/sell loop and measured pacing.
 - Footprint means the grading job cells requested by T2; heap sourcing and
