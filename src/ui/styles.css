@@ -913,3 +913,6 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .lt-ticker b { flex: none; font-size: 0.84rem; }
 .lt-ticker b.up { color: var(--good); }
 .lt-ticker b.down { color: #ff9a8a; }
+.trend-news { display: inline-block; margin-left: 0.45rem; padding: 0.05rem 0.4rem; border-radius: 999px; font-size: 0.68rem; font-weight: 700;
+  background: rgba(107, 217, 138, 0.14); color: var(--good); }
+.trend-news.down { background: rgba(255, 154, 138, 0.14); color: #ff9a8a; }

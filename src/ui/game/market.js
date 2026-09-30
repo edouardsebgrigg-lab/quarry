@@ -1,7 +1,7 @@
 // The depot's price board (in the laptop's prices app, M): prices, trends and price history.
 import { el, setText } from '../dom.js';
 import { price } from '../format.js';
-import { currentPrice, priceTrendDirection, fuelPrice } from '../../economy/index.js';
+import { currentPrice, priceTrendDirection, fuelPrice, newsMultiplier } from '../../economy/index.js';
 
 function drawSparkline(canvas, history, color) {
   const g = canvas.getContext('2d');
@@ -60,7 +60,14 @@ export function priceBoard(game) {
       setText(cells.price, price(p));
       setText(cells.slight, id === data.depot.mixedProduct ? '—' : price(p * slight.factor));
       const dir = priceTrendDirection(ctx, id);
-      setText(cells.trend, dir > 0 ? '▲ Rising' : dir < 0 ? '▼ Falling' : '— Steady');
+      const news = newsMultiplier(ctx, id) - 1;
+      const newsText = Math.abs(news) > 0.005 ? `${news > 0 ? '+' : '−'}${Math.round(Math.abs(news) * 100)}% news` : '';
+      const trendKey = `${dir}|${newsText}`;
+      if (cells.trend.dataset.key !== trendKey) {
+        cells.trend.dataset.key = trendKey;
+        cells.trend.replaceChildren(dir > 0 ? '▲ Rising' : dir < 0 ? '▼ Falling' : '— Steady',
+          newsText ? el('span', { class: `trend-news ${news > 0 ? 'up' : 'down'}` }, newsText) : null);
+      }
       cells.trend.className = `trend trend-${dir > 0 ? 'up' : dir < 0 ? 'down' : 'flat'}`;
       drawSparkline(cells.spark, game.state.market.products[id].history, dir > 0 ? '#6bd98a' : dir < 0 ? '#ff6b6b' : '#98a0ab');
     }
