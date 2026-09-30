@@ -1,0 +1,36 @@
+// Screens of the office laptop: the dealer's machine grid and one machine in detail, upgrades,
+// sell, home and prices. Opened with the real B / M keys; low graphics so the 3D behind is cheap.
+// OUT=<dir> TAG=<name> node docs/handover/browser-checks/laptop.mjs
+import { start } from './common.mjs';
+const TAG = process.env.TAG ?? 'laptop';
+const { browser, page, errors, q, frames, newGame } = await start({ width: 1280, height: 800 });
+const shot = async (name) => { await frames(3); await page.screenshot({ path: `${process.env.OUT}/${TAG}-${name}.png`, timeout: 300000 }); console.log('shot', name); };
+await newGame();
+await q(() => { const g = window.__quarry.game; g.state.money = 2600; g.actions.buyMachine('miniDigger', 'rusty'); });
+await frames(4);
+await page.keyboard.press('KeyB');
+await frames(40); // (a product photo per frame)
+await shot('dealer-diggers');
+await page.locator('.lt-tile').nth(1).click();
+await frames(12);
+await shot('dealer-detail');
+await page.locator('.lt-cat', { hasText: 'Upgrades' }).click();
+await frames(8);
+await shot('dealer-upgrades');
+await page.locator('.lt-cat', { hasText: 'Sell' }).click();
+await frames(8);
+await shot('dealer-sell');
+await page.locator('.lt-dock-app', { hasText: 'Home' }).click();
+await frames(4);
+await shot('home');
+await page.keyboard.press('KeyM');
+await frames(4);
+await shot('prices');
+await page.locator('.lt-dock-app', { hasText: 'Bank' }).click();
+await frames(4);
+await shot('bank');
+await page.locator('.lt-bank .lt-buy').click();
+await frames(4);
+await shot('bank-loan');
+console.log('errors', errors.slice(0, 10).join('\n') || '(none)');
+await browser.close();

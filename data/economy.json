@@ -7,5 +7,27 @@
     "dailyNoise": 0.05
   },
   "debtInterestPerDay": 0.03,
-  "resaleBase": 0.5
+  "resaleBase": 0.5,
+  "bank": {
+    "name": "Wolds County Bank",
+    "dailyRate": 0.012,
+    "amounts": [
+      250,
+      500,
+      1000,
+      2500,
+      5000,
+      10000
+    ],
+    "terms": [
+      7,
+      14,
+      28
+    ],
+    "creditBase": 400,
+    "creditPerEarned": 0.5,
+    "creditPerFleetValue": 0.5,
+    "maxLoans": 3,
+    "statementLength": 250
+  }
 }

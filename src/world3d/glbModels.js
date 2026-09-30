@@ -44,6 +44,9 @@ export async function preloadModels({ onProgress } = {}) {
   }));
 }
 
+// The loaded scene for a model file name (e.g. "truck_used"), or null. (Shared: clone it.)
+export const modelScene = (name) => cache.get(name) ?? null;
+
 function instance(name) {
   const scene = cache.get(name);
   if (!scene) return null;

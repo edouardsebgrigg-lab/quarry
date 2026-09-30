@@ -36,7 +36,8 @@
           "repairTime": 12,
           "repairTo": 70
         }
-      }
+      },
+      "blurb": "Your old pickup. Carries a few barrow loads and can go on the road."
     },
     "miniDigger": {
       "name": "Mini Digger",
@@ -83,7 +84,8 @@
           "mass": 3500,
           "enginePower": 22
         }
-      }
+      },
+      "blurb": "A 1.5 tonne mini excavator on rubber tracks. Small bucket, tight turns, and cheap to run: the first machine most yards buy."
     },
     "dumper": {
       "name": "Site Dumper",
@@ -127,7 +129,8 @@
           "repairTime": 10,
           "repairTo": 75
         }
-      }
+      },
+      "blurb": "A tracked site dumper with a forward-tipping skip. Carries about a tonne around your land; not allowed on the road."
     },
     "tractor": {
       "name": "Tractor & Trailer",
@@ -173,7 +176,8 @@
           "repairTime": 12,
           "repairTo": 75
         }
-      }
+      },
+      "blurb": "A farm tractor with a tipping trailer. Road legal, so it can take loads to the depot, and the trailer tips at the back."
     },
     "excavator": {
       "name": "Excavator",
@@ -218,7 +222,8 @@
           "mass": 9200,
           "enginePower": 60
         }
-      }
+      },
+      "blurb": "A 7 to 8 tonne tracked excavator. A proper bucket, long reach and a full swing: digs several times faster than the mini digger."
     },
     "truck": {
       "name": "Tipper Truck",
@@ -262,7 +267,8 @@
           "repairTo": 75,
           "tipTime": 3
         }
-      }
+      },
+      "blurb": "A two-axle tipper truck. Road legal, carries a big load to the depot and tips its body to unload."
     }
   }
 }

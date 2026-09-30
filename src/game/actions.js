@@ -1,9 +1,9 @@
 // Player actions. Buttons, hotkeys and 3D driving/digging all call these.
 // Every action returns { ok, reason? }.
-import { weighIn as depotWeighIn } from '../economy/index.js';
+import { weighIn as depotWeighIn, takeLoan as bankTakeLoan, repayLoan as bankRepayLoan, loanOffers as bankLoanOffers, creditLimit as bankCreditLimit } from '../economy/index.js';
 import {
   getMachine, machinesAt, startJob, buyMachine as fleetBuyMachine,
-  sellMachine as fleetSellMachine, buyMod as fleetBuyMod, dumpBucket as fleetDumpBucket, bucketCut as fleetBucketCut,
+  sellMachine as fleetSellMachine, resaleValue, buyMod as fleetBuyMod, dumpBucket as fleetDumpBucket, bucketCut as fleetBucketCut,
 } from '../machinery/index.js';
 import { shovelDig, shovelDump, tipBarrow } from '../handtools/index.js';
 import { buyBuilding } from '../buildings/index.js';
@@ -11,6 +11,8 @@ import { planEarthworks, buildEarthworks } from '../earthworks/index.js';
 
 export function createActions(ctx) {
   const site = () => ctx.state.currentSiteId;
+  // (what the bank counts as security: what your machines would fetch)
+  const fleetValue = () => ctx.state.machines.reduce((a, m) => a + resaleValue(ctx, m), 0);
 
   return {
     // Broken machines come first: repairs the selected machine if broken,
@@ -71,6 +73,12 @@ export function createActions(ctx) {
     buildWorks: (input) => buildEarthworks(ctx, input),
 
     buyBuilding: (id) => buyBuilding(ctx, id),
+
+    // The bank: what you could borrow, take a loan ({ amount, days } from the offers), pay one off.
+    loanOffers: () => bankLoanOffers(ctx, fleetValue()),
+    creditLimit: () => bankCreditLimit(ctx, fleetValue()),
+    takeLoan: (amount, days) => bankTakeLoan(ctx, amount, days, fleetValue()),
+    repayLoan: (loanId) => bankRepayLoan(ctx, loanId),
 
     buyMachine: (type, tier) => fleetBuyMachine(ctx, type, tier),
     sellMachine: (id) => fleetSellMachine(ctx, id),

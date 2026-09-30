@@ -5,8 +5,7 @@ import { createHud } from './hud.js';
 import { createHud3d } from './hud3d.js';
 import { createFeedback } from './feedback.js';
 import { createDevPanel } from './devPanel.js';
-import { openShop } from './shop.js';
-import { openMarket } from './market.js';
+import { openLaptop } from './laptop/index.js';
 import { toggleMap } from './mapOverlay.js';
 import { openIntro } from '../screens/intro.js';
 import { markIntroSeen, mentorForStep } from '../../progression/index.js';
@@ -73,7 +72,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     audio: app.audio,
     notify: (text, level) => feedback.message(text, level),
     onLoadProgress: (f) => hud3d.setLoading(true, f),
-    onUseOffice: () => openOverlay(() => openShop(app.overlays, { game, feedback })),
+    onUseOffice: () => openOverlay(() => openLaptop(app.overlays, { game, feedback, world, app: 'home' })),
     // Esc (or alt-tab) released the mouse: show the pause menu, like any PC game.
     onPointerLockLost: () => {
       if (expectUnlock) {
@@ -101,8 +100,8 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
       case 'speed1': runtime.setSpeed(0); break;
       case 'speed2': runtime.setSpeed(1); break;
       case 'speed3': runtime.setSpeed(2); break;
-      case 'shop': openOverlay(() => openShop(app.overlays, { game, feedback })); break;
-      case 'market': openOverlay(() => openMarket(app.overlays, { game, feedback })); break;
+      case 'shop': openOverlay(() => openLaptop(app.overlays, { game, feedback, world, app: 'dealer' })); break;
+      case 'market': openOverlay(() => openLaptop(app.overlays, { game, feedback, world, app: 'prices' })); break;
       case 'map': openOverlay(() => toggleMap(app.overlays, { game, world })); break;
       case 'hints': hud3d.toggleHints(); break;
       case 'controls':

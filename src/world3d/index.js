@@ -20,6 +20,7 @@ import { createWorldSounds } from './sounds.js';
 import { createGroundView } from './groundChunks.js';
 import { createHandTools } from './handTools.js';
 import { createPlanner } from './planner.js';
+import { createThumbnails } from './thumbnails.js';
 import { createHeadSway } from './headSway.js';
 import { MAP, inRect } from './map.js';
 import { createGuideBeacon } from './guideBeacon.js';
@@ -1084,6 +1085,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     lockMouse: () => mouse.lock(),
     unlockMouse: () => mouse.unlock(),
     isMouseLocked: () => mouse.locked(),
+    // Product photos of the machines (for the laptop); dispose() the result when done.
+    createProductPhotos: () => createThumbnails(),
     destroy() {
       offs.forEach((off) => off());
       resizeObserver.disconnect();
