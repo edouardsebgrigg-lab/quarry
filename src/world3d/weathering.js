@@ -10,7 +10,7 @@
 // attribute so the patterns stick to each part as it moves) and in a light shader addition:
 // three octaves of value noise and the surface curvature from screen-space derivatives, which
 // finds edges and bevels without any extra textures.
-import { BufferAttribute } from 'three';
+import { BufferAttribute, MeshPhysicalMaterial, MeshStandardMaterial } from 'three';
 
 // Which material gets which treatment (Blender material names, before any ".001" suffix).
 const ROLES = {
@@ -171,8 +171,18 @@ function bakeRest(mesh) {
   geo.setAttribute('aRest', new BufferAttribute(out, 3));
 }
 
+// Paint that's been looked after keeps a glossy clear coat; worn paint has lost it.
+function withClearcoat(src, amount) {
+  const m = new MeshPhysicalMaterial();
+  MeshStandardMaterial.prototype.copy.call(m, src);
+  m.defines = { STANDARD: '', PHYSICAL: '' };
+  m.clearcoat = amount;
+  m.clearcoatRoughness = 0.28;
+  return m;
+}
+
 function weathered(src, role, tier, ground, baked = false) {
-  const m = src.clone();
+  const m = role === 'body' && tier.wear < 0.3 ? withClearcoat(src, 0.55) : src.clone();
   // (the refined fleet's rubber already has dirt painted in: keep it dark)
   const k = baked && role === 'mud' ? { ...ROLE_SCALE.mud, mud: 0.45 } : ROLE_SCALE[role];
   const u = {
