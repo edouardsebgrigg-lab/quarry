@@ -4,9 +4,9 @@ Claude plans and reviews; Codex implements. **Claude is the only one who edits t
 the branch `claude/coordination`. Codex reports progress in `docs/CODEX-CHECKPOINT.md` on its own
 branch.
 
-- **Queue updated:** 30 September 2026 (second review)
-- **Last Codex commit reviewed:** `0db19b6` on `codex/step-7-safety-and-yard-buildings`
-- **Codex works on:** `codex/step-7-safety-and-yard-buildings` (keep using it)
+- **Queue updated:** 30 September 2026 (third review)
+- **Last Codex commit reviewed:** `fbf0885` on `codex/vehicle-model-integration` (and `0db19b6` on `codex/step-7-safety-and-yard-buildings`)
+- **Codex works on:** `codex/step-7-safety-and-yard-buildings`. After T11 that one branch holds everything; keep using it
 
 ## How to work the queue
 
@@ -45,6 +45,28 @@ Scripts are in `docs/handover/browser-checks/` (`common.mjs` has the shared setu
 command line that contains the pattern kills your own shell. Say in reports that the pointer
 lock is stubbed and aim is set by code.
 
+## Review notes on `fbf0885` (VEH1, the new vehicle models)
+
+VEH1 was a batch Edouard asked for directly, so doing it before the queue was right, and
+putting it on its own branch was sensible. Checked by Claude: `npm test` (161 passing in 21
+files) and `npm run build` (passed) on `fbf0885`, the comparison sheets, and the model files.
+
+Good: tyres and tracks are now dark rubber and steel (half of R3), the models have more detail,
+the rigs and joint names are kept and guarded by tests, and the report is clear about what was
+and wasn't checked.
+
+**R4 (must fix, T12):** the models nearly doubled in size, from 38 MB to 72 MB. 47.5 MB of that
+is PNG textures: 25 to 57 images per model, and each rusty/used pair carries its own copies.
+Every player downloads all of it before the game starts.
+
+**R5 (still open, T10 re-scoped):** in the comparison sheets the rusty and used versions look
+almost the same, and "rusty" doesn't read as rusty (the rusty dumper is plain orange-brown).
+The in-game shot `fleet-in-world.png` is 320×180 and covered by the HUD, so it shows nothing.
+
+**Note:** the private preview site was built from a different baseline (158 tests, without the
+T2 safety fixes). Don't update it unless Edouard asks; if he does, build it from the merged
+branch after T11.
+
 ## Review notes on `0db19b6` (T1 to T4)
 
 Checked by Claude: read the diff and your checkpoint, `npm test` (147 passing in 20 files) and
@@ -78,8 +100,15 @@ feet changed.
 - T2 earthworks obstacles by real footprint (`5645f29`, `69af721`)
 - T3 mini digger on the ramps (`a13bb10`, `fbd0f06`): both ramps climbed in the browser
 - T4 paint before and after (`fc33266`, `0db19b6`): shots in, but see R3 and T10
+- VEH1 new vehicle models (`38af7d1`, `fbf0885` on `codex/vehicle-model-integration`): see R4 and R5
 
 ## Tasks
+
+### T11: One working branch
+Merge `origin/codex/vehicle-model-integration` into `codex/step-7-safety-and-yard-buildings`
+(it already contains everything else), run `npm test` and `npm run build`, and push. From now on
+all work goes on `codex/step-7-safety-and-yard-buildings`; leave the vehicle branch as it is.
+**Done when:** merged, both pass, pushed. (A sync task: it doesn't count toward the three.)
 
 ### T9: Spoil and heap sourcing respect obstacles (R2)
 - Check the spoil spot's footprint (the heap's radius) against the same obstacles (machines,
@@ -93,6 +122,19 @@ feet changed.
 another spot (or refuse), a machine on a heap isn't undermined, and a refused build changes
 nothing. Material still conserved.
 
+### T12: Shrink the vehicle textures (R4)
+- Re-encode the embedded textures: colour maps as WebP or JPEG (three.js's `GLTFLoader` reads
+  `EXT_texture_webp`), normal and roughness maps as WebP too if they survive it; 1024 px at most,
+  512 for small parts.
+- Share identical images between the rusty and used models where they're the same (tyres,
+  glass, steel, decals), or at least within a model.
+- Keep it reproducible: a script in `blender/` that does the conversion, documented in
+  `docs/models.md`.
+- Add a test that fails if `assets/models` grows past a budget (start at 40 MB).
+**Done when:** all models together are 40 MB or less, the review comparison sheets rebuilt from
+the new files show no visible loss, the rig tests still pass, and the game loads them (a
+bounded browser check that instantiates every machine without errors).
+
 ### T5: The opening loop with real controls and normal money
 The fresh-save loop has never been measured: dig by hand, fill the barrow, load the pickup,
 drive to the depot, weigh in, sell, then buy the first machine. Use
@@ -102,18 +144,17 @@ the first machine, and any point where a new player would get stuck.
 **Done when:** times recorded in your checkpoint, or the exact blocker with steps to reproduce if
 software rendering makes it impractical. Fix any defect that blocks the loop.
 
-### T10: Make the weathering read as wear, not paler paint (R3)
-Work in `src/world3d/weathering.js` (the shader tiers) and, only if needed, the base paint in
-`blender/lib.py` (then rebuild the affected models with the Blender scripts).
-- Rusty tier: keep each machine's colour but clearly worn: darker, faded base; orange-brown
-  rust patches and streaks visible at 10 to 15 m (edges, bottoms of panels, around bolts);
-  chipped paint showing dark metal. It must not look lighter or cleaner than before the pass.
-- Used tier: the same idea, much subtler (sun-faded tops, light dirt low down, a few chips).
-- Tyres and tracks: dark rubber and steel, with mud only on the lower part and treads.
-- All numbers for the look stay in one place (the tier table), easy to tune.
-**Done when:** a fresh `TAG=after2` capture of the five views is committed next to the others,
-with a short note on each view. Claude and Edouard judge it by eye; don't mark it passed
-yourself, mark it "ready to judge".
+### T10: Rusty and used must look different in the game (R3, R5)
+The new models bake their own wear, and the shader weathering skips them, so the work is in the
+models' materials (and `blender/review_models.py`), not in `src/world3d/weathering.js`.
+- Rusty: clearly worn at 10 to 15 m: orange-brown rust patches and streaks on edges and the
+  bottoms of panels, chipped paint showing dark metal, faded base colour. Not lighter or cleaner
+  than the used one.
+- Used: the same machine, cleaner: sun-faded tops, light dirt low down, a few chips.
+- Keep tyres and tracks dark, with mud only low down.
+**Done when:** fresh in-game shots of the five paint views at 960×540 with `CLEAN_SHOTS=1`
+(`TAG=after2`), committed next to the others, with a short note per view. Mark it "ready to
+judge"; Claude and Edouard decide by eye.
 
 ### T6: Step 8b: stockpile bays at the home yard
 The design's "hold or sell" choice (`docs/design-spec.md`: yard stockpile with a limit).
