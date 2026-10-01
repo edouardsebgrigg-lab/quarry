@@ -31,11 +31,12 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       and a proper tipper-ram sound
 - [ ] M2 Blender: the biggest remaining model issues from the studio shots (the used truck and
       excavator look too clean and toy-like up close: panel gaps, grime in recesses)
-- [ ] V1 Countryside: hedges done (one continuous hedge with oaks). Next: the far hills are
-      smooth green domes (field patterns, hedge lines up their sides), and a few farm buildings
+- [ ] V1 Countryside: hedges, field patchwork and four farmsteads done. Next: farm animals or
+      machinery in the fields, and a track surface that matches the ground shader
 
 ## Done
 
+- [x] V1 (part) Four farmsteads by the lanes (house, barn, silo, bales, yard, track to the road), on the map too — see git log
 - [x] U10 Laptop open: notifications pop up bottom right above its taskbar — `89574af`
 - [x] N1 Milestones app on the laptop (summary, perks, groups with progress), dock badge,
       one merged toast for a burst — `15274c2`

@@ -151,7 +151,7 @@ The numbers are in `data/happenings.json`.
 
 ## The map
 
-The map is 2 km across. Your land is the 150 m field and the yard next to it, on Mill Lane. The lane runs east and then north through **Ashby** (a village with a pub and the machine dealer, **Ashby Plant**). In the middle of the village **Quarry Road** turns off west to **Ashby Aggregates**, the depot where you sell. It's about 1.2 km from your gate by road, a couple of minutes in the pickup. Site machines (the excavator) aren't road-legal and stay on your land; the pickup and the tipper truck can go anywhere.
+The map is 2 km across. Your land is the 150 m field and the yard next to it, on Mill Lane. The lane runs east and then north through **Ashby** (a village with a pub and the machine dealer, **Ashby Plant**). In the middle of the village **Quarry Road** turns off west to **Ashby Aggregates**, the depot where you sell. It's about 1.2 km from your gate by road, a couple of minutes in the pickup. Site machines (the excavator) aren't road-legal and stay on your land; the pickup and the tipper truck can go anywhere. Four farms sit back from the lanes (Mill Farm is across the lane from your gate); they're scenery for now.
 
 ## Selling at the depot
 

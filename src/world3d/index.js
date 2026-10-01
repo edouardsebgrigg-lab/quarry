@@ -7,6 +7,7 @@ import { createRenderer, createEnvironment, createFrameRenderer } from './enviro
 import { createCountryside, planWorld, preloadCountryside } from './countryside.js';
 import { ownsBuilding } from '../buildings/index.js';
 import { buildPlaces } from './places.js';
+import { buildFarms, farmClearRect, farmTrees, farmTrack } from './farms.js';
 import { createParticles } from './particles.js';
 import { createPlayer } from './player.js';
 import { createTruck } from './truck.js';
@@ -92,6 +93,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const bayNames = Object.fromEntries(Object.entries(data.depot.bays).map(([id, b]) => [id, b.name]));
   const places = buildPlaces({ scene, physics, plan, heightAt, materials: data.materials, bayNames });
   for (const id of Object.keys(data.buildings)) places.setBuilding(id, ownsBuilding(game.ctx, id, siteId));
+  buildFarms({ scene, physics, plan, heightAt });
   const particles = createParticles(scene);
   const rain = createRain(scene);
   let weatherGrip = 1; // (rain makes everything slippery)
@@ -105,6 +107,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     [{ x0: home.driveway.x0, x1: home.driveway.x1, z0: home.yard.z0 - 14, z1: home.yard.z0 }, 1],
     [{ x0: MAP.depot.driveway.x0, x1: MAP.depot.driveway.x1, z0: MAP.depot.yard.z1, z1: MAP.depot.yard.z1 + 10 }, 1],
     ...houseRects.map((r) => [r, 0]),
+    ...plan.farms.map((f) => [farmClearRect(f), 0]),
   ];
   const vegetation = createVegetation({
     scene,
@@ -1140,6 +1143,8 @@ function treePlan(plan) {
     [(map.home.driveway.x0 + map.home.driveway.x1) / 2, map.home.yard.z0 - 10, 14],
     [(map.depot.driveway.x0 + map.depot.driveway.x1) / 2, map.depot.yard.z1 + 4, 16],
     [map.dealer.yard.x0 - 6, (map.dealer.driveway.z0 + map.dealer.driveway.z1) / 2, 14],
+    // (farm tracks meet the road through a gap in the hedge)
+    ...plan.farms.map((f) => farmTrack(plan, f)).filter(Boolean).map((t) => [t.meets.x, t.meets.z, 9]),
   ];
   const village = { x0: 520, x1: 720, z0: -620, z1: -370 };
   const hedges = [...map.hedges];
@@ -1165,6 +1170,8 @@ function treePlan(plan) {
   }
   // Trees in the village gardens: one behind most houses.
   const singles = [...plan.houses, plan.pub].filter((h, i) => i % 3 !== 1).map((h) => [h.x - Math.sin(h.yaw) * 12, h.z - Math.cos(h.yaw) * 12, 0]);
+  // and a few round each farm.
+  for (const [i, f] of plan.farms.entries()) for (const [k, t] of farmTrees(f).entries()) singles.push([t.x, t.z, (i + k) % 2]); // (oaks and poplars)
   return {
     hedges,
     copses: map.copses,

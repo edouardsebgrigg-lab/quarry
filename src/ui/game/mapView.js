@@ -142,6 +142,19 @@ export function createMapView({ world }) {
       g.fillRect(-4.5 * scale, -3.5 * scale, 9 * scale, 7 * scale);
       g.restore();
     }
+    // Farmsteads: the house and the barn around the yard (as world3d/farms.js lays them out).
+    for (const f of plan.farms ?? []) {
+      g.save();
+      g.translate(sx(f.x), sy(f.z));
+      g.rotate(-f.yaw);
+      g.fillStyle = 'rgba(160, 140, 110, 0.55)';
+      g.fillRect(-22 * scale, -17 * scale, 44 * scale, 34 * scale);
+      g.fillStyle = '#c96f55';
+      g.fillRect(-20 * scale, 1 * scale, 6 * scale, 9 * scale);
+      g.fillStyle = '#8fa39a';
+      g.fillRect(4 * scale, -18 * scale, 13 * scale, 20 * scale);
+      g.restore();
+    }
     g.fillStyle = '#8fa39a';
     g.fillRect(sx(map.dealer.shed.x - 8), sy(map.dealer.shed.z - 12), 16 * scale, 24 * scale);
     g.fillStyle = '#d9d4c7';
@@ -188,6 +201,7 @@ export function createMapView({ world }) {
     place('Your field', (map.home.plot.x0 + map.home.plot.x1) / 2, (map.home.plot.z0 + map.home.plot.z1) / 2, { color: '#f5b82e' });
     place(map.village.name, 690, -470, { size: 17, weight: 750, prio: 3 });
     place(map.dealer.name, (map.dealer.yard.x0 + map.dealer.yard.x1) / 2, map.dealer.yard.z1, { size: 12, dy: 12 });
+    for (const f of plan.farms ?? []) label(f.name, f.x, f.z, { size: 11, weight: 550, color: COLORS.textDim, prio: 1, dy: 18 });
     place(map.depot.name, (map.depot.yard.x0 + map.depot.yard.x1) / 2, map.depot.yard.z0, { size: 14, weight: 750, color: '#9fe3a7', dy: -16 });
     for (const road of plan.roads) {
       const p = road.samples[Math.floor(road.samples.length * (road.id === 'millLane' ? 0.18 : 0.62))];

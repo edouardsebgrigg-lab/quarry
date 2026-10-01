@@ -4,6 +4,7 @@
 // diggable ground plot) is drawn and collided by groundChunks.js; this terrain leaves a hole
 // for it and meets its edge.
 import * as THREE from 'three';
+import { farmRect } from './farms.js';
 import { createGroundMaterial, dampSheen } from './groundMaterial.js';
 import { MAP, inRect } from './map.js';
 
@@ -144,7 +145,8 @@ export function planWorld(map = MAP) {
 
   const houses = map.village.houses.map((h, i) => ({ ...h, ...besideRoad(h, h.style === 'bungalow' ? 14 : 15), seed: i }));
   const pub = { ...map.village.pub, ...besideRoad(map.village.pub, 16) };
-  return { map, roads, byId, nearestOnRoad, houses, pub };
+  const farms = map.farms ?? [];
+  return { map, roads, byId, nearestOnRoad, houses, pub, farms };
 }
 
 // ---------------------------------------------------------------- the countryside
@@ -194,6 +196,7 @@ export function createCountryside({ scene, physics, ground, plan, asphalt = asph
     { rect: { x0: map.depot.yard.x0 - 2, x1: map.depot.yard.x1 + 2, z0: map.depot.yard.z0 - 2, z1: map.depot.yard.z1 + 2 }, margin: 30 },
     { rect: map.dealer.yard, margin: 20 },
     ...[...plan.houses, plan.pub].map((h) => ({ rect: { x0: h.x - 8, x1: h.x + 8, z0: h.z - 8, z1: h.z + 8 }, margin: 10 })),
+    ...(plan.farms ?? []).map((f) => ({ rect: farmRect(f), margin: 30 })),
   ];
   for (const f of flats) {
     const r0 = f.rect;

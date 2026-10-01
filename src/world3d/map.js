@@ -78,6 +78,17 @@ export const MAP = {
   },
 
   // Ashby Plant: the machine dealer, on the east side of Mill Lane at the north end of the village.
+  // Farmsteads out in the countryside (scenery): a farmhouse, a barn, a silo and bales. x, z is
+  // the middle of the yard; yaw turns the farm (its front is +Z at 0).
+  // They sit back from the lanes you drive along, like real farms; the first is across Mill Lane
+  // from your gate.
+  farms: [
+    { name: 'Mill Farm', x: 80, z: -140, yaw: 0 },
+    { name: 'Westfield Farm', x: -470, z: -150, yaw: 0.15, house: 'house_bungalow' },
+    { name: 'Quarry Farm', x: 420, z: -720, yaw: Math.PI, house: 'house_semi' },
+    { name: 'Grange Farm', x: 350, z: 150, yaw: -Math.PI / 2 },
+  ],
+
   dealer: {
     name: 'Ashby Plant',
     yard: { x0: 640, x1: 704, z0: -604, z1: -546 },
