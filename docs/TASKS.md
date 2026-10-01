@@ -264,7 +264,7 @@ Models went from 72 MB to 37 MB (`blender/compress_textures.py`, test in
 `src/world3d/assetBudget.test.js`). It arrives with your next merge. Run the script after any
 model rebuild.
 
-### T5: The opening loop with real controls and normal money
+### T5: The opening loop with real controls and normal money: BOUNDED CHECK — `50923aa` (sale/machine times not verified; exact blockers in checkpoint)
 The fresh-save loop has never been measured: dig by hand, fill the barrow, load the pickup,
 drive to the depot, weigh in, sell, then buy the first machine. Use
 `docs/handover/browser-checks/opening.mjs` (unrun; it has hard-coded paths). No dev money and no

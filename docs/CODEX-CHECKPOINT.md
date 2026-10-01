@@ -300,3 +300,34 @@ are visible. This supersedes the earlier “ring appearance not verified” limi
 `edouardgrigg-sketch` has no write access. Correct-account authentication requested;
 all commits remain local, no publication claimed. Fresh pre-push tests: 250 passing;
 production build passed.
+
+
+### T5 — bounded measurement, with exact blockers
+
+- Implementation/check commit: `50923aa`.
+- Fresh save, normal $200, 1x clock. Eight shovelfuls filled the barrow at 22 game
+  seconds (12 seconds to park the pickup on the field). One actual barrow transfer
+  loaded 0.114 t. **Time to first sale and first machine: not verified.** No dev money.
+- Software run (SwiftShader, in-process GPU, 320×180) reached only the start checkpoint
+  before the 600-second subprocess timeout. Native Metal runs made progress but exposed
+  bad automation routes through the wheelbarrow, through the pickup, and across the
+  hedge outside its gateway. Script now checks waypoint arrival and actual loaded/sold
+  material, writes `opening.json` at each stage and on failure, and captures a blocker shot.
+- Latest exact native blocker: after the first real tip, the scripted return steering
+  jams the barrow against the hedge at (154.4703, 19.8815), while trying to reach
+  (155.9565, 17.5); fails after 900 frames. Reproduce: fresh game, park pickup beside
+  barrow, dig eight shovelfuls, use the scripted barrow route, tip, back away 90 frames,
+  steer towards that waypoint. See `opening.json` and `opening-blocker.png`.
+  This is an automation limit, not a claimed defect in manual steering.
+- Found a real layout defect: container at (181,-8) blocked the driveway. Moved it
+  to explicit `MAP.home.workshop` (166,27), clear of driveway/delivery positions.
+  `driveway.mjs` verifies normal forward physics from (180,3) to z=-25 without errors.
+- Empty barrow at a tailgate now prompts backing away before turning; README/modules updated.
+- Actually ran: `npm test` (250 passing), `npm run build` (passed), `git diff --check`;
+  bounded `opening.mjs`, `opening-probe.mjs`, `driveway.mjs`. Inspected the blocker shot.
+  Stubbed pointer lock, code-set aim/held keys, debug control hooks for entry/grabbing,
+  forced time gate at normal 1x. Driveway check uses code-set starting position, then
+  normal physical driving. Real mouse/pointer lock, full opening, purchases and save/reload
+  are **not verified**. No balance changes based on incomplete timing.
+- Queue acceptance uses T5’s bounded-check fallback; a real-mouse timing session remains
+  an explicitly documented follow-up. Publication still blocked by GitHub account access.
