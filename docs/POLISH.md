@@ -25,8 +25,9 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       loops added; subjective listening remains unverified. No gearbox whine.
 - [x] M2 Blender (`048d7d7`): the biggest remaining model issues from the studio shots (the used truck and
       excavator look too clean and toy-like up close: panel gaps, grime in recesses)
-- [ ] V1 Countryside: hedges, field patchwork, farmsteads (with gravel-rutted tracks) and a
-      patchy home field done. Next: farm animals or machinery in the fields
+- [x] V1 Countryside (`6888038`): hedges, field patchwork, farmsteads (with gravel-rutted tracks) and a
+      patchy home field done. Parked tractors/empty trailers and scattered bales now in
+      Mill/Westfield fields; solid scenery separate from the player’s fleet.
 - [ ] D7 Time of day: the sun never moves. The clock runs a whole day in two minutes, so a
       moving sun would sweep the sky every minute; needs a decision on day length (and night)
       before the light can follow the clock

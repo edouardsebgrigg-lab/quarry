@@ -447,3 +447,18 @@ dirt and lowered the joint, rebuilt and repeated checks. First sandbox Blender i
 crashed; the permitted local invocation completed. Manual driving, cab motion and tipper
 animation are not newly verified; exporter checks cover rig identity. Publication still
 blocked by GitHub account write access.
+
+### V1 — completed locally
+
+Implementation commit: `6888038`. Mill/Westfield field-work scenery uses existing
+used/rusty tractor and empty trailer models, hitched at fleet geometry offsets, with solid
+colliders and fixed scattered bales merged into farm batches. Tall grass keeps clear of
+the machinery. Data placements, no saved/economic RNG draws and no new fleet entries.
+Actually ran: `npm test` (271 passing), `npm run build` (passed), `git diff --check`,
+native Metal `farm-fields.mjs`: two scenery groups, tractor/trailer present, finite ground
+heights, unchanged player fleet, no page errors. Inspected both 960×540 field views in
+`docs/handover/screenshots/v1/`. No manual collision/drive-by or distant-LOD check.
+Publication remains blocked by repository account access.
+
+D7 decision received: retain the 120-second economy day; separate 20-minute visual
+daylight/night cycle with playable nights. No economic timings should change.
