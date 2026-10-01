@@ -7,7 +7,8 @@ branch.
 - **Queue updated:** 1 October 2026 (overnight pass)
 - **Last Codex commit reviewed:** `7ddb43d` (T11) on `codex/step-7-safety-and-yard-buildings`
 - **Codex works on:** `codex/step-7-safety-and-yard-buildings`. After T11 that one branch holds everything; keep using it
-- **`main`:** on 1 October Edouard had everything merged into `main` (a fast-forward to the overnight pass, which includes PR #1). `main` is now the playable game; work still happens on the branches above, and only Edouard merges into `main`
+- **`main`:** still the initial commit on GitHub (the planned fast-forward was blocked and Edouard deferred it). `claude/coordination` is the newest branch and holds everything; only Edouard merges into `main`
+- **Handoff:** Claude has handed development to Codex; start with `docs/HANDOFF-TO-CODEX.md`
 
 ## How to work the queue
 
