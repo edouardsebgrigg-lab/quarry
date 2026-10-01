@@ -56,7 +56,7 @@ export function classifiedsApp({ game, feedback, photos, openApp, setHead }) {
       grid.append(el('div', { class: 'lt-tile lt-ad' },
         photo(l.type, l.tier),
         el('div', { class: 'lt-tile-body' },
-          el('div', { class: 'lt-tile-title' }, el('span', {}, typeName(data, l.type)), el('span', { class: `tier-pill ${l.tier}` }, tierName(data, l.tier))),
+          el('div', { class: 'lt-tile-title' }, el('span', {}, td.modelName ?? typeName(data, l.type)), td.modelName ? null : el('span', { class: `tier-pill ${l.tier}` }, tierName(data, l.tier))),
           el('div', { class: 'lt-ad-seller' }, `${l.seller} · ${l.expires <= day ? 'last day' : `until day ${l.expires}`}`),
           el('div', { class: 'lt-ad-note' }, `“${l.note}”`),
           el('div', { class: 'lt-ad-cond' }, verdict, el('b', {}, `${cond}%`)),

@@ -133,3 +133,12 @@ dealer, the bank, the depot's prices, your fleet, your messages).
 - [x] Clean-sales alternatives let the company grow without mandatory customer jobs.
 
 Actual checks, implementation commits and remaining verification limits are recorded in CODEX-CHECKPOINT.md. This batch does not add a new jobs system.
+
+## Model fit and interface review — October 2026
+
+- [x] M4 Import/audit the entire Blender library, refine fleet hardware, author the four mobility models, preserve mapped paint detail, and deliver a packed editable catalogue.
+- [x] F2 Enter every equipment variant; review cab/chase/work views, wheels, cargo floors and hitches. Correct lateral bucket cutting, moving unload points, drawbar alignment and camera framing.
+- [x] U13 Reduce shop/menu congestion: responsive dealer browse/detail, aligned fleet rows, applicants first, bounded settings scrolling, mobile map and a separate laptop notice strip.
+
+For later visual updates, use the review procedure in HANDOFF-TO-CODEX.md and
+record actual checks and limits in CODEX-CHECKPOINT.md.

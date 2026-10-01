@@ -10,6 +10,10 @@ in `docs/CODEX-CHECKPOINT.md`. The current handoff and Edouard’s instructions 
 - **`main`:** still the initial commit on GitHub (the planned fast-forward was blocked and Edouard deferred it). `claude/coordination` is the newest branch and holds everything; only Edouard merges into `main`
 - **Handoff:** Claude has handed development to Codex; start with `docs/HANDOFF-TO-CODEX.md`
 
+Latest user-requested review batch: **M4** complete Blender catalogue/cleanup,
+**F2** in-game equipment fit, **U13** responsive shop/menu cleanup. Implementation
+and review receipts are in `CODEX-CHECKPOINT.md`; earlier task IDs remain historical.
+
 ## How to work the queue
 
 1. At the start of every session: `git fetch origin`, then `git merge origin/claude/coordination`

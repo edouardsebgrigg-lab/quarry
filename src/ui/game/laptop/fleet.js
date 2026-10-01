@@ -10,7 +10,7 @@ import { workerFor } from '../../../staff/index.js';
 export function fleetApp({ game, feedback, photos, openApp, setHead }) {
   const { data } = game;
   const ctx = game.ctx;
-  setHead('Your fleet', 'Every machine in the yard, how it’s holding up and what it’s done, and machines out on hire');
+  setHead('Your fleet', 'Condition, upkeep and trailer connections for your machines');
   const ms = machinesAt(ctx, game.state.currentSiteId);
   const pending = [];
   const totalV = el('div', { class: 'lt-stat-value' });
@@ -40,11 +40,11 @@ export function fleetApp({ game, feedback, photos, openApp, setHead }) {
     return el('div', { class: 'lt-row lt-fl-row' },
       box,
       el('div', { class: 'lt-row-main' },
-        el('b', {}, machineName(data, m)),
+        el('b', {}, machineName(data, m)), status,
         el('span', {}, `${work}${log.breakdowns ? ` · broke down ${log.breakdowns}×` : ''}`)),
-      el('div', { class: 'lt-fl-col' }, status),
-      el('div', { class: 'lt-fl-col' }, el('div', { class: 'lt-cond' }, cond), condT),
-      el('div', { class: 'lt-fl-col lt-fl-val' }, el('span', {}, m.rental ? 'Deposit held' : 'Worth'), value),
+      el('div', { class: 'lt-fl-metrics' },
+        el('div', { class: 'lt-fl-col' }, el('div', { class: 'lt-cond' }, cond), condT),
+        el('div', { class: 'lt-fl-col lt-fl-val' }, el('span', {}, m.rental ? 'Deposit held' : 'Worth'), value)),
       el('div', { class: 'lt-fl-actions' }, call, towControls(m), rentalControls(m)));
   });
 
@@ -149,7 +149,7 @@ export function fleetApp({ game, feedback, photos, openApp, setHead }) {
       c.status.className = `lt-fl-status ${c.m.broken ? 'bad' : c.m.condition < 40 ? 'warn' : c.m.job || op?.role ? 'busy' : 'ok'}`;
       if (c.m.broken || c.m.condition < 40) attention += 1;
       const q = game.actions.mechanicQuote(c.m.id);
-      c.call.style.visibility = q.reason ? 'hidden' : '';
+      c.call.hidden = !!q.reason;
       if (!q.reason) {
         setText(c.call, `${q.kind === 'repair' ? 'Repair' : 'Service'} here · ${money(q.total)}`);
         c.call.disabled = game.state.money < q.total;
@@ -168,8 +168,8 @@ export function fleetApp({ game, feedback, photos, openApp, setHead }) {
         el('div', { class: 'lt-stat-note' }, `${ms.filter(m=>m.rental).length} hired · ${Object.keys(data.machines.types).filter((k) => ms.some((m) => !m.rental && m.type === k)).length} owned kinds`)),
       el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Fleet value'), totalV, el('div', { class: 'lt-stat-note' }, `Insurance ${money(weeklyInsurance(ctx))} a week`)),
       el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Need attention'), attnV, attnN)),
-    hireBox,
     el('div', { class: 'lt-rows' }, rows),
+    hireBox,
     coverBox,
     el('button', { class: 'lt-link', onClick: () => openApp('dealer') }, 'Buy, upgrade or sell machines at the plant dealer →'));
 

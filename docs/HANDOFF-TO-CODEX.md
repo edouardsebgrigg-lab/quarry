@@ -60,6 +60,23 @@ Vite, Vitest. No engine.
 - Look at visual changes yourself in a screenshot, and say what you didn't verify. Pointer lock
   is stubbed in the checks.
 
+### Review future model and UI updates
+
+Edouard requested thorough review for each update. A changed model needs its rig
+contract and asset budget checked, plus actual in-game entry, cab/chase views,
+movement and its working parts. Use `fleet-fit.mjs`; check visible bucket teeth,
+moving cargo floor/unload points and trailer hitch alignment where applicable.
+Inspect the screenshots, not only numerical assertions. A changed menu/shop needs
+desktop and narrow layouts, larger text, visible/reachable primary controls and
+its real purchase/hire/return action checked. Use `ui-layout.mjs`,
+`ui-layout-small.mjs` and `entry-rentals.mjs` as appropriate. Restart the no-watch
+server after edits; fetching new CSS directly does not refresh its module cache.
+Have another agent review significant asset/interface changes when available.
+Fix findings and rerun affected checks, then record the actual evidence and limits
+in the checkpoint. The native Mac checks use ANGLE Metal; low graphics/muted audio
+and synthetic pointer lock do not establish subjective sound or a long manual
+playthrough. Always run the full tests and build before pushing.
+
 ## Playable web copy (claude.ai artifact)
 
 Edouard plays a build published as a private claude.ai artifact. That host won't serve `.glb`,

@@ -20,7 +20,7 @@ const GRAPHICS = [
 const KEY_GROUPS = [
   ['Moving', ['forward', 'back', 'left', 'right', 'jump', 'sprint']],
   ['Doing things', ['interact', 'tip', 'repair', 'recover', 'camera', 'works']],
-  ['Digger', ['controls', 'boomUp', 'boomDown', 'bucketCurl', 'bucketDump']],
+  ['Digger', ['controls', 'boomUp', 'boomDown', 'stickIn', 'stickOut', 'bucketCurl', 'bucketDump', 'slewLeft', 'slewRight', 'freeLook', 'precision']],
   ['Menus and time', ['shop', 'market', 'map', 'goal', 'hints', 'pause', 'speed1', 'speed2', 'speed3', 'dev']],
 ];
 
@@ -36,8 +36,11 @@ export function openSettings(overlays, { settings, onChange, keyboard }) {
         onChange(settings);
       };
 
-      const row = (label, control, hint) => el('div', { class: 'setting-row' },
-        el('label', {}, label, hint ? el('span', { class: 'hint' }, hint) : null), control);
+      const row = (label, control, hint) => {
+        const input = control.matches('input') ? control : control.querySelector('input');
+        if (input) input.setAttribute('aria-label', label);
+        return el('div', { class: 'setting-row' }, el('label', {}, label, hint ? el('span', { class: 'hint' }, hint) : null), control);
+      };
 
       const range = (key, min, max, step, show = (v) => `${Math.round(v * 100)}%`) => {
         const out = el('span', { class: 'range-value' }, show(settings[key]));

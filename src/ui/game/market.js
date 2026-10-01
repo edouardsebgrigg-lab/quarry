@@ -40,15 +40,15 @@ export function priceBoard(game) {
   const slight = grades[1];
   const rows = Object.keys(data.depot.bays).map((id) => {
     const cells = {
-      price: el('td', { class: 'price-big' }),
-      slight: el('td'),
-      trend: el('td', { class: 'trend' }),
+      price: el('td', { class: 'price-big', 'data-label': 'Clean / tonne' }),
+      slight: el('td', { 'data-label': 'Slightly mixed / tonne' }),
+      trend: el('td', { class: 'trend', 'data-label': 'Trend' }),
       spark: el('canvas', { width: 160, height: 36, class: 'spark' }),
     };
     const product = data.materials[id];
     const tr = el('tr', {},
       el('td', { class: 'product' }, el('span', { class: 'dot', style: { background: product.color } }), data.depot.bays[id].name),
-      cells.price, cells.slight, cells.trend, el('td', {}, cells.spark));
+      cells.price, cells.slight, cells.trend, el('td', { 'data-label': 'Last 3 days' }, cells.spark));
     return { id, tr, cells };
   });
   const fuelText = el('span');

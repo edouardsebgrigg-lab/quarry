@@ -45,6 +45,7 @@ export function openLaptop(overlays, { game, feedback, world, app = 'home' }) {
   }
   const photos = world?.createProductPhotos?.() ?? null;
   let active = null; // { id, instance }
+  const movedFeedback = [];
 
   overlays.open({
     id: 'laptop',
@@ -53,21 +54,27 @@ export function openLaptop(overlays, { game, feedback, world, app = 'home' }) {
     onClose: () => {
       active?.instance.dispose?.();
       photos?.dispose();
+      for (const [node, parent, next] of [...movedFeedback].reverse()) parent.insertBefore(node, next?.parentNode === parent ? next : null);
       openLaptopState = null;
     },
     build: ({ close, entry }) => {
-      const dock = el('nav', { class: 'lt-dock' });
+      const dock = el('nav', { class: 'lt-dock', 'aria-label': 'Office apps' });
       const head = el('div', { class: 'lt-app-head' });
       const body = el('div', { class: 'lt-app-body' });
       const clock = el('span', { class: 'lt-clock' });
       const balance = el('span', { class: 'lt-balance' });
+      const notices = el('div', { class: 'lt-notices', 'aria-live': 'polite' });
+      for (const node of document.querySelectorAll('.feedback > .toasts, .feedback > .log')) {
+        movedFeedback.push([node, node.parentNode, node.nextSibling]);
+        notices.append(node);
+      }
 
       const buttons = new Map();
       const badges = new Map();
       for (const a of APPS) {
         const badge = el('i', { class: 'lt-badge' });
         badges.set(a.id, badge);
-        const b = el('button', { class: 'lt-dock-app', onClick: () => show(a.id) }, lineIcon(a.icon), el('span', {}, a.label), badge);
+        const b = el('button', { class: 'lt-dock-app', title: a.label, 'aria-label': a.label, onClick: () => show(a.id) }, lineIcon(a.icon), el('span', {}, a.label), badge);
         buttons.set(a.id, b);
         dock.append(b);
       }
@@ -79,6 +86,7 @@ export function openLaptop(overlays, { game, feedback, world, app = 'home' }) {
         active = { id: a.id, instance };
         for (const [bid, b] of buttons) {
           b.classList.toggle('active', bid === a.id);
+          b.setAttribute('aria-current', bid === a.id ? 'page' : 'false');
           b.autofocus = bid === a.id; // (the laptop opens with the current app focused)
         }
         clear(body);
@@ -134,6 +142,7 @@ export function openLaptop(overlays, { game, feedback, world, app = 'home' }) {
         el('div', { class: 'lt-screen' },
           el('div', { class: 'lt-side' }, el('div', { class: 'lt-brand' }, el('b', {}, game.actions.companyName()), el('span', {}, 'Office')), dock),
           el('section', { class: 'lt-main' }, head, body),
+          notices,
           el('footer', { class: 'lt-bar' },
             el('span', { class: 'lt-status' }, el('i', { class: 'lt-dot' }), 'Online'),
             clock,

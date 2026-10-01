@@ -16,7 +16,7 @@ export function staffApp({ game, feedback, world, setHead }) {
   const { data } = game;
   const ctx = game.ctx;
   const cfg = data.staff;
-  setHead('Staff', 'The people who work for you: give each a job and a machine, and they get on with it');
+  setHead('Staff', 'Hire your crew, choose their jobs and assign their machines');
   const body = el('div', { class: 'lt-home' });
   let key = '';
 
@@ -42,11 +42,10 @@ export function staffApp({ game, feedback, world, setHead }) {
         },
       }, label)));
     const need = w.role && roleNeeds(w.role);
-    const machineChips = need ? el('div', { class: 'st-machines' }, el('span', { class: 'st-label' }, 'Machine'),
-      machinesFor(ctx, w.role, w).map((x) => el('button', {
-        class: `lt-chip${w.machineId === x.id ? ' active' : ''}`, disabled: away || x.broken,
-        onClick: () => assign(w, w.role, x.id),
-      }, machineName(data, x), x.broken ? ' (broken)' : ''))) : null;
+    const machineChips = need ? el('label', { class: 'st-assignment' }, el('span', { class: 'st-label' }, 'Machine'),
+      el('select', { class: 'lt-select', disabled: away, 'aria-label': `Machine for ${w.name}`,
+        onChange: e => assign(w, w.role, e.target.value),
+      }, machinesFor(ctx, w.role, w).map(x => el('option', { value: x.id, selected: w.machineId === x.id, disabled: x.broken }, machineName(data, x), x.broken ? ' (broken)' : '')))) : null;
     const c = contractsState(ctx);
     const destinations = [[null,'Best depot bay'], ...c.active.map(a=>[{kind:'job',id:a.id},`${a.client}: ${data.materials[a.material].name}`])];
     const regular = c.standing.active;
@@ -65,13 +64,13 @@ export function staffApp({ game, feedback, world, setHead }) {
     const units = {dig:'t dug',drive:'round trips',sell:'t sold',fix:'jobs completed'};
     const done = [w.stats.dug ? `${w.stats.dug.toFixed(1)} t dug` : null, w.stats.loads ? `${w.stats.loads} load${w.stats.loads > 1 ? 's' : ''} · ${money(w.stats.sold)} sold` : null,
       w.stats.fixed ? `${w.stats.fixed} machine${w.stats.fixed > 1 ? 's' : ''} seen to` : null].filter(Boolean).join(' · ');
-    return el('div', { class: 'lt-card st-worker' },
+    return el('div', { class: 'lt-card st-worker', dataset: { workerId: w.id } },
       el('div', { class: 'st-head' },
         el('div', { class: 'lt-avatar' }, w.name[0]),
         el('div', { class: 'st-name' }, el('b', {}, w.name), el('span', {}, `${money(w.wage)} a day · since day ${w.hired}`)),
         el('span', { class: `st-status ${w.role ? (away ? 'away' : 'on') : ''}` }, w.role ? w.status : 'No job')),
-      skillRows(w),
-      xp ? el('p',{class:'st-role-text'},xp.max ? `${cfg.skills[skill]}: maximum skill` : `${cfg.skills[skill]} experience: ${xp.have.toFixed(1)} / ${xp.need} ${units[skill]} to the next star`) : null,
+      el('details', { class: 'lt-disclosure st-experience' }, el('summary', {}, 'Skills and experience'), skillRows(w),
+        xp ? el('p',{class:'st-role-text'},xp.max ? `${cfg.skills[skill]}: maximum skill` : `${cfg.skills[skill]} experience: ${xp.have.toFixed(1)} / ${xp.need} ${units[skill]} to the next star`) : null),
       el('div', { class: 'st-label' }, 'Job'), roleChips,
       w.role ? el('p', { class: 'st-role-text' }, cfg.roles[w.role].text) : null,
       machineChips,
@@ -93,7 +92,10 @@ export function staffApp({ game, feedback, world, setHead }) {
   function act(r, ok) {
     feedback.message(r.ok ? ok : r.reason, r.ok ? 'good' : 'warn');
     key = '';
+    const scroller = body.closest('.lt-app-body');
+    const scroll = scroller?.scrollTop ?? 0;
     render();
+    if (scroller) scroller.scrollTop = scroll;
   }
 
   function render() {
@@ -103,14 +105,14 @@ export function staffApp({ game, feedback, world, setHead }) {
       game.state.machines.map((m) => [m.id, m.operator, m.away, m.broken])]);
     if (k === key) return;
     key = k;
-    const posts = [];
+    const posts = [], future = [];
     for (let i = 0; i < cfg.slots.length; i++) {
       const w = st.workers[i];
       if (w) posts.push(workerCard(w));
-      else if (i < open) posts.push(el('div', { class: 'lt-card st-post open' }, lineIcon('people', 'st-post-icon'), el('b', {}, 'Open post'), el('span', {}, 'Hire someone from the applicants below')));
+      else if (i < open) continue;
       else {
         const next = i === open ? nextSlot(ctx) : null;
-        posts.push(el('div', { class: 'lt-card st-post locked' }, lineIcon('people', 'st-post-icon'), el('b', {}, `Post ${i + 1}`),
+        future.push(el('div', { class: 'lt-card st-post locked' }, lineIcon('people', 'st-post-icon'), el('b', {}, `Post ${i + 1}`),
           el('span', {}, cfg.slots[i].text),
           next ? el('div', { class: 'st-req' }, next.parts.map((p) => el('div', { class: 'st-req-row' },
             el('span', {}, p.label), el('div', { class: 'lt-job-bar' }, el('i', { style: { width: `${Math.min(100, (p.have / p.need) * 100)}%` } })),
@@ -118,12 +120,13 @@ export function staffApp({ game, feedback, world, setHead }) {
       }
     }
     const hiring = open > st.workers.length;
+    const expanded = new Set([...body.querySelectorAll('details[open]')].map(d => `${d.closest('[data-worker-id]')?.dataset.workerId ?? ''}:${d.querySelector('summary').textContent}`));
     body.replaceChildren(...[
-      el('div',{class:'lt-card'},el('div',{class:'lt-card-label'},'Daily payroll'),
-        el('b',{},`${money(st.workers.reduce((sum,w)=>sum+w.wage,0))} each morning`),
-        el('p',{class:'lt-note'},'A business day takes 20 minutes at 1×. Apprentices learn through real work; their agreed wage stays fixed.')),
-      el('div', { class: 'st-posts' }, posts),
-      hiring ? el('div', {}, el('div', { class: 'lt-card-label lt-offers-label' }, 'Applicants'),
+      el('div',{class:'lt-card st-payroll'},
+        el('div',{},el('div',{class:'lt-card-label'},'Daily payroll'),el('b',{},`${money(st.workers.reduce((sum,w)=>sum+w.wage,0))} each morning`)),
+        el('span',{class:'lt-note'},`${st.workers.length} employed · ${Math.max(0, open-st.workers.length)} open post${open-st.workers.length===1?'':'s'}`)),
+      posts.length ? el('div', { class: 'st-posts' }, posts) : null,
+      hiring ? el('div', {}, el('div', { class: 'lt-section-heading' }, el('h3', {}, 'Applicants'), el('span', {}, 'Choose someone to fill your open post')),
         st.applicants.length ? el('div', { class: 'lt-jobs' }, st.applicants.map((a) => {
           const fee = hiringFee(ctx, a);
           const good = bestAt(a);
@@ -136,8 +139,10 @@ export function staffApp({ game, feedback, world, setHead }) {
               act(r, `${a.name} starts today (agency fee ${money(fee)})`);
             } }, `Hire · ${money(fee)} fee`));
         })) : el('div', { class: 'lt-muted-row' }, 'No one applying today. New applicants come every few days.')) : null,
-      el('p', { class: 'lt-note' }, `Wages are paid every morning. Experience earns stars through completed work; the agreed wage stays fixed. Park the digger and truck within arm's reach before assigning them, then choose the operator under Loading. A customer delivery needs clean material; a completed order waits for a new choice, and a regular customer waits for next week's quota. You can't use a worked machine; give its worker another job (or none) first.`),
+      future.length ? el('details', { class: 'lt-disclosure lt-card st-future' }, el('summary', {}, `Future posts (${future.length})`), el('div', { class: 'st-posts' }, future)) : null,
+      el('details', { class: 'lt-disclosure lt-card' }, el('summary', {}, 'Working with your crew'), el('p', { class: 'lt-note' }, `Wages are paid every morning. Experience earns stars through completed work; the agreed wage stays fixed. Park the digger and truck within arm's reach before assigning them, then choose the operator under Loading. A customer delivery needs clean material; a completed order waits for a new choice, and a regular customer waits for next week's quota. You can't use a worked machine; give its worker another job (or none) first.`)),
     ].filter(Boolean));
+    for (const detail of body.querySelectorAll('details')) detail.open = expanded.has(`${detail.closest('[data-worker-id]')?.dataset.workerId ?? ''}:${detail.querySelector('summary').textContent}`);
   }
 
   render();

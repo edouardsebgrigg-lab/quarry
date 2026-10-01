@@ -5,7 +5,11 @@ A first-person quarry mining game for PC. Start with a shovel, a wheelbarrow and
 Built with plain JavaScript, [Three.js](https://threejs.org) (3D) and [Rapier](https://rapier.rs) (physics). The game logic is separate from the 3D, so balancing and rules live in `data/` and `src/` modules that know nothing about graphics.
 
 The fleet includes refined Blender models with transparent cab glazing, worn paint
-and distinct rubber/steel materials. See [model rebuilding and rig contracts](docs/models.md).
+and distinct rubber/steel materials. The complete Blender library now includes authored
+quad, buggy, 4×4 and service van models. Cab/chase fit, articulated cargo floors and
+trailer hitches are checked across the full fleet. Shops and laptop apps have responsive
+layouts, with purchase details and notifications given their own space.
+See [model rebuilding and rig contracts](docs/models.md).
 
 ## Run it
 

@@ -118,15 +118,15 @@
         "bayId": "topsoil",
         "productId": "topsoil",
         "tonnes": 0.1,
-        "revenue": 4.991690262965022,
-        "pricePerTonne": 49.916902629650224,
+        "revenue": 4.987316352677472,
+        "pricePerTonne": 49.87316352677472,
         "grade": "Clean",
         "purity": 1
       },
       "deliveries": 2,
       "apprentice": {
         "id": "a1",
-        "name": "Tom Whitaker",
+        "name": "Mick Teasdale",
         "skills": {
           "dig": 2,
           "drive": 1,
@@ -143,7 +143,7 @@
       "workers": [
         {
           "id": "w4",
-          "name": "Tom Whitaker",
+          "name": "Mick Teasdale",
           "skills": {
             "dig": 2,
             "drive": 1,

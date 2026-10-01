@@ -80,6 +80,16 @@ carry their own painted wear; `weathering.js` adds a lighter layer on top (rust 
 the Rusty tier, light fade and dirt on Used) so the two tiers read differently in the game. `blender/fleet-rigs.json`
 records the protected animation hierarchy and rest transforms for export checks.
 
+M4 adds the complete Blender cleanup/catalogue scripts and four authored mobility
+GLBs (see `docs/models.md`). `glbModels.js` reads their named cab/cargo anchors;
+truck, dumper and trailer cargo coordinates are expressed in the moving bed frame.
+Trailer collider bounds include variant sideboards, and its drawbar eye follows
+the tractor hitch in three dimensions. Excavator tooth and dump targeting include
+the authored boom's lateral offset. The chase camera fits current model/trailer
+bounds and viewport aspect ratio. Dealer/Fleet/Staff use responsive rows and
+separate purchase details; laptop notices occupy their own strip and restore on
+close. Settings keep their tabs and action bar outside the scroll region.
+
 ## Tests
 Unit tests sit next to the code (`*.test.js`). Run them with `npm test`.
 

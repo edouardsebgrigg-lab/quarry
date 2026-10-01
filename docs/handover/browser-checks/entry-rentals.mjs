@@ -2,7 +2,7 @@
 // Rental UI uses an explicitly recorded cash fixture; cargo comes from real digging actions.
 import { writeFileSync } from 'node:fs';
 import { start } from './common.mjs';
-const { browser, page, q, frames, shot, newGame, errors } = await start();
+const { browser, page, q, frames, shot, newGame, errors } = await start({ width: 960, height: 540 });
 page.setDefaultTimeout(30000);
 const report = { checks: [], normalMoney: {}, rentalFixture: {}, saved: null, restored: null };
 const check = (condition, label) => {
@@ -17,7 +17,6 @@ const capture = async (name, target) => {
   await page.setViewportSize({ width: 960, height: 540 }); await frames(2);
   await target.scrollIntoViewIfNeeded(); await frames(2);
   await shot(name, { big: false });
-  await page.setViewportSize({ width: 320, height: 180 }); await frames(2);
 };
 try {
   await newGame({ force: false });
@@ -87,11 +86,12 @@ try {
   });
   await app('Plant dealer');
   await page.locator('.lt-tile').filter({ hasText: 'Mini 16' }).click(); await frames(2);
-  check(await page.getByRole('button', { name: /^Hire 1 day ·/ }).count() === 1
-    && await page.getByRole('button', { name: /^Hire 3 days ·/ }).count() === 1,
+  const oneDayHire = page.locator('.lt-rental-row').filter({ hasText: /^1 day ·/ }).getByRole('button', { name: 'Hire', exact: true });
+  const threeDayHire = page.locator('.lt-rental-row').filter({ hasText: /^3 days ·/ }).getByRole('button', { name: 'Hire', exact: true });
+  check(await oneDayHire.count() === 1 && await threeDayHire.count() === 1,
   'Dealer exposes both one-day and three-day rentals with deposit labels');
-  await capture('entry-rental-dealer', page.getByRole('button', { name: /^Hire 1 day ·/ }));
-  await page.getByRole('button', { name: /^Hire 1 day ·/ }).click(); await frames(2);
+  await capture('entry-rental-dealer', oneDayHire);
+  await oneDayHire.click(); await frames(2);
   report.rentalFixture.rented = await q(() => {
     const g = window.__quarry.game, m = g.state.machines.find(m => m.rental);
     window.__entry.rental = m.id;

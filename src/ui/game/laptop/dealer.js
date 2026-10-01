@@ -34,7 +34,8 @@ export function dealerApp({ game, feedback, photos, setHead }) {
   let buyButtons = [];
   const pending = []; // [img, type, tier]: photos still to take
   const body = el('div', { class: 'lt-dealer' });
-  const catBar = el('div', { class: 'lt-cats' });
+  const catBar = el('nav', { class: 'lt-cats', 'aria-label': 'Dealer sections' });
+  const top = () => { const scroller = body.closest('.lt-app-body'); if (scroller) scroller.scrollTop = 0; };
 
   const owned = () => machinesAt(ctx, game.state.currentSiteId);
   const typesOfKind = (kind) => Object.entries(data.machines.types).filter(([type, t]) => t.shop !== false && (kind === 'tractors' ? type === 'tractor' : kind === 'trailers' ? type === 'trailer' : kind === 'transport' ? ['quad','buggy','fourByFour','serviceVan'].includes(type) : t.kind === kind && type !== 'tractor' && !['buggy','fourByFour','serviceVan'].includes(type)));
@@ -90,7 +91,7 @@ export function dealerApp({ game, feedback, photos, setHead }) {
         const count = owned().filter((m) => m.type === type && m.tier === tier).length;
         const lines = describeStats(data, type, td);
         const unlocked = isTierUnlocked(ctx, type, tier);
-        grid.append(el('button', { class: `lt-tile ${unlocked ? '' : 'locked'}`, onClick: () => { detail = { type, tier }; render(); } },
+        grid.append(el('button', { class: `lt-tile ${unlocked ? '' : 'locked'}`, onClick: () => { detail = { type, tier }; render(); top(); } },
           photo(type, tier),
           el('div', { class: 'lt-tile-body' },
             el('div', { class: 'lt-tile-title' }, el('span', {}, td.modelName ?? t.name), offerOn(type, tier) ? el('span', { class: 'lt-offer' }, `−${Math.round(offerOn(type, tier).discount * 100)}%`) : null, td.modelName ? null : tierPill(tier)),
@@ -116,7 +117,7 @@ export function dealerApp({ game, feedback, photos, setHead }) {
       if (mine) {
         const better = l.better === 'lower' ? l.value < mine.value - 1e-9 : l.value > mine.value + 1e-9;
         const worse = l.better === 'lower' ? l.value > mine.value + 1e-9 : l.value < mine.value - 1e-9;
-        cmp = el('span', { class: `lt-cmp ${better ? 'up' : worse ? 'down' : ''}` }, `yours ${statValue(mine)}`);
+        cmp = el('span', { class: `lt-cmp ${better ? 'up' : worse ? 'down' : ''}`, title: better ? 'Better than your best machine' : worse ? 'Below your best machine' : 'Matches your best machine' }, statValue(mine));
       }
       return el('div', { class: 'lt-spec' }, el('span', { class: 'lt-spec-label' }, l.label), el('span', { class: 'lt-spec-val' }, statValue(l)), cmp);
     });
@@ -131,9 +132,10 @@ export function dealerApp({ game, feedback, photos, setHead }) {
       ['Insurance', `${money(td.price * insuranceCover(ctx).weeklyRate)} a week`],
     ].filter(Boolean);
     body.append(el('div', { class: 'lt-detail' },
-      el('button', { class: 'lt-back', onClick: () => { detail = null; render(); } }, lineIcon('back'), 'All machines'),
+      el('button', { class: 'lt-back', onClick: () => { detail = null; render(); top(); } }, lineIcon('back'), 'All machines'),
       el('div', { class: 'lt-detail-grid' },
-        photo(type, tier, 'big'),
+        el('div', { class: 'lt-detail-visual' }, photo(type, tier, 'big'),
+          el('div', { class: 'lt-facts' }, facts.map(([k, v]) => el('div', {}, el('span', {}, k), el('b', {}, v))))),
         el('div', { class: 'lt-detail-info' },
           el('div', { class: 'lt-detail-title' }, el('h3', {}, td.modelName ?? t.name), td.modelName ? null : tierPill(tier)),
           t.blurb ? el('p', { class: 'lt-blurb' }, t.blurb) : null,
@@ -143,22 +145,24 @@ export function dealerApp({ game, feedback, photos, setHead }) {
                 : machinePrice(ctx, type, tier) < td.price ? `Trade price (list ${money(td.price)})` : 'Price, delivered'),
             el('div', { class: 'lt-buy-price' }, money(machinePrice(ctx, type, tier)))),
             unlocked ? buyButton(machinePrice(ctx, type, tier), () => buyMachine(type, tier)) : el('span', { class: 'muted small' }, 'Needs research')),
-          el('div', { class: 'lt-specs' }, specRows),
+          el('div', { class: `lt-specs${best ? ' compared' : ''}` },
+            el('div', { class: 'lt-spec lt-spec-head' }, el('span', {}, 'Specification'), el('span', {}, 'This model'), best ? el('span', {}, 'Your best') : null), specRows),
           rentalOptions(type, tier),
-          type === 'trailer' ? trailerAdvice(td) : null,
-          el('div', { class: 'lt-facts' }, facts.map(([k, v]) => el('div', {}, el('span', {}, k), el('b', {}, v))))))));
+          type === 'trailer' ? trailerAdvice(td) : null))));
   }
 
   function rentalOptions(type, tier) {
     if (!game.actions.rentalQuote || type === 'tractor' || type === 'trailer') return null;
     const quotes = [1, 3].map(days => ({ days, ...game.actions.rentalQuote(type, tier, days) })).filter(q => q.ok);
     if (!quotes.length) return null;
-    return el('div', { class: 'lt-card' }, el('b', {}, 'Try it on hire'),
+    return el('div', { class: 'lt-card lt-rental' }, el('b', {}, 'Try it on hire'),
       el('p', { class: 'lt-note' }, 'Short hire lets you use the next machine before buying. Your deposit is returned when the machine comes back.'),
-      ...quotes.map(q => buyButton(q.total ?? q.cost, () => {
+      ...quotes.map(q => el('div', { class: 'lt-rental-row' },
+        el('div', {}, el('b', {}, `${q.days} day${q.days === 1 ? '' : 's'} · ${money(q.total ?? q.cost)}`), el('span', {}, `${money(q.deposit)} refundable deposit included`)),
+        buyButton(q.total ?? q.cost, () => {
         const r = game.actions.rentMachine(type, tier, q.days);
         feedback.message(r.ok ? 'Hire machine delivered to your yard' : r.reason, r.ok ? 'good' : 'warn');
-      }, `Hire ${q.days} day${q.days === 1 ? '' : 's'} · ${money(q.total ?? q.cost)} (${money(q.deposit)} deposit)`)));
+      }, 'Hire'))));
   }
 
   function trailerAdvice(spec) {
@@ -169,7 +173,7 @@ export function dealerApp({ game, feedback, photos, setHead }) {
       return payload > 0 ? `${machineName(data, m)}: up to ${payload.toFixed(1)} t cargo` : null;
     }).filter(Boolean);
     return el('div', { class: 'lt-card' }, el('b', {}, 'Your towing options'),
-      el('p', { class: 'lt-note' }, compatible.length ? compatible.join(' · ') : 'You need a tractor with a gross towing limit above this trailer’s empty weight.'));
+      compatible.length ? el('ul', { class: 'lt-tow-options' }, compatible.map(text => el('li', {}, text))) : el('p', { class: 'lt-note' }, 'You need a tractor with a gross towing limit above this trailer’s empty weight.'));
   }
 
   // ---- upgrades for the machines you own
@@ -244,7 +248,7 @@ export function dealerApp({ game, feedback, photos, setHead }) {
     pending.length = 0;
     clear(catBar);
     for (const c of CATEGORIES) {
-      catBar.append(el('button', { class: `lt-cat ${cat === c.id ? 'active' : ''}`, onClick: () => { cat = c.id; detail = null; render(); } },
+      catBar.append(el('button', { class: `lt-cat ${cat === c.id ? 'active' : ''}`, onClick: () => { cat = c.id; detail = null; render(); top(); } },
         lineIcon(c.icon), c.label));
     }
     clear(body);
@@ -265,7 +269,7 @@ export function dealerApp({ game, feedback, photos, setHead }) {
   render();
 
   return {
-    node: el('div', {}, catBar, body),
+    node: el('div', { class: 'lt-dealer-app' }, catBar, body),
     headSet: true,
     refresh: refreshButtons,
     // Take one product photo per frame, so opening the dealer never stalls.
