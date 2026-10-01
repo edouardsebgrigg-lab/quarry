@@ -1,0 +1,338 @@
+{
+  "kind": "Native HUD component fixtures and live settings controls",
+  "checks": [
+    {
+      "label": "digger-960: bounded readable content",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          640,
+          327.90625,
+          944,
+          524
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "text": "Mini 16 #2DirectClayTrenching bucketHard cut — take a shallower biteHydraulics 93%65 kN resistance · 0.22 m cutkm/hBucket0.23/0.40 m³Cond92%",
+        "overflow": false
+      }
+    },
+    {
+      "label": "Exact partial bucket capacity",
+      "passed": true
+    },
+    {
+      "label": "Material and useful resistance visible",
+      "passed": true
+    },
+    {
+      "label": "digger-390: bounded readable content",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          75.609375,
+          443.515625,
+          379.609375,
+          639.609375
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "text": "Mini 16 #2DirectClayTrenching bucketHard cut — take a shallower biteHydraulics 93%65 kN resistance · 0.22 m cutkm/hBucket0.23/0.40 m³Cond92%",
+        "overflow": false
+      }
+    },
+    {
+      "label": "guided-goal-390: bounded readable content",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          6.40625,
+          7.203125,
+          150.9375,
+          169.09375
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "text": "TargetDig with the shovel1/22Walk onto your field (through the gap from the yard), look at the ground and click to dig a shovelful.J · keep details open",
+        "overflow": false
+      }
+    },
+    {
+      "label": "Default guided goal text is unobscured on phone",
+      "passed": true
+    },
+    {
+      "label": "digger-130-960: bounded readable content",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          544.015625,
+          264.109375,
+          939.203125,
+          519.203125
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "text": "Mini 16 #2DirectClayTrenching bucketHard cut — take a shallower biteHydraulics 93%65 kN resistance · 0.22 m cutkm/hBucket0.23/0.40 m³Cond92%",
+        "overflow": false
+      }
+    },
+    {
+      "label": "Large-text machine prompt is clear of mentor and dash",
+      "passed": true
+    },
+    {
+      "label": "tractor-960: bounded readable content",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          640,
+          307.3125,
+          944,
+          524
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "text": "Field 90 #4ReadyGravelLow grip — ease the throttleHydraulics 0%4.3/5.0 t tow · 2.8/3.5 m³ bed · 38% wheel slip212km/hLoad2.4/4.0 tCond87%",
+        "overflow": false
+      }
+    },
+    {
+      "label": "Useful towing and wheel slip visible",
+      "passed": true
+    },
+    {
+      "label": "survey-960: bounded readable content",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          16,
+          348.4375,
+          320,
+          524
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "text": "Ground surveyL CloseClay · 65 kNClay0.00–0.60 mSand0.60–1.0 mGravel1.0–2.3 mRock at 2.3 m",
+        "overflow": false
+      }
+    },
+    {
+      "label": "survey-390: bounded readable content",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          10.390625,
+          464.046875,
+          314.390625,
+          639.609375
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "text": "Ground surveyL CloseClay · 65 kNClay0.00–0.60 mSand0.60–1.0 mGravel1.0–2.3 mRock at 2.3 m",
+        "overflow": false
+      }
+    },
+    {
+      "label": "Survey shows three real depth layers",
+      "passed": true
+    },
+    {
+      "label": "survey-empty-390: bounded readable content",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          10.390625,
+          561.828125,
+          314.390625,
+          639.609375
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "text": "Ground surveyL CloseAim at the ground on your fieldBedrock below",
+        "overflow": false
+      }
+    },
+    {
+      "label": "Empty survey gives a helpful reason without invented bedrock",
+      "passed": true
+    },
+    {
+      "label": "Actual comfort sliders save steady camera and wide view",
+      "passed": true
+    },
+    {
+      "label": "comfort-settings-960: fits viewport",
+      "passed": true
+    },
+    {
+      "label": "comfort-settings-390: fits viewport",
+      "passed": true
+    },
+    {
+      "label": "No native browser errors",
+      "passed": true
+    }
+  ],
+  "screens": [
+    {
+      "name": "digger-960",
+      "sample": {
+        "bounds": [
+          640,
+          327.90625,
+          944,
+          524
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "text": "Mini 16 #2DirectClayTrenching bucketHard cut — take a shallower biteHydraulics 93%65 kN resistance · 0.22 m cutkm/hBucket0.23/0.40 m³Cond92%",
+        "overflow": false
+      }
+    },
+    {
+      "name": "digger-390",
+      "sample": {
+        "bounds": [
+          75.609375,
+          443.515625,
+          379.609375,
+          639.609375
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "text": "Mini 16 #2DirectClayTrenching bucketHard cut — take a shallower biteHydraulics 93%65 kN resistance · 0.22 m cutkm/hBucket0.23/0.40 m³Cond92%",
+        "overflow": false
+      }
+    },
+    {
+      "name": "guided-goal-390",
+      "sample": {
+        "bounds": [
+          6.40625,
+          7.203125,
+          150.9375,
+          169.09375
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "text": "TargetDig with the shovel1/22Walk onto your field (through the gap from the yard), look at the ground and click to dig a shovelful.J · keep details open",
+        "overflow": false
+      }
+    },
+    {
+      "name": "digger-130-960",
+      "sample": {
+        "bounds": [
+          544.015625,
+          264.109375,
+          939.203125,
+          519.203125
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "text": "Mini 16 #2DirectClayTrenching bucketHard cut — take a shallower biteHydraulics 93%65 kN resistance · 0.22 m cutkm/hBucket0.23/0.40 m³Cond92%",
+        "overflow": false
+      }
+    },
+    {
+      "name": "tractor-960",
+      "sample": {
+        "bounds": [
+          640,
+          307.3125,
+          944,
+          524
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "text": "Field 90 #4ReadyGravelLow grip — ease the throttleHydraulics 0%4.3/5.0 t tow · 2.8/3.5 m³ bed · 38% wheel slip212km/hLoad2.4/4.0 tCond87%",
+        "overflow": false
+      }
+    },
+    {
+      "name": "survey-960",
+      "sample": {
+        "bounds": [
+          16,
+          348.4375,
+          320,
+          524
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "text": "Ground surveyL CloseClay · 65 kNClay0.00–0.60 mSand0.60–1.0 mGravel1.0–2.3 mRock at 2.3 m",
+        "overflow": false
+      }
+    },
+    {
+      "name": "survey-390",
+      "sample": {
+        "bounds": [
+          10.390625,
+          464.046875,
+          314.390625,
+          639.609375
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "text": "Ground surveyL CloseClay · 65 kNClay0.00–0.60 mSand0.60–1.0 mGravel1.0–2.3 mRock at 2.3 m",
+        "overflow": false
+      }
+    },
+    {
+      "name": "survey-empty-390",
+      "sample": {
+        "bounds": [
+          10.390625,
+          561.828125,
+          314.390625,
+          639.609375
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "text": "Ground surveyL CloseAim at the ground on your fieldBedrock below",
+        "overflow": false
+      }
+    },
+    {
+      "name": "comfort-settings-960"
+    },
+    {
+      "name": "comfort-settings-390"
+    }
+  ],
+  "errors": []
+}

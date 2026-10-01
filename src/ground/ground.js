@@ -738,6 +738,27 @@ export function createGround(groundData, plotId, opts = {}) {
       const j = Math.min(nz - 1, Math.max(0, Math.floor((z - z0) / cell)));
       return mats[topMaterial(idx(i, j))];
     },
+    // Read-only survey of the remaining column, including tipped spoil and graded fill.
+    // Depths are measured from today's surface, never from the original geology.
+    inspectAt(x, z) {
+      if (![x,z].every(Number.isFinite) || !api.inside(x,z)) return null;
+      const k=cellAt(x,z), rows=[];
+      let depth=0;
+      const add=(material,thickness,kind,composition=null)=>{
+        if (thickness<=1e-5) return;
+        rows.push({material,depth,thickness,kind,composition});depth+=thickness;
+      };
+      const mixture=(array)=>{
+        const values=mats.map((m,i)=>[m,array[k*M+i]]).filter(([,v])=>v>1e-6);
+        const total=values.reduce((sum,[,v])=>sum+v,0);
+        values.sort((a,b)=>b[1]-a[1]);
+        return {material:values[0]?.[0]??mats[topMaterial(k)],composition:Object.fromEntries(values.map(([m,v])=>[m,v/Math.max(total,1e-9)]))};
+      };
+      if (loose[k]>1e-5) { const m=mixture(mix);add(m.material,loose[k],'loose',m.composition); }
+      if (fill[k]>1e-5) { const m=mixture(fillMix);add(m.material,fill[k],'compacted',m.composition); }
+      for(let l=K-1;l>=0;l--) add(mats[layers[l]],nat[l][k],'natural');
+      return {surface:{...response(k),coverMaterial:rows[0]?.material??mats[bedMat]},layers:rows,bedrock:mats[bedMat],bedrockDepth:depth,height:height(k)};
+    },
     cellSurface: (i, j) => topMaterial(idx(i, j)),
     cellDisturbed: (i, j) => disturbed[idx(i, j)] !== 0,
     // A cell that has been built on (a graded road, ramp or level area).

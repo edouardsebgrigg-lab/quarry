@@ -145,3 +145,7 @@ each system: hire-out (`m.onHire`), classifieds, insurance (`repairShare`), cred
 After each task, update `docs/CODEX-CHECKPOINT.md`. For each task, give its ID, the commit, what
 changed, and what was actually run (tests, build, browser), with "not verified" stated plainly.
 Tick items in `docs/POLISH.md` or `docs/TASKS.md` with the commit.
+
+### Game-feel update checks
+
+Use `f3-feel.mjs` for actual keyboard walking/jump/barrow/reverse checks, `game-feel.mjs` for real survey/excavation and machine feedback, `hud-comfort.mjs` for bounded HUD/comfort controls, and `personal-target-ui.mjs` for choose/switch/clear and Save/Continue. Their reports distinguish component fixtures from gameplay actions. Inspect final phone and larger-text views and check overlay intersections, not just viewport bounds. See `game-feel-review.md` and the checkpoint for evidence and limits.

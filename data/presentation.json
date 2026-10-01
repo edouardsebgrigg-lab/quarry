@@ -1,0 +1,20 @@
+{
+  "camera": {
+    "walkBobHeight": 0.018,
+    "walkBobRoll": 0.0025,
+    "strideLength": 1.7,
+    "sprintFov": 4,
+    "blendRate": 10,
+    "landingDropMax": 0.055,
+    "referenceSpeed": 4.5,
+    "landingReleaseRate": 14,
+    "landingImpactScale": 0.006
+  },
+  "survey": {
+    "range": 18,
+    "markerRadius": 0.42
+  },
+  "workFeedback": {
+    "highSlip": 0.25
+  }
+}

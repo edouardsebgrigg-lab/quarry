@@ -5,6 +5,19 @@
 // No graphics here, so it can be tested headless. The chassis faces +X in its local space.
 // Units are real: kilograms, newtons, metres, seconds. The tipper truck is the default; the
 // pickup and the tractor pass their own shape, tuning and engine (see PICKUP and TRACTOR below).
+import handling from '../../data/handling.json';
+
+// Cancel opposite lock at the centering rate, then build the newly requested steering angle.
+export function steeringStep(current,target,dt,steerRate,returnRate) {
+  const approach=(a,b,amount)=>a+Math.sign(b-a)*Math.min(Math.abs(b-a),amount);
+  if(!(dt>0))return current;
+  if(current*target<0){
+    const centreTime=Math.abs(current)/returnRate;
+    if(dt<=centreTime)return approach(current,0,dt*returnRate);
+    return approach(0,target,(dt-centreTime)*steerRate);
+  }
+  return approach(current,target,dt*(Math.abs(target)<Math.abs(current)?returnRate:steerRate));
+}
 
 export const TRUCK_SHAPE = {
   halfLength: 3.2,
@@ -225,12 +238,15 @@ export function createTruckPhysics({ RAPIER, world }, {
     shiftT: 0, // counts down while changing gear
     load: 0, // 0..1 how hard the engine is working
     misfire: 0,
+    directionT: 0,
+    directionRequest: 0,
   };
   const out = {
     braking: false, reversing: false, shifted: 0, surface: DEFAULT_SURFACE.name,
     slip: 0, bump: 0, airborne: false,
   };
   const lastSusp = [0, 0, 0, 0];
+  let suspensionPrimed = false;
 
   function updateFinalDrive() {
     // Top gear at max rpm = top speed.
@@ -253,6 +269,8 @@ export function createTruckPhysics({ RAPIER, world }, {
   }
 
   function update(dt) {
+    if(!Number.isFinite(dt)||dt<=0)return;
+    dt=Math.min(dt,handling.vehicle.maxStepSeconds);
     const v = vehicle.currentVehicleSpeed();
     const g = 9.81;
     const m = totalMass();
@@ -261,19 +279,15 @@ export function createTruckPhysics({ RAPIER, world }, {
     // ---- pedals: forward/back pick a direction, the other pedal brakes
     let throttle = 0;
     let brake = 0;
-    if (throttleIn > 0) {
-      if (eng.gear < 0 && v < -0.4) brake = throttleIn;
-      else {
-        if (eng.gear < 0 && Math.abs(v) <= 0.4) eng.gear = 1;
-        throttle = throttleIn;
+    const direction=Math.sign(throttleIn),currentDirection=Math.sign(eng.gear);
+    if(direction!==eng.directionRequest){eng.directionRequest=direction;eng.directionT=0;}
+    if(direction&&v*direction<-handling.vehicle.directionBrakeSpeed){brake=Math.abs(throttleIn);eng.directionT=0;}
+    else if(direction&&direction!==currentDirection){
+      eng.directionT+=dt; brake=Math.max(Math.abs(throttleIn),handling.vehicle.directionHoldBrake);
+      if(eng.directionT>=handling.vehicle.directionChangeSeconds){
+        eng.gear=direction;eng.shiftT=E.shiftTime*.7;eng.directionT=0;
       }
-    } else if (throttleIn < 0) {
-      if (eng.gear > 0 && v > 0.4) brake = -throttleIn;
-      else {
-        if (eng.gear > 0 && Math.abs(v) <= 0.4) eng.gear = -1;
-        throttle = -throttleIn;
-      }
-    }
+    } else if(direction){throttle=Math.abs(throttleIn);eng.directionT=0;}
     if (!eng.running && Math.abs(v) < 0.3) brake = 1; // parked in gear
     // No pedal at walking pace: the driver rests on the brake, so it doesn't roll away on slopes.
     if (throttle === 0 && brake === 0 && Math.abs(v) < 2.5) brake = 0.15 + 0.35 * (1 - Math.abs(v) / 2.5);
@@ -353,10 +367,9 @@ export function createTruckPhysics({ RAPIER, world }, {
     }
 
     // ---- steering: speed-sensitive, with Ackermann (the inside wheel turns more)
-    const maxSteer = T.maxSteer / (1 + Math.abs(v) * 0.07);
+    const maxSteer = T.maxSteer / (1 + Math.abs(v) * handling.vehicle.steeringSpeedSensitivity);
     const targetSteer = control.steer * maxSteer;
-    const rateNow = Math.abs(targetSteer) < Math.abs(steer) ? T.returnRate : T.steerRate;
-    steer += Math.sign(targetSteer - steer) * Math.min(Math.abs(targetSteer - steer), dt * rateNow);
+    steer=steeringStep(steer,targetSteer,dt,T.steerRate,T.returnRate);
     let left = steer;
     let right = steer;
     if (Math.abs(steer) > 1e-3) {
@@ -389,11 +402,12 @@ export function createTruckPhysics({ RAPIER, world }, {
     for (let i = 0; i < 4; i++) {
       if (vehicle.wheelIsInContact(i)) contact += 1;
       const l = vehicle.wheelSuspensionLength(i) ?? 0;
-      bump = Math.max(bump, Math.abs(l - lastSusp[i]) / dt);
+      if(suspensionPrimed)bump = Math.max(bump, Math.abs(l - lastSusp[i]) / dt);
       lastSusp[i] = l;
       side += Math.abs(vehicle.wheelSideImpulse(i) ?? 0);
     }
     out.airborne = contact === 0;
+    suspensionPrimed=true;
     out.bump = bump;
     out.slip = Math.min(1, side / (m * g * grip * dt + 1e-6) * 0.8);
     out.braking = (brake > 0.05 && Math.abs(v) > 0.3) || control.handbrake;
@@ -447,6 +461,9 @@ export function createTruckPhysics({ RAPIER, world }, {
       body.setRotation(yawQuat(yawAngle), true);
       body.setLinvel({ x: 0, y: 0, z: 0 }, true);
       body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      steer=0;eng.gear=1;eng.shiftT=0;eng.directionT=0;eng.directionRequest=0;eng.load=0;eng.misfire=0;
+      control.throttle=0;control.steer=0;control.handbrake=true;
+      suspensionPrimed=false;out.bump=0;out.slip=0;out.braking=true;out.reversing=false;
     },
     destroy() {
       world.removeVehicleController(vehicle);

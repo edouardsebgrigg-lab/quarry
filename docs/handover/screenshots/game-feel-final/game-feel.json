@@ -1,0 +1,268 @@
+{
+  "checks": [
+    {
+      "label": "L surveys the actual field through keyboard routing",
+      "passed": true
+    },
+    {
+      "label": "Survey exposes remaining strata and bedrock depth",
+      "passed": true
+    },
+    {
+      "label": "Survey creates no material",
+      "passed": true
+    },
+    {
+      "label": "Survey updates after a real excavation exposes clay",
+      "passed": true
+    },
+    {
+      "label": "L closes the survey",
+      "passed": true
+    },
+    {
+      "label": "Actual occupied digger supplies material and attachment",
+      "passed": true
+    },
+    {
+      "label": "Empty bucket telemetry uses real loose volume",
+      "passed": true
+    },
+    {
+      "label": "Real Assisted cut drives live bucket-volume feedback",
+      "passed": true
+    },
+    {
+      "label": "Capacity and hydraulic effort remain bounded",
+      "passed": true
+    },
+    {
+      "label": "New digging presentation conserves ground and cargo",
+      "passed": true
+    },
+    {
+      "label": "Digger survey reads the working area",
+      "passed": true
+    },
+    {
+      "label": "Actual camera applies chosen95degreeFOV",
+      "passed": true
+    },
+    {
+      "label": "Zero motion setting removes cab sway",
+      "passed": true
+    },
+    {
+      "label": "Chase camera remains available with widerFOV",
+      "passed": true
+    },
+    {
+      "label": "No browser runtime errors",
+      "passed": true
+    }
+  ],
+  "samples": [
+    {
+      "survey": {
+        "key": "L",
+        "surface": {
+          "material": "topsoil",
+          "resistance": 18,
+          "loose": false,
+          "compaction": 0,
+          "cohesion": 0.18,
+          "flow": 0.62,
+          "traction": 0.68,
+          "rollingResistance": 0.055,
+          "coverMaterial": "topsoil",
+          "id": "topsoil",
+          "name": "Topsoil",
+          "color": "#5e4a36"
+        },
+        "layers": [
+          {
+            "material": "topsoil",
+            "depth": 0,
+            "thickness": 0.33055591583251953,
+            "kind": "natural",
+            "composition": null,
+            "id": "topsoil",
+            "name": "Topsoil"
+          },
+          {
+            "material": "clay",
+            "depth": 0.33055591583251953,
+            "thickness": 0.5866827368736267,
+            "kind": "natural",
+            "composition": null,
+            "id": "clay",
+            "name": "Clay"
+          },
+          {
+            "material": "sand",
+            "depth": 0.9172386527061462,
+            "thickness": 1.9140455722808838,
+            "kind": "natural",
+            "composition": null,
+            "id": "sand",
+            "name": "Sand"
+          },
+          {
+            "material": "gravel",
+            "depth": 2.83128422498703,
+            "thickness": 2.5070979595184326,
+            "kind": "natural",
+            "composition": null,
+            "id": "gravel",
+            "name": "Gravel"
+          }
+        ],
+        "bedrockDepth": 5.338382184505463,
+        "bedrockName": "Rock"
+      }
+    },
+    {
+      "cutSurvey": {
+        "key": "L",
+        "surface": {
+          "material": "clay",
+          "resistance": 65,
+          "loose": false,
+          "compaction": 0,
+          "cohesion": 0.8,
+          "flow": 0.18,
+          "traction": 0.7,
+          "rollingResistance": 0.085,
+          "coverMaterial": "clay",
+          "id": "clay",
+          "name": "Clay",
+          "color": "#8a6a4c"
+        },
+        "layers": [
+          {
+            "material": "clay",
+            "depth": 0,
+            "thickness": 0.5266827344894409,
+            "kind": "natural",
+            "composition": null,
+            "id": "clay",
+            "name": "Clay"
+          },
+          {
+            "material": "sand",
+            "depth": 0.5266827344894409,
+            "thickness": 1.9140455722808838,
+            "kind": "natural",
+            "composition": null,
+            "id": "sand",
+            "name": "Sand"
+          },
+          {
+            "material": "gravel",
+            "depth": 2.4407283067703247,
+            "thickness": 2.5070979595184326,
+            "kind": "natural",
+            "composition": null,
+            "id": "gravel",
+            "name": "Gravel"
+          }
+        ],
+        "bedrockDepth": 4.947826266288757,
+        "bedrockName": "Rock"
+      }
+    },
+    {
+      "idle": {
+        "name": "Mini 16 #1",
+        "tier": "mini16",
+        "type": "miniDigger",
+        "road": false,
+        "carrier": false,
+        "condition": 80,
+        "broken": false,
+        "load": 0,
+        "capacity": 0.08,
+        "bucketVolume": 0,
+        "cutDepth": 0.35,
+        "aimReach": 3.3,
+        "resistance": 0,
+        "direct": false,
+        "speedKmh": 0,
+        "camera": "cab",
+        "ticket": false,
+        "material": {
+          "material": "topsoil",
+          "resistance": 18,
+          "loose": false,
+          "compaction": 0,
+          "cohesion": 0.18,
+          "flow": 0.62,
+          "traction": 0.68,
+          "rollingResistance": 0.055,
+          "id": "topsoil",
+          "name": "Topsoil",
+          "color": "#5e4a36"
+        },
+        "loadVolume": 0,
+        "capacityVolume": 0.08,
+        "bucketFill01": 0,
+        "hydraulicLoad": 0,
+        "slip": 0,
+        "attachment": "Standard bucket",
+        "grossLoadTonnes": null,
+        "towLimitTonnes": null,
+        "workFeedback": null,
+        "engine": "running"
+      }
+    },
+    {
+      "filled": {
+        "name": "Mini 16 #1",
+        "tier": "mini16",
+        "type": "miniDigger",
+        "road": false,
+        "carrier": false,
+        "condition": 79.78273941249951,
+        "broken": false,
+        "load": 0.08204245961556937,
+        "capacity": 0.08,
+        "bucketVolume": 0.0790038500001779,
+        "cutDepth": 0.35,
+        "aimReach": 3.3,
+        "resistance": 0,
+        "direct": false,
+        "speedKmh": 0,
+        "camera": "cab",
+        "ticket": false,
+        "material": {
+          "material": "topsoil",
+          "resistance": 18,
+          "loose": false,
+          "compaction": 0,
+          "cohesion": 0.18,
+          "flow": 0.62,
+          "traction": 0.68,
+          "rollingResistance": 0.055,
+          "id": "topsoil",
+          "name": "Topsoil",
+          "color": "#5e4a36"
+        },
+        "loadVolume": 0.0790038500001779,
+        "capacityVolume": 0.08,
+        "bucketFill01": 0.9875481250022238,
+        "hydraulicLoad": 0.3328224516862191,
+        "slip": 0,
+        "attachment": "Standard bucket",
+        "grossLoadTonnes": null,
+        "towLimitTonnes": null,
+        "workFeedback": {
+          "kind": "ready",
+          "label": "Bucket full — swing to unload",
+          "intensity": 0.9875481250022238
+        },
+        "engine": "running"
+      }
+    }
+  ],
+  "errors": []
+}

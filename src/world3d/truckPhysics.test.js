@@ -1,7 +1,7 @@
 // Checks the truck's driving feel stays sensible when physics numbers change.
 import { describe, it, expect, beforeAll } from 'vitest';
 import RAPIER from '@dimforge/rapier3d-compat';
-import { createTruckPhysics, PICKUP } from './truckPhysics.js';
+import { createTruckPhysics, PICKUP, steeringStep } from './truckPhysics.js';
 
 beforeAll(async () => {
   await RAPIER.init();
@@ -35,6 +35,18 @@ function speedAfter(cargo, seconds) {
 }
 
 describe('truck driving', () => {
+  it('clears opposite steering through neutral consistently across physics steps',()=>{
+    const run=dt=>{let angle=.6;for(let t=0;t<.5-1e-8;t+=dt)angle=steeringStep(angle,-.6,dt,.9,1.6);return angle;};
+    expect(run(1/30)).toBeCloseTo(run(1/120),8);expect(run(1/60)).toBeLessThan(-.1);
+  });
+  it('brakes before changing direction and resets steering, controls and suspension shock on recovery',()=>{
+    const{truck,run}=setup();truck.control.throttle=-1;run(3);expect(truck.speed()).toBeLessThan(-2);
+    truck.control.throttle=1;run(.05);expect(truck.telemetry().gear).toBe(-1);expect(truck.telemetry().braking).toBe(true);
+    run(3);expect(truck.telemetry().gear).toBeGreaterThan(0);expect(truck.speed()).toBeGreaterThan(1);
+    truck.control.steer=1;run(.5);expect(truck.steering()).toBeGreaterThan(.1);
+    truck.reset(20,0,20,0);expect(truck.steering()).toBe(0);expect(truck.control.throttle).toBe(0);expect(truck.control.handbrake).toBe(true);
+    truck.update(0);expect(truck.telemetry().bump).toBe(0);truck.update(1/60);expect(truck.telemetry().bump).toBe(0);
+  });
   it('accelerates to its top speed and no further', () => {
     const v = speedAfter(0, 8);
     expect(v).toBeGreaterThan(8 * 1.4 * 0.9);

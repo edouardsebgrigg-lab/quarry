@@ -1,7 +1,7 @@
 // The laptop's home screen: your balance, the goal you're on, the best price at the depot today,
 // and how the fleet is doing, with shortcuts into the apps.
 import { el, setText } from '../../dom.js';
-import { money, price } from '../../format.js';
+import { money, price, tonnes } from '../../format.js';
 import { getDate } from '../../../core/index.js';
 import { currentPrice, activeNews } from '../../../economy/index.js';
 import { machinesAt } from '../../../machinery/index.js';
@@ -11,8 +11,11 @@ import { nextInspection, inspectionReport, dealerOffer } from '../../../happenin
 import { contractsState } from '../../../contracts/index.js';
 import { hireState } from '../../../hire/index.js';
 import { staffState, openSlots } from '../../../staff/index.js';
-import { milestones } from '../../../career/index.js';
+import { milestones, pinnedMilestone } from '../../../career/index.js';
 import { machinePrice } from '../../../machinery/index.js';
+
+const targetAmount = (metric, value) => ['tonnesSold', 'tonnesDug', 'cleanTonnes', 'gravelDug'].includes(metric) ? tonnes(value)
+  : ['bestDay', 'totalEarned'].includes(metric) ? money(value) : metric === 'roadMetres' ? `${Math.round(value)} m` : String(Math.floor(value));
 
 export function homeApp({ game, openApp, setHead }) {
   const { data } = game;
@@ -33,6 +36,15 @@ export function homeApp({ game, openApp, setHead }) {
   const weather = tile('Weather');
   const goalTitle = el('div', { class: 'lt-goal-title' });
   const goalText = el('div', { class: 'lt-goal-text' });
+  const goalLabel = el('div', { class: 'lt-card-label' });
+  const targetProgress = el('div', { class: 'lt-target-progress' });
+  const targetBenefit = el('div', { class: 'lt-target-benefit' });
+  const targetFill = el('i');
+  const targetTrack = el('div', { class: 'lt-ms-bar' }, targetFill);
+  const chooseTarget = el('button', { class: 'lt-link', onClick: () => openApp('milestones') });
+  const clearTarget = el('button', { class: 'lt-link', onClick: () => { game.actions.unpinMilestone(); refresh(); } }, 'Clear target');
+  const goalCard = el('div', { class: 'lt-card lt-goal' }, goalLabel, goalTitle, goalText, targetProgress, targetTrack, targetBenefit,
+    el('div', { class: 'lt-target-actions' }, chooseTarget, clearTarget));
   // The latest story moving a price, as a one-line ticker into the prices app.
   const newsLine = el('button', { class: 'lt-ticker', onClick: () => openApp('prices') });
   // Coming up: the inspector, the dealer's offer, a regular customer, a rush job, the closest
@@ -71,7 +83,7 @@ export function homeApp({ game, openApp, setHead }) {
     const rush = contractsState(ctx).offers.find((o) => o.rush);
     if (rush) rows.push({ kind: 'good', title: `Rush job for ${rush.client}: +${money(rush.bonus)}`, sub: `${rush.tonnes} t of clean ${(data.materials[rush.material]?.name ?? rush.material).toLowerCase()}, take it today`, app: 'jobs' });
     const next = milestones(ctx).filter((m) => !m.reached).sort((a, b) => b.progress - a.progress)[0];
-    if (next) rows.push({ kind: '', title: `Closest milestone: ${next.title} (${Math.floor(next.progress * 100)}%)`, sub: `${next.text} +${money(next.reward)}`, app: 'milestones' });
+    if (next && !pinnedMilestone(ctx)) rows.push({ kind: '', title: `Closest milestone: ${next.title} (${Math.floor(next.progress * 100)}%)`, sub: `${next.text} +${money(next.reward)}`, app: 'milestones' });
     const key = JSON.stringify(rows);
     if (key === upcomingKey) return;
     upcomingKey = key;
@@ -106,8 +118,18 @@ export function homeApp({ game, openApp, setHead }) {
       }
     }
     const step = data.objectives.steps[game.state.objectives.index];
-    setText(goalTitle, step ? step.title : 'All goals done');
-    setText(goalText, step ? step.text : 'You’ve worked through every goal. Keep growing the quarry.');
+    const target = pinnedMilestone(ctx);
+    goalCard.classList.toggle('personal-target', !!target);
+    setText(goalLabel, target ? target.reached ? 'Personal target reached' : 'Your personal target' : 'Current goal');
+    setText(goalTitle, target ? target.title : step ? step.title : 'All goals done');
+    setText(goalText, target ? `${target.text} ${target.nextStep}` : step ? step.text : 'You’ve worked through every goal. Choose a personal target and keep growing the quarry.');
+    for (const node of [targetProgress, targetTrack, targetBenefit, clearTarget]) node.style.display = target ? '' : 'none';
+    setText(chooseTarget, target ? 'Switch target' : 'Choose a personal target');
+    if (target) {
+      setText(targetProgress, target.reached ? `Reached on day ${target.day}` : `${targetAmount(target.metric, target.value)} of ${targetAmount(target.metric, target.target)} · ${Math.floor(target.progress * 100)}%`);
+      targetFill.style.width = `${Math.round(target.progress * 100)}%`;
+      setText(targetBenefit, `${target.reached ? 'Earned' : 'Reward'}: ${money(target.reward ?? 0)}${target.perkName ? ` · ${target.perkName}: ${target.perkText}` : ''}`);
+    }
     comingUp();
   }
   refresh();
@@ -118,11 +140,11 @@ export function homeApp({ game, openApp, setHead }) {
   const node = el('div', { class: 'lt-home' },
     el('div', { class: 'lt-stats four' }, bal.node, best.node, fleet.node, weather.node),
     newsLine,
-    el('div', { class: 'lt-card lt-goal' }, el('div', { class: 'lt-card-label' }, 'Current goal'), goalTitle, goalText),
+    goalCard,
     upcomingCard,
     el('div', { class: 'lt-shortcuts' },
       shortcut('digger', 'Plant dealer', 'Machines, upgrades, yard buildings', 'dealer'),
-      shortcut('clipboard', 'Jobs board', 'Bonuses for clean loads, on time', 'jobs'),
+      shortcut('chart', 'Milestones', 'Choose what to work towards next', 'milestones'),
       shortcut('chart', 'Depot prices', 'What each material sells for today', 'prices'),
       shortcut('bank', 'Bank', 'Your statement, and loans to grow faster', 'bank')));
   return { node, refresh, headSet: true };

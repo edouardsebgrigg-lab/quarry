@@ -337,3 +337,9 @@ Edouard authorised the full brainstorm, with less emphasis on jobs, and parallel
 - Q1 short incoming rentals, repeat shovel, loaded barrow recovery, fleet waypoints and clean-sales alternatives to job goals — DONE `868c88f`; all verification in checkpoint.
 
 No new jobs system is planned in this batch. Existing contracts remain optional ways to earn bonuses.
+
+## Game feel refinement — 2 October 2026
+
+User requested greater depth and enjoyable controls, retaining the preference for optional jobs. F3 smooth movement/driving/cab response, P3 player-chosen milestones, D16 actual ground survey and operating feedback, and H1 readable work HUD/comfort controls are implemented. Final implementation commit and actual verification are recorded in CODEX-CHECKPOINT.md; native evidence is independently reviewed in handover/game-feel-review.md.
+
+This pass adds no job board or mandatory contract progression. Further content and long-session balancing remain future work rather than claims of a completed AAA game.

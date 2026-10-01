@@ -36,6 +36,7 @@ export const DEFAULT_BINDINGS = {
   slewRight: 'KeyO',
   freeLook: 'KeyX',
   precision: 'ShiftRight',
+  survey: 'KeyL',
   dev: 'F1',
 };
 
@@ -72,6 +73,7 @@ export const ACTION_LABELS = {
   slewRight: 'Digger: slew right',
   freeLook: 'Digger: hold to look around',
   precision: 'Digger: precision / adjust cut depth',
+  survey: 'Toggle material survey',
   dev: 'Dev panel',
 };
 

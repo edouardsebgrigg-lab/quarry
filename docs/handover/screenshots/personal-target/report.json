@@ -1,0 +1,292 @@
+{
+  "checks": [
+    {
+      "label": "Actual milestone click pins a target",
+      "passed": true
+    },
+    {
+      "label": "Chosen card state is clear",
+      "passed": true
+    },
+    {
+      "label": "milestones-pinned-960: bounded readable target",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          19.203125,
+          16.203125,
+          940.796875,
+          523.796875
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "Wolds Quarry Co.OfficeHomePlant dealerWolds TraderJobs board3MilestonesDepot pricesFleetStaffBankMessages1MilestonesChoose your own target. Achievements reward digging, building and growing your quarryYour personal targetRegular at the depotClear targetSell 25 t of material.0.0 t of 25.0 t · 0%Reward: $100Load a road vehicle, weigh in and sell at the depot.Reached0 of 31Closest: Good with money (62%)Rewards earned$0Perks0 of 3PerksDepot accountAshby Aggregates pays 4% more for clean loads.From: Five hundred tonnesFuel card10% off every litre of diesel.From: A proper holeTrade account5% off machines, upgrades and yard buildings at the dealer.From: Busy yardSelling · 0/9Regular at the depot+$100Sell 25 t of material.0.0 t of 25.0 t0%Clear targetSteady supplier+$300Sell 150 t of material.0.0 t of 150.0 t0%Make this my targetFive hundred tonnes+$800Sell 500 t of material.Perk: Depot account0.0 t of 500.0 t0%Make this my targetTwo thousand tonnes+$2,500Sell 2,000 t of material.0.0 t of 2000.0 t0%Make this my targetClean run+$80Sell 5 clean loads in a row.0 of 50%Make this my targetKnown for clean loads+$400Sell 25 clean loads in a row.0 of 250%Make this my targetWhatever the weather+$120Sell 3 loads while it's raining.0 of 30%Make this my targetA good day's work+$100Earn $500 from sales and jobs in one day.$0 of $5000%Make this my targetRecord day+$400Earn $2,000 from sales and jobs in one day.$0 of $2,0000%Make this my targetDigging · 0/4Earth mover+$60Dig 50 t, by hand or by machine.0.0 t of 50.0 t0%Make this my targetA proper hole+$300Dig 400 t.Perk: Fuel card0.0 t of 400.0 t0%Make this my targetMoving mountains+$1,200Dig 2,000 t.0.0 t of 2000.0 t0%Make this my targetDown to the gravel+$100Dig 20 t of gravel. It lies under the topsoil and the clay or sand.0.0 t of 20.0 t0%Make this my targetBuilding · 0/4Groundworks+$50Build a haul road, a ramp or a level area (F on foot).0 of 10%Make this my targetRoad builder+$250Build 100 m of haul road.0 m of 100 m0%Make this my targetIn and out+$150Build 3 ramps.0 of 30%Make this my targetFitted out+$200Own both yard buildings: the workshop and the fuel supply.0 of 20%Make this my targetBusiness · 0/14Busy yard+$300Own 6 machines.Perk: Trade account1 of 616%Make this my targetMoving up+$250Own 2 Used machines.0 of 20%Make this my targetRegular customers+$150Finish 3 jobs from the jobs board.0 of 30%Make this my targetTrusted supplier+$600Finish 15 jobs from the jobs board.0 of 150%Make this my targetA name in Ashby+$300Reach reputation 5 with your customers.0 of 50%Make this my targetTaking someone on+$150Employ your first member of staff.0 of 10%Make this my targetA proper firm+$1,500Employ three people.0 of 30%Make this my targetPlant hire+$60Hire a machine out and have it back.0 of 10%Make this my targetHire desk+$300Hire machines out 6 times.0 of 60%Make this my targetStanding order+$300Deliver 4 weeks of a regular customer's order in full.0 of 40%Make this my targetGood with money+$200Reach an Excellent credit rating with the bank.50 of 8062%Make this my targetPaid in full+$75Pay off a bank loan.0 of 10%Make this my targetTen grand+$500Earn $10,000 in total.$0 of $10,0000%Make this my targetFifty grand+$2,000Earn $50,000 in total.$0 of $50,0000%Make this my targetOnlineDay 1  07:00Balance$200EscClose"
+      }
+    },
+    {
+      "label": "Home shows progress, benefit and clear action",
+      "passed": true
+    },
+    {
+      "label": "home-target-960: bounded readable target",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          19.203125,
+          16.203125,
+          940.796875,
+          523.796875
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "Wolds Quarry Co.OfficeHomePlant dealerWolds TraderJobs board3MilestonesDepot pricesFleetStaffBankMessages1Good morningHere’s how the quarry is doingBalance$200Ready to spendBest price today$50.00/tTopsoil, cleanYour machines1All in good orderWeatherSunnyTomorrow: sunnyYour personal targetRegular at the depotSell 25 t of material. Load a road vehicle, weigh in and sell at the depot.0.0 t of 25.0 t · 0%Reward: $100Switch targetClear targetComing upPlant dealerMachines, upgrades, yard buildingsMilestonesChoose what to work towards nextDepot pricesWhat each material sells for todayBankYour statement, and loans to grow fasterOnlineDay 1  07:00Balance$200EscClose"
+      }
+    },
+    {
+      "label": "home-target-390: bounded readable target",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          0,
+          0,
+          390,
+          650
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "overflow": false,
+        "text": "Wolds Quarry Co.OfficeHomePlant dealerWolds TraderJobs board3MilestonesDepot pricesFleetStaffBankMessages1Good morningHere’s how the quarry is doingBalance$200Ready to spendBest price today$50.00/tTopsoil, cleanYour machines1All in good orderWeatherSunnyTomorrow: sunnyYour personal targetRegular at the depotSell 25 t of material. Load a road vehicle, weigh in and sell at the depot.0.0 t of 25.0 t · 0%Reward: $100Switch targetClear targetComing upPlant dealerMachines, upgrades, yard buildingsMilestonesChoose what to work towards nextDepot pricesWhat each material sells for todayBankYour statement, and loans to grow fasterOnlineDay 1  07:00Balance$200EscClose"
+      }
+    },
+    {
+      "label": "target-hud-390: bounded readable target",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          6.40625,
+          91.921875,
+          364.40625,
+          218.015625
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "overflow": false,
+        "text": "TargetRegular at the depot0.0 t / 25.0 t+$100Sell 25 t of material. Load a road vehicle, weigh in and sell at the depot.J · keep details open · switch target in Milestones"
+      }
+    },
+    {
+      "label": "Phone target sits below status without overlap",
+      "passed": true
+    },
+    {
+      "label": "Chosen phone target is not covered by the mentor",
+      "passed": true
+    },
+    {
+      "label": "target-hud-960: bounded readable target",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          6.40625,
+          7.203125,
+          342.40625,
+          133.296875
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "TargetRegular at the depot0.0 t / 25.0 t+$100Sell 25 t of material. Load a road vehicle, weigh in and sell at the depot.J · keep details open · switch target in Milestones"
+      }
+    },
+    {
+      "label": "Save and Continue preserve target",
+      "passed": true
+    },
+    {
+      "label": "target-hud-continued-960: bounded readable target",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          6.40625,
+          7.203125,
+          342.40625,
+          133.296875
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "TargetRegular at the depot0.0 t / 25.0 t+$100Sell 25 t of material. Load a road vehicle, weigh in and sell at the depot.J · keep details open · switch target in Milestones"
+      }
+    },
+    {
+      "label": "Switch replaces the chosen target",
+      "passed": true
+    },
+    {
+      "label": "milestones-switched-390: bounded readable target",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          0,
+          0,
+          390,
+          650
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "overflow": false,
+        "text": "Wolds Quarry Co.OfficeHomePlant dealerWolds TraderJobs board3MilestonesDepot pricesFleetStaffBankMessages2MilestonesChoose your own target. Achievements reward digging, building and growing your quarryYour personal targetSteady supplierClear targetSell 150 t of material.0.0 t of 150.0 t · 0%Reward: $300Load a road vehicle, weigh in and sell at the depot.Reached0 of 31Closest: Good with money (62%)Rewards earned$0Perks0 of 3PerksDepot accountAshby Aggregates pays 4% more for clean loads.From: Five hundred tonnesFuel card10% off every litre of diesel.From: A proper holeTrade account5% off machines, upgrades and yard buildings at the dealer.From: Busy yardSelling · 0/9Regular at the depot+$100Sell 25 t of material.0.0 t of 25.0 t0%Make this my targetSteady supplier+$300Sell 150 t of material.0.0 t of 150.0 t0%Clear targetFive hundred tonnes+$800Sell 500 t of material.Perk: Depot account0.0 t of 500.0 t0%Make this my targetTwo thousand tonnes+$2,500Sell 2,000 t of material.0.0 t of 2000.0 t0%Make this my targetClean run+$80Sell 5 clean loads in a row.0 of 50%Make this my targetKnown for clean loads+$400Sell 25 clean loads in a row.0 of 250%Make this my targetWhatever the weather+$120Sell 3 loads while it's raining.0 of 30%Make this my targetA good day's work+$100Earn $500 from sales and jobs in one day.$0 of $5000%Make this my targetRecord day+$400Earn $2,000 from sales and jobs in one day.$0 of $2,0000%Make this my targetDigging · 0/4Earth mover+$60Dig 50 t, by hand or by machine.0.0 t of 50.0 t0%Make this my targetA proper hole+$300Dig 400 t.Perk: Fuel card0.0 t of 400.0 t0%Make this my targetMoving mountains+$1,200Dig 2,000 t.0.0 t of 2000.0 t0%Make this my targetDown to the gravel+$100Dig 20 t of gravel. It lies under the topsoil and the clay or sand.0.0 t of 20.0 t0%Make this my targetBuilding · 0/4Groundworks+$50Build a haul road, a ramp or a level area (F on foot).0 of 10%Make this my targetRoad builder+$250Build 100 m of haul road.0 m of 100 m0%Make this my targetIn and out+$150Build 3 ramps.0 of 30%Make this my targetFitted out+$200Own both yard buildings: the workshop and the fuel supply.0 of 20%Make this my targetBusiness · 0/14Busy yard+$300Own 6 machines.Perk: Trade account1 of 616%Make this my targetMoving up+$250Own 2 Used machines.0 of 20%Make this my targetRegular customers+$150Finish 3 jobs from the jobs board.0 of 30%Make this my targetTrusted supplier+$600Finish 15 jobs from the jobs board.0 of 150%Make this my targetA name in Ashby+$300Reach reputation 5 with your customers.0 of 50%Make this my targetTaking someone on+$150Employ your first member of staff.0 of 10%Make this my targetA proper firm+$1,500Employ three people.0 of 30%Make this my targetPlant hire+$60Hire a machine out and have it back.0 of 10%Make this my targetHire desk+$300Hire machines out 6 times.0 of 60%Make this my targetStanding order+$300Deliver 4 weeks of a regular customer's order in full.0 of 40%Make this my targetGood with money+$200Reach an Excellent credit rating with the bank.50 of 8062%Make this my targetPaid in full+$75Pay off a bank loan.0 of 10%Make this my targetTen grand+$500Earn $10,000 in total.$0 of $10,0000%Make this my targetFifty grand+$2,000Earn $50,000 in total.$0 of $50,0000%Make this my targetOnlineDay 1  07:00Balance$200EscClose"
+      }
+    },
+    {
+      "label": "Home clear restores guided objective",
+      "passed": true
+    },
+    {
+      "label": "HUD clears personal target",
+      "passed": true
+    },
+    {
+      "label": "No native browser errors",
+      "passed": true
+    }
+  ],
+  "screens": [
+    {
+      "name": "milestones-pinned-960",
+      "sample": {
+        "bounds": [
+          19.203125,
+          16.203125,
+          940.796875,
+          523.796875
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "Wolds Quarry Co.OfficeHomePlant dealerWolds TraderJobs board3MilestonesDepot pricesFleetStaffBankMessages1MilestonesChoose your own target. Achievements reward digging, building and growing your quarryYour personal targetRegular at the depotClear targetSell 25 t of material.0.0 t of 25.0 t · 0%Reward: $100Load a road vehicle, weigh in and sell at the depot.Reached0 of 31Closest: Good with money (62%)Rewards earned$0Perks0 of 3PerksDepot accountAshby Aggregates pays 4% more for clean loads.From: Five hundred tonnesFuel card10% off every litre of diesel.From: A proper holeTrade account5% off machines, upgrades and yard buildings at the dealer.From: Busy yardSelling · 0/9Regular at the depot+$100Sell 25 t of material.0.0 t of 25.0 t0%Clear targetSteady supplier+$300Sell 150 t of material.0.0 t of 150.0 t0%Make this my targetFive hundred tonnes+$800Sell 500 t of material.Perk: Depot account0.0 t of 500.0 t0%Make this my targetTwo thousand tonnes+$2,500Sell 2,000 t of material.0.0 t of 2000.0 t0%Make this my targetClean run+$80Sell 5 clean loads in a row.0 of 50%Make this my targetKnown for clean loads+$400Sell 25 clean loads in a row.0 of 250%Make this my targetWhatever the weather+$120Sell 3 loads while it's raining.0 of 30%Make this my targetA good day's work+$100Earn $500 from sales and jobs in one day.$0 of $5000%Make this my targetRecord day+$400Earn $2,000 from sales and jobs in one day.$0 of $2,0000%Make this my targetDigging · 0/4Earth mover+$60Dig 50 t, by hand or by machine.0.0 t of 50.0 t0%Make this my targetA proper hole+$300Dig 400 t.Perk: Fuel card0.0 t of 400.0 t0%Make this my targetMoving mountains+$1,200Dig 2,000 t.0.0 t of 2000.0 t0%Make this my targetDown to the gravel+$100Dig 20 t of gravel. It lies under the topsoil and the clay or sand.0.0 t of 20.0 t0%Make this my targetBuilding · 0/4Groundworks+$50Build a haul road, a ramp or a level area (F on foot).0 of 10%Make this my targetRoad builder+$250Build 100 m of haul road.0 m of 100 m0%Make this my targetIn and out+$150Build 3 ramps.0 of 30%Make this my targetFitted out+$200Own both yard buildings: the workshop and the fuel supply.0 of 20%Make this my targetBusiness · 0/14Busy yard+$300Own 6 machines.Perk: Trade account1 of 616%Make this my targetMoving up+$250Own 2 Used machines.0 of 20%Make this my targetRegular customers+$150Finish 3 jobs from the jobs board.0 of 30%Make this my targetTrusted supplier+$600Finish 15 jobs from the jobs board.0 of 150%Make this my targetA name in Ashby+$300Reach reputation 5 with your customers.0 of 50%Make this my targetTaking someone on+$150Employ your first member of staff.0 of 10%Make this my targetA proper firm+$1,500Employ three people.0 of 30%Make this my targetPlant hire+$60Hire a machine out and have it back.0 of 10%Make this my targetHire desk+$300Hire machines out 6 times.0 of 60%Make this my targetStanding order+$300Deliver 4 weeks of a regular customer's order in full.0 of 40%Make this my targetGood with money+$200Reach an Excellent credit rating with the bank.50 of 8062%Make this my targetPaid in full+$75Pay off a bank loan.0 of 10%Make this my targetTen grand+$500Earn $10,000 in total.$0 of $10,0000%Make this my targetFifty grand+$2,000Earn $50,000 in total.$0 of $50,0000%Make this my targetOnlineDay 1  07:00Balance$200EscClose"
+      }
+    },
+    {
+      "name": "home-target-960",
+      "sample": {
+        "bounds": [
+          19.203125,
+          16.203125,
+          940.796875,
+          523.796875
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "Wolds Quarry Co.OfficeHomePlant dealerWolds TraderJobs board3MilestonesDepot pricesFleetStaffBankMessages1Good morningHere’s how the quarry is doingBalance$200Ready to spendBest price today$50.00/tTopsoil, cleanYour machines1All in good orderWeatherSunnyTomorrow: sunnyYour personal targetRegular at the depotSell 25 t of material. Load a road vehicle, weigh in and sell at the depot.0.0 t of 25.0 t · 0%Reward: $100Switch targetClear targetComing upPlant dealerMachines, upgrades, yard buildingsMilestonesChoose what to work towards nextDepot pricesWhat each material sells for todayBankYour statement, and loans to grow fasterOnlineDay 1  07:00Balance$200EscClose"
+      }
+    },
+    {
+      "name": "home-target-390",
+      "sample": {
+        "bounds": [
+          0,
+          0,
+          390,
+          650
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "overflow": false,
+        "text": "Wolds Quarry Co.OfficeHomePlant dealerWolds TraderJobs board3MilestonesDepot pricesFleetStaffBankMessages1Good morningHere’s how the quarry is doingBalance$200Ready to spendBest price today$50.00/tTopsoil, cleanYour machines1All in good orderWeatherSunnyTomorrow: sunnyYour personal targetRegular at the depotSell 25 t of material. Load a road vehicle, weigh in and sell at the depot.0.0 t of 25.0 t · 0%Reward: $100Switch targetClear targetComing upPlant dealerMachines, upgrades, yard buildingsMilestonesChoose what to work towards nextDepot pricesWhat each material sells for todayBankYour statement, and loans to grow fasterOnlineDay 1  07:00Balance$200EscClose"
+      }
+    },
+    {
+      "name": "target-hud-390",
+      "sample": {
+        "bounds": [
+          6.40625,
+          91.921875,
+          364.40625,
+          218.015625
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "overflow": false,
+        "text": "TargetRegular at the depot0.0 t / 25.0 t+$100Sell 25 t of material. Load a road vehicle, weigh in and sell at the depot.J · keep details open · switch target in Milestones"
+      }
+    },
+    {
+      "name": "target-hud-960",
+      "sample": {
+        "bounds": [
+          6.40625,
+          7.203125,
+          342.40625,
+          133.296875
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "TargetRegular at the depot0.0 t / 25.0 t+$100Sell 25 t of material. Load a road vehicle, weigh in and sell at the depot.J · keep details open · switch target in Milestones"
+      }
+    },
+    {
+      "name": "target-hud-continued-960",
+      "sample": {
+        "bounds": [
+          6.40625,
+          7.203125,
+          342.40625,
+          133.296875
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "TargetRegular at the depot0.0 t / 25.0 t+$100Sell 25 t of material. Load a road vehicle, weigh in and sell at the depot.J · keep details open · switch target in Milestones"
+      }
+    },
+    {
+      "name": "milestones-switched-390",
+      "sample": {
+        "bounds": [
+          0,
+          0,
+          390,
+          650
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "overflow": false,
+        "text": "Wolds Quarry Co.OfficeHomePlant dealerWolds TraderJobs board3MilestonesDepot pricesFleetStaffBankMessages2MilestonesChoose your own target. Achievements reward digging, building and growing your quarryYour personal targetSteady supplierClear targetSell 150 t of material.0.0 t of 150.0 t · 0%Reward: $300Load a road vehicle, weigh in and sell at the depot.Reached0 of 31Closest: Good with money (62%)Rewards earned$0Perks0 of 3PerksDepot accountAshby Aggregates pays 4% more for clean loads.From: Five hundred tonnesFuel card10% off every litre of diesel.From: A proper holeTrade account5% off machines, upgrades and yard buildings at the dealer.From: Busy yardSelling · 0/9Regular at the depot+$100Sell 25 t of material.0.0 t of 25.0 t0%Make this my targetSteady supplier+$300Sell 150 t of material.0.0 t of 150.0 t0%Clear targetFive hundred tonnes+$800Sell 500 t of material.Perk: Depot account0.0 t of 500.0 t0%Make this my targetTwo thousand tonnes+$2,500Sell 2,000 t of material.0.0 t of 2000.0 t0%Make this my targetClean run+$80Sell 5 clean loads in a row.0 of 50%Make this my targetKnown for clean loads+$400Sell 25 clean loads in a row.0 of 250%Make this my targetWhatever the weather+$120Sell 3 loads while it's raining.0 of 30%Make this my targetA good day's work+$100Earn $500 from sales and jobs in one day.$0 of $5000%Make this my targetRecord day+$400Earn $2,000 from sales and jobs in one day.$0 of $2,0000%Make this my targetDigging · 0/4Earth mover+$60Dig 50 t, by hand or by machine.0.0 t of 50.0 t0%Make this my targetA proper hole+$300Dig 400 t.Perk: Fuel card0.0 t of 400.0 t0%Make this my targetMoving mountains+$1,200Dig 2,000 t.0.0 t of 2000.0 t0%Make this my targetDown to the gravel+$100Dig 20 t of gravel. It lies under the topsoil and the clay or sand.0.0 t of 20.0 t0%Make this my targetBuilding · 0/4Groundworks+$50Build a haul road, a ramp or a level area (F on foot).0 of 10%Make this my targetRoad builder+$250Build 100 m of haul road.0 m of 100 m0%Make this my targetIn and out+$150Build 3 ramps.0 of 30%Make this my targetFitted out+$200Own both yard buildings: the workshop and the fuel supply.0 of 20%Make this my targetBusiness · 0/14Busy yard+$300Own 6 machines.Perk: Trade account1 of 616%Make this my targetMoving up+$250Own 2 Used machines.0 of 20%Make this my targetRegular customers+$150Finish 3 jobs from the jobs board.0 of 30%Make this my targetTrusted supplier+$600Finish 15 jobs from the jobs board.0 of 150%Make this my targetA name in Ashby+$300Reach reputation 5 with your customers.0 of 50%Make this my targetTaking someone on+$150Employ your first member of staff.0 of 10%Make this my targetA proper firm+$1,500Employ three people.0 of 30%Make this my targetPlant hire+$60Hire a machine out and have it back.0 of 10%Make this my targetHire desk+$300Hire machines out 6 times.0 of 60%Make this my targetStanding order+$300Deliver 4 weeks of a regular customer's order in full.0 of 40%Make this my targetGood with money+$200Reach an Excellent credit rating with the bank.50 of 8062%Make this my targetPaid in full+$75Pay off a bank loan.0 of 10%Make this my targetTen grand+$500Earn $10,000 in total.$0 of $10,0000%Make this my targetFifty grand+$2,000Earn $50,000 in total.$0 of $50,0000%Make this my targetOnlineDay 1  07:00Balance$200EscClose"
+      }
+    }
+  ],
+  "errors": []
+}

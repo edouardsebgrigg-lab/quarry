@@ -1,0 +1,240 @@
+{
+  "checks": [
+    {
+      "passed": true,
+      "label": "Held Space launches once and lands without bouncing"
+    },
+    {
+      "passed": true,
+      "label": "Walking starts with a short acceleration ramp"
+    },
+    {
+      "passed": true,
+      "label": "Walking reaches useful travel speed"
+    },
+    {
+      "passed": true,
+      "label": "Released movement stops without persistent drifting"
+    },
+    {
+      "passed": true,
+      "label": "Camera-motion zero removes foot bob and sprint FOV"
+    },
+    {
+      "passed": true,
+      "label": "Comfort-enabled sprint builds gentle wider FOV"
+    },
+    {
+      "passed": true,
+      "label": "E takes the barrow through normal interact routing"
+    },
+    {
+      "passed": true,
+      "label": "Barrow movement stops without drifting into nearby machines"
+    },
+    {
+      "passed": true,
+      "label": "E enters road vehicle"
+    },
+    {
+      "passed": true,
+      "label": "Opposing pedal brakes then selects reverse"
+    },
+    {
+      "passed": true,
+      "label": "Native input and comfort pass has no browser errors"
+    }
+  ],
+  "samples": {
+    "jump": {
+      "peaks": 1,
+      "max": 0.7766629219055176,
+      "base": 0.021107292175292947,
+      "end": 0.021107292175292947
+    },
+    "walk": {
+      "start": {
+        "feet": [
+          40,
+          0.021007335186004616,
+          40
+        ],
+        "eye": [
+          40,
+          1.671005034303346,
+          40
+        ],
+        "fov": 72,
+        "mode": "foot",
+        "barrow": false
+      },
+      "early": {
+        "feet": [
+          39.999969482421875,
+          0.02095696926116941,
+          39.949981689453125
+        ],
+        "eye": [
+          39.999969482421875,
+          1.6715568097573876,
+          39.949981689453125
+        ],
+        "fov": 72,
+        "mode": "foot",
+        "barrow": false
+      },
+      "moving": {
+        "feet": [
+          39.999839782714844,
+          0.01903477907180784,
+          37.82487869262695
+        ],
+        "eye": [
+          39.999839782714844,
+          1.6625697909599695,
+          37.82487869262695
+        ],
+        "fov": 72,
+        "mode": "foot",
+        "barrow": false
+      },
+      "stopped": {
+        "feet": [
+          39.99979782104492,
+          0.018672859668731667,
+          37.619842529296875
+        ],
+        "eye": [
+          39.99979782104492,
+          1.66592863599406,
+          37.619842529296875
+        ],
+        "fov": 72,
+        "mode": "foot",
+        "barrow": false
+      },
+      "parked": {
+        "feet": [
+          39.99979782104492,
+          0.018672859668731667,
+          37.619842529296875
+        ],
+        "eye": [
+          39.99979782104492,
+          1.668575290929063,
+          37.619842529296875
+        ],
+        "fov": 72,
+        "mode": "foot",
+        "barrow": false
+      }
+    },
+    "comfort": {
+      "feet": [
+        49.999755859375,
+        0.06224910020828245,
+        46.17382049560547
+      ],
+      "eye": [
+        49.999755859375,
+        1.7122491002082825,
+        46.17382049560547
+      ],
+      "fov": 72,
+      "mode": "foot",
+      "barrow": false
+    },
+    "sprint": {
+      "feet": [
+        49.9991455078125,
+        0.05338994264602659,
+        40.8492546081543
+      ],
+      "eye": [
+        49.9991455078125,
+        1.696473182747657,
+        40.8492546081543
+      ],
+      "fov": 75.99103405522008,
+      "mode": "foot",
+      "barrow": false
+    },
+    "barrow": {
+      "barrowStop": {
+        "feet": [
+          60.00069046020508,
+          0.03458712100982664,
+          58.762229919433594
+        ],
+        "eye": [
+          60.00069046020508,
+          1.6845869951208314,
+          58.762229919433594
+        ],
+        "fov": 72.00430552268509,
+        "mode": "foot",
+        "barrow": true
+      },
+      "barrowPark": {
+        "feet": [
+          60.00069046020508,
+          0.03458706140518186,
+          58.762229919433594
+        ],
+        "eye": [
+          60.00069046020508,
+          1.6845870604506983,
+          58.762229919433594
+        ],
+        "fov": 72.00430552268509,
+        "mode": "foot",
+        "barrow": true
+      }
+    },
+    "drive": {
+      "forward": {
+        "rpm": 1635.5251840182714,
+        "gear": 2,
+        "shifting": false,
+        "load": 1,
+        "running": true,
+        "misfire": false,
+        "braking": false,
+        "reversing": false,
+        "shifted": 1,
+        "surface": "grass",
+        "slip": 0.0014438916250016523,
+        "bump": 0.004026889801025391,
+        "airborne": false,
+        "engine": "running",
+        "speed": 4.725808620452881,
+        "bedSpeed": 0,
+        "bedAngle": 0,
+        "tailgate": 0,
+        "size": 1
+      },
+      "reverse": {
+        "rpm": 2587.5962864268913,
+        "gear": -1,
+        "shifting": false,
+        "load": 1,
+        "running": true,
+        "misfire": false,
+        "braking": false,
+        "reversing": true,
+        "shifted": 2,
+        "surface": "grass",
+        "slip": 0.0007456305707509829,
+        "bump": 0.00012159347534179688,
+        "airborne": false,
+        "engine": "running",
+        "speed": -4.427680015563965,
+        "bedSpeed": 0,
+        "bedAngle": 0,
+        "tailgate": 0,
+        "size": 1
+      }
+    }
+  },
+  "errors": []
+}

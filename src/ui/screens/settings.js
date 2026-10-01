@@ -19,7 +19,7 @@ const GRAPHICS = [
 
 const KEY_GROUPS = [
   ['Moving', ['forward', 'back', 'left', 'right', 'jump', 'sprint']],
-  ['Doing things', ['interact', 'tip', 'repair', 'recover', 'camera', 'works']],
+  ['Doing things', ['interact', 'tip', 'repair', 'recover', 'camera', 'works', 'survey']],
   ['Digger', ['controls', 'boomUp', 'boomDown', 'stickIn', 'stickOut', 'bucketCurl', 'bucketDump', 'slewLeft', 'slewRight', 'freeLook', 'precision']],
   ['Menus and time', ['shop', 'market', 'map', 'goal', 'hints', 'pause', 'speed1', 'speed2', 'speed3', 'dev']],
 ];
@@ -110,6 +110,8 @@ export function openSettings(overlays, { settings, onChange, keyboard }) {
           ])),
         ],
         display: () => [
+          row('Camera motion', range('cameraMotion', 0, 1, 0.05), 'Reduce bob, shake and camera sway. 0% keeps movement steady.'),
+          row('Field of view', range('fieldOfView', 50, 95, 1, (v) => `${Math.round(v)}°`), 'Wider views show more of your surroundings.'),
           row('Graphics quality', choice('graphics', GRAPHICS), 'Applies when a game starts'),
           row('Interface size', choice('uiScale', [0.85, 1, 1.15, 1.3, 1.5].map((v) => [v, `${Math.round(v * 100)}%`]), Number)),
           row('Full screen', toggle('fullscreen')),

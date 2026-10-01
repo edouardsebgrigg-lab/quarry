@@ -1,7 +1,7 @@
 // Top of the screen, sim style: a compact money / date / game-speed widget top right and
 // a one-line goal top left (details show when a goal is new, or with J).
 import { el, setText, icon } from '../dom.js';
-import { money, clockTime } from '../format.js';
+import { money, clockTime, tonnes } from '../format.js';
 import { visualHour } from '../../core/visualClock.js';
 import { getDate } from '../../core/index.js';
 import { getSiteData } from '../../quarry/index.js';
@@ -9,8 +9,11 @@ import { keyLabel } from '../../input/index.js';
 import { currentObjective } from '../../progression/index.js';
 import { contractsState } from '../../contracts/index.js';
 import { currentWeather } from '../../weather/index.js';
+import { pinnedMilestone } from '../../career/index.js';
 
 const DETAIL_TIME = 9; // seconds a new goal stays expanded
+const milestoneAmount = (metric, value) => ['tonnesSold', 'tonnesDug', 'cleanTonnes', 'gravelDug'].includes(metric) ? tonnes(value)
+  : ['bestDay', 'totalEarned'].includes(metric) ? money(value) : metric === 'roadMetres' ? `${Math.round(value)} m` : String(Math.floor(value));
 
 // Small line icons for the weather (24-unit box).
 const SUN = '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/>';
@@ -49,18 +52,19 @@ export function createHud({ game, runtime, settings }) {
 
   // Goal: one line, expands with details.
   const goalCount = el('span', { class: 'goal-count' });
+  const goalKind = el('span', { class: 'goal-kind', hidden: true }, 'Target');
   const goalTitle = el('span', { class: 'goal-title' });
   const goalReward = el('span', { class: 'goal-reward' });
   const goalText = el('div', { class: 'goal-text' });
   const goalKey = el('span', { class: 'goal-key' });
   const goalFill = el('div', { class: 'goal-fill' });
   const goal = el('div', { class: 'hud-goal' },
-    el('div', { class: 'goal-line' }, el('span', { class: 'goal-dot' }), goalTitle, goalCount, goalReward),
+    el('div', { class: 'goal-line' }, el('span', { class: 'goal-dot' }), goalKind, goalTitle, goalCount, goalReward),
     el('div', { class: 'goal-track' }, goalFill),
     el('div', { class: 'goal-details' }, el('div', {}, goalText, goalKey))); // (one row, so it folds away completely)
   let currentGoal = '';
   let detailT = 0;
-  let pinned = false;
+  let detailsPinned = false;
 
   // The most urgent job from the jobs board, under the goal.
   const jobText = el('span', { class: 'job-text' });
@@ -76,7 +80,7 @@ export function createHud({ game, runtime, settings }) {
     node,
     moneyNode: moneyText,
     toggleGoal() {
-      pinned = !pinned;
+      detailsPinned = !detailsPinned;
       detailT = 0;
     },
     update(dt, { active = true } = {}) {
@@ -116,23 +120,28 @@ export function createHud({ game, runtime, settings }) {
         }
       }
 
-      const o = currentObjective(game.ctx);
+      const personal = pinnedMilestone(game.ctx);
+      const o = personal ? { ...personal, id: `personal:${personal.id}:${personal.reached ? 'reached' : 'active'}` } : currentObjective(game.ctx);
       goal.style.display = o ? '' : 'none';
+      goalKind.hidden = !personal;
+      goal.classList.toggle('personal-target', !!personal);
+      goal.classList.toggle('target-reached', !!personal?.reached);
       if (!o) return;
       if (o.id !== currentGoal) {
         currentGoal = o.id;
         setText(goalTitle, o.title);
-        setText(goalCount, `${o.number}/${o.total}`);
-        setText(goalReward, o.reward ? `+${money(o.reward)}` : '');
-        setText(goalText, o.text);
+        setText(goalReward, personal ? `${personal.reached ? 'Earned ' : '+'}${money(personal.reward ?? 0)}${personal.perkName ? ` · ${personal.perkName}` : ''}` : o.reward ? `+${money(o.reward)}` : '');
+        setText(goalText, personal ? `${personal.text} ${personal.nextStep}${personal.perkText ? ` ${personal.reached ? 'Perk active' : 'Unlocks'}: ${personal.perkText}` : ''}` : o.text);
         detailT = DETAIL_TIME;
         goal.classList.remove('goal-new');
         void goal.offsetWidth; // restart the highlight animation
         goal.classList.add('goal-new');
       }
-      setText(goalKey, `${keyLabel(settings.bindings.goal)} · ${pinned ? 'hide details' : 'keep details open'}`);
+      setText(goalCount, personal ? personal.reached ? 'Reached' : `${milestoneAmount(personal.metric, personal.value)} / ${milestoneAmount(personal.metric, personal.target)}` : `${o.number}/${o.total}`);
+      if (personal && !personal.reached) setText(goalText, `${personal.text} ${personal.nextStep}${personal.perkText ? ` Unlocks: ${personal.perkText}` : ''}`);
+      setText(goalKey, `${keyLabel(settings.bindings.goal)} · ${detailsPinned ? 'hide details' : 'keep details open'}${personal ? ' · switch target in Milestones' : ''}`);
       if (active) detailT = Math.max(0, detailT - dt); // the details stay up until you're playing
-      goal.classList.toggle('open', pinned || detailT > 0);
+      goal.classList.toggle('open', detailsPinned || detailT > 0);
       goal.classList.toggle('has-progress', o.progress !== null);
       if (o.progress !== null) goalFill.style.width = `${Math.round(o.progress * 100)}%`;
     },

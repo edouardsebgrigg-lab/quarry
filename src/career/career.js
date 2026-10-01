@@ -19,6 +19,8 @@ export function careerState(ctx) {
   c.perks ??= [];
   for (const [k, v] of Object.entries(COUNTERS)) if (!(k in c)) c[k] = v;
   c.seen ??= 0;
+  c.pinnedMilestoneId ??= null;
+  if (c.pinnedMilestoneId !== null && !(ctx.data.milestones?.list ?? []).some(m => m.id === c.pinnedMilestoneId)) c.pinnedMilestoneId = null;
   return c;
 }
 
@@ -77,11 +79,61 @@ export function careerMetric(ctx, name) {
 // The milestones with where you are on each: { ...def, value, progress (0..1), reached, day }.
 export function milestones(ctx) {
   const c = careerState(ctx);
-  return (ctx.data.milestones?.list ?? []).map((m) => {
-    const value = careerMetric(ctx, m.metric);
-    const day = c.reached[m.id] ?? null;
-    return { ...m, value, progress: Math.min(1, value / m.target), reached: day !== null, day };
-  });
+  return (ctx.data.milestones?.list ?? []).map(m => milestoneProgress(ctx, m, c));
+}
+
+function milestoneProgress(ctx, m, c) {
+  const value = careerMetric(ctx, m.metric);
+  const day = c.reached[m.id] ?? null;
+  return { ...m, value, progress: day !== null ? 1 : Math.min(1, Math.max(0, value / m.target)), reached: day !== null,
+    day, pinned: c.pinnedMilestoneId === m.id };
+}
+
+const NEXT_STEPS = {
+  tonnesSold: 'Load a road vehicle, weigh in and sell at the depot.',
+  tonnesDug: 'Dig fresh ground on your land, by hand or by machine.',
+  gravelDug: 'Dig below the topsoil and the clay or sand to reach gravel.',
+  worksBuilt: 'Press F on foot to plan a haul road, ramp or level area.',
+  roadMetres: 'Press F on foot to extend a haul road on your land.',
+  rampsBuilt: 'Press F on foot to build a ramp between the pit and the surface.',
+  yardBuildings: 'Commission yard buildings at the plant dealer.',
+  fleetSize: 'Buy machines for your fleet. Rented machines do not count.',
+  usedMachines: 'Look for Used machines at the dealer or Wolds Trader. Rentals do not count.',
+  staffCount: 'Open Staff to hire someone when a post is available.',
+  hiresDone: 'Open Fleet to send an eligible parked machine out on hire.',
+  creditScore: 'Keep enough cash for bills and repay bank loans on time.',
+  loansCleared: 'Open Bank to repay a loan in full.',
+  totalEarned: 'Sell material and grow your quarry at your own pace.',
+};
+
+// A personal target only changes what the player follows. Every milestone still earns its
+// original reward automatically, whether pinned or not. Completed targets remain selected.
+export function pinnedMilestone(ctx) {
+  const c = careerState(ctx);
+  const def = (ctx.data.milestones?.list ?? []).find(m => m.id === c.pinnedMilestoneId);
+  if (!def) return null;
+  const m = milestoneProgress(ctx, def, c);
+  const perk = ctx.data.milestones?.perks?.[m.perk];
+  const nextStep = m.reached ? 'Target reached. Choose another milestone when you are ready.'
+    : m.metric === 'bestCleanStreak' ? `Keep materials separate and sell to their matching depot bay. Current clean run: ${c.cleanStreak}; mixed sales reset it.`
+      : NEXT_STEPS[m.metric] ?? m.text;
+  return { ...m, nextStep, perkName: perk?.name ?? null, perkText: perk?.text ?? null };
+}
+
+export function pinMilestone(ctx, id) {
+  const c = careerState(ctx);
+  const m = (ctx.data.milestones?.list ?? []).find(m => m.id === id);
+  if (!m) return { ok: false, reason: 'No such milestone' };
+  if (c.pinnedMilestoneId === id) return { ok: true, id };
+  if (c.reached[id] !== undefined) return { ok: false, reason: 'That milestone is already reached' };
+  c.pinnedMilestoneId = id;
+  // No gameplay event: selecting a target must not trigger earnings, goals or contracts.
+  return { ok: true, id };
+}
+
+export function unpinMilestone(ctx) {
+  careerState(ctx).pinnedMilestoneId = null;
+  return { ok: true };
 }
 
 let checking = false;

@@ -14,6 +14,7 @@ import { inspectListing, buyListing } from '../classifieds/index.js';
 import { hireApplicant, assignWorker, dismissWorker, configureHaul } from '../staff/index.js';
 import { attachTrailer, detachTrailer } from '../machinery/trailers.js';
 import { setDiggerAttachment } from '../machinery/fleet.js';
+import { pinMilestone, unpinMilestone } from '../career/index.js';
 
 export const DEFAULT_COMPANY = 'Wolds Quarry Co.';
 
@@ -106,6 +107,10 @@ export function createActions(ctx) {
       return { ok: true, name: ctx.state.company.name };
     },
     companyName: () => ctx.state.company?.name ?? DEFAULT_COMPANY,
+
+    // Optional personal direction; choosing a target never pays or completes anything.
+    pinMilestone: (id) => pinMilestone(ctx, id),
+    unpinMilestone: () => unpinMilestone(ctx),
 
     // The jobs board: take on one of the offers.
     acceptContract: (offerId) => acceptContract(ctx, offerId),

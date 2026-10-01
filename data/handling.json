@@ -1,0 +1,45 @@
+{
+  "player": {
+    "walkSpeed": 4.5,
+    "sprintSpeed": 8.5,
+    "groundAcceleration": 30,
+    "groundDeceleration": 42,
+    "reversalAcceleration": 46,
+    "airAcceleration": 9,
+    "airDeceleration": 1.5,
+    "jumpSpeed": 5.5,
+    "gravity": 20,
+    "terminalFallSpeed": 32,
+    "coyoteSeconds": 0.1,
+    "jumpBufferSeconds": 0.12,
+    "maxStepSeconds": 0.05,
+    "movingThreshold": 0.08,
+    "landingMemorySeconds": 0.1
+  },
+  "vehicle": {
+    "directionBrakeSpeed": 0.4,
+    "directionChangeSeconds": 0.12,
+    "directionHoldBrake": 0.45,
+    "steeringSpeedSensitivity": 0.07,
+    "maxStepSeconds": 0.05
+  },
+  "cab": {
+    "springStiffness": 60,
+    "dampingRatio": 0.7,
+    "accelerationScale": 0.006,
+    "velocityFilterSeconds": 0.085,
+    "maxAcceleration": 12,
+    "maxOffset": 0.12,
+    "teleportDistance": 3,
+    "maxFrameSeconds": 0.1,
+    "engineShake": 0.001,
+    "engineLoadShake": 0.0015,
+    "roadShake": 0.004,
+    "bumpShake": 0.003,
+    "maxBumpShake": 0.012,
+    "digShake": 0.004,
+    "surfaceRoughness": {"gravel": 1, "dirt": 0.8, "grass": 0.9, "rock": 1.2, "asphalt": 0.15},
+    "pitchLean": 0.35,
+    "rollLean": 0.4
+  }
+}

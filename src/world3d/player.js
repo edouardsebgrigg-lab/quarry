@@ -1,13 +1,11 @@
 // You on foot: a first-person character using Rapier's kinematic character controller.
 import * as THREE from 'three';
+import { createPlayerMovement } from './playerMovement.js';
+import handling from '../../data/handling.json';
 
 const RADIUS = 0.35;
 const HALF_HEIGHT = 0.55;
 const EYE = 1.65; // eye height above the feet
-const WALK = 4.5;
-const SPRINT = 8.5;
-const JUMP = 5.5;
-const GRAVITY = 20;
 
 export function createPlayer({ physics, spawn }) {
   const { RAPIER, world } = physics;
@@ -22,8 +20,7 @@ export function createPlayer({ physics, spawn }) {
   controller.enableSnapToGround(0.4);
   controller.setApplyImpulsesToDynamicBodies(true);
 
-  let vy = 0;
-  let grounded = false;
+  const movement = createPlayerMovement();
   let active = true;
   const look = { yaw: spawn.yaw ?? 0, pitch: 0 };
   // maxSpeed and moveYaw (optional) override the walking speed and direction, e.g. while
@@ -31,32 +28,16 @@ export function createPlayer({ physics, spawn }) {
   const input = { forward: 0, right: 0, sprint: false, jump: false, maxSpeed: null, moveYaw: null };
 
   function step(dt) {
-    if (!active) return;
-    const speed = input.maxSpeed ?? (input.sprint ? SPRINT : WALK);
-    // Move relative to where you are looking (camera yaw: 0 looks along -Z).
-    const yaw = input.moveYaw ?? look.yaw;
-    const fx = -Math.sin(yaw);
-    const fz = -Math.cos(yaw);
-    const rx = -fz;
-    const rz = fx;
-    let mx = fx * input.forward + rx * input.right;
-    let mz = fz * input.forward + rz * input.right;
-    const len = Math.hypot(mx, mz);
-    if (len > 1) {
-      mx /= len;
-      mz /= len;
-    }
-    if (grounded && input.jump) vy = JUMP;
-    vy -= GRAVITY * dt;
-    const desired = { x: mx * speed * dt, y: vy * dt, z: mz * speed * dt };
+    if (!active || !Number.isFinite(dt) || dt <= 0) return;
+    dt = Math.min(dt, handling.player.maxStepSeconds);
+    const desired = movement.step(dt,input,look.yaw);
     controller.computeColliderMovement(collider, desired);
     const move = controller.computedMovement();
-    grounded = controller.computedGrounded();
-    if (grounded && vy < 0) vy = 0;
+    movement.resolve(dt,move,controller.computedGrounded(),desired);
     const p = body.translation();
     body.setNextKinematicTranslation({ x: p.x + move.x, y: p.y + move.y, z: p.z + move.z });
     // Fell off the world somehow: put back at spawn.
-    if (p.y < -30) body.setNextKinematicTranslation({ x: spawn.x, y: spawn.y + 2, z: spawn.z });
+    if (p.y < -30) { body.setNextKinematicTranslation({ x: spawn.x, y: spawn.y + 2, z: spawn.z }); movement.reset(input.jump); }
   }
 
   const offStep = physics.onBeforeStep(step);
@@ -65,7 +46,10 @@ export function createPlayer({ physics, spawn }) {
     look,
     input,
     collider,
-    grounded: () => grounded,
+    grounded: () => movement.state.grounded,
+    motion: () => ({speed:movement.state.speed,forwardSpeed:movement.state.forwardSpeed,strafeSpeed:movement.state.strafeSpeed,
+      verticalSpeed:movement.state.vy,grounded:movement.state.grounded,moving:movement.state.moving,sprinting:movement.state.sprinting,
+      constrained:movement.state.constrained,landed:movement.state.landed,landingSpeed:movement.state.landingSpeed}),
     feet() {
       const p = body.translation();
       return new THREE.Vector3(p.x, p.y - feetToCentre, p.z);
@@ -77,11 +61,12 @@ export function createPlayer({ physics, spawn }) {
     teleport(x, y, z) {
       body.setTranslation({ x, y: y + feetToCentre + 0.05, z }, true);
       body.setNextKinematicTranslation({ x, y: y + feetToCentre + 0.05, z });
-      vy = 0;
+      movement.reset(input.jump);
     },
     setEnabled(on) {
       active = on;
       collider.setEnabled(on);
+      movement.reset(input.jump);
     },
     destroy() {
       offStep();

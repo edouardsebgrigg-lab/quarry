@@ -33,8 +33,19 @@ export function createHud3d({ settings }) {
   };
   const cond = meter('Cond');
   const load = meter('Load');
+  const materialDot = el('span', { class: 'mw-material-dot' });
+  const materialName = el('span', { class: 'mw-material-name' });
+  const attachment = el('span', { class: 'mw-attachment' });
+  const workMaterial = el('div', { class: 'mw-material' }, materialDot, materialName, attachment);
+  const workLabel = el('span', { class: 'mw-state' });
+  const workEffort = el('span', { class: 'mw-effort' });
+  const workFill = el('div', { class: 'mw-effort-fill' });
+  const workMetrics = el('div', { class: 'mw-metrics' });
+  const workStrip = el('div', { class: 'machine-work' }, workMaterial,
+    el('div', { class: 'mw-state-row' }, workLabel, workEffort),
+    el('div', { class: 'mw-effort-track' }, workFill), workMetrics);
   const machinePanel = el('div', { class: 'machine-dash' },
-    el('div', { class: 'md-head' }, mName, mStatus), drive, load.node, cond.node);
+    el('div', { class: 'md-head' }, mName, mStatus), workStrip, drive, load.node, cond.node);
 
   const ctpTitle = el('div', { class: 'ctp-title' }, 'Click to play');
   const clickToPlay = el('div', { class: 'click-to-play' },
@@ -57,7 +68,16 @@ export function createHud3d({ settings }) {
   const worksCard = el('div', { class: 'works-card' }, worksTitle, worksModes, worksRows);
   let worksKey = '';
 
-  const node = el('div', { class: 'hud3d' }, crosshair, guidePill, prompt, help, helpTag, machinePanel, worksCard, clickToPlay, loading);
+  const surveyTitle = el('span', {}, 'Ground survey');
+  const surveyKey = el('span', { class: 'survey-key' });
+  const surveySurface = el('div', { class: 'survey-surface' });
+  const surveyLayers = el('div', { class: 'survey-layers' });
+  const surveyBed = el('div', { class: 'survey-bed' });
+  const surveyCard = el('div', { class: 'survey-card' },
+    el('div', { class: 'survey-head' }, surveyTitle, surveyKey), surveySurface, surveyLayers, surveyBed);
+  let surveyCache = '';
+
+  const node = el('div', { class: 'hud3d' }, crosshair, guidePill, prompt, help, helpTag, machinePanel, worksCard, surveyCard, clickToPlay, loading);
 
   // Control hints per mode: [keys, label]. The last rows are the same everywhere.
   function hints(mode) {
@@ -85,7 +105,7 @@ export function createHud3d({ settings }) {
     } else {
       rows = [[[k('forward'), k('left'), k('back'), k('right')], 'Move'], [[k('sprint')], 'Sprint'], [[k('jump')], 'Jump'],
         [['LMB'], 'Dig / tip the shovel'], [[k('interact')], 'Use / get in / take barrow'], [[k('repair')], 'Service / repair'],
-        [[k('works')], 'Plan a road, ramp or level area']];
+        [[k('works')], 'Plan a road, ramp or level area'], [[k('survey')], 'Survey ground']];
     }
     return [...rows, null, [[k('shop')], 'Dealer'], [[k('market')], 'Prices'], [[k('map')], 'Map'], [[k('goal')], 'Goal']];
   }
@@ -160,8 +180,11 @@ export function createHud3d({ settings }) {
       }
       hintT = Math.max(0, hintT - dt);
       const showHelp = hintsPinned || hintT > 0;
-      help.classList.toggle('hidden', !showHelp);
-      helpTag.classList.toggle('hidden', showHelp);
+      const surveying = !!info.survey && !overlayOpen;
+      node.classList.toggle('surveying', surveying);
+      node.classList.toggle('in-machine', !!info.machine);
+      help.classList.toggle('hidden', !showHelp || surveying);
+      helpTag.classList.toggle('hidden', showHelp || surveying);
       clear(helpTag);
       helpTag.append(kbd(k('hints')), el('span', {}, 'Controls'));
 
@@ -193,10 +216,38 @@ export function createHud3d({ settings }) {
         guideArrow.style.transform = `rotate(${(g.bearing * 180) / Math.PI}deg)`;
       }
 
+      surveyCard.style.display = surveying ? '' : 'none';
+      if (surveying) {
+        const s = info.survey;
+        const cache = JSON.stringify(s);
+        if (cache !== surveyCache) {
+          surveyCache = cache;
+          clear(surveyKey);
+          surveyKey.append(kbd(s.key ?? k('survey')), ' Close');
+          const surface = s.surface ?? {};
+          const hardness = Number.isFinite(surface.resistance) ? ` · ${Math.round(surface.resistance)} kN` : '';
+          setText(surveySurface, s.empty ? s.reason ?? 'Aim at the ground on your field'
+            : `${surface.name ?? surface.id ?? 'Ground'}${surface.loose ? ' · loose' : ''}${hardness}`);
+          surveyLayers.style.display = s.empty ? 'none' : '';
+          surveyBed.style.display = s.empty ? 'none' : '';
+          clear(surveyLayers);
+          for (const layer of (s.layers ?? []).slice(0, 3)) {
+            const depth = Math.max(0, layer.depth ?? 0);
+            const bottom = depth + Math.max(0, layer.thickness ?? 0);
+            const metres = (n) => n.toFixed(n < 1 ? 2 : 1);
+            surveyLayers.append(el('div', { class: 'survey-layer' },
+              el('span', {}, `${layer.name ?? layer.id}${{ compacted: ' (firm fill)', loose: ' (spoil)', fill: ' (fill)' }[layer.kind] ?? ''}`), el('b', {}, `${metres(depth)}–${metres(bottom)} m`)));
+          }
+          setText(surveyBed, Number.isFinite(s.bedrockDepth)
+            ? `${s.bedrockName ?? 'Bedrock'} at ${s.bedrockDepth.toFixed(1)} m` : s.bedrockName ?? 'Bedrock below');
+        }
+      }
+
       const m = info.machine;
-      machinePanel.style.display = m ? '' : 'none';
+      machinePanel.style.display = m && !overlayOpen ? '' : 'none';
       if (!m) return;
       setText(mName, m.name);
+      workStrip.style.display = m.type === 'barrow' ? 'none' : '';
       if (m.type === 'barrow') {
         // A wheelbarrow: just what's in it, by volume and weight.
         setText(mStatus, m.load > 0.001 ? `${Math.round(m.tonnes * 1000)} kg` : 'Empty');
@@ -210,17 +261,48 @@ export function createHud3d({ settings }) {
       }
       cond.node.style.display = '';
       const engineStatus = { off: 'Engine off', cranking: 'Starting', stopping: 'Engine off', stall: 'Stalled' }[m.engine];
-      const status = m.broken ? 'Broken' : j ? j.label : engineStatus ?? (m.resistance > 0 ? `Resistance ${Math.round(m.resistance)} kN` : m.aimReach != null ? `${m.aimReach.toFixed(1)} m reach · ${m.cutDepth.toFixed(2)} m cut` : m.ticket ? 'Weighed in' : 'Ready');
+      const status = m.broken ? 'Broken' : j ? 'Working' : engineStatus ?? (m.ticket ? 'Weighed in' : m.direct ? 'Direct' : m.aimReach != null ? 'Assisted' : 'Ready');
       setText(mStatus, status);
       mStatus.className = `md-status ${m.broken ? 'bad' : j ? 'busy' : engineStatus ? 'off' : ''}`;
       cond.fill.style.width = `${Math.round(m.condition)}%`;
       cond.fill.style.background = conditionColor(m.condition, m.broken);
       setText(cond.val, `${Math.round(m.condition)}%`);
-      setText(load.lab, m.carrier ? 'Load' : 'Bucket');
-      const amount = m.bucketVolume ?? m.load;
-      load.fill.style.width = `${Math.round(Math.min(1, amount / m.capacity) * 100)}%`;
-      const dp = m.capacity < 1 ? 2 : 1; // (small buckets need the extra digit)
-      setText(load.val, `${amount.toFixed(dp)}/${m.capacity.toFixed(dp)} ${m.bucketVolume != null ? 'm³' : 't'}`);
+      const digger = m.bucketVolume != null || m.bucketFill01 != null || m.aimReach != null;
+      const capacity = (digger ? m.capacityVolume : null) ?? m.capacity ?? 0;
+      const amount = (digger ? m.loadVolume ?? m.bucketVolume : m.load) ?? 0;
+      setText(load.lab, digger ? 'Bucket' : 'Load');
+      const volumeFill = !digger && m.capacityVolume > 0 ? (m.loadVolume ?? 0) / m.capacityVolume : 0;
+      const fill01 = digger && Number.isFinite(m.bucketFill01) ? m.bucketFill01 : Math.max(volumeFill, capacity > 0 ? amount / capacity : 0);
+      load.fill.style.width = `${Math.round(Math.max(0, Math.min(1, fill01)) * 100)}%`;
+      const dp = capacity < 1 ? 2 : 1;
+      load.node.style.display = capacity > 0 ? '' : 'none';
+      setText(load.val, `${amount.toFixed(dp)}/${capacity.toFixed(dp)} ${digger ? 'm³' : 't'}`);
+
+      workMaterial.style.display = m.material || m.attachment ? '' : 'none';
+      setText(materialName, m.material?.name ?? m.material?.id ?? '');
+      materialDot.style.display = m.material ? '' : 'none';
+      const color = m.material?.color;
+      materialDot.style.background = typeof color === 'number' ? `#${color.toString(16).padStart(6, '0')}` : color ?? '#d9b98a';
+      setText(attachment, m.attachment ?? '');
+      const hydraulic = Math.max(0, Math.min(1, m.hydraulicLoad ?? 0));
+      const slip = Math.max(0, Math.min(1, m.slip ?? 0));
+      const feedback = m.workFeedback;
+      setText(workLabel, j?.label ?? feedback?.label ?? (m.broken ? 'Repair needed' : engineStatus ? 'Start the engine' : slip > .2 ? 'Losing traction' : digger ? 'Ready to dig' : 'Ready to drive'));
+      workStrip.dataset.kind = feedback?.kind ?? (slip > .2 ? 'slip' : 'ready');
+      workStrip.classList.toggle('strained', hydraulic > .85 || slip > .2 || ['blocked', 'warn'].includes(feedback?.kind));
+      workEffort.style.display = digger && Number.isFinite(m.hydraulicLoad) ? '' : 'none';
+      workFill.parentElement.style.display = workEffort.style.display;
+      setText(workEffort, `Hydraulics ${Math.round(hydraulic * 100)}%`);
+      workFill.style.width = `${Math.round(hydraulic * 100)}%`;
+      const metrics = [];
+      const resistance = m.resistance > 0 ? m.resistance : m.material?.resistance;
+      if (digger && resistance > 0) metrics.push(`${Math.round(resistance)} kN resistance`);
+      if (digger && Number.isFinite(m.cutDepth)) metrics.push(`${m.cutDepth.toFixed(2)} m cut`);
+      if (!digger && m.towLimitTonnes > 0 && Number.isFinite(m.grossLoadTonnes)) metrics.push(`${m.grossLoadTonnes.toFixed(1)}/${m.towLimitTonnes.toFixed(1)} t tow`);
+      if (!digger && m.capacityVolume > 0) metrics.push(`${(m.loadVolume ?? 0).toFixed(1)}/${m.capacityVolume.toFixed(1)} m³ bed`);
+      if (slip > .2) metrics.push(`${Math.round(slip * 100)}% wheel slip`);
+      setText(workMetrics, metrics.join(' · '));
+      workMetrics.style.display = metrics.length ? '' : 'none';
       drive.style.display = m.road ? '' : 'none';
       if (m.road) {
         setText(speedValue, String(Math.round(m.speedKmh)).padStart(2, '0'));

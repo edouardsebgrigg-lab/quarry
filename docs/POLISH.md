@@ -142,3 +142,12 @@ Actual checks, implementation commits and remaining verification limits are reco
 
 For later visual updates, use the review procedure in HANDOFF-TO-CODEX.md and
 record actual checks and limits in CODEX-CHECKPOINT.md.
+
+## Game feel refinement — October 2026
+
+- [x] F3 Acceleration/stopping, buffered/coyote jumps without held-key repeats, physical reverse braking, steering recovery, stable cab spring and optional grounded camera cues.
+- [x] P3 Choose/switch/clear a saved personal milestone target, with progress, reward and next step across HUD, Home and Milestones; automatic rewards remain once-only.
+- [x] D16 Read the actual remaining ground column, deposits and compacted fill; display real cutting material, capacity, hydraulics, wrong-tool/hard-cut/slip/towing advice.
+- [x] H1 Bounded machine dash and survey, camera-motion/FOV controls, safe old settings and custom key preservation, narrow goal/mentor overlap fix.
+
+Implementation commit, actual controls/fixture distinction and checks are in CODEX-CHECKPOINT.md. Independent evidence review: handover/game-feel-review.md.

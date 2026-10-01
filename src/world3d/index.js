@@ -31,6 +31,8 @@ import { workerFor } from '../staff/index.js';
 import { visualHour } from '../core/visualClock.js';
 import { currentWeather } from '../weather/index.js';
 import { createHeadSway } from './headSway.js';
+import { createFootCameraFeel } from './cameraFeel.js';
+import { dominantMaterial, workFeedback } from './workTelemetry.js';
 import { MAP, inRect } from './map.js';
 import { createGuideBeacon } from './guideBeacon.js';
 import { currentObjective } from '../progression/index.js';
@@ -40,7 +42,7 @@ import { barrowFill } from '../handtools/index.js';
 import { keyLabel } from '../input/index.js';
 import { pileTotal } from '../quarry/index.js';
 import { bucketFill, cuttingAttack } from '../machinery/digging.js';
-import { loadCarrier, combinationStats, attachedTrailer } from '../machinery/trailers.js';
+import { loadCarrier, combinationStats, attachedTrailer, cargoVolume } from '../machinery/trailers.js';
 import {
   getStats, machinesAt, machineName, getMachine, JOBS, jobProgress, isDigger, bucketRadius, typeName, machinePrice,
 } from '../machinery/index.js';
@@ -85,6 +87,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   let yardStockpiles = null;
   const heightAt = (x, z) => Math.max(land.heightAt(x, z), yardStockpiles?.surfaceAt(x, z) ?? -Infinity);
   const onPlot = (x, z) => ground && ground.inside(x, z);
+  let surveying = false;
+  let surveyInfo = null;
   // Height and surface mix anywhere (your field uses the real ground's top material).
   function surfaceAt(x, z) {
     if (onPlot(x, z)) {
@@ -357,6 +361,9 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const m = currentMachine();
     const report = (r) => { if (r && !r.ok) notify(r.reason, 'warn'); };
     switch (action) {
+      case 'survey':
+        surveying = !surveying;
+        return true;
       case 'interact': {
         if (v) exit();
         else if (hands.holding()) hands.letGo();
@@ -564,7 +571,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const fill = bucketFill(ground, stats, cargoLoad(m));
     const enabled = (v === current() && v.isDirect()) || (m.job?.type === 'dig' && m.job.params.physical);
     if (!enabled || fill.full || !s.under) {
-      c.from = s.teeth; c.time = 0;
+      c.from = s.teeth; c.time = 0; c.blocked = null;
       v.directReport({ pouring: directState.get(m.id)?.pouring ?? 0 });
       return;
     }
@@ -572,12 +579,16 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     c.time = 0;
     const attack = cuttingAttack(c.from, s.teeth, v.houseWorldYaw(), s.phi);
     const distance = Math.hypot(s.teeth.x - c.from.x, s.teeth.y - c.from.y, s.teeth.z - c.from.z);
+    const cutMaterial = onPlot(s.teeth.x,s.teeth.z) ? data.ground.materials[ground.surfaceAt(s.teeth.x,s.teeth.z)] : null;
     const r = attack > 0.05 && distance < 2 ? game.actions.bucketCut(m.id, { x: s.teeth.x, z: s.teeth.z, from: c.from, to: s.teeth, attack, moisture: groundWeather.wet.value,
       stockpileBay: yardStockpiles.bayAt(s.teeth.x, s.teeth.z)?.id }) : { ok: true, tonnes: 0 };
     c.from = s.teeth;
     const cutting = r.ok && r.tonnes > 0;
+    c.blocked = r.blocked ?? null;
     v.directReport({ cutting, stuck: !!r.blocked, resistance: r.resistance ?? 0, pouring: directState.get(m.id)?.pouring ?? 0 });
-    if (cutting) particles.spawn(new THREE.Vector3(s.teeth.x, s.teeth.y, s.teeth.z), { count: 1, spread: 0.4, life: 1.2, up: 0.5 });
+    if (cutting) {
+      particles.spawn(new THREE.Vector3(s.teeth.x,s.teeth.y,s.teeth.z), {count:2,spread:.3,life:.9,up:.35,size:.22,color:cutMaterial?.color??0xc8b08a,opacity:groundWeather.wet.value>.4?.25:.45});
+    }
   }
 
   let digHintShown = false;
@@ -837,6 +848,38 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   marker.visible = false;
   scene.add(marker);
 
+  const surveyMarker=new THREE.Mesh(new THREE.RingGeometry(data.presentation.survey.markerRadius*.8,data.presentation.survey.markerRadius,32),
+    new THREE.MeshBasicMaterial({color:0xf2b632,transparent:true,opacity:.9,depthWrite:false}));
+  surveyMarker.rotation.x=-Math.PI/2;surveyMarker.visible=false;scene.add(surveyMarker);
+  const surveyDirection=new THREE.Vector3();
+  function updateSurvey() {
+    surveyMarker.visible=false;surveyInfo=null;
+    if (!surveying) return;
+    const key=keyLabel(settings.bindings.survey);
+    surveyInfo={key,empty:true,reason:'Aim at the ground on your field'};
+    const v=current();
+    let point;
+    if (v?.digger) point=v.isDirect()?v.teethWorld():v.bucketTarget();
+    else {
+      // Stop at the first actual collider, so the survey cannot see through plant or buildings.
+      camera.getWorldDirection(surveyDirection);
+      const hit=physics.world.castRay(new physics.RAPIER.Ray(camera.position,surveyDirection),data.presentation.survey.range,true,
+        undefined,undefined,player.collider);
+      if(hit) point=camera.position.clone().addScaledVector(surveyDirection,hit.timeOfImpact);
+      if(point&&Math.abs(point.y-heightAt(point.x,point.z))>.35) point=null;
+    }
+    const column=point&&ground?.inspectAt(point.x,point.z);
+    if (!column) return;
+    const coverId=column.surface.coverMaterial,material=data.ground.materials[coverId];
+    const name=material?.name??coverId;
+    const substrate=data.ground.materials[column.surface.material]?.name??column.surface.material;
+    surveyInfo={key,surface:{...column.surface,id:coverId,name:coverId!==column.surface.material?`${name} over ${substrate}`:name,color:material?.color},
+      layers:column.layers.map(l=>({...l,id:l.material,name:data.ground.materials[l.material]?.name??l.material})),
+      bedrockDepth:column.bedrockDepth,bedrockName:data.ground.materials[column.bedrock]?.name??column.bedrock};
+    surveyMarker.position.set(point.x,heightAt(point.x,point.z)+.035,point.z);
+    surveyMarker.material.color.set(material?.color??0xf2b632);surveyMarker.visible=true;
+  }
+
   // ---- camera ----
   const tmpQ = new THREE.Quaternion();
   const lookQ = new THREE.Quaternion();
@@ -844,13 +887,22 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const chaseBounds = new THREE.Box3();
   const chaseSphere = new THREE.Sphere();
   const head = createHeadSway();
+  const footFeel = createFootCameraFeel();
 
   function placeCamera(dt) {
     const v = current();
+    const motionScale=THREE.MathUtils.clamp(settings.cameraMotion??1,0,1);
+    let fov=THREE.MathUtils.clamp(settings.fieldOfView??72,50,95);
+    const footMotion=!v ? footFeel.update(dt,player.motion?.()??{},motionScale) : null;
+    if (footMotion) fov+=footMotion.fov;
+    else footFeel.reset();
+    if (Math.abs(camera.fov-fov)>.005) {camera.fov=fov;camera.updateProjectionMatrix();}
     for (const veh of vehicles.values()) veh.model.setFirstPerson?.(veh === v && camMode === 'cab');
     if (!v) {
+      head.reset();
       camera.position.copy(player.eye());
-      camera.rotation.set(player.look.pitch, player.look.yaw, 0);
+      camera.position.y+=footMotion.height;
+      camera.rotation.set(player.look.pitch, player.look.yaw, footMotion.roll);
       return;
     }
     const baseYaw = v.digger ? v.houseWorldYaw() : v.yaw();
@@ -859,8 +911,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       // machine's acceleration and picks up engine and ground vibration.
       const cabQ = v.digger ? v.model.house.getWorldQuaternion(tmpQ) : tmpQ.copy(v.quaternion());
       const sway = head.update(dt, v, cabQ);
-      camera.position.copy(v.seatWorld()).add(sway.offset);
-      lookQ.setFromEuler(lookE.set(look.pitch + sway.pitch, -Math.PI / 2 + look.yaw, sway.roll, 'YXZ'));
+      camera.position.copy(v.seatWorld()).addScaledVector(sway.offset,motionScale);
+      lookQ.setFromEuler(lookE.set(look.pitch + sway.pitch*motionScale, -Math.PI / 2 + look.yaw, sway.roll*motionScale, 'YXZ'));
       camera.quaternion.copy(cabQ).multiply(lookQ);
       return;
     }
@@ -1062,7 +1114,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const here = v ? v.position() : player.feet();
     vegetation.update(dt, here);
     trees.update(dt);
-    placeCamera(dt);
+    placeCamera(paused ? 0 : dt);
+    updateSurvey();
     workLight.update(camera, env.lighting().night);
     sounds?.update(dt, {
       rain: rainFelt,
@@ -1197,6 +1250,23 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         ticket: hasTicket(game.ctx, m.id),
       };
       const f = v.feel();
+      const load=cargoLoad(m),volume=cargoVolume(game.ctx,load);
+      const target=v.digger?v.teethWorld():v.position();
+      const response=v.digger&&onPlot(target.x,target.z)?ground.materialResponseAt(target.x,target.z):null;
+      const materialId=response?.material??dominantMaterial(load);
+      const material=data.ground.materials[materialId];
+      machine.material=materialId?{...response,id:materialId,name:material?.name??materialId,color:material?.color}:null;
+      machine.loadVolume=volume;
+      machine.capacityVolume=v.digger?stats.bucketVolume:stats.bedVolume??null;
+      const filling=v.digger?bucketFill(ground,stats,load):null;
+      machine.bucketFill01=filling?.fraction??null;
+      machine.hydraulicLoad=v.digger?Math.max(0,Math.min(1,Math.max(f.work??0,(v.state.resistance??0)/Math.max(1,stats.breakoutForce??60)))):null;
+      machine.slip=f.slip??0;
+      machine.attachment=v.digger?({standard:'Standard bucket',trench:'Trenching bucket',grading:'Grading bucket',breaker:'Hydraulic breaker'}[m.attachment??'standard']??m.attachment):null;
+      machine.grossLoadTonnes=stats.grossTrailerMass!=null?stats.grossTrailerMass/1000:null;
+      machine.towLimitTonnes=stats.maxTowMass!=null?stats.maxTowMass/1000:null;
+      machine.workFeedback=workFeedback({digger:v.digger,attachment:m.attachment??'standard',fill:machine.bucketFill01??0,full:filling?.full??false,
+        blocked:cuts.get(m.id)?.blocked,resistance:v.state?.resistance??0,force:stats.breakoutForce??60,material:materialId,loose:response?.loose,feel:f,overloaded:stats.overloaded});
       machine.engine = f.engine; // off / cranking / running / idleOut / stopping / stall
       if (v.road) {
         machine.rpm = f.rpm;
@@ -1213,7 +1283,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     }
     // Which set of control hints applies.
     const hintMode = works ? 'plan' : hands.holding() ? 'barrow' : !v ? 'foot' : v.digger ? (v.isDirect() ? 'digger-direct' : 'digger') : v.type;
-    return { prompt, job, machine: machine ?? tool, mode: hintMode, locked: mouse.locked(), guide: guideInfo, works: works?.card ?? null };
+    return { prompt, job, machine: machine ?? tool, mode: hintMode, locked: mouse.locked(), guide: guideInfo, works: works?.card ?? null, survey:surveyInfo };
   }
 
   // Remember where everything is, so saves put machines back in place.
@@ -1350,6 +1420,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       groundView?.dispose();
       hands.destroy();
       beacon.destroy();
+      surveyMarker.geometry.dispose();surveyMarker.material.dispose();
       for (const veh of vehicles.values()) veh.destroy();
       player.destroy();
       yardStockpiles.destroy();

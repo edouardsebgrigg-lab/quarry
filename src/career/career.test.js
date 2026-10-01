@@ -3,7 +3,7 @@ import { createGame } from '../game/index.js';
 import { sellLoad, quoteDelivery, chargeFuel, weighIn, weeklyInsurance } from '../economy/index.js';
 import { buyMachine, buyMod } from '../machinery/index.js';
 import { buyBuilding } from '../buildings/index.js';
-import { careerState, milestones, careerMetric, careerMetricNames, dealerPrice, hasPerk } from './index.js';
+import { careerState, milestones, careerMetric, careerMetricNames, dealerPrice, hasPerk, pinnedMilestone, checkMilestones } from './index.js';
 
 function setup(seed = 7) {
   const game = createGame({ seed });
@@ -98,6 +98,104 @@ describe('milestones', () => {
     const g2 = createGame({ seed: 7, state: saved });
     expect(careerState(g2.ctx).bestCleanStreak).toBe(5);
     expect(milestones(g2.ctx).find((x) => x.id === 'clean5').reached).toBe(true);
+  });
+});
+
+describe('player-chosen milestone targets', () => {
+  it('chooses, switches and clears through actions without changing work, cash or goals', () => {
+    const { game, ctx } = setup();
+    const before = { money: game.state.money, stats: structuredClone(game.state.stats), objective: game.state.objectives.index };
+    const events = [];
+    game.events.on('*', type => events.push(type));
+    expect(game.actions.pinMilestone('dug400')).toEqual({ ok: true, id: 'dug400' });
+    expect(pinnedMilestone(ctx)).toMatchObject({ id: 'dug400', progress: 0, reached: false, perkName: 'Fuel card' });
+    expect(game.actions.pinMilestone('road100').ok).toBe(true);
+    expect(careerState(ctx).pinnedMilestoneId).toBe('road100');
+    expect(game.actions.pinMilestone('missing')).toMatchObject({ ok: false });
+    expect(careerState(ctx).pinnedMilestoneId).toBe('road100');
+    expect(game.actions.unpinMilestone()).toEqual({ ok: true });
+    expect(game.actions.unpinMilestone().ok).toBe(true);
+    expect(pinnedMilestone(ctx)).toBeNull();
+    expect(game.state.money).toBe(before.money);
+    expect(game.state.stats).toEqual(before.stats);
+    expect(game.state.objectives.index).toBe(before.objective);
+    expect(events).toEqual([]);
+  });
+
+  it('selection never claims rewards, while real milestone checks pay pinned and unpinned achievements once', () => {
+    const { game, ctx, reached } = setup();
+    game.state.stats.tonnesDug = 400; // fixture: completed digging has not been checked yet
+    const before = game.state.money;
+    expect(game.actions.pinMilestone('dug400').ok).toBe(true);
+    expect(game.state.money).toBe(before);
+    expect(careerState(ctx).reached).toEqual({});
+    checkMilestones(ctx);
+    expect(reached.map(m => m.id)).toEqual(['dug50', 'dug400']);
+    expect(game.state.money).toBe(before + 60 + 300);
+    expect(hasPerk(ctx, 'fuelCard')).toBe(true);
+    expect(pinnedMilestone(ctx)).toMatchObject({ id: 'dug400', reached: true, progress: 1, reward: 300, perkName: 'Fuel card' });
+    checkMilestones(ctx);
+    expect(game.actions.pinMilestone('dug400').ok).toBe(true); // retained completed target
+    expect(game.actions.pinMilestone('dug50')).toMatchObject({ ok: false });
+    expect(game.state.money).toBe(before + 360);
+    expect(reached).toHaveLength(2);
+    game.actions.unpinMilestone();
+    expect(game.actions.pinMilestone('dug400')).toMatchObject({ ok: false });
+    expect(game.actions.pinMilestone('road100').ok).toBe(true);
+  });
+
+  it('tracks actual clean-run progress and exposes a reset without weakening the clean-sale rule', () => {
+    const { game, ctx, sell, reached } = setup();
+    game.actions.pinMilestone('clean5');
+    for (let i = 0; i < 4; i++) sell('topsoil', { topsoil: .5 });
+    expect(pinnedMilestone(ctx)).toMatchObject({ value: 4, progress: .8, reached: false });
+    sell('topsoil', { topsoil: .3, clay: .3 });
+    expect(pinnedMilestone(ctx)).toMatchObject({ value: 4, reached: false });
+    expect(pinnedMilestone(ctx).nextStep).toContain('Current clean run: 0');
+    for (let i = 0; i < 5; i++) sell('topsoil', { topsoil: .5 });
+    expect(pinnedMilestone(ctx)).toMatchObject({ id: 'clean5', reached: true, progress: 1 });
+    sell('topsoil', { topsoil: .5 });
+    expect(reached.filter(m => m.id === 'clean5')).toHaveLength(1);
+  });
+
+  it('preserves the selected target and exact progress across save/load', () => {
+    const { game, ctx } = setup();
+    game.actions.pinMilestone('dug400');
+    game.state.stats.tonnesDug = 37.25;
+    const target = pinnedMilestone(ctx);
+    const restored = createGame({ state: JSON.parse(JSON.stringify(game.snapshot())) });
+    expect(pinnedMilestone(restored.ctx)).toEqual(target);
+    expect(restored.state.career.pinnedMilestoneId).toBe('dug400');
+  });
+
+  it('defaults old and removed-target saves without losing existing achievements or perks', () => {
+    const { game } = setup();
+    game.state.career.reached.dug400 = 2;
+    game.state.career.perks = ['fuelCard'];
+    game.state.career.seen = 1;
+    const saved = game.snapshot();
+    delete saved.career.pinnedMilestoneId;
+    const old = createGame({ state: JSON.parse(JSON.stringify(saved)) });
+    expect(old.state.career).toMatchObject({ pinnedMilestoneId: null, reached: { dug400: 2 }, perks: ['fuelCard'], seen: 1 });
+    saved.career.pinnedMilestoneId = 'removed-milestone';
+    const missing = createGame({ state: JSON.parse(JSON.stringify(saved)) });
+    expect(missing.state.career).toMatchObject({ pinnedMilestoneId: null, reached: { dug400: 2 }, perks: ['fuelCard'], seen: 1 });
+    delete saved.career;
+    const legacy = createGame({ state: JSON.parse(JSON.stringify(saved)) });
+    expect(legacy.state.career.pinnedMilestoneId).toBeNull();
+  });
+
+  it('keeps a reached target complete when a live ownership counter later falls', () => {
+    const { game, ctx } = setup();
+    game.actions.pinMilestone('fleet6');
+    while (game.state.machines.length < 6) game.state.machines.push({ ...game.state.machines[0], id: `fixture-${game.state.machines.length}` });
+    checkMilestones(ctx);
+    const paid = game.state.money;
+    game.state.machines.splice(1);
+    expect(pinnedMilestone(ctx)).toMatchObject({ id: 'fleet6', value: 1, reached: true, progress: 1 });
+    expect(milestones(ctx).find(m => m.id === 'fleet6')).toMatchObject({ reached: true, pinned: true, progress: 1 });
+    checkMilestones(ctx);
+    expect(game.state.money).toBe(paid);
   });
 });
 

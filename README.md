@@ -35,6 +35,7 @@ Use Chrome or Edge for the best experience (full screen and mouse capture work b
 | E | Take the wheelbarrow (at its handles) / get into the machine in front of you / use the office laptop or the dealer's door |
 | R | Service / repair the nearest machine |
 | F | Plan a haul road, ramp or level area on your land (see below) |
+| L | Toggle ground survey: aim at your field to see the remaining material layers and bedrock depth |
 
 | Planning works (F, on foot) | |
 |---|---|
@@ -104,7 +105,7 @@ In Direct mode the tooth edge sweeps a strip through the ground. Bucket width, a
 | Esc | Menu |
 | F1 | Dev panel (in `npm run dev` only) |
 
-All keys can be changed in Settings.
+All keys can be changed in Settings. **Settings → Display** also controls field of view (50–95°) and camera motion; set motion to zero for a steady view. Walking eases into movement and stops, jumps support a small input buffer, and reversing a road vehicle brakes before changing direction.
 
 ## Machines and sound
 
@@ -141,11 +142,13 @@ Each goal pays a small bonus. Entry equipment is small and slow; upgrades improv
 
 ## Milestones and perks
 
-Alongside the goals, the office laptop's **Milestones** app lists 25 company achievements you can go for in any order: tonnes sold and dug, clean loads in a row, loads sold in the rain, your best day, gravel dug, metres of haul road, ramps, yard buildings, the size of your fleet, jobs done, reputation, loans paid off and money earned. Each pays a cash reward when you reach it, and three switch on a perk for good:
+Alongside the goals, the office laptop's **Milestones** app lists 31 company achievements you can go for in any order: tonnes sold and dug, clean loads in a row, loads sold in the rain, your best day, gravel dug, metres of haul road, ramps, yard buildings, the size of your fleet, jobs done, reputation, loans paid off and money earned. Each pays a cash reward when you reach it, and three switch on a perk for good:
 
 - **Depot account** (sell 500 t): the depot pays 4% more for clean loads
 - **Fuel card** (dig 400 t): 10% off diesel
 - **Trade account** (own 6 machines): 5% off machines, upgrades and yard buildings at the dealer
+
+Choose a personal target in **Milestones** to follow its progress, reward and next step in the HUD and Home. Switch or clear it freely; other milestones still pay once when earned, and a reached target stays visible until you choose another.
 
 The numbers are in `data/milestones.json`. An old save catches up the first time something happens: anything you've already done is paid out then.
 
@@ -270,3 +273,7 @@ The first staff post opens when you own a digger and make two depot sales (or ea
 Topsoil crumbles easily, clay resists and holds steep faces, sand spreads readily and gravel settles as loose aggregate. Weather and compaction affect grip and resistance. A compatible breaker extracts finite bedrock into saleable broken rock; ordinary buckets cannot cut intact rock. Traffic compacts the surface and displaces shallow rut spoil without destroying tonnes. Exposed slopes show the underlying strata.
 
 **Settings → Controls → Hold to repeat shovel** avoids repeated clicks. **V on foot** recovers a stuck wheelbarrow onto a nearby clear, level patch while retaining its cargo; V in a road vehicle recovers that vehicle. **Tab → machine name** selects a machine and marks the route to it; select *Follow the current goal* to clear the waypoint. Existing saves retain their business date, loads, staff and trailer combinations.
+
+## Reading your work
+
+The machine dash shows the attachment, material under the teeth, cutting resistance, hydraulic effort and actual bucket volume. Advice explains a full bucket, a hard bite, the wrong tool for rock or loose rubble, low grip and excessive towing load. The ground survey reads the current excavated column, including deposited spoil and compacted fill; it changes no material or money. Thin deposits show their cover and the working material below.
