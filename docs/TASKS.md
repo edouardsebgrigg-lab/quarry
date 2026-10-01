@@ -63,7 +63,10 @@ delivery contracts (`src/contracts/`, `data/contracts.json`), a mobile mechanic 
 (`src/machinery/mechanic.js`), decals on the machines (`src/world3d/decals.js`) and site-plant
 reversing alarms, weather with a forecast (`src/weather/`), a weekly report, and market news
 (`src/economy/news.js`: local stories push one material's price up or down for a few days;
-`currentPrice` and `quoteSale` include it, so anything pricing a load already follows it). For T6 (stockpiles): a load tipped into a bay is not a sale, so it shouldn't
+`currentPrice` and `quoteSale` include it, so anything pricing a load already follows it), and
+regular customers (standing orders in `src/contracts`: from reputation 4, a weekly quota of one
+clean material; a clean sale counts toward whichever is due first, a board job or this week's
+quota, so T6 stockpile tips must stay out of `productSold` as already noted). For T6 (stockpiles): a load tipped into a bay is not a sale, so it shouldn't
 emit `productSold` (contracts count sales).
 
 ## State of the game (Claude's review, 30 September 2026)
