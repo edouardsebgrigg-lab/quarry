@@ -7,6 +7,7 @@ branch.
 - **Queue updated:** 1 October 2026 (overnight pass)
 - **Last Codex commit reviewed:** `7ddb43d` (T11) on `codex/step-7-safety-and-yard-buildings`
 - **Codex works on:** `codex/step-7-safety-and-yard-buildings`. After T11 that one branch holds everything; keep using it
+- **`main`:** on 1 October Edouard had everything merged into `main` (a fast-forward to the overnight pass, which includes PR #1). `main` is now the playable game; work still happens on the branches above, and only Edouard merges into `main`
 
 ## How to work the queue
 
@@ -156,12 +157,11 @@ screenshot checked, no page errors). **Codex: run `npm test` and `npm run build`
 and say in your checkpoint if anything fails.**
 
 **Still open from earlier reviews:** the `worksBuilt` event carries a function
-(`touchesChangedCell`); make it plain data when T9 is in that code. `main` still only has the
-first commit: that's Edouard's call (see "Needs Edouard" below).
+(`touchesChangedCell`); make it plain data when T9 is in that code. `main` now has everything (merged
+at Edouard's request on 1 October).
 
 **Needs Edouard:**
 - Play the first ten minutes with a real mouse and say what felt wrong (the biggest gap, as before).
-- Decide when to merge the work into `main` (PR #1 is still open from the first branch).
 - Judge T10 (rusty vs used paint) in the game.
 
 ## Review notes on `fbf0885` (VEH1, the new vehicle models)
