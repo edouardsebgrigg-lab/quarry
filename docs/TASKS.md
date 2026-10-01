@@ -295,7 +295,7 @@ The design's "hold or sell" choice (`docs/design-spec.md`: yard stockpile with a
 **Done when:** unit tests cover conservation, capacity, purity and save/load; a bounded browser
 check tips a load in and digs a bucket out; README and modules docs updated.
 
-### T7: Step 8c: home weighbridge
+### T7: Step 8c: home weighbridge — DONE (`b6af5da`)
 Buying it lets you weigh in at home: the ticket then counts at the depot, so you drive straight
 to the bays. The depot weighbridge still works as now. Show the load and its quote when you
 weigh at home.

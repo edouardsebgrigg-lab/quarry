@@ -357,3 +357,20 @@ a new manual barrow-control check was not run.
   Direct controls, manual pointer lock and UI Continue reload: **not verified**.
   Unit tests cover Direct rules and JSON save/load (including in-progress tips and legacy defaults).
 - Push still blocked by the CLI account's repository write permission; no publication claimed.
+
+### T7 — completed locally
+
+- Implementation commit: `b6af5da`. Commissioned home deck at the driveway, automatic
+  stopped-vehicle weighing, current best depot quote, and tickets valid at either bridge.
+  Same weight with different materials invalidates a ticket. Repeated unchanged weighing
+  emits one receipt; field/stock tips clear it; sale completion rechecks it before unloading.
+  Building entry, price/timing data, README/modules updated.
+- Actually ran: `npm test` (263 passing in 39 files), `npm run build` (passed),
+  `git diff --check`, bounded `weighbridge.mjs` with native Metal. Normal frame dwell issued
+  one home receipt for an actual 0.5 t cut; world T sold it in a depot bay without visiting
+  the depot bridge. Load emptied, ticket consumed, exact sold tonnes, no browser errors.
+  Inspected `docs/handover/screenshots/t7/home-weighbridge.png`: deck, pickup and quote visible.
+- Development funds, code placement/entry, game ticks for unload, pointer lock stubbed.
+  Manual driveway approach and UI save/reload **not verified**; JSON ticket/ownership
+  save/load and the existing depot weighing path covered by unit tests.
+- GitHub publication remains blocked by account write access.
