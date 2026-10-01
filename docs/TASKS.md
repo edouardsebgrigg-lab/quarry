@@ -66,7 +66,9 @@ reversing alarms, weather with a forecast (`src/weather/`), a weekly report, and
 `currentPrice` and `quoteSale` include it, so anything pricing a load already follows it), and
 regular customers (standing orders in `src/contracts`: from reputation 4, a weekly quota of one
 clean material; a clean sale counts toward whichever is due first, a board job or this week's
-quota, so T6 stockpile tips must stay out of `productSold` as already noted). For T6 (stockpiles): a load tipped into a bay is not a sale, so it shouldn't
+quota, so T6 stockpile tips must stay out of `productSold` as already noted), and a bank credit
+rating (`creditRating` in `src/economy/bank.js`: it moves each morning, so a test that checks
+an exact borrowing limit or loan rate after days pass should pin `state.bank.credit`). For T6 (stockpiles): a load tipped into a bay is not a sale, so it shouldn't
 emit `productSold` (contracts count sales).
 
 ## State of the game (Claude's review, 30 September 2026)

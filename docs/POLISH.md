@@ -86,6 +86,8 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       (painted steel now), bales were flat yellow (straw texture; black-wrapped silage at some
       farms); farms.mjs check
 - [x] Cab views (cabs.mjs): windscreen dust with wiper arcs, black plastic darkened to charcoal
+- [x] D9 Credit rating: rises in credit and with loans paid off, falls each morning overdrawn;
+      scales the borrowing limit and loan rates; Bank app, Messages, toasts; tested
 - [x] U11 Bank: the last fortnight's profit as a chart (bars up for profit, down for loss,
       today paler, the fortnight's total, a hover card per day); bankchart.mjs check
 - [x] D8 Regular customers: standing orders from reputation 4 (weekly quota, paid each week
