@@ -31,9 +31,8 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       and a proper tipper-ram sound
 - [ ] M2 Blender: the biggest remaining model issues from the studio shots (the used truck and
       excavator look too clean and toy-like up close: panel gaps, grime in recesses)
-- [ ] V1 Countryside: hedges, field patchwork and four farmsteads done. Next: farm animals or
-      machinery in the fields, a track surface that matches the ground shader, and some variety
-      in the big home field (it reads as one flat, even lawn in the in-world shots)
+- [ ] V1 Countryside: hedges, field patchwork, farmsteads (with gravel-rutted tracks) and a
+      patchy home field done. Next: farm animals or machinery in the fields
 - [ ] D7 Time of day: the sun never moves. The clock runs a whole day in two minutes, so a
       moving sun would sweep the sky every minute; needs a decision on day length (and night)
       before the light can follow the clock
