@@ -1021,3 +1021,20 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .lt-ad-dealer { font-size: 0.72rem; color: var(--muted); }
 .lt-ad-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.5rem; margin-top: 0.4rem; }
 .lt-ad-actions .lt-buy { width: 100%; min-width: 0; padding-left: 0.4rem; padding-right: 0.4rem; font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Pause: the scene darkened from the left, the HUD out of the way, and where things stand */
+.overlay:has(.overlay-pause) { background: linear-gradient(90deg, rgba(6, 7, 9, 0.88) 0%, rgba(6, 7, 9, 0.62) 42%, rgba(6, 7, 9, 0.2) 100%); }
+body:has(.overlay-pause) :is(.hud, .hud3d, .mentor, .toasts, .log) { visibility: hidden; }
+.pause-layout { display: flex; align-items: center; gap: 6vw; }
+.pause-summary { width: 19rem; padding: 1.2rem 1.3rem; border-radius: 14px; background: rgba(18, 20, 24, 0.72); border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex; flex-direction: column; gap: 0.45rem; }
+.ps-company { font-family: var(--display); font-size: 1.5rem; font-weight: 700; letter-spacing: 0.02em; }
+.ps-when { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.4rem; }
+.ps-row { display: flex; justify-content: space-between; font-size: 0.86rem; color: var(--muted); }
+.ps-row b { color: var(--text); font-variant-numeric: tabular-nums; }
+.ps-row b.neg { color: var(--bad); }
+.ps-goal { margin-top: 0.6rem; padding-top: 0.7rem; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; gap: 0.15rem; }
+.ps-goal span { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.ps-goal b { font-size: 0.95rem; }
+/* (any open overlay: notifications move down to the bottom right, clear of its header) */
+body:has(.overlay) .toasts { top: auto; bottom: 5.5rem; right: 3rem; }

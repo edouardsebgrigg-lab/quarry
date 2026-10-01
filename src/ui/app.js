@@ -146,6 +146,7 @@ export function startApp(root, { data, storage, isDev }) {
   function openPause({ fromLockLoss = false } = {}) {
     if (fromLockLoss) lastLockPause = performance.now();
     openPauseMenu(overlays, {
+      game: session?.game ?? null,
       onSave: () => openSlotPicker(overlays, { mode: 'save', saves, onPick: (slot) => saveTo(slot) }),
       onLoad: () => openSlotPicker(overlays, { mode: 'load', saves, onPick: loadSlot }),
       onSettings: openSettingsScreen,
