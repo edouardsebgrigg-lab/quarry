@@ -7,6 +7,7 @@ import { createFeedback } from './feedback.js';
 import { createDevPanel } from './devPanel.js';
 import { openLaptop } from './laptop/index.js';
 import { toggleMap } from './mapOverlay.js';
+import { openDiggerTools } from './diggerTools.js';
 import { openIntro } from '../screens/intro.js';
 import { markIntroSeen, mentorForStep } from '../../progression/index.js';
 import { timeRunning, createTicker, windowActive } from './timeGate.js';
@@ -111,6 +112,13 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
           ? 'Digger controls: Direct (boom, stick, bucket and swing on their own keys)'
           : 'Digger controls: Assisted (aim and click)', 'good');
         world?.handleAction('controls');
+        break;
+      case 'attachments':
+        if (!world?.hudInfo().machine?.attachment) {
+          feedback.message('Get into a digger to choose its attachment', 'info');
+          break;
+        }
+        openOverlay(() => openDiggerTools(app.overlays, { game, world, feedback }));
         break;
       case 'goal': hud.toggleGoal(); break;
       case 'dev':

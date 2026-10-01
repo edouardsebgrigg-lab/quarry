@@ -515,6 +515,28 @@ export function createGround(groundData, plotId, opts = {}) {
     const availBankPlan = availPlan.reduce((a, v, m) => a + v / bankDensity[m], 0);
     const usePlan = availBankPlan > 0 ? Math.min(1, fillBank / availBankPlan) : 0;
     const availTonnes = availPlan.reduce((a, v) => a + v, 0);
+    // Exact, read-only supply breakdown. Surface volumes are loose m³; fill is bank
+    // (compacted) m³. Records are tonnes by material, including mixtures retained in fill.
+    // Found supply is what this plan can actually use, never all material in the search area.
+    const supply = (required, fromCut, fromHeaps) => ({ required, fromCut, fromHeaps, missing: Math.max(0, required - fromCut - fromHeaps) });
+    const surfaceSupply = supply(surfaceLoose, gravelFromCut, src.gravelFound);
+    const heapMaterials = src.tonnes.slice();
+    if (sm >= 0) heapMaterials[sm] += src.gravelTonnes;
+    const materials = {
+      sourceRadius,
+      cut: toRecord(pool),
+      heaps: toRecord(heapMaterials),
+      surface: {
+        material: surface,
+        looseVolume: surfaceSupply,
+        tonnes: Object.fromEntries(Object.entries(surfaceSupply).map(([key, value]) => [key, sm >= 0 ? value * looseDensity[sm] : 0])),
+      },
+      fill: {
+        bankVolume: supply(fillBank, Math.min(fillBank, poolBank), src.bankFound),
+        tonnes: toRecord(Array.from(availPlan, v => v * usePlan)),
+      },
+      spoil: toRecord(Array.from(availPlan, v => v * (1 - usePlan))),
+    };
     // Query the actual grading jobs, including side batters, rather than the maximum
     // search reach. Only visit cells under the circle's bounding box on each query.
     const changedCells = new Set(jobs.map(({ k }) => k));
@@ -541,6 +563,7 @@ export function createGround(groundData, plotId, opts = {}) {
       heapTonnes: src.gravelTonnes + src.tonnes.reduce((a, v) => a + v, 0),
       fillTonnes: availTonnes * usePlan,
       spoilTonnes: availTonnes * (1 - usePlan),
+      materials,
     };
     if (src.gravelFound < gravelFromHeaps - 1e-6) return { ...plan, ok: false, reason: 'gravel' };
     if (src.bankFound < fillFromHeaps - 1e-6) return { ...plan, ok: false, reason: 'fill' };

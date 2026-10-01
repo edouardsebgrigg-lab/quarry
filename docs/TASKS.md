@@ -345,3 +345,11 @@ User requested greater depth and enjoyable controls, retaining the preference fo
 This pass adds no job board or mandatory contract progression. Further content and long-session balancing remain future work rather than claims of a completed AAA game.
 
 F3/P3/D16/H1 implementation: `b17280d`; per-task verification receipts are in CODEX-CHECKPOINT.md.
+
+## Hauling, quick tools and clearer planning — 2 October 2026
+
+- F4 Current-speed cruise for road vehicles, ordinary physical limits, clear pedal/pause/exit/recovery behavior and active dash readout — DONE; commit and verification in checkpoint.
+- Q2 Direct compatible digger-tool selection in the cab with actual stats, working/moving/cargo/rental restrictions and saved attachment continuity — DONE; commit and verification in checkpoint.
+- T11 Exact read-only cut/heap surface and compacted fill supply, quantified shortages and grade run guidance; integrated unobscured planning controls — DONE; commit and verification in checkpoint.
+
+The review procedure and actual native fixture limits apply to this batch; no new jobs, balance rewards or mandatory progression were introduced.

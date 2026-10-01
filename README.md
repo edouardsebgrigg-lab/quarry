@@ -277,3 +277,11 @@ Topsoil crumbles easily, clay resists and holds steep faces, sand spreads readil
 ## Reading your work
 
 The machine dash shows the attachment, material under the teeth, cutting resistance, hydraulic effort and actual bucket volume. Advice explains a full bucket, a hard bite, the wrong tool for rock or loose rubble, low grip and excessive towing load. The ground survey reads the current excavated column, including deposited spoil and compacted fill; it changes no material or money. Thin deposits show their cover and the working material below.
+
+## Quick tools and easier hauling
+
+**Q in a digger** opens compatible attachments with their purpose and actual width/capacity or breaking force. Pick a tool directly; the panel returns to the same cab. Stop travelling/slewing, finish the stroke and empty the bucket first. Rental tools stay unchanged. T still cycles empty attachments or recalls the last Assisted dump target.
+
+**Z in a road vehicle** captures your current forward speed once above 8 km/h. Release the accelerator to let cruise hold it; Z again, a new W/S press, or Space cancels. Engine off, recovery, leaving the cab or sustained loss of wheel contact also cancels it. Loads, grades, grip, available engine power and towing speed limits still matter. The dash shows the selected speed and any grip/terrain limitation; cruise is cleared when loading a save.
+
+Road/ramp/level previews show usable gravel from the planned cut and nearby clear heaps, exact required/available tonnes, compacted fill volumes and quantitative shortages. A steep plan gives the minimum run for the same rise. Planning controls sit inside the quote, and a successful build stays confirmed there. The preview costs nothing and creates no material; only the final click builds and charges.

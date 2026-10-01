@@ -16,5 +16,10 @@
   },
   "workFeedback": {
     "highSlip": 0.25
-  }
+  },
+  "tools": {
+    "stationarySlew": 0.02,
+    "stationaryTravel": 0.08
+  },
+  "controlNoticeSeconds": 3
 }

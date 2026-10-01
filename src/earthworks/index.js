@@ -9,6 +9,7 @@ export const WORKS_MODES = ['road', 'ramp', 'level'];
 
 const pct = (g) => `${Math.round(g * 100)}%`;
 const t1 = (n) => `${n.toFixed(1)} t`;
+const m3 = (n) => `${Math.max(0.1, Math.ceil(n * 10 - 1e-8) / 10).toFixed(1)} m³`;
 const money = (n) => `$${Math.round(n)}`;
 
 export function worksConfig(data, mode) {
@@ -43,6 +44,12 @@ export const worksCost = (data, mode, area) => {
 
 // Says what would happen, changing nothing. Returns:
 //  { ok, reason?, affordable, cost, ...the ground's numbers (length, grade, tonnes, ...) }
+// `materials` is additive plain data: cut/heaps/spoil are tonnes by material;
+// surface.looseVolume and surface.tonnes each have required/fromCut/fromHeaps/missing;
+// fill.bankVolume has those same fields in compacted m³, fill.tonnes is its actual mix.
+// Supply is usable material for this plan, after surface priority and source exclusions.
+// A steep plan adds gradeGuidance (metres for rise/run, ratio for limit). minimumRun
+// holds the same rise constant; changing either endpoint still requires a fresh plan.
 // `ok` means it can be built right now (valid and paid for). `input.obstacles` is a list of
 // { x, z, r, label } (machines and the barrow) that mustn't be under the works.
 // The player is repositioned by the world after worksBuilt, and does not block.
@@ -61,8 +68,14 @@ export function planEarthworks(ctx, input) {
   const p = ground.planWorks(spec);
   const cost = p.coreArea ? worksCost(data, input.mode, p.coreArea) : 0;
   const out = { ...p, mode: input.mode, name: cfg.name, valid: p.ok, cost, affordable: false };
+  if (p.reason === 'steep' && cfg.maxGrade > 0) {
+    const rise = Math.abs(p.pB - p.pA);
+    const minimumRun = rise / cfg.maxGrade;
+    out.gradeGuidance = { rise, limit: cfg.maxGrade, currentRun: length, minimumRun,
+      extraRun: Math.max(0, minimumRun - length), withinMaxLength: minimumRun <= data.works.maxLength };
+  }
   if (!p.ok) {
-    out.reason = worksReason(p, cfg, data);
+    out.reason = worksReason(out, cfg, data);
     return out;
   }
   for (const o of input.obstacles ?? []) {
@@ -82,13 +95,15 @@ export function planEarthworks(ctx, input) {
 function worksReason(p, cfg, data) {
   switch (p.reason) {
     case 'steep':
-      return `Too steep: ${pct(p.grade)} and the most ${cfg.name.toLowerCase()} can be is ${pct(cfg.maxGrade)}. Make it longer, or start it further back`;
+      return `Too steep: ${pct(p.grade)} and the most ${cfg.name.toLowerCase()} can be is ${pct(cfg.maxGrade)}. ${p.gradeGuidance ? `For the same rise, allow at least ${Math.ceil(p.gradeGuidance.minimumRun)} m of run${p.gradeGuidance.withinMaxLength ? '; start further back' : '. Reduce the rise or build a gentler route in stages'}` : 'Make it longer, or start it further back'}`;
     case 'gravel': {
       const short = (p.heapGravelNeeded - p.heapGravelFound) * (p.surfaceTonnes / Math.max(1e-9, p.surfaceLoose));
       return `Not enough gravel for the surface: ${t1(Math.max(0.1, short))} more. Tip loose gravel within ${data.works.sourceRadius} m of it`;
     }
-    case 'fill':
-      return `Not enough loose material to fill it: tip more spoil within ${data.works.sourceRadius} m of it`;
+    case 'fill': {
+      const missing = p.materials?.fill.bankVolume.missing ?? Math.max(0, p.heapFillNeeded - p.heapFillFound);
+      return `Not enough loose material to fill it: ${m3(missing)} more after compaction. Tip loose spoil within ${data.works.sourceRadius} m of it`;
+    }
     case 'spoil':
       return `No room for the spare spoil: ${p.blocker ? `move ${p.blocker}` : 'choose a spot further inside your land'}`;
     default:

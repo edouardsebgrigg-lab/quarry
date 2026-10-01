@@ -39,8 +39,18 @@ describe('camera comfort settings', () => {
   it('leaves a new action unbound when its default key belongs to an older custom binding', () => {
     const bindings = { ...DEFAULT_BINDINGS, camera: 'KeyL', interact: 'KeyZ' };
     delete bindings.survey;
+    delete bindings.cruise;
+    delete bindings.attachments;
     const loaded = loadSettings(storageFor({ bindingsVersion: BINDINGS_VERSION, bindings }));
-    expect(loaded.bindings).toMatchObject({ camera: 'KeyL', interact: 'KeyZ', survey: null });
+    expect(loaded.bindings).toMatchObject({ camera: 'KeyL', interact: 'KeyZ', survey: null, cruise: null });
+    const keys = Object.values(loaded.bindings).filter(Boolean);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+  it('preserves older custom Q and Z bindings when quick tools and cruise are introduced', () => {
+    const bindings = { ...DEFAULT_BINDINGS, camera: 'KeyQ', interact: 'KeyZ' };
+    delete bindings.attachments; delete bindings.cruise;
+    const loaded = loadSettings(storageFor({ bindingsVersion: BINDINGS_VERSION, bindings }));
+    expect(loaded.bindings).toMatchObject({ camera: 'KeyQ', interact: 'KeyZ', attachments: null, cruise: null });
     const keys = Object.values(loaded.bindings).filter(Boolean);
     expect(new Set(keys).size).toBe(keys.length);
   });

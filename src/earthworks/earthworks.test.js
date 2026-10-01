@@ -77,6 +77,38 @@ describe('earthworks: what it costs and what it needs', () => {
     expect(total(g)).toBe(t);
   });
 
+  it('gives an actionable compacted-fill shortfall while keeping failed plans and builds read only', () => {
+    const { game, g, a } = setup(500, true);
+    heap(g, 40, 60, 5);
+    const initial = a.planWorks(road());
+    expect(initial.materials.fill.bankVolume.missing).toBeGreaterThan(0);
+    heap(g, 50, 82, initial.materials.surface.tonnes.missing + .002);
+    const before = JSON.stringify(game.snapshot());
+    const p = a.planWorks(road());
+    expect(p.ok).toBe(false);
+    expect(p.reason).toMatch(/\d+\.\d m³ more after compaction/);
+    expect(p.reason).toContain('within 30 m');
+    expect(p.materials.fill.bankVolume.missing).toBeGreaterThan(0);
+    expect(a.buildWorks(road()).ok).toBe(false);
+    expect(JSON.stringify(game.snapshot())).toBe(before);
+  });
+
+  it('quantifies the run needed for the same rise and flags routes beyond a single build', () => {
+    const { game, g, a } = setup(500, true);
+    g.dig({ x: 60, z: 60, radius: 3, bottomY: g.heightAt(60, 60) - 2.6 });
+    const p = a.planWorks(road());
+    expect(p.reason).toContain('For the same rise');
+    expect(p.gradeGuidance.minimumRun).toBeCloseTo(p.gradeGuidance.rise / .1, 6);
+    expect(p.gradeGuidance.extraRun).toBeGreaterThan(0);
+    expect(p.gradeGuidance.withinMaxLength).toBe(true);
+    heap(g, 40, 60, 20);
+    const before = JSON.stringify(game.snapshot()), q = a.planWorks(road());
+    expect(q.gradeGuidance.withinMaxLength).toBe(false);
+    expect(q.reason).toContain('Reduce the rise');
+    expect(a.buildWorks(road()).ok).toBe(false);
+    expect(JSON.stringify(game.snapshot())).toBe(before);
+  });
+
   it('refuses a too-steep ramp and too short or too long strips, with the reason', () => {
     const { g, a } = setup();
     heap(g, 50, 82);

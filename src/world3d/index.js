@@ -32,6 +32,7 @@ import { visualHour } from '../core/visualClock.js';
 import { currentWeather } from '../weather/index.js';
 import { createHeadSway } from './headSway.js';
 import { createFootCameraFeel } from './cameraFeel.js';
+import { toolSwapBusy } from './toolSwap.js';
 import { dominantMaterial, workFeedback } from './workTelemetry.js';
 import { MAP, inRect } from './map.js';
 import { createGuideBeacon } from './guideBeacon.js';
@@ -89,6 +90,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const onPlot = (x, z) => ground && ground.inside(x, z);
   let surveying = false;
   let surveyInfo = null;
+  let roadNotice = null;
   // Height and surface mix anywhere (your field uses the real ground's top material).
   function surfaceAt(x, z) {
     if (onPlot(x, z)) {
@@ -313,7 +315,9 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       return;
     }
     if (v.road) {
+      v.phys.cancelCruise?.();
       v.control.throttle = 0;
+      v.control.brakePressed = false;
       v.control.steer = 0;
       v.control.handbrake = true;
     }
@@ -361,6 +365,17 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const m = currentMachine();
     const report = (r) => { if (r && !r.ok) notify(r.reason, 'warn'); };
     switch (action) {
+      case 'forward':
+      case 'back':
+      case 'jump':
+        v?.phys?.cancelCruise?.();
+        return false; // held input still controls ordinary pedals/jumping
+      case 'cruise': {
+        if (!v?.road) { notify('Cruise control is available in road vehicles', 'info'); return true; }
+        const r = v.phys.toggleCruise();
+        roadNotice = r.ok ? null : { machineId: m.id, text: r.reason, left: data.presentation.controlNoticeSeconds };
+        return true;
+      }
       case 'survey':
         surveying = !surveying;
         return true;
@@ -397,6 +412,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
             else { v.state.repeatDump = {destination,height:bed?.bedWorld().y??null}; notify('Returning to the last dump target', 'good'); }
             return true;
           }
+          if (toolSwapBusy(v, m)) { notify('Stop the machine and finish the current stroke before changing attachments', 'warn'); return true; }
           const choices = getStats(data, m).attachments ?? ['standard', 'trench', 'grading'];
           const attachment = choices[(Math.max(0, choices.indexOf(m.attachment ?? 'standard')) + 1) % choices.length];
           const r = game.actions.setDiggerAttachment(m.id, attachment);
@@ -474,6 +490,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const busy = !!m.job;
     v.control.throttle = m.broken || busy ? 0 : (keys('forward') ? 1 : 0) - (keys('back') ? 1 : 0);
     v.control.steer = (keys('left') ? 1 : 0) - (keys('right') ? 1 : 0);
+    v.control.brakePressed = keys('back');
     v.control.handbrake = keys('jump') || m.broken || busy;
   }
 
@@ -1017,6 +1034,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const dy = settings.invertY ? -d.y : d.y;
     const delta = paused ? { x: 0, y: 0 } : { x: d.x, y: dy };
     blockedNoteT = Math.max(0, blockedNoteT - dt);
+    if (roadNotice && !paused) roadNotice.left = Math.max(0, roadNotice.left - dt);
 
     const v = current();
     const m = currentMachine();
@@ -1058,7 +1076,9 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         veh.update(paused ? 0 : dt, { job: mm.job, fill: cap > 0 ? tonnes / cap : 0, color: bedColor(cargoLoad(mm)), occupied: veh === v });
         if (veh !== v) {
           if (veh.road) {
+            veh.phys.cancelCruise?.();
             veh.control.throttle = 0;
+            veh.control.brakePressed = false;
             veh.control.handbrake = true;
           } else veh.drive?.(dt, 0, 0);
         }
@@ -1245,6 +1265,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         aimReach: v.digger ? v.state.aimReach : null,
         resistance: v.digger ? v.state.resistance : null,
         direct: !!v.digger && v.isDirect(),
+        attachmentBusy: !!v.digger && toolSwapBusy(v, m),
         speedKmh: Math.abs(v.speed()) * 3.6,
         camera: camMode,
         ticket: hasTicket(game.ctx, m.id),
@@ -1267,8 +1288,12 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       machine.towLimitTonnes=stats.maxTowMass!=null?stats.maxTowMass/1000:null;
       machine.workFeedback=workFeedback({digger:v.digger,attachment:m.attachment??'standard',fill:machine.bucketFill01??0,full:filling?.full??false,
         blocked:cuts.get(m.id)?.blocked,resistance:v.state?.resistance??0,force:stats.breakoutForce??60,material:materialId,loose:response?.loose,feel:f,overloaded:stats.overloaded});
+      if (v.road && roadNotice?.machineId === m.id && roadNotice.left > 0) machine.workFeedback = { kind: 'warn', label: roadNotice.text, intensity: 1 };
       machine.engine = f.engine; // off / cranking / running / idleOut / stopping / stall
       if (v.road) {
+        machine.cruiseActive = !!f.cruiseActive;
+        machine.cruiseTargetKmh = (f.cruiseTarget ?? 0) * 3.6;
+        machine.cruiseLimited = !!f.cruiseLimited;
         machine.rpm = f.rpm;
         machine.maxRpm = { pickup: 4600, tractor: 2500 }[v.type] ?? 2600;
         machine.gear = f.shifting ? '–' : f.gear < 0 ? 'R' : String(f.gear);

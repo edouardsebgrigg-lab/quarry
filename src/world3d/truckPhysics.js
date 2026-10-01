@@ -6,6 +6,7 @@
 // Units are real: kilograms, newtons, metres, seconds. The tipper truck is the default; the
 // pickup and the tractor pass their own shape, tuning and engine (see PICKUP and TRACTOR below).
 import handling from '../../data/handling.json';
+import { createCruiseControl } from './cruiseControl.js';
 
 // Cancel opposite lock at the centering rate, then build the newly requested steering angle.
 export function steeringStep(current,target,dt,steerRate,returnRate) {
@@ -230,7 +231,7 @@ export function createTruckPhysics({ RAPIER, world }, {
   let maxTorque = peakTorque(power, T.powerRpm, E);
   let finalDrive = 1;
   let condition = 100;
-  const control = { throttle: 0, steer: 0, handbrake: false };
+  const control = { throttle: 0, steer: 0, handbrake: false, brakePressed: false };
   const eng = {
     running: true,
     rpm: E.idleRpm,
@@ -247,6 +248,7 @@ export function createTruckPhysics({ RAPIER, world }, {
   };
   const lastSusp = [0, 0, 0, 0];
   let suspensionPrimed = false;
+  const cruise = createCruiseControl(handling.vehicle.cruise);
 
   function updateFinalDrive() {
     // Top gear at max rpm = top speed.
@@ -274,11 +276,20 @@ export function createTruckPhysics({ RAPIER, world }, {
     const v = vehicle.currentVehicleSpeed();
     const g = 9.81;
     const m = totalMass();
-    const throttleIn = eng.running ? control.throttle : 0;
+    let contacts = 0, roadGrip = 0;
+    for (let i = 0; i < 4; i++) {
+      if (vehicle.wheelIsInContact(i)) { contacts += 1; roadGrip += surfaceUnder(i).grip; }
+    }
+    const assistance = cruise.step(dt, {
+      speed: v, speedLimit: topSpeed, running: eng.running, forward: eng.gear > 0,
+      manualThrottle: control.throttle, handbrake: control.handbrake, shifting: eng.shiftT > 0,
+      brakePressed: control.brakePressed, grounded: contacts >= 2, grip: contacts ? roadGrip / contacts : 0, slip: out.slip,
+    });
+    const throttleIn = eng.running ? (assistance.engaged ? assistance.throttle : control.throttle) : 0;
 
     // ---- pedals: forward/back pick a direction, the other pedal brakes
     let throttle = 0;
-    let brake = 0;
+    let brake = assistance.brake;
     const direction=Math.sign(throttleIn),currentDirection=Math.sign(eng.gear);
     if(direction!==eng.directionRequest){eng.directionRequest=direction;eng.directionT=0;}
     if(direction&&v*direction<-handling.vehicle.directionBrakeSpeed){brake=Math.abs(throttleIn);eng.directionT=0;}
@@ -425,7 +436,16 @@ export function createTruckPhysics({ RAPIER, world }, {
     telemetry: () => ({
       rpm: eng.rpm, gear: eng.gear, shifting: eng.shiftT > 0, load: eng.load, running: eng.running,
       misfire: eng.misfire > 0, ...out,
+      cruiseActive: cruise.state().active, cruiseTarget: cruise.state().targetSpeed, cruiseLimited: cruise.state().limited,
     }),
+    toggleCruise() {
+      let contacts = 0;
+      for (let i = 0; i < 4; i++) if (vehicle.wheelIsInContact(i)) contacts += 1;
+      return cruise.toggle({ speed: vehicle.currentVehicleSpeed(), speedLimit: topSpeed,
+        running: eng.running, forward: eng.gear > 0, manualThrottle: control.throttle,
+        grounded: contacts >= 2, handbrake: control.handbrake, brakePressed: control.brakePressed });
+    },
+    cancelCruise: () => cruise.cancel(),
     setTowBraking(braked) { towBraked = !!braked; },
     setCargo(tonnes) {
       if (Math.abs(tonnes - cargoTonnes) < 0.01) return;
@@ -452,17 +472,19 @@ export function createTruckPhysics({ RAPIER, world }, {
       // A cold diesel catches with a flare of revs, then settles to idle.
       if (on && !eng.running) eng.rpm = 1250;
       eng.running = on;
+      if (!on) cruise.cancel();
     },
     steering: () => steer,
     rideHeight: T.rideHeight,
     // Put the truck back on its wheels at a spot (for "recover stuck vehicle").
     reset(px, py, pz, yawAngle) {
+      cruise.cancel();
       body.setTranslation({ x: px, y: py + T.rideHeight + 0.1, z: pz }, true);
       body.setRotation(yawQuat(yawAngle), true);
       body.setLinvel({ x: 0, y: 0, z: 0 }, true);
       body.setAngvel({ x: 0, y: 0, z: 0 }, true);
       steer=0;eng.gear=1;eng.shiftT=0;eng.directionT=0;eng.directionRequest=0;eng.load=0;eng.misfire=0;
-      control.throttle=0;control.steer=0;control.handbrake=true;
+      control.throttle=0;control.steer=0;control.handbrake=true;control.brakePressed=false;
       suspensionPrimed=false;out.bump=0;out.slip=0;out.braking=true;out.reversing=false;
     },
     destroy() {

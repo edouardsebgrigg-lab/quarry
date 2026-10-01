@@ -19,8 +19,8 @@ const GRAPHICS = [
 
 const KEY_GROUPS = [
   ['Moving', ['forward', 'back', 'left', 'right', 'jump', 'sprint']],
-  ['Doing things', ['interact', 'tip', 'repair', 'recover', 'camera', 'works', 'survey']],
-  ['Digger', ['controls', 'boomUp', 'boomDown', 'stickIn', 'stickOut', 'bucketCurl', 'bucketDump', 'slewLeft', 'slewRight', 'freeLook', 'precision']],
+  ['Doing things', ['interact', 'tip', 'repair', 'recover', 'camera', 'works', 'survey', 'cruise']],
+  ['Digger', ['controls', 'attachments', 'boomUp', 'boomDown', 'stickIn', 'stickOut', 'bucketCurl', 'bucketDump', 'slewLeft', 'slewRight', 'freeLook', 'precision']],
   ['Menus and time', ['shop', 'market', 'map', 'goal', 'hints', 'pause', 'speed1', 'speed2', 'speed3', 'dev']],
 ];
 

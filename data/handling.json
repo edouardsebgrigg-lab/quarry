@@ -21,7 +21,20 @@
     "directionChangeSeconds": 0.12,
     "directionHoldBrake": 0.45,
     "steeringSpeedSensitivity": 0.07,
-    "maxStepSeconds": 0.05
+    "maxStepSeconds": 0.05,
+    "cruise": {
+      "minSpeed": 2,
+      "initialThrottle": 0.18,
+      "speedGain": 0.65,
+      "integralGain": 0.24,
+      "integralReleaseRate": 0.5,
+      "brakeDeadband": 0.35,
+      "brakeGain": 0.22,
+      "maxBrake": 0.35,
+      "lowGripThrottle": 0.4,
+      "slipThrottleReduction": 0.75,
+      "airborneCancelSeconds": 0.65
+    }
   },
   "cab": {
     "springStiffness": 60,

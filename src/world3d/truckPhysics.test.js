@@ -35,6 +35,64 @@ function speedAfter(cargo, seconds) {
 }
 
 describe('truck driving', () => {
+  it('holds a captured hauling speed using the loaded drivetrain and immediately gives back pedal control', () => {
+    const { truck, run } = setup(3);
+    truck.control.throttle = 1;
+    run(4);
+    truck.control.brakePressed = true;
+    expect(truck.toggleCruise().ok).toBe(false);
+    truck.control.brakePressed = false;
+    const setting = truck.toggleCruise();
+    expect(setting.ok).toBe(true);
+    const target = setting.targetSpeed;
+    truck.control.throttle = 0;
+    run(12);
+    expect(truck.telemetry().cruiseActive).toBe(true);
+    expect(truck.speed()).toBeGreaterThan(target - .7);
+    expect(truck.speed()).toBeLessThan(target + .7);
+    truck.control.throttle = -1;
+    run(.05);
+    expect(truck.telemetry().cruiseActive).toBe(false);
+    expect(truck.telemetry().braking).toBe(true);
+    expect(truck.speed()).toBeLessThan(target + .4);
+    truck.control.throttle = 0;
+    expect(truck.toggleCruise().ok).toBe(true);
+    truck.setEngineRunning(false);
+    expect(truck.telemetry().cruiseActive).toBe(false);
+  });
+
+  it('clears cruise on recovery and respects an overloaded towing speed cap', () => {
+    const { truck, run } = setup();
+    truck.control.throttle = 1;
+    run(4);
+    expect(truck.toggleCruise().ok).toBe(true);
+    truck.control.throttle = 0;
+    truck.setSpeedStat(.25);
+    run(.05);
+    expect(truck.telemetry().cruiseActive).toBe(false);
+    truck.setSpeedStat(8);
+    truck.control.throttle = 1;
+    run(3);
+    expect(truck.toggleCruise().ok).toBe(true);
+    truck.reset(0, 0, 0, 0);
+    expect(truck.telemetry().cruiseActive).toBe(false);
+    expect(truck.telemetry().cruiseTarget).toBe(0);
+  });
+
+  it('holds a loaded uphill or downhill haul with ordinary engine and brake forces', () => {
+    for (const grade of [.06, -.06]) {
+      const { truck, run } = setup(3, Math.atan(grade));
+      truck.control.throttle = 1;
+      run(4);
+      const result = truck.toggleCruise();
+      expect(result.ok).toBe(true);
+      truck.control.throttle = 0;
+      run(14);
+      expect(truck.telemetry().cruiseActive).toBe(true);
+      expect(Math.abs(truck.speed() - result.targetSpeed)).toBeLessThan(.8);
+    }
+  });
+
   it('clears opposite steering through neutral consistently across physics steps',()=>{
     const run=dt=>{let angle=.6;for(let t=0;t<.5-1e-8;t+=dt)angle=steeringStep(angle,-.6,dt,.9,1.6);return angle;};
     expect(run(1/30)).toBeCloseTo(run(1/120),8);expect(run(1/60)).toBeLessThan(-.1);

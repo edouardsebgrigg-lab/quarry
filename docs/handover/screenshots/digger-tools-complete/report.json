@@ -1,0 +1,357 @@
+{
+  "checks": [
+    {
+      "label": "Q opens real cab tools shortcut",
+      "passed": true
+    },
+    {
+      "label": "Current tool is marked Equipped",
+      "passed": true
+    },
+    {
+      "label": "tools-960: bounded readable tool panel",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          144,
+          51.765625,
+          816,
+          488.234375
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "Digger toolsEscCloseUtility 80 #1Choose a tool. Your machine stays here.Standard bucketEquippedGeneral digging and loading.0.90 m wide · 0.40 m³Trenching bucketNarrow cuts for trenches and small bites.0.41 m wide · 0.22 m³Grading bucketWide, shallow cuts for shaping and loose spoil.1.35 m wide · 0.40 m³Hydraulic breakerBreak rock into rubble, then scoop it with a bucket.110 kN breaking forceEsc Close and return to the cab"
+      }
+    },
+    {
+      "label": "tools-390: bounded readable tool panel",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          16,
+          26,
+          374,
+          624
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "overflow": false,
+        "text": "Digger toolsEscCloseUtility 80 #1Choose a tool. Your machine stays here.Standard bucketEquippedGeneral digging and loading.0.90 m wide · 0.40 m³Trenching bucketNarrow cuts for trenches and small bites.0.41 m wide · 0.22 m³Grading bucketWide, shallow cuts for shaping and loose spoil.1.35 m wide · 0.40 m³Hydraulic breakerBreak rock into rubble, then scoop it with a bucket.110 kN breaking forceEsc Close and return to the cab"
+      }
+    },
+    {
+      "label": "tools-130-960: bounded readable tool panel",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          43.203125,
+          21.59375,
+          916.796875,
+          518.390625
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "Digger toolsEscCloseUtility 80 #1Choose a tool. Your machine stays here.Standard bucketEquippedGeneral digging and loading.0.90 m wide · 0.40 m³Trenching bucketNarrow cuts for trenches and small bites.0.41 m wide · 0.22 m³Grading bucketWide, shallow cuts for shaping and loose spoil.1.35 m wide · 0.40 m³Hydraulic breakerBreak rock into rubble, then scoop it with a bucket.110 kN breaking forceEsc Close and return to the cab"
+      }
+    },
+    {
+      "label": "Actual direct selection fits trenching bucket",
+      "passed": true
+    },
+    {
+      "label": "Successful selection keeps the same cab",
+      "passed": true
+    },
+    {
+      "label": "Selection requests and restores cab control under simulated browser pointer lock",
+      "passed": true
+    },
+    {
+      "label": "HUD shows the selected real attachment",
+      "passed": true
+    },
+    {
+      "label": "Actual lever motion marks the tool swap busy",
+      "passed": true
+    },
+    {
+      "label": "Moving empty arm locks every tool",
+      "passed": true
+    },
+    {
+      "label": "tools-moving-960: bounded readable tool panel",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          144,
+          51.765625,
+          816,
+          488.234375
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "Digger toolsEscCloseUtility 80 #1Stop the machine and finish the current stroke before changing tools.Standard bucketGeneral digging and loading.0.90 m wide · 0.40 m³Trenching bucketEquippedNarrow cuts for trenches and small bites.0.41 m wide · 0.22 m³Grading bucketWide, shallow cuts for shaping and loose spoil.1.35 m wide · 0.40 m³Hydraulic breakerBreak rock into rubble, then scoop it with a bucket.110 kN breaking forceEsc Close and return to the cab"
+      }
+    },
+    {
+      "label": "Stopped arm restores tool selection",
+      "passed": true
+    },
+    {
+      "label": "Loaded bucket disables all swaps",
+      "passed": true
+    },
+    {
+      "label": "Loaded bucket explains what to do",
+      "passed": true
+    },
+    {
+      "label": "tools-loaded-960: bounded readable tool panel",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          144,
+          51.765625,
+          816,
+          488.234375
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "Digger toolsEscCloseUtility 80 #1Empty the bucket before changing tools.Standard bucketGeneral digging and loading.0.90 m wide · 0.40 m³Trenching bucketEquippedNarrow cuts for trenches and small bites.0.41 m wide · 0.22 m³Grading bucketWide, shallow cuts for shaping and loose spoil.1.35 m wide · 0.40 m³Hydraulic breakerBreak rock into rubble, then scoop it with a bucket.110 kN breaking forceEsc Close and return to the cab"
+      }
+    },
+    {
+      "label": "Blocked panel preserves the bucket cargo and fitted tool",
+      "passed": true
+    },
+    {
+      "label": "Actual rental disables every tool",
+      "passed": true
+    },
+    {
+      "label": "Rental gives the original-tool explanation",
+      "passed": true
+    },
+    {
+      "label": "tools-rental-390: bounded readable tool panel",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          16,
+          26,
+          374,
+          624
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "overflow": false,
+        "text": "Digger toolsEscCloseMicro 08 #1Rented equipment must be returned with its original tool.Standard bucketEquippedGeneral digging and loading.0.32 m wide · 0.03 m³Trenching bucketNarrow cuts for trenches and small bites.0.14 m wide · 0.02 m³Grading bucketWide, shallow cuts for shaping and loose spoil.0.48 m wide · 0.03 m³Hydraulic breakerBreak rock into rubble, then scoop it with a bucket.14 kN breaking forceEsc Close and return to the cab"
+      }
+    },
+    {
+      "label": "Save and Continue preserve the fitted tool",
+      "passed": true
+    },
+    {
+      "label": "Restored cab marks the saved tool Equipped",
+      "passed": true
+    },
+    {
+      "label": "tools-continued-960: bounded readable tool panel",
+      "passed": true,
+      "sample": {
+        "bounds": [
+          144,
+          51.765625,
+          816,
+          488.234375
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "Digger toolsEscCloseUtility 80 #1Choose a tool. Your machine stays here.Standard bucketGeneral digging and loading.0.90 m wide · 0.40 m³Trenching bucketEquippedNarrow cuts for trenches and small bites.0.41 m wide · 0.22 m³Grading bucketWide, shallow cuts for shaping and loose spoil.1.35 m wide · 0.40 m³Hydraulic breakerBreak rock into rubble, then scoop it with a bucket.110 kN breaking forceEsc Close and return to the cab"
+      }
+    },
+    {
+      "label": "On foot does not open a machine selector",
+      "passed": true
+    },
+    {
+      "label": "No browser errors",
+      "passed": true
+    }
+  ],
+  "screens": [
+    {
+      "name": "tools-960",
+      "sample": {
+        "bounds": [
+          144,
+          51.765625,
+          816,
+          488.234375
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "Digger toolsEscCloseUtility 80 #1Choose a tool. Your machine stays here.Standard bucketEquippedGeneral digging and loading.0.90 m wide · 0.40 m³Trenching bucketNarrow cuts for trenches and small bites.0.41 m wide · 0.22 m³Grading bucketWide, shallow cuts for shaping and loose spoil.1.35 m wide · 0.40 m³Hydraulic breakerBreak rock into rubble, then scoop it with a bucket.110 kN breaking forceEsc Close and return to the cab"
+      }
+    },
+    {
+      "name": "tools-390",
+      "sample": {
+        "bounds": [
+          16,
+          26,
+          374,
+          624
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "overflow": false,
+        "text": "Digger toolsEscCloseUtility 80 #1Choose a tool. Your machine stays here.Standard bucketEquippedGeneral digging and loading.0.90 m wide · 0.40 m³Trenching bucketNarrow cuts for trenches and small bites.0.41 m wide · 0.22 m³Grading bucketWide, shallow cuts for shaping and loose spoil.1.35 m wide · 0.40 m³Hydraulic breakerBreak rock into rubble, then scoop it with a bucket.110 kN breaking forceEsc Close and return to the cab"
+      }
+    },
+    {
+      "name": "tools-130-960",
+      "sample": {
+        "bounds": [
+          43.203125,
+          21.59375,
+          916.796875,
+          518.390625
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "Digger toolsEscCloseUtility 80 #1Choose a tool. Your machine stays here.Standard bucketEquippedGeneral digging and loading.0.90 m wide · 0.40 m³Trenching bucketNarrow cuts for trenches and small bites.0.41 m wide · 0.22 m³Grading bucketWide, shallow cuts for shaping and loose spoil.1.35 m wide · 0.40 m³Hydraulic breakerBreak rock into rubble, then scoop it with a bucket.110 kN breaking forceEsc Close and return to the cab"
+      }
+    },
+    {
+      "name": "tools-moving-960",
+      "sample": {
+        "bounds": [
+          144,
+          51.765625,
+          816,
+          488.234375
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "Digger toolsEscCloseUtility 80 #1Stop the machine and finish the current stroke before changing tools.Standard bucketGeneral digging and loading.0.90 m wide · 0.40 m³Trenching bucketEquippedNarrow cuts for trenches and small bites.0.41 m wide · 0.22 m³Grading bucketWide, shallow cuts for shaping and loose spoil.1.35 m wide · 0.40 m³Hydraulic breakerBreak rock into rubble, then scoop it with a bucket.110 kN breaking forceEsc Close and return to the cab"
+      }
+    },
+    {
+      "name": "tools-loaded-960",
+      "sample": {
+        "bounds": [
+          144,
+          51.765625,
+          816,
+          488.234375
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "Digger toolsEscCloseUtility 80 #1Empty the bucket before changing tools.Standard bucketGeneral digging and loading.0.90 m wide · 0.40 m³Trenching bucketEquippedNarrow cuts for trenches and small bites.0.41 m wide · 0.22 m³Grading bucketWide, shallow cuts for shaping and loose spoil.1.35 m wide · 0.40 m³Hydraulic breakerBreak rock into rubble, then scoop it with a bucket.110 kN breaking forceEsc Close and return to the cab"
+      }
+    },
+    {
+      "name": "tools-rental-390",
+      "sample": {
+        "bounds": [
+          16,
+          26,
+          374,
+          624
+        ],
+        "viewport": [
+          390,
+          650
+        ],
+        "overflow": false,
+        "text": "Digger toolsEscCloseMicro 08 #1Rented equipment must be returned with its original tool.Standard bucketEquippedGeneral digging and loading.0.32 m wide · 0.03 m³Trenching bucketNarrow cuts for trenches and small bites.0.14 m wide · 0.02 m³Grading bucketWide, shallow cuts for shaping and loose spoil.0.48 m wide · 0.03 m³Hydraulic breakerBreak rock into rubble, then scoop it with a bucket.14 kN breaking forceEsc Close and return to the cab"
+      }
+    },
+    {
+      "name": "tools-continued-960",
+      "sample": {
+        "bounds": [
+          144,
+          51.765625,
+          816,
+          488.234375
+        ],
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": false,
+        "text": "Digger toolsEscCloseUtility 80 #1Choose a tool. Your machine stays here.Standard bucketGeneral digging and loading.0.90 m wide · 0.40 m³Trenching bucketEquippedNarrow cuts for trenches and small bites.0.41 m wide · 0.22 m³Grading bucketWide, shallow cuts for shaping and loose spoil.1.35 m wide · 0.40 m³Hydraulic breakerBreak rock into rubble, then scoop it with a bucket.110 kN breaking forceEsc Close and return to the cab"
+      }
+    }
+  ],
+  "samples": [
+    {
+      "moving": {
+        "id": "m2",
+        "attachment": "trench",
+        "load": {},
+        "busy": true
+      }
+    }
+  ],
+  "errors": [],
+  "pointerLockSimulation": "Browser permission/capture is simulated: request and exit update pointerLockElement and dispatch pointerlockchange. UI clicks, keyboard routing, game actions and native screenshots are real.",
+  "pointerLockTrace": [
+    {
+      "request": "world-canvas",
+      "time": 2850.199999988079
+    },
+    {
+      "locked": true,
+      "time": 2850.199999988079
+    },
+    {
+      "locked": false,
+      "time": 3115.3999999910593
+    },
+    {
+      "request": "world-canvas",
+      "time": 4984.199999988079
+    },
+    {
+      "locked": true,
+      "time": 4984.199999988079
+    }
+  ]
+}

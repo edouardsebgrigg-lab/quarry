@@ -29,6 +29,7 @@ export function createPlanner({ scene, camera, game, heightAt, notify, obstacles
     planKey: '',
     planAge: 0,
     built: 0,
+    lastBuild: null,
   };
 
   // ---- the strip drawn over the ground
@@ -212,6 +213,7 @@ export function createPlanner({ scene, camera, game, heightAt, notify, obstacles
     st.active = true;
     root.visible = true;
     reset();
+    st.lastBuild = null;
     notify(`Planning works: ${worksConfig(data, st.mode).name}. Click the start, then the end`, 'good');
   }
   function close() {
@@ -237,6 +239,7 @@ export function createPlanner({ scene, camera, game, heightAt, notify, obstacles
       return r;
     }
     st.built += 1;
+    st.lastBuild = `${worksConfig(data, st.mode).name} built for ${money(r.cost)}${r.spoilTonnes > 0.05 ? `; ${t1(r.spoilTonnes)} spare spoil heaped beside it` : ''}`;
     notify(`${worksConfig(data, st.mode).name} built for ${money(r.cost)}${r.spoilTonnes > 0.05 ? `; ${t1(r.spoilTonnes)} of spare spoil heaped beside it` : ''}`, 'good');
     reset(); // (stay in the planner so the next one can follow straight on)
     return r;
@@ -318,16 +321,25 @@ export function createPlanner({ scene, camera, game, heightAt, notify, obstacles
           lines.push(['Slope', p.mode === 'level' ? 'flat' : `${(p.grade * 100).toFixed(1)}%`]);
           lines.push(['Cost', `${money(p.cost)} (you have ${money(Math.max(0, game.state.money))})`]);
           lines.push(['Dig out', t1(p.cutTonnes)]);
-          if (p.surfaceTonnes > 0) lines.push(['Gravel surface', t1(p.surfaceTonnes)]);
+          if (p.materials?.surface.tonnes.required > 0) {
+            const surface = p.materials.surface.tonnes;
+            lines.push(['Gravel ready', `${t1(surface.fromCut + surface.fromHeaps)} / ${t1(surface.required)}`]);
+            lines.push(['Gravel source', `${t1(surface.fromCut)} cut · ${t1(surface.fromHeaps)} heaps`]);
+          } else if (p.surfaceTonnes > 0) lines.push(['Gravel surface', t1(p.surfaceTonnes)]);
+          const fill = p.materials?.fill.bankVolume;
+          if (fill?.required > 0.01) lines.push(['Fill ready', `${(fill.fromCut + fill.fromHeaps).toFixed(fill.required < 1 ? 2 : 1)} / ${fill.required.toFixed(fill.required < 1 ? 2 : 1)} m³ compacted`]);
           if (p.heapTonnes > 0.01) lines.push(['From your heaps', t1(p.heapTonnes)]);
           if (p.spoilTonnes > 0.05) lines.push(['Spare spoil', `${t1(p.spoilTonnes)}, at the amber ring`]);
         }
+        if (p.gradeGuidance) lines.push(['Minimum run', `${p.gradeGuidance.minimumRun.toFixed(1)} m for this rise`]);
+        if (p.materials && (p.materials.surface.tonnes.missing > 0.01 || p.materials.fill.bankVolume.missing > 0.01)) lines.push(['Heap reach', `${p.materials.sourceRadius} m · clear of obstacles`]);
         level = p.ok ? 'good' : 'bad';
         lines.push([null, p.ok ? (stage === 'confirm' ? 'Ready. Click to build' : 'Click to set the end here') : p.reason]);
       } else if (stage === 'end') {
         lines.push([null, 'Aim at the ground where it should end']);
-      } else if (!st.hover) lines.push([null, 'Aim at the ground']);
-      return { prompts, card: { title: headline, stage, lines, level, mode: st.mode, modeKey: key('works') } };
+      } else if (st.lastBuild) { lines.push([null, st.lastBuild]); level = 'good'; }
+      else if (!st.hover) lines.push([null, 'Aim at the ground']);
+      return { prompts, card: { controls: prompts, title: headline, stage, lines, level, mode: st.mode, modeKey: key('works') } };
     },
 
     destroy() {

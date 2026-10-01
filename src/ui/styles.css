@@ -1459,3 +1459,36 @@ body:has(.overlay-map) .feedback > :is(.toasts, .log, .mentor) { visibility: hid
   .hud3d.in-machine .prompt { left: 50%; }
   body:has(.hud-goal:not([style*="display: none"])) .mentor { visibility: hidden; }
 }
+
+/* Direct tool choice in the cab, with purpose and real attachment dimensions. */
+.overlay-digger-tools { width: min(42rem,calc(100vw - 2rem)); max-height: 92dvh; display: flex; flex-direction: column; overflow: hidden; }
+.overlay-digger-tools .overlay-head { flex: none; }
+.dt-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.dt-machine { font-size: .92rem; font-weight: 650; }
+.dt-note { font-size: .84rem; line-height: 1.5; color: var(--muted); margin: .45rem 0 1rem; }
+.dt-note.blocked { color: #e4cb9f; }
+.dt-choices { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .75rem; }
+.dt-tool { font: inherit; text-align: left; min-width: 0; display: flex; flex-direction: column; gap: .55rem; padding: .9rem; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.025); color: var(--text); cursor: pointer; }
+.dt-tool:hover:not(:disabled), .dt-tool:focus-visible { border-color: var(--accent); background: rgba(245,184,46,.08); }
+.dt-tool:disabled { cursor: default; opacity: .65; }
+.dt-tool.equipped { opacity: 1; border-color: rgba(245,184,46,.6); background: rgba(245,184,46,.065); }
+.dt-tool-head { display: flex; flex-wrap: wrap; gap: .4rem .7rem; align-items: center; font-size: .9rem; }
+.dt-equipped { font-size: .66rem; color: var(--accent); text-transform: uppercase; letter-spacing: .05em; }
+.dt-purpose { color: var(--muted); font-size: .8rem; line-height: 1.45; }
+.dt-specs { margin-top: auto; font-size: .75rem; font-variant-numeric: tabular-nums; color: #d6c394; line-height: 1.4; }
+.dt-foot { display: flex; align-items: center; gap: .4rem; color: var(--muted); font-size: .72rem; margin-top: 1rem; }
+.dt-foot .kbd { font-size: .65rem; }
+@media (max-width: 480px) { .overlay-digger-tools { padding: 1rem; } .dt-choices { grid-template-columns: minmax(0,1fr); } .dt-tool { gap: .4rem; padding: .75rem; } }
+/* Planning quotes stay inside the view, with labels and exact material amounts wrapping. */
+.works-card { width: min(24rem,calc(100vw - 2rem)); bottom: 1rem; max-height: calc(100dvh - 7rem); overflow-y: auto; box-sizing: border-box; }
+.wk-row { display: grid; grid-template-columns: minmax(0,.43fr) minmax(0,.57fr); align-items: start; gap: .45rem; font-size: .72rem; line-height: 1.4; }
+.wk-label, .wk-val { min-width: 0; overflow-wrap: anywhere; }
+.wk-note { font-size: .72rem; line-height: 1.45; overflow-wrap: anywhere; }
+.wk-modes { flex-wrap: wrap; }
+@media (max-width: 680px) { .works-card { right: .65rem; bottom: 1rem; max-width: calc(100vw - 1.3rem); max-height: calc(100dvh - 7rem); } }
+.wk-controls { display: flex; flex-wrap: wrap; gap: .45rem .8rem; border-top: 1px solid rgba(255,255,255,.18); padding-top: .6rem; margin-top: .3rem; font-size: .72rem; line-height: 1.4; }
+.wk-control { display: inline-flex; align-items: center; gap: .35rem; min-width: 0; }
+.wk-controls .kbd { flex: none; font-size: .65rem; height: 1.2rem; }
+.works-card { background: rgba(13,16,18,.93); border: 1px solid rgba(255,255,255,.2); box-shadow: 0 5px 20px rgba(0,0,0,.25); }
+body:has(.hud3d.planning) .feedback > :is(.mentor,.log,.toasts),
+body:has(.overlay-digger-tools) .feedback > :is(.mentor,.log,.toasts) { visibility: hidden; }

@@ -65,7 +65,8 @@ export function createHud3d({ settings }) {
   const worksModeKey = el('span', { class: 'wk-key' });
   const worksModes = el('div', { class: 'wk-modes' }, worksModeKey, ...['road', 'ramp', 'level'].map((m) => el('span', { class: 'wk-mode', 'data-mode': m }, { road: 'Road', ramp: 'Ramp', level: 'Level' }[m])));
   const worksRows = el('div', { class: 'wk-rows' });
-  const worksCard = el('div', { class: 'works-card' }, worksTitle, worksModes, worksRows);
+  const worksControls = el('div', { class: 'wk-controls' });
+  const worksCard = el('div', { class: 'works-card' }, worksTitle, worksModes, worksRows, worksControls);
   let worksKey = '';
 
   const surveyTitle = el('span', {}, 'Ground survey');
@@ -82,9 +83,10 @@ export function createHud3d({ settings }) {
   // Control hints per mode: [keys, label]. The last rows are the same everywhere.
   function hints(mode) {
     let rows;
-    if (mode === 'truck' || mode === 'pickup' || mode === 'tractor') {
+    if (['truck', 'pickup', 'tractor', 'quad', 'buggy', 'fourByFour', 'serviceVan'].includes(mode)) {
       rows = [[[k('forward'), k('back')], 'Drive / brake'], [[k('left'), k('right')], 'Steer'], [[k('jump')], 'Handbrake'],
-        [[k('tip')], { pickup: 'Unload', tractor: 'Tip trailer' }[mode] ?? 'Tip load'], [[k('camera')], 'Camera'], [[k('recover')], 'Recover'],
+        ...(['truck', 'pickup', 'tractor'].includes(mode) ? [[[k('tip')], { pickup: 'Unload', tractor: 'Tip trailer' }[mode] ?? 'Tip load']] : []),
+        [[k('cruise')], 'Hold current speed / cancel cruise'], [[k('camera')], 'Camera'], [[k('recover')], 'Recover'],
         [[k('interact')], 'Get out']];
     } else if (mode === 'plan') {
       rows = [[['LMB'], 'Set start / end, then build'], [['Wheel'], 'Width'], [[k('works')], 'Road / ramp / level'],
@@ -97,11 +99,11 @@ export function createHud3d({ settings }) {
         [[k('camera')], 'Camera'], [[k('interact')], 'Get out']];
     } else if (mode === 'digger') {
       rows = [[['Mouse ←→'], 'Swing'], [['Wheel'], 'Adjust reach'], [[k('precision'), 'Wheel'], 'Cut depth'], [['LMB'], 'Dig / dump'], [[k('freeLook')], 'Hold: look around'], [[k('precision')], 'Precision'], [[k('forward'), k('left'), k('back'), k('right')], 'Tracks'],
-        [[k('tip')], 'Last dump target / attachment'], [[k('controls')], 'Direct controls'], [[k('camera')], 'Camera'], [[k('interact')], 'Get out']];
+        [[k('tip')], 'Last dump target / attachment'], [[k('attachments')], 'Choose attachment'], [[k('controls')], 'Direct controls'], [[k('camera')], 'Camera'], [[k('interact')], 'Get out']];
     } else if (mode === 'digger-direct') {
       rows = [[['Mouse ←→'], 'Swing'], [['Mouse ↑↓'], 'Stick out / in'], [['Wheel'], 'Boom up / down'], [['LMB'], 'Curl bucket in'],
         [['RMB'], 'Open bucket'], [[k('stickOut'), k('stickIn')], 'Stick'], [[k('slewLeft'), k('slewRight')], 'Slew'], [[k('boomUp'), k('boomDown')], 'Boom'], [[k('freeLook')], 'Hold: look around'], [[k('precision')], 'Precision'], [[k('forward'), k('left'), k('back'), k('right')], 'Tracks'],
-        [[k('tip')], 'Change attachment (empty)'], [[k('controls')], 'Assisted controls'], [[k('camera')], 'Camera'], [[k('interact')], 'Get out']];
+        [[k('tip')], 'Change attachment (empty)'], [[k('attachments')], 'Choose attachment'], [[k('controls')], 'Assisted controls'], [[k('camera')], 'Camera'], [[k('interact')], 'Get out']];
     } else {
       rows = [[[k('forward'), k('left'), k('back'), k('right')], 'Move'], [[k('sprint')], 'Sprint'], [[k('jump')], 'Jump'],
         [['LMB'], 'Dig / tip the shovel'], [[k('interact')], 'Use / get in / take barrow'], [[k('repair')], 'Service / repair'],
@@ -162,7 +164,7 @@ export function createHud3d({ settings }) {
         prompt.classList.toggle('info', list.length === 1 && !p.key && !j);
       }
       if (promptFill && j) promptFill.style.width = `${Math.round(j.progress * 100)}%`;
-      prompt.style.display = key ? '' : 'none';
+      prompt.style.display = key && !info.works ? '' : 'none';
 
       // Hints: shown for a while when you change what you're driving, or pinned with H.
       if (helpKey !== info.mode) {
@@ -183,8 +185,8 @@ export function createHud3d({ settings }) {
       const surveying = !!info.survey && !overlayOpen;
       node.classList.toggle('surveying', surveying);
       node.classList.toggle('in-machine', !!info.machine);
-      help.classList.toggle('hidden', !showHelp || surveying);
-      helpTag.classList.toggle('hidden', showHelp || surveying);
+      help.classList.toggle('hidden', !showHelp || surveying || !!info.works);
+      helpTag.classList.toggle('hidden', showHelp || surveying || !!info.works);
       clear(helpTag);
       helpTag.append(kbd(k('hints')), el('span', {}, 'Controls'));
 
@@ -200,6 +202,8 @@ export function createHud3d({ settings }) {
           worksModeKey.append(kbd(w.modeKey));
           for (const n of worksModes.children) n.classList.toggle('on', n.dataset.mode === w.mode);
           clear(worksRows);
+          clear(worksControls);
+          for (const control of w.controls ?? []) worksControls.append(el('div', { class: 'wk-control' }, kbd(control.key), el('span', {}, control.text)));
           for (const [label, value] of w.lines) {
             worksRows.append(label
               ? el('div', { class: 'wk-row' }, el('span', { class: 'wk-label' }, label), el('span', { class: 'wk-val' }, value))
@@ -299,6 +303,7 @@ export function createHud3d({ settings }) {
       if (digger && resistance > 0) metrics.push(`${Math.round(resistance)} kN resistance`);
       if (digger && Number.isFinite(m.cutDepth)) metrics.push(`${m.cutDepth.toFixed(2)} m cut`);
       if (!digger && m.towLimitTonnes > 0 && Number.isFinite(m.grossLoadTonnes)) metrics.push(`${m.grossLoadTonnes.toFixed(1)}/${m.towLimitTonnes.toFixed(1)} t tow`);
+      if (m.road && m.cruiseActive) metrics.push(`Cruise ${Math.round(m.cruiseTargetKmh)} km/h${m.cruiseLimited ? ' · limited by grip / terrain' : ''}`);
       if (!digger && m.capacityVolume > 0) metrics.push(`${(m.loadVolume ?? 0).toFixed(1)}/${m.capacityVolume.toFixed(1)} m³ bed`);
       if (slip > .2) metrics.push(`${Math.round(slip * 100)}% wheel slip`);
       setText(workMetrics, metrics.join(' · '));

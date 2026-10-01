@@ -180,3 +180,68 @@ describe('earthworks: the spoil', () => {
     }
   });
 });
+
+describe('earthworks: material supply preview', () => {
+  const flatGround = () => {
+    const cfg = structuredClone(data.ground);
+    cfg.plots.home.surfaceRoll = 0;
+    return createGround(cfg, 'home', { x0: 0, z0: 0, seed: 7 });
+  };
+  it('balances every material in the preview and conserves it through a mixed-fill build', () => {
+    const g = flatGround();
+    heap(g, 40, 60, 8); // Raised start requires genuine fill as well as a surface.
+    g.deposit({ x: 50, z: 82, radius: 2.5, tonnes: { gravel: 60, sand: 60, clay: 20 } });
+    const before = g.totals(), saved = JSON.stringify(g.serialize());
+    const p = g.planWorks(strip());
+    expect(p.ok, p.reason).toBe(true);
+    expect(JSON.stringify(g.serialize())).toBe(saved);
+    expect(p.materials.fill.bankVolume.fromHeaps).toBeGreaterThan(0);
+    expect(p.materials.fill.tonnes.sand).toBeGreaterThan(0);
+    expect(p.materials.surface.looseVolume.missing).toBe(0);
+    expect(p.materials.fill.bankVolume.missing).toBeCloseTo(0, 6);
+    for (const m of Object.keys(data.ground.materials)) {
+      const available = (p.materials.cut[m] ?? 0) + (p.materials.heaps[m] ?? 0);
+      const surface = m === p.materials.surface.material ? p.materials.surface.tonnes.required : 0;
+      const used = surface + (p.materials.fill.tonnes[m] ?? 0) + (p.materials.spoil[m] ?? 0);
+      expect(available, m).toBeCloseTo(used, 5);
+    }
+    const built = g.buildWorks(strip());
+    expect(built.ok, built.reason).toBe(true);
+    expect(built.materials).toEqual(p.materials);
+    const after = g.totals();
+    for (const m of Object.keys(before)) expect(after[m], m).toBeCloseTo(before[m], 3);
+  });
+  it('reports both shortages before building, and adding precisely the missing supply makes it feasible', () => {
+    const g = flatGround();
+    heap(g, 40, 60, 5);
+    const saved = JSON.stringify(g.serialize()), p = g.planWorks(strip());
+    expect(p.reason).toBe('gravel');
+    expect(p.materials.surface.tonnes.missing).toBeGreaterThan(0);
+    expect(p.materials.fill.bankVolume.missing).toBeGreaterThan(0);
+    expect(g.buildWorks(strip()).ok).toBe(false);
+    expect(JSON.stringify(g.serialize())).toBe(saved);
+    heap(g, 50, 82, p.materials.surface.tonnes.missing + .002);
+    const q = g.planWorks(strip());
+    expect(q.reason).toBe('fill');
+    expect(q.materials.surface.looseVolume.missing).toBeCloseTo(0, 6);
+    const needed = q.materials.fill.bankVolume.missing;
+    g.deposit({ x: 52, z: 84, radius: 2.5, tonnes: { topsoil: needed * data.ground.materials.topsoil.density + .002 } });
+    const ready = g.planWorks(strip());
+    expect(ready.ok, ready.reason).toBe(true);
+    expect(ready.materials.fill.bankVolume.missing).toBeCloseTo(0, 6);
+    const before = g.totals();
+    expect(g.buildWorks(strip()).ok).toBe(true);
+    for (const [m, tonnes] of Object.entries(before)) expect(g.totals()[m], m).toBeCloseTo(tonnes, 3);
+  });
+  it('reports usable supply rather than counting occupied or out-of-reach heaps', () => {
+    const g = flatGround();
+    heap(g, 50, 80, 80);
+    heap(g, 50, 102, 100); // Outside the strip's 30 m sourcing reach.
+    const p = g.planWorks(strip({ obstacles: [{ x: 50, z: 80, r: 5 }] }));
+    expect(p.reason).toBe('gravel');
+    expect(p.materials.surface.looseVolume.fromHeaps).toBe(0);
+    expect(p.materials.heaps).toEqual({});
+    expect(p.materials.surface.tonnes.missing).toBeCloseTo(p.surfaceTonnes, 6);
+    expect(p.materials.sourceRadius).toBe(30);
+  });
+});

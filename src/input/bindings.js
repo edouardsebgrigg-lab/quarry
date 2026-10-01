@@ -37,6 +37,8 @@ export const DEFAULT_BINDINGS = {
   freeLook: 'KeyX',
   precision: 'ShiftRight',
   survey: 'KeyL',
+  cruise: 'KeyZ',
+  attachments: 'KeyQ',
   dev: 'F1',
 };
 
@@ -74,6 +76,8 @@ export const ACTION_LABELS = {
   freeLook: 'Digger: hold to look around',
   precision: 'Digger: precision / adjust cut depth',
   survey: 'Toggle material survey',
+  cruise: 'Road vehicle: hold current speed / cancel cruise',
+  attachments: 'Digger: choose attachment',
   dev: 'Dev panel',
 };
 

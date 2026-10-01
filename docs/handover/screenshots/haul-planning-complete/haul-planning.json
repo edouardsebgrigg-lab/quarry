@@ -1,0 +1,552 @@
+{
+  "checks": [
+    {
+      "passed": true,
+      "label": "Cruise refuses to engage while stationary"
+    },
+    {
+      "passed": true,
+      "label": "Cruise refusal appears locally in the occupied dash"
+    },
+    {
+      "passed": true,
+      "label": "Actual throttle reaches cruise engagement speed"
+    },
+    {
+      "passed": true,
+      "label": "Z engages current-speed cruise while the accelerator is held"
+    },
+    {
+      "passed": true,
+      "label": "True brake intent cancels even with W and S held together"
+    },
+    {
+      "passed": true,
+      "label": "Cruise continues driving after the accelerator is released"
+    },
+    {
+      "passed": true,
+      "label": "Cruise tracks the selected speed using real vehicle physics"
+    },
+    {
+      "passed": true,
+      "label": "Occupied road dash displays active cruise"
+    },
+    {
+      "passed": true,
+      "label": "Pause holds cruise target and vehicle position"
+    },
+    {
+      "passed": true,
+      "label": "Cruise resumes after pause"
+    },
+    {
+      "passed": true,
+      "label": "Brake pedal immediately cancels cruise"
+    },
+    {
+      "passed": true,
+      "label": "Cruise can be re-engaged"
+    },
+    {
+      "passed": true,
+      "label": "Handbrake immediately cancels cruise"
+    },
+    {
+      "passed": true,
+      "label": "Recovery cancels cruise rather than accelerating a reset vehicle"
+    },
+    {
+      "passed": true,
+      "label": "Low-speed exit fixture has engaged cruise"
+    },
+    {
+      "passed": true,
+      "label": "Getting out cancels cruise on the parked machine"
+    },
+    {
+      "passed": true,
+      "label": "F and an actual mouse click set the road start"
+    },
+    {
+      "passed": true,
+      "label": "Road preview reports an exact gravel shortfall"
+    },
+    {
+      "passed": true,
+      "label": "Actual planner HUD shows available/required gravel and usable heap range"
+    },
+    {
+      "passed": true,
+      "label": "Planner controls live in the quote without duplicate floating hints"
+    },
+    {
+      "passed": true,
+      "label": "Road material card fits at390px"
+    },
+    {
+      "passed": true,
+      "label": "Phone quote/footer clear status and remain inside visible card"
+    },
+    {
+      "passed": true,
+      "label": "Phone planner controls are visible and mentor cannot cover them"
+    },
+    {
+      "passed": true,
+      "label": "Road material card fits at130percent text"
+    },
+    {
+      "passed": true,
+      "label": "Large-text quote/footer clear status and remain inside visible card"
+    },
+    {
+      "passed": true,
+      "label": "Large-text planner actions remain visible without message overlap"
+    },
+    {
+      "passed": true,
+      "label": "Clear nearby gravel makes the same plan feasible"
+    },
+    {
+      "passed": true,
+      "label": "Planning and real heap relocation conserve material"
+    },
+    {
+      "passed": true,
+      "label": "Third actual mouse click builds and charges the displayed price once"
+    },
+    {
+      "passed": true,
+      "label": "Actual road build conserves material"
+    },
+    {
+      "passed": true,
+      "label": "No native runtime errors"
+    }
+  ],
+  "samples": [
+    {
+      "before": {
+        "machine": {
+          "name": "Used Tipper Truck #1",
+          "tier": "used",
+          "type": "truck",
+          "road": true,
+          "carrier": true,
+          "condition": 90,
+          "broken": false,
+          "load": 0,
+          "capacity": 20,
+          "bucketVolume": null,
+          "cutDepth": null,
+          "aimReach": null,
+          "resistance": null,
+          "direct": false,
+          "attachmentBusy": false,
+          "speedKmh": 16.656895637512207,
+          "camera": "cab",
+          "ticket": false,
+          "material": null,
+          "loadVolume": 0,
+          "capacityVolume": null,
+          "bucketFill01": null,
+          "hydraulicLoad": null,
+          "slip": 0.00815236556541176,
+          "attachment": null,
+          "grossLoadTonnes": null,
+          "towLimitTonnes": null,
+          "workFeedback": {
+            "kind": "warn",
+            "label": "Drive forward above 8 km/h before setting cruise",
+            "intensity": 1
+          },
+          "engine": "running",
+          "cruiseActive": false,
+          "cruiseTargetKmh": 0,
+          "cruiseLimited": false,
+          "rpm": 1601.2808448308472,
+          "maxRpm": 2600,
+          "gear": "2"
+        },
+        "feel": {
+          "rpm": 1601.2808448308472,
+          "gear": 2,
+          "shifting": false,
+          "load": 1,
+          "running": true,
+          "misfire": false,
+          "braking": false,
+          "reversing": false,
+          "shifted": 1,
+          "surface": "grass",
+          "slip": 0.00815236556541176,
+          "bump": 0.00561833381652832,
+          "airborne": false,
+          "cruiseActive": false,
+          "cruiseTarget": 0,
+          "cruiseLimited": false,
+          "engine": "running",
+          "speed": 4.626915454864502,
+          "bedSpeed": 0,
+          "bedAngle": 0,
+          "tailgate": 0,
+          "size": 1
+        },
+        "pos": [
+          76.03742980957031,
+          1.3480989933013916,
+          69.98358917236328
+        ]
+      }
+    },
+    {
+      "engaged": {
+        "machine": {
+          "name": "Used Tipper Truck #1",
+          "tier": "used",
+          "type": "truck",
+          "road": true,
+          "carrier": true,
+          "condition": 90,
+          "broken": false,
+          "load": 0,
+          "capacity": 20,
+          "bucketVolume": null,
+          "cutDepth": null,
+          "aimReach": null,
+          "resistance": null,
+          "direct": false,
+          "attachmentBusy": false,
+          "speedKmh": 16.93728733062744,
+          "camera": "cab",
+          "ticket": false,
+          "material": null,
+          "loadVolume": 0,
+          "capacityVolume": null,
+          "bucketFill01": null,
+          "hydraulicLoad": null,
+          "slip": 0.006862179962921872,
+          "attachment": null,
+          "grossLoadTonnes": null,
+          "towLimitTonnes": null,
+          "workFeedback": null,
+          "engine": "running",
+          "cruiseActive": true,
+          "cruiseTargetKmh": 16.656895637512207,
+          "cruiseLimited": false,
+          "rpm": 1628.5192076261942,
+          "maxRpm": 2600,
+          "gear": "2"
+        },
+        "feel": {
+          "rpm": 1628.5192076261942,
+          "gear": 2,
+          "shifting": false,
+          "load": 1,
+          "running": true,
+          "misfire": false,
+          "braking": false,
+          "reversing": false,
+          "shifted": 1,
+          "surface": "grass",
+          "slip": 0.006862179962921872,
+          "bump": 0.0019562244415283203,
+          "airborne": false,
+          "cruiseActive": true,
+          "cruiseTarget": 4.626915454864502,
+          "cruiseLimited": false,
+          "engine": "running",
+          "speed": 4.7048020362854,
+          "bedSpeed": 0,
+          "bedAngle": 0,
+          "tailgate": 0,
+          "size": 1
+        },
+        "pos": [
+          76.19490814208984,
+          1.3484132289886475,
+          69.98347473144531
+        ]
+      }
+    },
+    {
+      "held": {
+        "machine": {
+          "name": "Used Tipper Truck #1",
+          "tier": "used",
+          "type": "truck",
+          "road": true,
+          "carrier": true,
+          "condition": 90,
+          "broken": false,
+          "load": 0,
+          "capacity": 20,
+          "bucketVolume": null,
+          "cutDepth": null,
+          "aimReach": null,
+          "resistance": null,
+          "direct": false,
+          "attachmentBusy": false,
+          "speedKmh": 18.208652687072753,
+          "camera": "cab",
+          "ticket": false,
+          "material": null,
+          "loadVolume": 0,
+          "capacityVolume": null,
+          "bucketFill01": null,
+          "hydraulicLoad": null,
+          "slip": 0.001215899660414452,
+          "attachment": null,
+          "grossLoadTonnes": null,
+          "towLimitTonnes": null,
+          "workFeedback": null,
+          "engine": "running",
+          "cruiseActive": true,
+          "cruiseTargetKmh": 18.276719856262208,
+          "cruiseLimited": false,
+          "rpm": 1765.4043629571986,
+          "maxRpm": 2600,
+          "gear": "2"
+        },
+        "feel": {
+          "rpm": 1765.4043629571986,
+          "gear": 2,
+          "shifting": false,
+          "load": 0.18385549926757822,
+          "running": true,
+          "misfire": false,
+          "braking": false,
+          "reversing": false,
+          "shifted": 1,
+          "surface": "grass",
+          "slip": 0.001215899660414452,
+          "bump": 0.0009691715240478516,
+          "airborne": false,
+          "cruiseActive": true,
+          "cruiseTarget": 5.076866626739502,
+          "cruiseLimited": false,
+          "engine": "running",
+          "speed": 5.057959079742432,
+          "bedSpeed": 0,
+          "bedAngle": 0,
+          "tailgate": 0,
+          "size": 1
+        },
+        "pos": [
+          85.998046875,
+          1.3690779209136963,
+          69.97695922851562
+        ]
+      }
+    },
+    {
+      "slow": {
+        "machine": {
+          "name": "Used Tipper Truck #1",
+          "tier": "used",
+          "type": "truck",
+          "road": true,
+          "carrier": true,
+          "condition": 90,
+          "broken": false,
+          "load": 0,
+          "capacity": 20,
+          "bucketVolume": null,
+          "cutDepth": null,
+          "aimReach": null,
+          "resistance": null,
+          "direct": false,
+          "attachmentBusy": false,
+          "speedKmh": 8.80744228363037,
+          "camera": "cab",
+          "ticket": false,
+          "material": null,
+          "loadVolume": 0,
+          "capacityVolume": null,
+          "bucketFill01": null,
+          "hydraulicLoad": null,
+          "slip": 0.0058564638993574315,
+          "attachment": null,
+          "grossLoadTonnes": null,
+          "towLimitTonnes": null,
+          "workFeedback": null,
+          "engine": "running",
+          "cruiseActive": true,
+          "cruiseTargetKmh": 8.999882411956788,
+          "cruiseLimited": false,
+          "rpm": 1213.9709908543846,
+          "maxRpm": 2600,
+          "gear": "1"
+        },
+        "feel": {
+          "rpm": 1213.9709908543846,
+          "gear": 1,
+          "shifting": false,
+          "load": 0.21866787099838256,
+          "running": true,
+          "misfire": false,
+          "braking": false,
+          "reversing": false,
+          "shifted": 2,
+          "surface": "grass",
+          "slip": 0.0058564638993574315,
+          "bump": 0.15168428421020508,
+          "airborne": false,
+          "cruiseActive": true,
+          "cruiseTarget": 2.499967336654663,
+          "cruiseLimited": false,
+          "engine": "running",
+          "speed": 2.446511745452881,
+          "bedSpeed": 0,
+          "bedAngle": 0,
+          "tailgate": 0,
+          "size": 1
+        },
+        "pos": [
+          101.45819854736328,
+          1.2966277599334717,
+          69.96407318115234
+        ]
+      }
+    },
+    {
+      "short": {
+        "ok": false,
+        "reason": "Not enough gravel for the surface: 13.7 t more. Tip loose gravel within 30 m of it",
+        "materials": {
+          "sourceRadius": 30,
+          "cut": {
+            "topsoil": 14.729554734192092
+          },
+          "heaps": {},
+          "surface": {
+            "material": "gravel",
+            "looseVolume": {
+              "required": 9.389999999999992,
+              "fromCut": 0,
+              "fromHeaps": 0,
+              "missing": 9.389999999999992
+            },
+            "tonnes": {
+              "required": 13.693749999999989,
+              "fromCut": 0,
+              "fromHeaps": 0,
+              "missing": 13.693749999999989
+            }
+          },
+          "fill": {
+            "bankVolume": {
+              "required": 0,
+              "fromCut": 0,
+              "fromHeaps": 0,
+              "missing": 0
+            },
+            "tonnes": {}
+          },
+          "spoil": {
+            "topsoil": 14.729554734192092
+          }
+        },
+        "card": {
+          "controls": [
+            {
+              "key": "LMB",
+              "text": "Can't build this yet"
+            },
+            {
+              "key": "Wheel",
+              "text": "Width 4 m"
+            },
+            {
+              "key": "RMB",
+              "text": "Back"
+            }
+          ],
+          "title": "Haul road 20 m × 4 m",
+          "stage": "confirm",
+          "lines": [
+            [
+              "Slope",
+              "0.1%"
+            ],
+            [
+              "Cost",
+              "$137 (you have $500)"
+            ],
+            [
+              "Dig out",
+              "14.7 t"
+            ],
+            [
+              "Gravel ready",
+              "0.0 t / 13.7 t"
+            ],
+            [
+              "Gravel source",
+              "0.0 t cut · 0.0 t heaps"
+            ],
+            [
+              "Spare spoil",
+              "14.7 t, at the amber ring"
+            ],
+            [
+              "Heap reach",
+              "30 m · clear of obstacles"
+            ],
+            [
+              null,
+              "Not enough gravel for the surface: 13.7 t more. Tip loose gravel within 30 m of it"
+            ]
+          ],
+          "level": "bad",
+          "mode": "road",
+          "modeKey": "F"
+        }
+      }
+    },
+    {
+      "ready": {
+        "ok": true,
+        "cost": 137,
+        "materials": {
+          "sourceRadius": 30,
+          "cut": {
+            "topsoil": 14.729554734192092
+          },
+          "heaps": {
+            "gravel": 13.693749999999987
+          },
+          "surface": {
+            "material": "gravel",
+            "looseVolume": {
+              "required": 9.389999999999992,
+              "fromCut": 0,
+              "fromHeaps": 9.38999999999999,
+              "missing": 1.7763568394002505e-15
+            },
+            "tonnes": {
+              "required": 13.693749999999989,
+              "fromCut": 0,
+              "fromHeaps": 13.693749999999987,
+              "missing": 2.590520390792032e-15
+            }
+          },
+          "fill": {
+            "bankVolume": {
+              "required": 0,
+              "fromCut": 0,
+              "fromHeaps": 0,
+              "missing": 0
+            },
+            "tonnes": {}
+          },
+          "spoil": {
+            "topsoil": 14.729554734192092
+          }
+        }
+      }
+    }
+  ],
+  "errors": []
+}
