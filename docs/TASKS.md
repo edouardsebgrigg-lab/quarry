@@ -328,7 +328,7 @@ Edouard authorised the full brainstorm, with less emphasis on jobs, and parallel
 - G1 material/ground physics, finite broken rock, strata faces and exact compatible compressed saves — DONE `d9ea29a`; verification in checkpoint.
 - P1 20-minute business day with old-save date preservation — integrated, awaiting final checks/commit.
 - P2 easier first apprentice and immediate applicants — integrated, awaiting final checks/commit.
-- F1 8 diggers, 5 tractors, 5 independent trailers, 4 mobility vehicles, towing limits, visual profiles, dealer categories and legacy migration — integrated; visual QA fixes underway.
+- F1 8 diggers, 5 tractors, 5 independent trailers, 4 mobility vehicles, towing limits, visual profiles, dealer categories and legacy migration — DONE `1d151f9`; verification in checkpoint.
 - D15 swept real digging, independent controls, free look, precision, attachments, guided Assisted strokes, depth/reach feedback, remembered dump and pose saves — integrated; native checks passed, final additions being checked.
 - Q1 short incoming rentals, repeat shovel, loaded barrow recovery, fleet waypoints and clean-sales alternatives to job goals — integrated, awaiting final checks/commit.
 
