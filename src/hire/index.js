@@ -6,6 +6,7 @@
 import { addMoney } from '../economy/index.js';
 import { getDate, createRng } from '../core/index.js';
 import { getMachine, machineName } from '../machinery/index.js';
+import { loadCarrier, canDeliver, attachedTrailer } from '../machinery/trailers.js';
 
 export const AWAY = 'hire'; // (the "site" a machine on hire is at)
 
@@ -28,12 +29,14 @@ export function dayRate(ctx, type) {
 
 // Why a machine can't go out on hire now (null if it can).
 export function cantHire(ctx, m) {
+  if (m.rental) return 'You cannot hire out rented equipment';
+  if (m.attachedTo || attachedTrailer(ctx,m)) return 'Unhitch the trailer before sending a machine away';
   if (m.onHire) return 'It’s already out on hire';
   if (m.operator) return 'One of your staff is working it';
   if (m.broken) return 'It’s broken down';
   if (m.job) return 'It’s busy';
-  if (loaded(m)) return 'Empty it first';
-  if (roadLegal(ctx, m) && ctx.state.machines.filter((x) => roadLegal(ctx, x) && !x.onHire).length <= 1) {
+  if (loaded(loadCarrier(ctx,m) ?? m)) return 'Empty it first';
+  if (canDeliver(ctx, m) && ctx.state.machines.filter((x) => canDeliver(ctx, x) && !x.onHire && !x.rental).length <= 1) {
     return 'You need a road vehicle at home';
   }
   return null;

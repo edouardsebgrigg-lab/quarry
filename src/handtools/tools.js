@@ -8,6 +8,7 @@
 // Tonnes are always conserved: whatever doesn't fit stays where it was.
 import { pileTotal, addToPile, takeProportional } from '../quarry/index.js';
 import { getMachine, getStats } from '../machinery/index.js';
+import { loadCarrier, combinationStats, cargoRoom } from '../machinery/trailers.js';
 
 const EPS = 1e-6;
 
@@ -57,8 +58,10 @@ export function shovelDig(ctx, { x, z }) {
   const reason = whyCannotDig(ctx, x, z);
   if (reason) return { ok: false, reason };
   const spec = ctx.data.tools.shovel;
+  const resistance = ctx.ground.digResistanceAt?.(x,z) ?? spec.force;
+  const effort = Math.max(spec.minimumBiteFactor,Math.min(1,spec.force/Math.max(1,resistance)));
   const r = ctx.ground.dig({
-    x, z, radius: spec.radius, bottomY: ctx.ground.heightAt(x, z) - spec.depth, maxVolume: spec.volume,
+    x, z, radius: spec.radius, bottomY: ctx.ground.heightAt(x, z) - spec.depth * effort, maxVolume: spec.volume * effort,
   });
   if (r.total < 1e-4) return { ok: false, reason: 'Solid rock: too hard for a shovel' };
   tools(ctx).shovel.load = r.tonnes;
@@ -99,14 +102,15 @@ export function shovelDump(ctx, target) {
 // Put as much of a load as fits into a vehicle's bed. Returns { ok, tonnes }.
 function intoBed(ctx, machineId, load) {
   const m = getMachine(ctx, machineId);
-  const cap = m ? getStats(ctx.data, m).capacity ?? 0 : 0;
+  const carrier = loadCarrier(ctx,m);
+  const cap = m ? combinationStats(ctx,m).capacity ?? 0 : 0;
   if (!cap) return { ok: false, reason: 'That has nowhere to put it' };
-  if (m.job) return { ok: false, reason: 'Wait for it to finish' };
-  const room = cap - pileTotal(m.load);
+  if (m.job || carrier?.job) return { ok: false, reason: 'Wait for it to finish' };
+  const room = cargoRoom(ctx,m,load);
   if (room < 0.005) return { ok: false, reason: 'It\'s full' };
   const moved = Math.min(room, pileTotal(load));
-  addToPile(m.load, takeProportional(load, moved));
-  ctx.events.emit('truckLoaded', { machineId: m.id, tonnes: pileTotal(m.load) });
+  addToPile(carrier.load, takeProportional(load, moved));
+  ctx.events.emit('truckLoaded', { machineId: m.id, carrierId:carrier.id, tonnes: pileTotal(carrier.load) });
   return { ok: true, tonnes: moved };
 }
 

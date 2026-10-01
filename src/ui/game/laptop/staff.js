@@ -119,6 +119,9 @@ export function staffApp({ game, feedback, world, setHead }) {
     }
     const hiring = open > st.workers.length;
     body.replaceChildren(...[
+      el('div',{class:'lt-card'},el('div',{class:'lt-card-label'},'Daily payroll'),
+        el('b',{},`${money(st.workers.reduce((sum,w)=>sum+w.wage,0))} each morning`),
+        el('p',{class:'lt-note'},'A business day takes 20 minutes at 1×. Apprentices learn through real work; their agreed wage stays fixed.')),
       el('div', { class: 'st-posts' }, posts),
       hiring ? el('div', {}, el('div', { class: 'lt-card-label lt-offers-label' }, 'Applicants'),
         st.applicants.length ? el('div', { class: 'lt-jobs' }, st.applicants.map((a) => {
@@ -126,7 +129,7 @@ export function staffApp({ game, feedback, world, setHead }) {
           const good = bestAt(a);
           return el('div', { class: 'lt-job st-applicant' },
             el('div', { class: 'lt-job-head' }, el('b', {}, a.name), el('span', { class: 'st-wage' }, `${money(a.wage)} a day`)),
-            el('div', { class: 'st-best' }, `Best as: ${cfg.roles[roleFor(good)]?.name ?? cfg.skills[good]}`),
+            el('div', { class: 'st-best' }, `${a.apprentice ? 'Apprentice · learns through work · ' : ''}Best as: ${cfg.roles[roleFor(good)]?.name ?? cfg.skills[good]}`),
             skillRows(a),
             el('button', { class: 'btn btn-primary lt-buy', disabled: game.state.money < fee, onClick: () => {
               const r = game.actions.hireStaff(a.id);

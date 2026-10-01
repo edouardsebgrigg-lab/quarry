@@ -149,7 +149,7 @@ export function createFeedback({ game, getMoneyNode }) {
     game.events.on('machineServiced', (e) => message(`${name(e.machineId)} serviced`)),
     game.events.on('machineSold', (e) => {
       floatText(signedMoney(e.value), 'gain', getMoneyNode());
-      message(`Sold ${e.name} for ${money(e.value)}`);
+      message(e.rental ? `Returned ${e.name} · ${money(e.value)} deposit refunded` : `Sold ${e.name} for ${money(e.value)}`);
     }),
     game.events.on('interestCharged', (e) => message(`Debt interest charged: ${money(e.amount)}`, 'warn')),
     game.events.on('message', (e) => message(e.text, e.level)),

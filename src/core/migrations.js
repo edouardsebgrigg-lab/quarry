@@ -1,6 +1,9 @@
 // Save migrations: migrations[n] turns a version-n save state into version n + 1.
 // Bump data/game.json "saveVersion" and add an entry here whenever the state shape changes.
 export const migrations = {
+  // v6: clock rates are explicit. createGame rebases this legacy rate to today's
+  // balance while preserving day/hour, active orders, staff and finance deadlines.
+  5: (state) => ({ ...state, time: { ...state.time, ticksPerDay: state.time.ticksPerDay ?? 1200 } }),
   // v2: machines carry rock (excavator bucket / truck bed).
   1: (state) => ({
     ...state,

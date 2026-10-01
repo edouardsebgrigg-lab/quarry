@@ -7,6 +7,7 @@ import { createMapView } from './mapView.js';
 import { machinesAt, machineName, getStats, isDigger } from '../../machinery/index.js';
 import { pileTotal } from '../../quarry/index.js';
 import { conditionColor } from '../format.js';
+import { loadCarrier, combinationStats } from '../../machinery/trailers.js';
 
 export function toggleMap(overlays, { game, world }) {
   if (!world) return;
@@ -55,11 +56,12 @@ export function toggleMap(overlays, { game, world }) {
         }
         clear(fleet);
         for (const m of machinesAt(game.ctx, game.state.currentSiteId)) {
-          const cap = isDigger(game.data, m.type) ? null : getStats(game.data, m).capacity;
-          const load = pileTotal(m.load);
+          const cap = isDigger(game.data, m.type) ? null : combinationStats(game.ctx,m).capacity;
+          const load = pileTotal(loadCarrier(game.ctx,m)?.load ?? {});
           fleet.append(el('div', { class: 'fleet-row' },
             el('div', { class: 'row-between' },
-              el('span', { class: 'fleet-name' }, machineName(game.data, m)),
+              el('button', { class: 'btn btn-ghost fleet-name',disabled:m.away || m.onHire,title:'Select and mark the route to this machine',onClick:()=>game.actions.navigateFleet(m.id) },
+                `${game.state.player.navigationMachineId === m.id ? '→ ' : ''}${machineName(game.data, m)}`),
               el('span', { class: 'small', style: { color: conditionColor(m.condition, m.broken) } }, m.broken ? 'Broken' : `${Math.round(m.condition)}%`)),
             cap ? el('div', { class: 'small muted' }, load > 0.01 ? `${load.toFixed(2)} of ${cap} t on board` : 'Empty') : null));
         }
@@ -67,7 +69,8 @@ export function toggleMap(overlays, { game, world }) {
       return el('div', { class: 'map-layout' }, view.node,
         el('div', { class: 'sidebar' },
           el('section', { class: 'panel' }, el('h3', {}, 'Places'), places),
-          el('section', { class: 'panel' }, el('h3', {}, 'Your machines'), fleet),
+          el('section', { class: 'panel' }, el('h3', {}, 'Your machines'), el('p',{class:'small muted'},'Click a machine to select it and follow its marker.'),
+            el('button',{class:'btn btn-small',onClick:()=>game.actions.navigateFleet(null)},'Follow the current goal'),fleet),
           el('section', { class: 'panel' }, el('h3', {}, 'Stockpile bays'), stores),
           el('section', { class: 'panel' }, el('h3', {}, 'Key'),
             el('div', { class: 'small muted map-key' },

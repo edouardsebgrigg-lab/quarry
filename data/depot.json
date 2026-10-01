@@ -1,6 +1,7 @@
 {
   "name": "Ashby Aggregates",
   "bays": {
+    "rock": { "name": "Broken rock" },
     "topsoil": {
       "name": "Topsoil"
     },

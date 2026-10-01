@@ -1125,7 +1125,12 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const bed = bedUnder(t);
       const store = yardStockpiles.bayAt(t.x, t.z);
       const diggable = !!store || ground?.workable(t.x, t.z);
-      if (!full) {
+      if (m.attachment === 'breaker' && diggable) {
+        const face = ground.materialResponseAt(t.x, t.z);
+        prompt = !store && face.material === 'rock' && !face.loose
+          ? { key: 'Hold LMB', text: 'Break exposed rock into rubble' }
+          : { key: 'T', text: 'Use a bucket to remove soil or collect rubble' };
+      } else if (!full) {
         prompt = diggable
           ? { key: 'Hold LMB', text: store ? `Load from ${stockpileConfig(game.ctx, store.id).name}` : `Dig ${(data.ground.materials[ground.surfaceAt(t.x, t.z)]?.name ?? '').toLowerCase()}` }
           : { key: null, text: 'Swing the bucket over your field to dig' };

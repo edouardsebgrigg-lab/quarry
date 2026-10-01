@@ -27,7 +27,7 @@ function weatherIcon(id) {
 export function createHud({ game, runtime, settings }) {
   const moneyText = el('div', { class: 'hs-money' });
   const debtTag = el('span', { class: 'hs-debt' }, 'DEBT');
-  const dateText = el('span', { class: 'hs-date', title: 'Business calendar: wages, prices and deadlines follow this clock. Daylight has its own slower cycle.' });
+  const dateText = el('span', { class: 'hs-date', title: 'A business day takes 20 minutes at 1×. Wages, prices and deadlines follow this clock. Daylight takes 20 minutes of active play independently of speed.' });
   const siteText = el('span', { class: 'hs-site' });
   const weatherText = el('span', { class: 'hs-weather' });
   let weatherId = '';

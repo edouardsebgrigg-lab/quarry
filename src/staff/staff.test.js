@@ -29,7 +29,7 @@ describe('staff', () => {
     const game = setup({ earned: 100 });
     expect(openSlots(game.ctx)).toBe(0);
     expect(staffState(game.ctx).applicants).toHaveLength(0);
-    expect(nextSlot(game.ctx).parts[0]).toMatchObject({ label: 'Earned', have: 100, need: 3000 });
+    expect(nextSlot(game.ctx).parts[0]).toMatchObject({ label: 'Earned', have: 100, need: 120 });
     game.state.stats.totalEarned = 3500;
     game.dev.skipDays(1);
     expect(openSlots(game.ctx)).toBe(1);
@@ -49,7 +49,7 @@ describe('staff', () => {
     const before = game.state.money;
     const a = staffState(game.ctx).applicants[0];
     hireApplicant(game.ctx, a.id);
-    expect(game.state.money).toBeCloseTo(before - a.wage * game.data.staff.hiringFeeDays, 2);
+    expect(game.state.money).toBeCloseTo(before - a.wage * (a.apprentice ? game.data.staff.apprentice.feeDays : game.data.staff.hiringFeeDays), 2);
     const paid = [];
     game.events.on('wagesPaid', (e) => paid.push(e.amount));
     game.dev.skipDays(2);

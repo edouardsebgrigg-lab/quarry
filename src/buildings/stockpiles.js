@@ -1,13 +1,14 @@
 // Yard inventory is already-dug material. Transfers never emit productSold or create tonnes.
 import { ownsBuilding } from './index.js';
 import { pileTotal, addToPile, takeProportional } from '../quarry/index.js';
+import { loadCarrier } from '../machinery/trailers.js';
 
 export const stockpileLoad = (ctx, bayId, siteId = ctx.state.currentSiteId) => ctx.state.stockpiles?.[siteId]?.[bayId] ?? {};
 export const stockpileConfig = (ctx, bayId) => ctx.data.buildings.stockpiles?.bays.find(b => b.id === bayId);
 export function stockpileRoom(ctx, bayId, siteId = ctx.state.currentSiteId, exceptMachine = null) {
   const b = stockpileConfig(ctx, bayId);
   if (!b || !ownsBuilding(ctx, 'stockpiles', siteId)) return 0;
-  const reserved = ctx.state.machines.reduce((t, m) => t + (m.id !== exceptMachine && m.siteId === siteId && m.job?.type === 'tip' && m.job.params.stockpileBay === bayId ? pileTotal(m.load) : 0), 0);
+  const reserved = ctx.state.machines.reduce((t, m) => t + (m.id !== exceptMachine && m.siteId === siteId && m.job?.type === 'tip' && m.job.params.stockpileBay === bayId ? pileTotal(loadCarrier(ctx,m)?.load) : 0), 0);
   return Math.max(0, b.capacity - pileTotal(stockpileLoad(ctx, bayId, siteId)) - reserved);
 }
 export function whyCannotStore(ctx, bayId, tonnes, siteId = ctx.state.currentSiteId, exceptMachine = null) {

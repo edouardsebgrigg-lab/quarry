@@ -1,10 +1,12 @@
 {
   "slots": [
     {
-      "earned": 3000,
-      "machines": 3,
+      "earned": 120,
+      "deliveries": 2,
+      "diggers": 1,
+      "machines": 2,
       "reputation": 0,
-      "text": "Earn $3,000 and own 3 machines"
+      "text": "Own a digger and make 2 sales (or earn $120)"
     },
     {
       "earned": 20000,
@@ -20,6 +22,7 @@
     }
   ],
   "applicants": 3,
+  "apprentice": { "wage": 18, "feeDays": 1, "skills": { "dig": 2, "drive": 1, "sell": 1, "fix": 1 } },
   "refreshDays": 4,
   "wage": {
     "base": 10,

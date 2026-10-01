@@ -155,6 +155,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     }),
     game.events.on('rushOrder', (e) => feedback.message(`Rush job from ${e.client}: $${e.bonus} bonus, today only (laptop: Jobs board)`, 'good')),
     game.events.on('staffSlotOpened', () => feedback.message('You can take someone on now (laptop: Staff)', 'good')),
+    game.events.on('rentalDue', (e) => feedback.message(`Rental due: unload and return it in Fleet. Keeping it costs $${e.rate} a day.`, 'warn')),
     game.events.on('staffTookJob', (e) => feedback.message(`The office took a job for ${e.client}: +$${e.bonus} bonus (laptop: Jobs board)`, 'good')),
     game.events.on('staffTripBack', (e) => feedback.message(`${e.name} is back from the depot`, 'good')),
     game.events.on('listingNotAsDescribed', (e) => feedback.message(`It’s not as described: ${e.actual}%, not the ${e.claimed}% ${e.seller} claimed`, 'warn')),

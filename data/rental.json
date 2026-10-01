@@ -1,0 +1,11 @@
+{
+  "dayRateOfPrice": 0.06,
+  "minimumDayRate": 18,
+  "depositOfPrice": 0.08,
+  "maximumDeposit": 100,
+  "durations": [1, 3],
+  "maximumActive": 2,
+  "allowedKinds": ["digger", "carrier", "transport"],
+  "excludedTypes": ["tractor", "trailer"],
+  "damagePerCondition": 1.5
+}

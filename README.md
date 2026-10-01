@@ -71,11 +71,17 @@ Use Chrome or Edge for the best experience (full screen and mouse capture work b
 | Mouse left/right | Swing |
 | Mouse forward/back | Stick out / in |
 | Mouse wheel (or Up / Down arrows) | Boom up / down |
+| I / K | Stick out / in independently |
+| U / O | Slew left / right independently |
+| Hold X | Free look without moving the arm |
+| Hold Right Shift | Precision movement |
+| T (empty bucket) | Cycle standard, trench, grading or available breaker attachment |
+| T (loaded, Assisted) | Return to the last dump destination |
 | Hold Left Mouse (or Left arrow) | Curl the bucket in |
 | Hold Right Mouse (or Right arrow) | Open the bucket |
 | W A S D | Drive on tracks |
 
-In Direct mode the teeth cut the ground where they really are (as much as fits in the bucket, and not into rock or off your land), and the load runs out where the tilted bucket really is: into a truck or trailer under it, or onto the ground as a heap.
+In Direct mode the tooth edge sweeps a strip through the ground. Bucket width, angle, available room, machine force and material resistance determine the bite. A partly filled bucket keeps collecting until its loose-volume capacity is reached. The load pours only when the bucket opens, into the bed beneath it or onto your field. Assisted mode performs a real reach/bite/drag/curl/lift stroke; use the wheel to adjust reach and Right Shift + wheel to adjust cut depth. Both modes show reach, depth and load in the HUD.
 
 | Site dumper | |
 |---|---|
@@ -117,17 +123,17 @@ You've bought a field off Mill Lane, outside the village of Ashby, with $200, a 
 3. Take the handles (**E**), push the barrow up to the pickup's tailgate in the yard and tip it in (**T**). Do it again until there's at least 300 kg on board.
 4. Get in the pickup and drive to **Ashby Aggregates**: out of the gate, east along Mill Lane, north into Ashby, left at The Plough onto Quarry Road, and the depot is on the right. **Tab** shows the map.
 5. Stop on the weighbridge at the depot gate to weigh in, then back up to the **topsoil** bay and unload (**T**).
-6. Buy a cheap upgrade for the pickup, then keep going by hand until you can afford the **mini digger** (on the office laptop, **E** at the door, **B** anywhere, or at Ashby Plant in the village). Bought machines are delivered to your yard. It digs far faster than you can and loads the pickup.
-7. Save up for the **tractor and trailer** (4 t a trip instead of 0.8), and sell a trailer load.
+6. Buy a cheap upgrade for the pickup, then choose a **compact digger** (the Micro 08 costs $180, or rent one to try it) (on the office laptop, **E** at the door, **B** anywhere, or at Ashby Plant in the village). Bought machines are delivered to your yard. It digs far faster than you can and loads the pickup.
+7. Buy a **tractor and a separate trailer**, hitch them in Fleet, and sell at least 1 t. The cheapest Yard pair costs $255 and carries 1.5 t. Gross tow limits include empty trailer mass.
 8. Build your first groundworks (**F** on foot): a ramp out of the pit, a haul road or a level area.
-9. Then the 8 t **excavator** and the **tipper truck**, earn $3,000, and a Used machine.
-10. After that, the business: a job from the **Jobs board**, a yard building, 300 t of clean material, a reputation of 3, a Used digger and a Used road vehicle, and $15,000 earned.
+9. Then the 8 t **excavator** and the **tipper truck**, earn $3,000, and buy your next machine.
+10. After that, grow the business with clean material sales, yard buildings and a stronger fleet. Jobs-board orders are optional alternatives to the clean-tonnage goals.
 
 **Ray**, who sold you the field, texts you the plan as each goal comes up (top right), plus the odd tip when something goes wrong. A **guide marker** shows where to go next: a column of light in the world, an arrow with the distance at the top of the screen, and a ring on the map (**Tab**). It follows what you're doing, so it points at the barrow, then the pickup, then the weighbridge, then the right bay.
 
-Roughly how long each machine takes to save for, playing the obvious way (from `src/progression/pacing.test.js`): the mini digger a few minutes after your first sale, the tractor about half an hour after that, then the excavator and the truck about half an hour each.
+The Micro 08 is affordable from your starting cash. The pacing tests estimate the first tractor/trailer pair within 40 minutes of pickup hauling, then check that larger buckets and beds make subsequent upgrades practical. These estimates assume continuous work and are not a timed playthrough.
 
-Each goal pays a small bonus. Everything starts slow and clapped-out on purpose. Every machine tier is roughly 2.5 to 3 times better than the one before, so each purchase is a big step.
+Each goal pays a small bonus. Entry equipment is small and slow; upgrades improve bucket capacity, reach, hydraulic force, speed or towing capacity.
 
 ## Milestones and perks
 
@@ -228,9 +234,35 @@ Completed digging, round trips, sales and fitter jobs earn experience and raise 
 matching skill up to five stars. The agreed daily wage stays fixed; progress appears in Staff.
 
 Daylight follows a separate **20-minute cycle** of active play, with a moving sun, dusk,
-night and dawn. The business calendar keeps its two-minute day: wages, prices, contracts
+night and dawn. The business calendar takes **20 minutes per day at 1×**: wages, prices, contracts
 and deadlines still follow the date/clock shown in the HUD. Changing economic speed
 leaves daylight at its normal pace. Both clocks stop when play pauses or loses focus.
 Night has moonlit ambient light and an automatic work light following your view; the
 weather label shows Dawn/Dusk/Night. The daylight phase is saved; older saves start it
 at morning.
+
+
+## Expanded fleet and easier progression
+
+The dealer separates **Diggers**, **Tractors**, **Trailers**, **Haulage** and **Getting around**. Condition is saved on each owned machine separately from its model and upgrades.
+
+| Digger | Operating mass | Bucket | Reach |
+|---|---:|---:|---:|
+| Micro 08 | 0.8 t | 0.03 m³ | 2.4 m |
+| Mini 16 | 1.6 t | 0.08 m³ | 3.3 m |
+| Compact 25 | 2.5 t | 0.12 m³ | 4.0 m |
+| Compact 35 | 3.5 t | 0.20 m³ | 4.6 m |
+| Utility 80 | 8 t | 0.40 m³ | 6.8 m |
+| Production 130 | 13 t | 0.70 m³ | 8.0 m |
+| Quarry 210 | 21 t | 1.10 m³ | 9.2 m |
+| Heavy 320 | 32 t | 1.60 m³ | 10.5 m |
+
+Five tractors run from Yard 35 (25 km/h, 3 t gross tow limit) to Haul 210 (50 km/h, 24 t gross). Five tipping trailers have 1.5, 3, 6, 10 and 16 t nominal payloads; usable payload also depends on the tractor's tow limit and the bed's volume. Single, tandem and triaxle bodies have different braking and tipping behaviour. Stop within 10 m and use **Fleet → Hitch**; **Unhitch** parks the same loaded trailer. Load and weighbridge tickets follow the trailer, and changing the combination invalidates its ticket.
+
+A quad, utility buggy, purchasable 4×4 and service van provide other ways to get around. The service van provides nearby mechanical support. Incoming one- or three-day rentals in the dealer let you try diggers or vehicles before buying. The fee and refundable deposit are shown before renting; return through Fleet after unloading and releasing staff. Keeping equipment past its due time incurs another day rate, and damage is settled from the deposit. A rental cannot be sold or hired out.
+
+The first staff post opens when you own a digger and make two depot sales (or earn $120). An apprentice is available immediately at **$18 per day with an $18 fee**. Later posts keep their existing growth requirements. Payroll is shown in Staff and skill grows through real work.
+
+Topsoil crumbles easily, clay resists and holds steep faces, sand spreads readily and gravel settles as loose aggregate. Weather and compaction affect grip and resistance. A compatible breaker extracts finite bedrock into saleable broken rock; ordinary buckets cannot cut intact rock. Traffic compacts the surface and displaces shallow rut spoil without destroying tonnes. Exposed slopes show the underlying strata.
+
+**Settings → Controls → Hold to repeat shovel** avoids repeated clicks. **V on foot** recovers a stuck wheelbarrow onto a nearby clear, level patch while retaining its cargo; V in a road vehicle recovers that vehicle. **Tab → machine name** selects a machine and marks the route to it; select *Follow the current goal* to clear the waypoint. Existing saves retain their business date, loads, staff and trailer combinations.

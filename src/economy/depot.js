@@ -7,6 +7,7 @@ import { addMoney } from './money.js';
 import { quoteSale, applySaleToMarket } from './market.js';
 import { cleanSaleBonus } from '../career/index.js';
 import { staffSaleBonus } from '../staff/perks.js';
+import { loadCarrier } from '../machinery/trailers.js';
 
 function tickets(ctx) {
   ctx.state.depot ??= { tickets: {} };
@@ -15,20 +16,23 @@ function tickets(ctx) {
 
 // Record a vehicle's load on the weighbridge. Returns { ok, tonnes }.
 export function weighIn(ctx, machine) {
-  const tonnes = pileTotal(machine.load);
+  const carrier = loadCarrier(ctx,machine);
+  const tonnes = pileTotal(carrier?.load ?? {});
   if (tonnes < ctx.data.depot.minLoad) return { ok: false, reason: 'Nothing on board to sell' };
   if (hasTicket(ctx, machine.id)) return { ok: true, tonnes, existing: true };
-  tickets(ctx)[machine.id] = { tonnes, materials: { ...machine.load } };
-  ctx.events.emit('weighedIn', { machineId: machine.id, tonnes, materials: { ...machine.load } });
+  tickets(ctx)[machine.id] = { tonnes, carrierId:carrier.id, materials: { ...carrier.load } };
+  ctx.events.emit('weighedIn', { machineId: machine.id, tonnes, materials: { ...carrier.load } });
   return { ok: true, tonnes };
 }
 
 export function hasTicket(ctx, machineId) {
   const ticket = tickets(ctx)[machineId];
   if (!ticket) return false;
-  const load = ctx.state.machines.find(m => m.id === machineId)?.load;
+  const owner = ctx.state.machines.find(m => m.id === machineId);
+  const carrier = loadCarrier(ctx,owner);
+  const load = carrier?.load;
   const ids = new Set([...Object.keys(load ?? {}), ...Object.keys(ticket.materials ?? {})]);
-  const valid = load && ticket.materials && pileTotal(load) >= ctx.data.depot.minLoad &&
+  const valid = load && (!ticket.carrierId || ticket.carrierId === carrier.id) && ticket.materials && pileTotal(load) >= ctx.data.depot.minLoad &&
     Math.abs(pileTotal(load) - ticket.tonnes) < 1e-8 &&
     [...ids].every(id => Math.abs((load[id] ?? 0) - (ticket.materials[id] ?? 0)) < 1e-8);
   if (!valid) delete tickets(ctx)[machineId];
@@ -72,6 +76,7 @@ export function sellLoad(ctx, machineId, bayId, load, { deliveryTarget = null } 
   delete tickets(ctx)[machineId];
   ctx.state.stats.totalEarned += q.gross;
   ctx.state.stats.tonnesSold += tonnes;
+  if (tonnes >= ctx.data.depot.minLoad) ctx.state.stats.deliveries = (ctx.state.stats.deliveries ?? 0) + 1;
   const sale = {
     machineId, bayId, productId: q.product, tonnes, revenue: q.gross, pricePerTonne: q.perTonne, grade: q.grade, purity: q.purity,
     ...(deliveryTarget ? { deliveryTarget } : {}),

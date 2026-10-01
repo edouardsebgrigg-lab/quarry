@@ -3,7 +3,7 @@
     "title": "Home Field",
     "text": [
       "You've bought a field off Mill Lane, outside the village of Ashby. Under the grass there's topsoil, then clay, sand and gravel, and people pay good money for all of it.",
-      "There's $200 in the bank, an old shovel, a wheelbarrow and your tired pickup. Nowhere near enough for a machine yet, so you start by hand: dig it, barrow it to the pickup and sell it at Ashby Aggregates, the depot on the other side of the village."
+      "There's $200 in the bank, a shovel, a wheelbarrow and your tired pickup. Practise by hand or try a short machine rental at Ashby Plant. The Micro 08 is a cheap first digger; bigger kit comes from selling clean loads at Ashby Aggregates."
     ]
   },
   "steps": [
@@ -59,9 +59,9 @@
     {
       "id": "buyMiniDigger",
       "title": "Buy a mini digger",
-      "text": "Keep digging by hand until you can buy the Rusty Mini Digger (B, the office laptop, or Ashby Plant in the village). It's delivered to your yard. It digs far faster than you, and it can load the pickup.",
+      "text": "Buy one of the four compact diggers at Ashby Plant (B). The Micro 08 is the cheapest; the Mini 16 has a larger bucket and stronger hydraulics. Rentals let you try a machine first.",
       "reward": 0,
-      "mentor": "Keep at it. A rusty mini digger does in a minute what takes you ten with a shovel. I've marked the office for when you can afford it.",
+      "mentor": "Try a small digger next. The Micro 08 is cheap, and the Mini 16 has more muscle. Every model feels different. Rent one at the plant dealer if you want to try it first.",
       "guide": "office"
     },
     {
@@ -75,18 +75,18 @@
     {
       "id": "buyTractor",
       "title": "Buy a tractor and trailer",
-      "text": "The pickup only carries about a tonne. An old tractor with a tipping trailer carries 4 t to the depot. Save up for it.",
+      "text": "Buy a tractor and a separate tipping trailer in the dealer. The Yard tractor and Yard Tipper are the cheapest pair. Drive within 10 m of the trailer, stop, and hitch it in Fleet.",
       "reward": 0,
-      "mentor": "The pickup's holding you back now: a tonne a trip. An old tractor and tipping trailer takes four. Save for that next.",
+      "mentor": "The pickup is holding you back. Buy a tractor and its own trailer, then hitch them in Fleet. Watch the gross tow limit: the empty trailer counts too.",
       "guide": "office"
     },
     {
       "id": "sellTrailer",
       "title": "Sell a trailer load",
-      "text": "Fill the trailer with the digger (at least 3 t), take it to the depot, weigh in and tip it in the right bay (T). Reversing a trailer takes practice: the back goes the opposite way to the wheel.",
+      "text": "Fill your hitched trailer with at least 1 t, drive to the depot, weigh in and tip in the right bay (T). Slow down when reversing; trailer brakes and gross weight matter.",
       "reward": 60,
-      "target": 3,
-      "mentor": "Fill the trailer with the digger, three tonnes or more, then off to the depot. Reversing a trailer: steer the wrong way, go slow.",
+      "target": 1,
+      "mentor": "Fill your own trailer with a tonne or more, then take it over the weighbridge. Go slowly in reverse. A heavier trailer needs a stronger tractor.",
       "guide": "tractor"
     },
     {
@@ -100,17 +100,17 @@
     {
       "id": "buyExcavator",
       "title": "Buy an excavator",
-      "text": "An 8-tonne excavator fills a trailer in a few swings. Save up for the Rusty Excavator.",
+      "text": "Choose an excavator at Ashby Plant: Utility 80 through Heavy 320 offer more reach, breakout force and bucket capacity. The cheapest production digger is the Utility 80.",
       "reward": 0,
-      "mentor": "You're making proper money now. An 8-tonne excavator fills that trailer in a few swings.",
+      "mentor": "Now choose more digging power. The Utility 80 is a useful step up; bigger excavators reach farther and bite harder. Match the digger to the ground and your haulage.",
       "guide": "office"
     },
     {
       "id": "buyTruck",
       "title": "Buy a tipper truck",
-      "text": "A tipper truck carries twice what the trailer does, and faster. Save up for the Rusty Tipper Truck.",
+      "text": "A tipper truck is faster on the road and carries more than the starter trailer. Save up for the Rusty Tipper Truck.",
       "reward": 0,
-      "mentor": "Next, a tipper truck. Twice what the trailer takes, and quicker on the road.",
+      "mentor": "Next, a tipper truck. More than the starter trailer takes, and quicker on the road.",
       "guide": "office"
     },
     {
@@ -132,18 +132,19 @@
     {
       "id": "usedMachine",
       "title": "Get a better machine",
-      "text": "Save up for a Used excavator or truck. It's a huge step up from the rusty ones.",
+      "text": "Choose another model or a second-hand upgrade. Model size, reach and force matter separately from condition.",
       "reward": 0,
-      "mentor": "Time to swap a rusty old thing for a Used one. You'll feel the difference straight away.",
+      "mentor": "Look for a machine that suits your ground. A bigger bucket and more force make a difference; condition tells you when it needs a service.",
       "guide": "office"
     },
     {
       "id": "firstJob",
-      "title": "Do a job for a customer",
-      "text": "Open the Jobs board on the office laptop, take a job and deliver its tonnes, clean, before the deadline. The customer pays a bonus on top of the depot price.",
+      "title": "Supply clean material",
+      "text": "Sell 60 t of clean material, or complete an optional customer order from the Jobs board for a bonus.",
       "reward": 100,
-      "mentor": "Right, you've got proper kit. Time to get known. Folk round here post jobs on the board (office laptop, Jobs board): so many tonnes of this or that by a certain day, with a bonus. Take one you can do.",
-      "guide": "office"
+      "mentor": "Keep the clean loads coming. Sixty tonnes builds a useful supply business. There are optional customer orders on the Jobs board if you fancy a bonus.",
+      "guide": "office",
+      "alternativeTonnes": 60
     },
     {
       "id": "yardBuilding",
@@ -164,24 +165,25 @@
     {
       "id": "goodName",
       "title": "Build a name in Ashby",
-      "text": "Finish jobs from the jobs board on time until your reputation reaches 3. A better name brings bigger bonuses and more offers.",
+      "text": "Sell 500 t of clean material, or reach reputation 3 by finishing optional customer orders.",
       "reward": 200,
       "target": 3,
-      "mentor": "Every job done on time, word gets round. Let one slip and it gets round faster. Get your name up to 3 on the jobs board and the better work starts coming in.",
-      "guide": "office"
+      "mentor": "Clean loads earn trust. Keep supplying good material, or take an occasional customer order if you want the extra bonus.",
+      "guide": "office",
+      "alternativeTonnes": 500
     },
     {
       "id": "usedFleet",
-      "title": "Replace the rusty ones",
-      "text": "Own a Used digger (mini digger or excavator) and a Used road vehicle (tractor or truck). Sell the rusty ones to the dealer if you need the money.",
+      "title": "Build a stronger fleet",
+      "text": "Own a digger of at least 3.5 t and a road haulage vehicle or tractor/trailer combination carrying at least 6 t. Existing Used machines also count.",
       "reward": 300,
-      "mentor": "Those rusty old things got you here, but they'll cost you in repairs. Get a Used digger and a Used road vehicle working together and you'll feel the difference in every load.",
+      "mentor": "Match digging to haulage: a stronger digger and a larger truck or trailer work well together. Keep the kit you use and sell what you have outgrown.",
       "guide": "office"
     },
     {
       "id": "earnBig",
       "title": "Earn $15,000",
-      "text": "Keep the loads clean, the jobs coming and the machines serviced. Watch the depot prices: news in the Prices app moves them for a few days at a time.",
+      "text": "Keep the loads clean and the machines serviced. Watch the depot prices: news in the Prices app moves them for a few days at a time.",
       "reward": 500,
       "target": 15000,
       "mentor": "That's a real business now. Keep an eye on the prices: when there's news, hold off on what's down and sell what's up. Fifteen grand and you can call yourself a quarry."

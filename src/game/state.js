@@ -1,5 +1,5 @@
 // Builds the state for a brand-new game.
-import { startTick } from '../core/index.js';
+import { startTick, ticksPerDay } from '../core/index.js';
 import { createMarketState, recordPriceHistory } from '../economy/index.js';
 import { createSitesState } from '../quarry/index.js';
 import { createMachine } from '../machinery/index.js';
@@ -10,10 +10,10 @@ export function createNewState(data, seed) {
   const state = {
     seed,
     rngState: seed >>> 0,
-    time: { tick: startTick(data) },
+    time: { tick: startTick(data), ticksPerDay: ticksPerDay(data) },
     money: data.economy.startMoney,
     fuel: { priceMult: 1 },
-    stats: { totalEarned: 0, tonnesDug: 0, tonnesSold: 0, fuelSpent: 0 },
+    stats: { totalEarned: 0, tonnesDug: 0, tonnesSold: 0, fuelSpent: 0, deliveries: 0 },
     market: createMarketState(data),
     currentSiteId: data.game.startSite,
     sites: createSitesState(data),

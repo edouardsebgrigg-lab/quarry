@@ -17,6 +17,17 @@ export function startTick(data) {
   return data.game.startHour * ticksPerHour(data);
 }
 
+// Store the rate with the calendar, so balance changes never move a saved business
+// back to day one or shift wages/deadlines. Saves before this field used 1,200 ticks/day.
+export function restoreClock(state, data) {
+  const rate = ticksPerDay(data);
+  const oldRate = state.time.ticksPerDay ?? data.game.legacyTicksPerDay ?? rate;
+  if (oldRate !== rate && oldRate > 0) {
+    state.time.tick = Math.round(state.time.tick * rate / oldRate);
+  }
+  state.time.ticksPerDay = rate;
+}
+
 // Advances one tick and emits hourPassed / dayStarted when crossing boundaries.
 export function advanceClock(ctx) {
   const { state, data, events } = ctx;

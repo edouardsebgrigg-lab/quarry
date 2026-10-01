@@ -114,6 +114,7 @@ export const MAP = {
       { id: 'sand', x0: 162, x1: 172 },
       { id: 'gravel', x0: 174, x1: 184 },
       { id: 'mixed', x0: 186, x1: 196 },
+      { id: 'rock', x0: 198, x1: 208 },
     ],
     bayZ: { z0: -766, z1: -750 },
     stockpiles: [[214, -752, 'gravel', 7], [224, -730, 'sand', 6], [210, -716, 'gravel', 5]],

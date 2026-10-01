@@ -3,6 +3,7 @@
   "saturation": { "recoveryPerHour": 0.03, "minMultiplier": 0.5 },
   "historyLength": 72,
   "products": {
+    "rock": { "saturationPerTonne": 0.003 },
     "sand": { "saturationPerTonne": 0.004 },
     "gravel": { "saturationPerTonne": 0.004 },
     "topsoil": { "saturationPerTonne": 0.006 },

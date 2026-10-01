@@ -1,7 +1,7 @@
 // Creates a running game: state + event bus + tick loop + player actions.
 // Knows nothing about the screen.
 import {
-  loadData, createEventBus, createRng, advanceClock, tickSeconds, ticksPerDay, ticksPerHour,
+  loadData, createEventBus, createRng, advanceClock, tickSeconds, ticksPerDay, ticksPerHour, restoreClock,
 } from '../core/index.js';
 import { marketHourly, chargeDailyInterest, fuelDaily, addMoney, recordMoney, bankDaily, overheadsDaily, newsDaily } from '../economy/index.js';
 import { tickJobs, fixAllMachines } from '../machinery/index.js';
@@ -18,14 +18,23 @@ import { classifiedsOnEvent } from '../classifieds/index.js';
 import { staffOnEvent, staffTick } from '../staff/index.js';
 import { careerOnEvent, careerState } from '../career/index.js';
 import { happeningsDaily, happeningsHourly } from '../happenings/index.js';
+import { rentalTick, rentalActions } from '../rental/index.js';
+import { migrateFleet } from '../machinery/catalogue.js';
+import { fleetNavigationActions } from './fleetNavigation.js';
 
 export function createGame({ data = loadData(), seed = Math.floor(Math.random() * 2 ** 31), state } = {}) {
   const events = createEventBus();
   const ctx = { data, events, state: null, rng: null };
   ctx.rng = createRng(() => ctx.state);
   ctx.state = state ?? createNewState(data, seed);
+  restoreClock(ctx.state, data);
+  migrateFleet(ctx.state);
+  ctx.state.stats.deliveries ??= Object.values(ctx.state.logbook?.machines ?? {}).reduce((sum, m) => sum + (m.loads ?? 0), 0);
   visualClock(ctx.state, data);
   ctx.state.stockpiles ??= {}; // old saves start with empty yard bays
+  for (const id of Object.keys(data.market.products)) {
+    ctx.state.market.products[id] ??= { trend:1,velocity:0,saturation:0,history:[] };
+  }
 
   // The diggable ground of the current site (if it has one), rebuilt from its seed plus
   // the saved changes.
@@ -62,6 +71,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
     staffTick(ctx, tickSeconds(data));
     ctx.ground?.settle(4000);
     advanceClock(ctx);
+    rentalTick(ctx);
   }
 
   function advance(ticks) {
@@ -92,7 +102,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
       if (ctx.ground) ctx.state.ground = ctx.ground.serialize();
       return ctx.state;
     },
-    actions: createActions(ctx),
+    actions: { ...createActions(ctx), ...rentalActions(ctx), ...fleetNavigationActions(ctx) },
     dev,
   };
 }

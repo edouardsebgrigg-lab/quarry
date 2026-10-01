@@ -146,7 +146,7 @@ out of the machinery. No fleet entries, saved RNG draws or economic work are cre
 `farm-fields.mjs` checks scenery presence, unchanged fleet and two field screenshots.
 
 D7 daylight: `data/game.json.visualDayLengthSeconds` is 1200 while economic
-`dayLengthSeconds` stays 120. `core/visualClock.js` defaults old saves' optional
+`dayLengthSeconds` is now also 1200 (P1), with the visual clock independent of speed. `core/visualClock.js` defaults old saves' optional
 `state.time.visualSeconds`, wraps active elapsed time and computes smooth solar phases.
 `game.advanceVisualTime(dt)` is called once per active real frame by `gameScreen.js`
 through the existing time gate; economic ticks/speed/dev skips do not advance it.
@@ -157,3 +157,16 @@ shadow-free view-following night light; `sounds.js` suppresses new bird calls at
 The HUD marks the visual period and explains the business clock in its date tooltip.
 `visualClock.test.js` covers separate timing, cyclic boundaries and save/legacy behaviour;
 `daylight.mjs` checks real pause/resume, lighting views, a night walk/dig and UI Continue.
+
+
+P1 business pacing: `time.ticksPerDay` stores the calendar rate. Save v6 records v5's 1200-tick legacy rate; `restoreClock` rebases ticks to the current 12000-tick day once, retaining day/hour/deadlines. New states store the current rate. Speed controls affect economic ticks; daylight remains real-time.
+
+F1 catalogue: model tier IDs remain under machine families, preserving the `buyMachine(type,tier)` boundary. `machinery/catalogue.js` supplies descriptors and idempotent `migrateFleet`: old tractor bundles become a tractor plus attached trailer, preserving loads, mods, original total value/insurance and saved positions. `trailers.js` resolves `loadCarrier`, `combinationStats`, `cargoRoom`, hitching and gross/volume limits. Tickets remain under the driven tractor ID and record carrier ID. Hand tools, jobs, buckets, staff and stockpiles resolve the actual cargo owner. Bare tractors, passenger quads and detached trailers do not satisfy the last-delivery-vehicle safeguard. `world3d/fleetProfiles.js` provides drive/shape profiles and `fleetVariants.js` adds distinct bodywork to shared rigs plus mobility models; existing asset downloads remain unchanged. Trailer articulation uses a kinematic follower, with combination mass, grade/traction and trailer braking in the tractor physics.
+
+G1 materials: ground `materialResponseAt` exposes resistance, cohesion, flow, wet grip and rolling resistance. `cutSweep` removes material along a finite moving cutting edge, with force/attack/width/capacity limits; a breaker can extract a finite rock reserve. `applyTraffic` tracks firmness and moves rut material into neighbouring shoulders without changing density or total tonnes. Compacted earthworks fill retains its real material mixture. The chunk mesh passes original geological contacts to the terrain shader, which uses soil/gravel textures on exposed faces. Ground persistence records material/layer IDs and lossless floats; loading reactivates unfinished settling and supports older packed saves.
+
+D15 operation: `machinery/digging.js` centralises true loose-volume bucket fill and directional attack. Assisted jobs marked `physical` receive material incrementally from world tooth sweeps and never mint a fallback bucket on completion. Dumps retain cargo until the real joint pose opens. Direct mouse and independent joint/slew keys use material resistance feedback, free look and precision. Digger placement saves optional arm/house/reach/depth/last-dump state. Attachments alter cut geometry and available tools through the action boundary.
+
+P2 entry hire: first-slot sale/earned/digger requirements and guaranteed apprenticeship wage/fee live in `data/staff.json`. Valid depot sales increment saved deliveries; older totals are restored from machine logbooks. Applicants appear when a post opens, without waiting for dawn. Staff hauling reserves the trailer as well as the tractor and respects both tonnes and bed volume.
+
+Q1 rentals and convenience: `data/rental.json` and `src/rental/` implement incoming short hire independently of contractor hire-out. Calendar-day deadlines, deposits, wear and overdue charges are saved on the machine; loaded/occupied/busy rentals cannot be removed. Rentals are excluded from owned-machine progression, resale collateral and insurance. `fleetNavigation.js` adds explicit map waypoints through actions. World hand tools implement repeat swings and cargo-preserving local recovery. Jobs-board progression has clean-tonnage alternatives.

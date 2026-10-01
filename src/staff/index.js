@@ -18,6 +18,7 @@ import { getMachine, getStats, machineName, startJob, dumpBucket, isDigger, isRo
 import { applyWear } from '../machinery/wear.js';
 import { contractsState, reputation, acceptContract } from '../contracts/index.js';
 import { pileTotal } from '../quarry/index.js';
+import { loadCarrier, combinationStats, canDeliver, cargoRoom, cargoVolume } from '../machinery/trailers.js';
 
 export const SKILLS = ['dig', 'drive', 'sell', 'fix'];
 
@@ -77,7 +78,7 @@ function waitingDriver(ctx, operator, digger) {
     const bed = w.spot.bed ?? w.spot;
     const reach = getStats(ctx.data,digger).reach * cfg(ctx).trip.pairReachFactor;
     return Math.hypot(bed.x-operator.spot.x,bed.z-operator.spot.z) <= reach &&
-      pileTotal(m.load) < getStats(ctx.data,m).capacity - 1e-8 &&
+      cargoRoom(ctx,m,digger.load) > 1e-8 &&
       (!order || quoteDelivery(ctx,order.material,digger.load).purity >= ctx.data.depot.grades[0].minPurity);
   });
 }
@@ -85,7 +86,11 @@ function waitingDriver(ctx, operator, digger) {
 // ---- posts (slots): how many you may employ, and what opens the next one
 
 function slotMet(ctx, s) {
-  return (ctx.state.stats.totalEarned ?? 0) >= s.earned && ctx.state.machines.length >= s.machines && reputation(ctx).level >= s.reputation;
+  const progress = (ctx.state.stats.totalEarned ?? 0) >= s.earned ||
+    (s.deliveries != null && (ctx.state.stats.deliveries ?? 0) >= s.deliveries);
+  const diggers = ctx.state.machines.filter(m => isDigger(ctx.data, m.type) && !m.rental).length;
+  return progress && ctx.state.machines.filter(m => !m.rental).length >= s.machines &&
+    diggers >= (s.diggers ?? 0) && reputation(ctx).level >= s.reputation;
 }
 // Posts open now (once opened, a post stays open).
 export function openSlots(ctx) {
@@ -93,6 +98,7 @@ export function openSlots(ctx) {
   let n = 0;
   for (const s of cfg(ctx).slots) if (slotMet(ctx, s)) n += 1; else break;
   st.slotsOpen = Math.max(st.slotsOpen, n);
+  if (st.slotsOpen > st.workers.length && !st.applicants.length) refreshApplicants(ctx);
   return st.slotsOpen;
 }
 // What the next post needs, with how far along you are: { text, parts: [{ label, have, need }] } or null.
@@ -103,7 +109,9 @@ export function nextSlot(ctx) {
     text: s.text,
     parts: [
       { label: 'Earned', have: Math.floor(ctx.state.stats.totalEarned ?? 0), need: s.earned, money: true },
+      ...(s.deliveries ? [{ label: 'Or sales', have: ctx.state.stats.deliveries ?? 0, need: s.deliveries }] : []),
       { label: 'Machines', have: ctx.state.machines.length, need: s.machines },
+      ...(s.diggers ? [{ label: 'Diggers', have: ctx.state.machines.filter(m => isDigger(ctx.data,m.type) && !m.rental).length, need: s.diggers }] : []),
       ...(s.reputation ? [{ label: 'Reputation', have: Math.floor(reputation(ctx).level), need: s.reputation }] : []),
     ],
   };
@@ -112,7 +120,7 @@ export function nextSlot(ctx) {
 // ---- applicants
 
 const wageFor = (ctx, skills) => cfg(ctx).wage.base + cfg(ctx).wage.perStar * SKILLS.reduce((t, k) => t + skills[k], 0);
-export const hiringFee = (ctx, a) => a.wage * cfg(ctx).hiringFeeDays;
+export const hiringFee = (ctx, a) => a.wage * (a.apprentice ? cfg(ctx).apprentice.feeDays : cfg(ctx).hiringFeeDays);
 
 function makeApplicant(ctx, rng) {
   const st = staffState(ctx);
@@ -128,6 +136,9 @@ function refreshApplicants(ctx) {
   const st = staffState(ctx);
   const rng = createRng(() => st);
   st.applicants = Array.from({ length: cfg(ctx).applicants }, () => makeApplicant(ctx, rng));
+  if (!st.apprenticeHired && cfg(ctx).apprentice) {
+    Object.assign(st.applicants[0], { apprentice: true, skills: { ...cfg(ctx).apprentice.skills }, wage: cfg(ctx).apprentice.wage });
+  }
   st.applicantsDay = today(ctx);
 }
 
@@ -140,6 +151,7 @@ export function hireApplicant(ctx, applicantId) {
   spendMoney(ctx, fee, 'hiringFee');
   const w = { ...a, id: `w${st.nextId++}`, hired: today(ctx), role: null, machineId: null, spot: null, phase: 'idle', t: 0, status: 'Waiting for a job', stats: { dug: 0, loads: 0, sold: 0, fixed: 0 }, experience: {dig:0,drive:0,sell:0,fix:0}, delivery:null, partnerId:null };
   st.workers.push(w);
+  if (a.apprentice) st.apprenticeHired = true;
   st.applicants = st.applicants.filter((x) => x !== a);
   ctx.events.emit('staffHired', { workerId: w.id, name: w.name, fee });
   return { ok: true, worker: w };
@@ -167,14 +179,14 @@ export const roleNeeds = (role) => (role === 'dig' ? 'digger' : role === 'haul' 
 // Can this machine be worked in this role? (a digger to dig; a road vehicle with a bed to haul)
 export function machineFits(ctx, role, m) {
   if (role === 'dig') return isDigger(ctx.data, m.type);
-  if (role === 'haul') return isRoadLegal(ctx.data, m.type) && (getStats(ctx.data, m).capacity ?? 0) > 0;
+  if (role === 'haul') return canDeliver(ctx,m);
   return false;
 }
 
 // Machines someone could take for a role now: right kind, here, not on hire, not anyone else's;
 // the biggest first (the most bucket or bed), so that's the one they're given by default.
 export function machinesFor(ctx, role, worker = null) {
-  const size = (m) => { const s = getStats(ctx.data, m); return role === 'dig' ? s.bucketVolume ?? 0 : s.capacity ?? 0; };
+  const size = (m) => { const s = combinationStats(ctx, m); return role === 'dig' ? s.bucketVolume ?? 0 : s.capacity ?? 0; };
   return ctx.state.machines.filter((m) => machineFits(ctx, role, m) && !m.onHire && m.siteId === ctx.state.currentSiteId
     && (!m.operator || m.operator === worker?.id)).sort((a, b) => size(b) - size(a));
 }
@@ -182,6 +194,8 @@ export function machinesFor(ctx, role, worker = null) {
 function release(ctx, w) {
   const m = w.machineId && getMachine(ctx, w.machineId);
   if (m && m.operator === w.id) m.operator = null;
+  const carrier = m && loadCarrier(ctx,m);
+  if (carrier?.operator === w.id) carrier.operator = null;
   w.role = null;
   w.machineId = null;
   w.spot = null;
@@ -204,6 +218,8 @@ export function assignWorker(ctx, workerId, role, { machineId = null, spot = nul
     m = getMachine(ctx, machineId);
     if (!m || !machineFits(ctx, role, m)) return { ok: false, reason: role === 'dig' ? 'They need a digger' : 'They need a road vehicle with a bed' };
     if (m.operator && m.operator !== w.id) return { ok: false, reason: 'Someone else is on that machine' };
+    const carrier = role === 'haul' && loadCarrier(ctx,m);
+    if (carrier?.operator && carrier.operator !== w.id) return {ok:false,reason:'Someone else is working its trailer'};
     if (m.onHire) return { ok: false, reason: 'That one’s out on hire' };
   }
   release(ctx, w);
@@ -212,6 +228,7 @@ export function assignWorker(ctx, workerId, role, { machineId = null, spot = nul
   if (m) {
     w.machineId = m.id;
     m.operator = w.id;
+    if (role === 'haul') loadCarrier(ctx,m).operator = w.id;
   }
   if (role === 'haul' && spot) w.spot = { x: spot.x, z: spot.z, face: spot.yaw ?? 0, bed: spot.bed ?? null };
   if (role === 'dig') {
@@ -363,10 +380,14 @@ function loadUp(ctx, m, room, material = null) {
   if (!choice || room <= 0) return {};
   const [, cells] = choice;
   const load = {};
+  const carrier = loadCarrier(ctx,m);
+  const volumeLimit = combinationStats(ctx,m).bedVolume ?? Infinity;
   let got = 0;
   for (const c of cells.sort((a, b) => b.depth - a.depth)) {
     if (got >= room - 1e-6) break;
-    const r = g.dig({ x: c.x, z: c.z, radius: g.cellSize * 0.55, bottomY: g.cellHeight(c.i, c.j) - c.depth, maxTonnes: room - got });
+    const maxVolume = volumeLimit - cargoVolume(ctx,carrier.load) - cargoVolume(ctx,load);
+    if (maxVolume <= 1e-8) break;
+    const r = g.dig({ x: c.x, z: c.z, radius: g.cellSize * 0.55, bottomY: g.cellHeight(c.i, c.j) - c.depth, maxTonnes: room - got, maxVolume });
     for (const [k, t] of Object.entries(r.tonnes)) load[k] = (load[k] ?? 0) + t;
     got += r.total;
   }
@@ -384,7 +405,9 @@ function bestBay(ctx, load) {
 
 function workHaul(ctx, w, m, dt) {
   const T = cfg(ctx).trip;
-  const st = getStats(ctx.data, m);
+  const st = combinationStats(ctx,m);
+  const carrier = loadCarrier(ctx,m);
+  if (!carrier) { w.status = 'Hitch a trailer before hauling'; return; }
   const skill = 1.2 - 0.08 * w.skills.drive; // (time, fuel and wear: a good driver is quicker and kinder)
   if (w.t > 0) {
     w.t -= dt;
@@ -407,32 +430,33 @@ function workHaul(ctx, w, m, dt) {
       const order = deliveryOrder(ctx,w.delivery);
       if (w.delivery && !order) { w.status='Selected order finished: choose a delivery'; w.t=T.checkEvery; return; }
       if (order && (order.paidThisWeek || (order.delivered ?? 0) >= (order.tonnes ?? order.tonnesPerWeek))) { w.status='Quota filled: waiting for next week'; w.t=T.checkEvery; return; }
-      if (order && pileTotal(m.load) > 0 && quoteDelivery(ctx,order.material,m.load).purity < ctx.data.depot.grades[0].minPurity) { w.status='Unload incompatible material before serving this customer'; w.t=T.checkEvery; return; }
+      if (order && pileTotal(carrier.load) > 0 && quoteDelivery(ctx,order.material,carrier.load).purity < ctx.data.depot.grades[0].minPurity) { w.status='Unload incompatible material before serving this customer'; w.t=T.checkEvery; return; }
       const remaining = order ? Math.max(0,(order.tonnes ?? order.tonnesPerWeek)-order.delivered) : Infinity;
       const goal = Math.min(st.capacity,remaining);
-      const room = Math.max(0, goal - pileTotal(m.load));
+      const room = Math.max(0, goal - pileTotal(carrier.load));
       const load = w.partnerId ? {} : loadUp(ctx, m, room, order?.material);
       const t = pileTotal(load);
-      if (pileTotal(m.load) + t < Math.min(T.minLoad, goal)) {
+      if (pileTotal(carrier.load) + t < Math.min(T.minLoad, goal)) {
         if (t > 0) ctx.ground.deposit({ ...looseSpot(ctx), tonnes: load, radius: 1 }); // (not worth the trip: put it back)
         w.status = w.partnerId ? 'Waiting for the paired operator to load' : order ? `Waiting for clean ${order.material} for ${order.client}` : 'Waiting for material to haul';
         w.phase = 'wait';
         w.t = T.checkEvery;
         return;
       }
-      for (const [k, v] of Object.entries(load)) m.load[k] = (m.load[k] ?? 0) + v;
-      if (order && quoteDelivery(ctx,order.material,m.load).purity < ctx.data.depot.grades[0].minPurity) {
+      for (const [k, v] of Object.entries(load)) carrier.load[k] = (carrier.load[k] ?? 0) + v;
+      if (order && quoteDelivery(ctx,order.material,carrier.load).purity < ctx.data.depot.grades[0].minPurity) {
         w.status='Mixed heap cannot fill the selected clean order'; w.t=T.checkEvery; return;
       }
       w.tripDelivery = w.delivery ? { ...w.delivery } : null;
       w.tripMaterial = order?.material ?? null;
-      w.status = `Loading ${pileTotal(m.load).toFixed(1)} t${order ? ` for ${order.client}` : ''}`;
+      w.status = `Loading ${pileTotal(carrier.load).toFixed(1)} t${order ? ` for ${order.client}` : ''}`;
       w.phase = 'out';
       w.t = t * T.loadSecondsPerTonne * skill;
       return;
     }
     case 'out':
       m.away = true;
+      carrier.away = true;
       chargeFuel(ctx, st.fuelPerJob * skill, m.siteId);
       applyWear(ctx, m, st, skill);
       ctx.events.emit('staffTripOut', { machineId: m.id, workerId: w.id, name: w.name });
@@ -442,8 +466,8 @@ function workHaul(ctx, w, m, dt) {
       return;
     case 'sell': {
       weighIn(ctx, m);
-      const load = m.load;
-      m.load = {};
+      const load = carrier.load;
+      carrier.load = {};
       const r = sellLoad(ctx, m.id, w.tripMaterial ?? bestBay(ctx, load), load, {deliveryTarget:w.tripDelivery});
       w.stats.loads += 1;
       w.stats.sold = Math.round((w.stats.sold + r.revenue) * 100) / 100;
@@ -455,6 +479,7 @@ function workHaul(ctx, w, m, dt) {
     case 'back':
       chargeFuel(ctx, st.fuelPerJob * skill, m.siteId);
       m.away = false;
+      carrier.away = false;
       learn(ctx,w,'drive',1);
       ctx.events.emit('staffTripBack', { machineId: m.id, workerId: w.id, name: w.name });
       w.phase = 'wait';
@@ -545,6 +570,11 @@ export function staffDaily(ctx) {
 
 export function staffOnEvent(ctx, type, e) {
   if (type === 'dayStarted') staffDaily(ctx);
+  if (type === 'productSold' || type === 'machineBought') {
+    const before = staffState(ctx).slotsOpen;
+    const open = openSlots(ctx);
+    if (open > before) ctx.events.emit('staffSlotOpened', { slots: open });
+  }
   const workers = ctx.state.staff?.workers ?? [];
   if (type === 'rockDug') {
     const w = workers.find(w=>w.role==='dig' && w.machineId===e.machineId);

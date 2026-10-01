@@ -7,7 +7,8 @@ import { topSpeedKmh, unloadSeconds } from '../machinery/index.js';
 import { worksCost } from '../earthworks/index.js';
 
 const data = loadData();
-const tier = (type, t = 'rusty') => data.machines.types[type].tiers[t];
+const ENTRY = {pickup:'rusty',miniDigger:'mini16',tractor:'utility60',trailer:'singleTipper',excavator:'utility80',truck:'rusty'};
+const tier = (type, t = ENTRY[type]) => data.machines.types[type].tiers[t];
 const TOPSOIL = data.materials.topsoil.basePrice;
 const g = data.ground.materials.topsoil;
 const LOOSE = g.density / g.swell; // t per loose m³
@@ -17,7 +18,7 @@ const FUEL = data.economy.fuelPrice;
 
 // Seconds for one round trip, and the money it makes.
 function trip(carrier, { digger = null, springs = false } = {}) {
-  const c = tier(carrier);
+  const c = carrier === 'tractor' ? { ...tier('tractor'), capacity:tier('trailer').capacity, tipTime:tier('trailer').tipTime } : tier(carrier);
   const load = c.capacity + (springs ? data.mods.stifferSprings.effects.capacity.add : 0);
   let fill;
   if (digger) {
@@ -35,33 +36,27 @@ function trip(carrier, { digger = null, springs = false } = {}) {
 const minutesToSave = (price, have, t) => Math.max(0, price - have) / (t.money / t.seconds) / 60;
 
 describe('early-game pacing', () => {
-  it('each rung of the ladder takes a few trips, not hours', () => {
-    const steps = [];
-    let money = data.economy.startMoney + data.objectives.steps.find((s) => s.id === 'firstSale').reward;
-    money -= data.mods.stifferSprings.price;
-    const rungs = [
-      ['miniDigger', trip('pickup', { springs: true })],
-      ['tractor', trip('pickup', { digger: 'miniDigger', springs: true })],
-      ['excavator', trip('tractor', { digger: 'miniDigger' })],
-      ['truck', trip('tractor', { digger: 'excavator' })],
-    ];
-    for (const [type, t] of rungs) {
-      const price = tier(type).price;
-      const minutes = minutesToSave(price, money, t);
-      steps.push({ type, price, minutes: Math.round(minutes), perTrip: Math.round(t.money), tripMin: +(t.seconds / 60).toFixed(1) });
-      money = Math.max(0, money - price);
-    }
-    console.table(steps);
-    for (const s of steps) {
-      expect(s.minutes, s.type).toBeGreaterThanOrEqual(5);
-      expect(s.minutes, s.type).toBeLessThanOrEqual(40);
-    }
+  it('keeps the first digger and tractor/trailer within a few pickup sales', () => {
+    const small = data.machines.types.miniDigger.tiers.micro08;
+    expect(small.price).toBeLessThanOrEqual(data.economy.startMoney);
+    const pairPrice = data.machines.types.tractor.tiers.yard35.price + data.machines.types.trailer.tiers.yardTipper.price;
+    const t = trip('pickup', { digger:'miniDigger', springs:true });
+    expect(t.money).toBeGreaterThan(0);
+    const minutes = minutesToSave(pairPrice,0,t);
+    expect(minutes).toBeLessThan(40);
+  });
+
+  it('a practical tractor and independent trailer earn positive net revenue', () => {
+    const t = trip('tractor',{digger:'excavator'});
+    expect(t.money).toBeGreaterThan(tier('trailer').capacity * TOPSOIL * .8);
+    expect(Number.isFinite(t.seconds)).toBe(true);
+    expect(t.seconds / 60).toBeLessThan(15);
   });
 
   // T8: groundworks come up as a goal once you have the tractor. Their labour should cost about
   // what a trailer load earns, so building one is a choice, not a week's savings.
   it('groundworks cost no more than about one good trailer load', () => {
-    const load = tier('tractor').capacity * TOPSOIL; // a full trailer of clean topsoil
+    const load = tier('trailer').capacity * TOPSOIL; // a full trailer of clean topsoil
     const cost = (mode, length) => worksCost(data, mode, length * data.works.modes[mode].width.default);
     const rows = [['road', 20], ['ramp', 15], ['level', 8]].map(([mode, length]) => ({ mode, length, cost: cost(mode, length) }));
     console.table(rows.map((r) => ({ ...r, loads: +(r.cost / load).toFixed(2) })));
@@ -74,7 +69,7 @@ describe('early-game pacing', () => {
   // Milestones (data/milestones.json) pay rewards too. The ones a player can reach while still
   // climbing the first machine ladder shouldn't buy the ladder for them: at most a quarter of it.
   it('early milestone rewards stay under a quarter of the machine ladder', () => {
-    const ladder = ['miniDigger', 'tractor', 'excavator', 'truck'].reduce((a, t) => a + tier(t).price, 0);
+    const ladder = ['miniDigger', 'tractor', 'trailer', 'excavator', 'truck'].reduce((a, t) => a + tier(t).price, 0);
     const early = ['clean5', 'sold25', 'works1', 'dug50'];
     const rewards = data.milestones.list.filter((m) => early.includes(m.id)).reduce((a, m) => a + m.reward, 0);
     expect(rewards).toBeLessThanOrEqual(ladder * 0.25);

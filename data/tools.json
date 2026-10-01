@@ -4,6 +4,8 @@
     "volume": 0.014,
     "radius": 0.4,
     "depth": 0.3,
+    "force": 24,
+    "minimumBiteFactor": 0.25,
     "reach": 3.2,
     "digTime": 0.55,
     "dumpTime": 0.45

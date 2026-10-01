@@ -1,6 +1,7 @@
 {
   "ticksPerSecond": 10,
-  "dayLengthSeconds": 120,
+  "dayLengthSeconds": 1200,
+  "legacyTicksPerDay": 1200,
   "startHour": 7,
   "speeds": [
     1,
@@ -8,7 +9,7 @@
     4
   ],
   "devSpeed": 10,
-  "saveVersion": 5,
+  "saveVersion": 6,
   "startSite": "home",
   "startingMachines": [
     {

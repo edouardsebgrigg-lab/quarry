@@ -47,12 +47,12 @@ describe('game', () => {
     expect(game.state.objectives.index).toBe(0);
   });
 
-  it('starts with a shovel and a wheelbarrow, and not quite enough for the first machine', () => {
+  it('starts with hand tools and enough for a basic digger or short rental', () => {
     const game = createGame({ seed: 1 });
     expect(game.state.tools).toEqual({ shovel: { load: {} }, barrow: { load: {} } });
-    const cheapest = Math.min(...Object.values(game.data.machines.types).filter((t) => t.shop !== false)
-      .map((t) => t.tiers.rusty.price));
-    expect(game.state.money).toBeLessThan(cheapest);
+    const cheapest = Math.min(...Object.values(game.data.machines.types).filter(t => t.kind === 'digger')
+      .flatMap(t => Object.values(t.tiers).filter(s=>!s.legacy).map(s=>s.price)));
+    expect(game.state.money).toBeGreaterThanOrEqual(cheapest);
     expect(game.state.money).toBeGreaterThan(cheapest * 0.5); // but it's not far off
     expect(game.actions.buyMachine('miniDigger', 'rusty').ok).toBe(false);
   });

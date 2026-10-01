@@ -1,0 +1,271 @@
+{
+  "checks": [
+    {
+      "label": "Normal starting $200 buys the $180 Micro 08 without a cash fixture",
+      "passed": true
+    },
+    {
+      "label": "First clean 0.1t sale uses digging, loading, weighing and depot tipping actions",
+      "passed": true
+    },
+    {
+      "label": "One sale leaves the apprentice post closed",
+      "passed": true
+    },
+    {
+      "label": "Second clean 0.1t sale increments real delivery count",
+      "passed": true
+    },
+    {
+      "label": "Second sale creates the $18 apprentice immediately",
+      "passed": true
+    },
+    {
+      "label": "Apprentice opens on day one without waiting for dawn",
+      "passed": true
+    },
+    {
+      "label": "Staff UI shows the immediate apprentice applicant",
+      "passed": true
+    },
+    {
+      "label": "Actual Staff Hire button charges $18 from normal opening money and creates a worker",
+      "passed": true
+    },
+    {
+      "label": "Dealer exposes both one-day and three-day rentals with deposit labels",
+      "passed": true
+    },
+    {
+      "label": "Dealer rental button charges its quoted fee and security deposit",
+      "passed": true
+    },
+    {
+      "label": "One-day rental deadline uses the 20-minute business calendar",
+      "passed": true
+    },
+    {
+      "label": "Fleet displays a real Return hire control",
+      "passed": true
+    },
+    {
+      "label": "Fleet refuses a loaded return without losing cargo or money",
+      "passed": true
+    },
+    {
+      "label": "Loaded-return refusal is explained in the visible UI",
+      "passed": true
+    },
+    {
+      "label": "Rental contract and actual cargo survive browser save/reload",
+      "passed": true
+    },
+    {
+      "label": "Business tick, 12000-tick day rate and independent visual clock survive browser save/reload",
+      "passed": true
+    },
+    {
+      "label": "Cash and the apprentice hired through UI survive browser save/reload",
+      "passed": true
+    },
+    {
+      "label": "Restored loaded hire still refuses to return",
+      "passed": true
+    },
+    {
+      "label": "Fleet Return hire removes empty equipment and refunds its damage-adjusted security deposit",
+      "passed": true
+    },
+    {
+      "label": "No browser console or runtime errors",
+      "passed": true
+    }
+  ],
+  "normalMoney": {
+    "purchase": {
+      "start": 200,
+      "ok": true,
+      "money": 20,
+      "paid": 180,
+      "tick": 3500
+    },
+    "firstSale": {
+      "load": {
+        "topsoil": 0.1
+      },
+      "money": 24.43,
+      "sale": {
+        "machineId": "m1",
+        "bayId": "topsoil",
+        "productId": "topsoil",
+        "tonnes": 0.1,
+        "revenue": 4.9985,
+        "pricePerTonne": 49.985,
+        "grade": "Clean",
+        "purity": 1
+      },
+      "deliveries": 1,
+      "apprentice": null,
+      "tick": 3898
+    },
+    "secondSale": {
+      "load": {
+        "topsoil": 0.1
+      },
+      "money": 28.88,
+      "sale": {
+        "machineId": "m1",
+        "bayId": "topsoil",
+        "productId": "topsoil",
+        "tonnes": 0.1,
+        "revenue": 4.991690262965022,
+        "pricePerTonne": 49.916902629650224,
+        "grade": "Clean",
+        "purity": 1
+      },
+      "deliveries": 2,
+      "apprentice": {
+        "id": "a1",
+        "name": "Tom Whitaker",
+        "skills": {
+          "dig": 2,
+          "drive": 1,
+          "sell": 1,
+          "fix": 1
+        },
+        "wage": 18,
+        "apprentice": true
+      },
+      "tick": 4208
+    },
+    "hired": {
+      "money": 160.88,
+      "workers": [
+        {
+          "id": "w4",
+          "name": "Tom Whitaker",
+          "skills": {
+            "dig": 2,
+            "drive": 1,
+            "sell": 1,
+            "fix": 1
+          },
+          "wage": 18,
+          "apprentice": true,
+          "hired": 1,
+          "role": null,
+          "machineId": null,
+          "spot": null,
+          "phase": "idle",
+          "t": 0,
+          "status": "Waiting for a job",
+          "stats": {
+            "dug": 0,
+            "loads": 0,
+            "sold": 0,
+            "fixed": 0
+          },
+          "experience": {
+            "dig": 0,
+            "drive": 0,
+            "sell": 0,
+            "fix": 0
+          },
+          "delivery": null,
+          "partnerId": null
+        }
+      ],
+      "moneyEvents": [
+        {
+          "amount": -18,
+          "reason": "hiringFee",
+          "money": 10.88
+        },
+        {
+          "amount": 150,
+          "reason": "milestone",
+          "money": 160.88
+        }
+      ]
+    }
+  },
+  "rentalFixture": {
+    "description": "Rental-only cash fixture; entry hire above used normal money",
+    "before": 160.88,
+    "fixtureCash": 1000,
+    "oneDay": {
+      "ok": true,
+      "rate": 18,
+      "deposit": 24,
+      "fee": 18,
+      "total": 42,
+      "days": 1
+    },
+    "threeDays": {
+      "ok": true,
+      "rate": 18,
+      "deposit": 24,
+      "fee": 54,
+      "total": 78,
+      "days": 3
+    },
+    "rented": {
+      "id": "m3",
+      "rental": {
+        "due": 1.3506666666666667,
+        "rate": 18,
+        "deposit": 24,
+        "startCondition": 80,
+        "paidThrough": 1.3506666666666667
+      },
+      "money": 958,
+      "tick": 4208
+    },
+    "returned": {
+      "removed": true,
+      "money": 981.63
+    },
+    "refundObserved": 23.66999999999996
+  },
+  "saved": {
+    "id": "m3",
+    "rental": {
+      "due": 1.3506666666666667,
+      "rate": 18,
+      "deposit": 24,
+      "startCondition": 80,
+      "paidThrough": 1.3506666666666667
+    },
+    "load": {
+      "topsoil": 0.0830769181251526
+    },
+    "condition": 79.78,
+    "time": {
+      "tick": 4269,
+      "ticksPerDay": 12000,
+      "visualSeconds": 361.25
+    },
+    "money": 957.96,
+    "workerId": "w4"
+  },
+  "restored": {
+    "rental": {
+      "due": 1.3506666666666667,
+      "rate": 18,
+      "deposit": 24,
+      "startCondition": 80,
+      "paidThrough": 1.3506666666666667
+    },
+    "load": {
+      "topsoil": 0.0830769181251526
+    },
+    "time": {
+      "tick": 4269,
+      "ticksPerDay": 12000,
+      "visualSeconds": 361.25
+    },
+    "money": 957.96,
+    "workerId": "w4"
+  },
+  "errors": []
+}

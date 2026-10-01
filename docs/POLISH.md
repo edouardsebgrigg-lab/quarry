@@ -120,3 +120,16 @@ dealer, the bank, the depot's prices, your fleet, your messages).
 - [x] U9 Prices app with news, laptop home ticker, weekly report: checked in laptop3.mjs shots
 - [x] Product photos pose the diggers (boom up, rams lined up) instead of the straight-out
       export pose with rams pointing the wrong way
+
+
+## User expansion — October 2026
+
+- [x] P1 Twenty-minute business day at 1×; old dates and deadlines preserved.
+- [x] P2 Affordable immediate apprentice after first digger and two sales; payroll shown.
+- [x] G1 Distinct material resistance, flow, cohesion, finite rock, ruts and compacted fill; compatible compressed exact saves.
+- [x] F1 Eight diggers, five tractors, five separate trailers, four mobility vehicles; gross towing, volume and brakes; legacy fleet migration.
+- [x] D15 Directional cutting, independent levers, precision/free look, Assisted guides, deferred/remembered dumping, functional tool variants and saved pose.
+- [x] Q1 Short incoming rentals/deposits, fleet map waypoints, repeat shovel option and loaded barrow recovery.
+- [x] Clean-sales alternatives let the company grow without mandatory customer jobs.
+
+Actual checks, implementation commits and remaining verification limits are recorded in CODEX-CHECKPOINT.md. This batch does not add a new jobs system.

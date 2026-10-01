@@ -7,6 +7,7 @@ import { sellLoad } from '../economy/index.js';
 import { contractsState, acceptContract } from '../contracts/index.js';
 import { buyBuilding } from '../buildings/index.js';
 import { careerMetric } from '../career/index.js';
+import { attachedTrailer } from '../machinery/trailers.js';
 
 function finish(ctx, m) {
   for (let i = 0; i < 10000 && m.job; i++) tickJobs(ctx, 0.1);
@@ -55,9 +56,9 @@ describe('getting-started goals', () => {
     expect(actions.buyMod(pickup.id, 'stifferSprings').ok).toBe(true);
     expect(step()).toBe('buyMiniDigger');
     expect(currentObjective(ctx).progress).toBeGreaterThan(0.5);
-    expect(currentObjective(ctx).progress).toBeLessThan(1);
+    expect(currentObjective(ctx).progress).toBeLessThanOrEqual(1);
     ctx.state.money += 400; // (more trips by hand)
-    const digger = actions.buyMachine('miniDigger', 'rusty').machine;
+    const digger = actions.buyMachine('miniDigger', 'mini16').machine;
     expect(step()).toBe('firstScoop');
     expect(actions.scoop(digger.id, { x: 60, z: 60 }).ok).toBe(true);
     finish(ctx, digger);
@@ -65,23 +66,26 @@ describe('getting-started goals', () => {
 
     // The tractor and trailer: only a full-ish trailer load counts.
     ctx.state.money += 500;
-    const tractor = actions.buyMachine('tractor', 'rusty').machine;
+    const tractor = actions.buyMachine('tractor', 'yard35').machine;
+    expect(step()).toBe('buyTractor');
+    const trailer = actions.buyMachine('trailer', 'yardTipper').machine;
+    expect(actions.attachTrailer(tractor.id,trailer.id).ok).toBe(true);
     expect(step()).toBe('sellTrailer');
     pickup.load = { topsoil: 0.5 };
     actions.weighIn(pickup.id);
     actions.tip(pickup.id, { bay: 'topsoil' });
     finish(ctx, pickup);
-    tractor.load = { topsoil: 1.5 };
+    attachedTrailer(ctx,tractor).load = { topsoil: 0.5 };
     actions.weighIn(tractor.id);
     actions.tip(tractor.id, { bay: 'topsoil' });
     finish(ctx, tractor);
     expect(step()).toBe('sellTrailer');
-    for (let i = 0; i < 80 && pileTotal(tractor.load) < 3.2; i++) {
+    for (let i = 0; i < 80 && pileTotal(attachedTrailer(ctx,tractor).load) < 1.2; i++) {
       actions.scoop(digger.id, { x: 60 + (i % 10) * 0.8, z: 64 + Math.floor(i / 10) * 0.8 });
       finish(ctx, digger);
       actions.dumpBucket(digger.id, { machineId: tractor.id });
     }
-    expect(pileTotal(tractor.load)).toBeGreaterThanOrEqual(3);
+    expect(pileTotal(attachedTrailer(ctx,tractor).load)).toBeGreaterThanOrEqual(1);
     actions.weighIn(tractor.id);
     expect(actions.tip(tractor.id, { bay: 'topsoil' }).ok).toBe(true);
     finish(ctx, tractor);
@@ -161,6 +165,28 @@ describe('getting-started goals', () => {
     game.state.stats.totalEarned = 15000;
     actions.selectMachine(pickup.id);
     expect(currentObjective(ctx)).toBeNull();
+  });
+
+  it('allows clean depot sales to replace customer jobs and reputation goals', () => {
+    const game = createGame({ seed: 5 });
+    const { ctx, actions } = game;
+    const pickup = game.state.machines[0];
+    const sell = tonnes => {
+      pickup.load = { topsoil: tonnes };
+      actions.weighIn(pickup.id);
+      pickup.load = {};
+      sellLoad(ctx, pickup.id, 'topsoil', { topsoil: tonnes });
+    };
+    ctx.state.objectives.index = game.data.objectives.steps.findIndex(s => s.id === 'firstJob');
+    sell(30);
+    expect(currentObjective(ctx).progress).toBeCloseTo(.5);
+    sell(30);
+    expect(currentObjective(ctx).id).toBe('yardBuilding');
+    expect(contractsState(ctx).done).toBe(0);
+    ctx.state.objectives.index = game.data.objectives.steps.findIndex(s => s.id === 'goodName');
+    sell(440);
+    expect(currentObjective(ctx).id).toBe('usedFleet');
+    expect(contractsState(ctx).done).toBe(0);
   });
 
   it('shows how far you are with saving up for the next machine', () => {

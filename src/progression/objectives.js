@@ -1,7 +1,8 @@
 // The step-by-step goals that take a new player from a shovel to a working business.
 // Texts and rewards are in data/objectives.json; the checks for each step are here.
 import { addMoney } from '../economy/index.js';
-import { machinePrice } from '../machinery/index.js';
+import { machinePrice, getStats } from '../machinery/index.js';
+import { attachedTrailer, combinationStats } from '../machinery/trailers.js';
 import { pileTotal } from '../quarry/index.js';
 import { barrowFill } from '../handtools/index.js';
 import { mentorForStep } from './mentor.js';
@@ -10,13 +11,15 @@ import { careerMetric, dealerPrice } from '../career/index.js';
 
 const pickupLoad = (ctx) => Math.max(0, ...ctx.state.machines.filter((m) => m.type === 'pickup').map((m) => pileTotal(m.load)));
 const machineOf = (ctx, id) => ctx.state.machines.find((m) => m.id === id);
-const owns = (ctx, type) => ctx.state.machines.some((m) => m.type === type);
+const owns = (ctx, type) => ctx.state.machines.some((m) => m.type === type && !m.rental);
 const worksBuilt = (ctx) => Object.values(ctx.state.stats.works ?? {}).reduce((a, b) => a + b, 0);
 const yardBuildings = (ctx) => Object.values(ctx.state.buildings?.[ctx.state.currentSiteId] ?? {}).filter((x) => x === true).length;
 // A Used digger and a Used road vehicle: { digger, road } (true when you own one).
 const usedFleet = (ctx) => {
-  const used = ctx.state.machines.filter((m) => m.tier === 'used').map((m) => ctx.data.machines.types[m.type]);
-  return { digger: used.some((t) => t?.kind === 'digger'), road: used.some((t) => t?.kind === 'carrier' && t.roadLegal) };
+  const owned = ctx.state.machines.filter(m=>!m.rental);
+  return { digger:owned.some(m=>ctx.data.machines.types[m.type]?.kind==='digger' && (m.tier==='used' || getStats(ctx.data,m).mass>=3500)),
+    road:owned.some(m=>ctx.data.machines.types[m.type]?.kind==='carrier' && ctx.data.machines.types[m.type].roadLegal &&
+      (m.tier==='used' || combinationStats(ctx,m).capacity>=6)) };
 };
 
 // Each check gets (ctx, eventType, payload, step) and returns true when the step is done.
@@ -27,7 +30,7 @@ const CHECKS = {
   weighIn: (ctx, type) => type === 'weighedIn',
   firstSale: (ctx, type) => type === 'productSold',
   buyMiniDigger: (ctx) => owns(ctx, 'miniDigger'),
-  buyTractor: (ctx) => owns(ctx, 'tractor'),
+  buyTractor: (ctx) => ctx.state.machines.some(m=>m.type==='tractor' && !m.rental && attachedTrailer(ctx,m)),
   buyExcavator: (ctx) => owns(ctx, 'excavator'),
   buyTruck: (ctx) => owns(ctx, 'truck'),
   firstScoop: (ctx, type, p) => type === 'rockDug' && p.tonnes > 0,
@@ -35,18 +38,23 @@ const CHECKS = {
   sell: (ctx, type, p) => type === 'productSold' && machineOf(ctx, p.machineId)?.type === 'truck',
   firstMod: (ctx, type) => type === 'modBought',
   earn: (ctx, type, p, step) => ctx.state.stats.totalEarned >= step.target,
-  usedMachine: (ctx, type, p) => type === 'machineBought' && p.tier !== 'rusty',
+  usedMachine: (ctx, type, p) => type === 'machineBought' && !p.rental && p.tier !== 'rusty',
   buildWorks: (ctx) => worksBuilt(ctx) > 0,
-  firstJob: (ctx) => (contractsState(ctx).done ?? 0) > 0,
+  firstJob: (ctx, type, p, step) => (contractsState(ctx).done ?? 0) > 0 || careerMetric(ctx,'cleanTonnes') >= step.alternativeTonnes,
   yardBuilding: (ctx) => yardBuildings(ctx) > 0,
   cleanTonnes: (ctx, type, p, step) => careerMetric(ctx, 'cleanTonnes') >= step.target - 1e-9,
-  goodName: (ctx, type, p, step) => reputation(ctx).level >= step.target,
+  goodName: (ctx, type, p, step) => reputation(ctx).level >= step.target || careerMetric(ctx,'cleanTonnes') >= step.alternativeTonnes,
   usedFleet: (ctx) => { const f = usedFleet(ctx); return f.digger && f.road; },
   earnBig: (ctx, type, p, step) => ctx.state.stats.totalEarned >= step.target,
 };
 
 // How far along the current step is (0..1), or null if it has no measurable progress.
-const saving = (ctx, type) => Math.min(1, Math.max(0, ctx.state.money) / machinePrice(ctx, type, 'rusty'));
+export const entryModel = (data,type) => Object.entries(data.machines.types[type].tiers)
+  .filter(([,s])=>!s.legacy).sort((a,b)=>a[1].price-b[1].price)[0]?.[0] ?? 'rusty';
+const saving = (ctx, type) => {
+  const price = machinePrice(ctx,type,entryModel(ctx.data,type)) + (type==='tractor' ? machinePrice(ctx,'trailer',entryModel(ctx.data,'trailer')) : 0);
+  return Math.min(1, Math.max(0, ctx.state.money) / price);
+};
 const PROGRESS = {
   fillBarrow: (ctx) => Math.min(1, barrowFill(ctx)),
   loadPickup: (ctx, step) => Math.min(1, pickupLoad(ctx) / step.target),
@@ -55,16 +63,17 @@ const PROGRESS = {
   buyExcavator: (ctx) => saving(ctx, 'excavator'),
   buyTruck: (ctx) => saving(ctx, 'truck'),
   earn: (ctx, step) => Math.min(1, ctx.state.stats.totalEarned / step.target),
-  firstJob: (ctx) => {
+  firstJob: (ctx, step) => {
     const active = contractsState(ctx).active;
-    return active.length ? Math.min(1, Math.max(...active.map((a) => (a.delivered ?? 0) / a.tonnes))) : null;
+    return Math.min(1, Math.max(careerMetric(ctx, 'cleanTonnes') / step.alternativeTonnes,
+      ...active.map((a) => (a.delivered ?? 0) / a.tonnes)));
   },
   yardBuilding: (ctx) => {
     const cheapest = Math.min(...Object.values(ctx.data.buildings).map((b) => dealerPrice(ctx, b.price)));
     return Math.min(1, Math.max(0, ctx.state.money) / cheapest);
   },
   cleanTonnes: (ctx, step) => Math.min(1, careerMetric(ctx, 'cleanTonnes') / step.target),
-  goodName: (ctx, step) => Math.min(1, reputation(ctx).level / step.target),
+  goodName: (ctx, step) => Math.min(1,Math.max(reputation(ctx).level / step.target,careerMetric(ctx,'cleanTonnes') / step.alternativeTonnes)),
   usedFleet: (ctx) => { const f = usedFleet(ctx); return (f.digger ? 0.5 : 0) + (f.road ? 0.5 : 0); },
   earnBig: (ctx, step) => Math.min(1, ctx.state.stats.totalEarned / step.target),
 };

@@ -4,7 +4,7 @@ import { getDate, ticksPerDay, createSaveSystem, createMemoryStorage } from './i
 import { createGame } from '../game/index.js';
 
 describe('independent visual day', () => {
-  it('takes 20 minutes of active real time, while economy ticks retain a two-minute day', () => {
+  it('takes 20 minutes of active real time, independently of the 20-minute business day', () => {
     const g = createGame({ seed: 1 });
     const tick = g.state.time.tick;
     g.advanceVisualTime(600);
@@ -15,7 +15,7 @@ describe('independent visual day', () => {
     expect(visualHour(g.state, g.data)).toBeCloseTo(19); // tick/speed/skip doesn't move the light
     g.advanceVisualTime(600);
     expect(visualHour(g.state, g.data)).toBeCloseTo(7);
-    expect(ticksPerDay(g.data) / g.data.game.ticksPerSecond).toBe(120);
+    expect(ticksPerDay(g.data) / g.data.game.ticksPerSecond).toBe(1200);
   });
   it('round-trips at night and defaults old saves without changing their business date', () => {
     const g = createGame({ seed: 1 });
