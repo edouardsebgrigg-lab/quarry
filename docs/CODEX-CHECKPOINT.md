@@ -507,3 +507,10 @@ HTTP 403: permission denied to CLI account `edouardgrigg-sketch` for
 commits remain local. Authenticate Git with a repository writer before retrying, and run
 both required checks again before that push. An incremental Git bundle of this branch and
 a copy of this checkpoint are saved as task outputs for recovery/review.
+
+
+## G1 — Material physics and terrain persistence (1 October 2026)
+
+Implementation commit: `d9ea29a`. Topsoil, clay, sand, gravel and rock now have resistance, cohesion, flow and traffic responses. Swept cutting follows a moving edge, respects width/force/attack/capacity and extracts finite rock only with a breaker. Rut spoil is displaced and compacted fill retains its material identity. Exposed cut faces use geological contact heights. Format 4 saves sparse changed cells with exact Float32 baseline XOR and byte-plane RLE; formats 1–3 remain readable and unfinished settlement resumes. Full-field traffic save measured 291,211 characters / 582,422 UTF16 bytes, with exactly restored totals.
+
+Actually ran: 35 ground/works/material tests (agent); `npm run build` (agent); scoped and root `git diff --check`; native ANGLE Metal browser operations R3 (root), no shader/runtime errors after the earlier shader fix, inspected Assisted/Direct cut screenshots. These browser checks ran against the combined in-progress integration, including uncommitted fleet/operation work. Not verified: an exhaustive real playthrough across every weather/material combination, worst-case entirely mixed filled-plot browser storage quota, or subjective material sounds. No push yet.
