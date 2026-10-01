@@ -23,7 +23,7 @@ Final fleet contact sheets were inspected for cab visibility, working-part place
 - Independently executed: **25 targeted tests passed** across fleet rig contracts, asset budget, fleet profiles, excavator operation and trailer pursuit.
 - Refreshed [entry/rental native report](screenshots/entry-rentals/entry-rentals.json): **20/20 checks passed; no browser errors**. Normal $200 buys the $180 Micro 08; two genuine 0.1 t topsoil sales open the $18 apprentice, hired through Staff. Rental-only fixture cash is recorded separately. Actual rental buttons, loaded-return refusal, unloading, refund, and saved/restored rental, cargo, employee, cash and calendar state pass. Saved and restored time is tick 4269, 12,000 ticks per business day, and 361.25 independent visual seconds.
 - [Complete UI evidence](screenshots/ui-layout-complete/layout.json): **74 broad screens, 12 real UI actions, and 17 final targeted checks passed; no browser errors**. Final dealer and Map images were inspected independently, including 390 and 640 px widths and 130% UI scale.
-- `git diff --check` passed during this review. The parent integration pass owns the final complete test suite and production build.
+- `git diff --check` passed during this review. The parent reported **325 tests and the production build passing** after the code freeze; those complete integration checks were performed separately from this review.
 
 ## Limits
 
