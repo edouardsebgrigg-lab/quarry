@@ -82,6 +82,7 @@ export function sellMachine(ctx, id) {
   const m = getMachine(ctx, id);
   if (!m) return { ok: false, reason: 'No such machine' };
   if (m.job) return { ok: false, reason: 'Machine is busy' };
+  if (m.onHire) return { ok: false, reason: 'It’s out on hire' };
   // Keep one road vehicle, or you'd have no way to get anything to the depot.
   const roadLegal = (x) => !!ctx.data.machines.types[x.type]?.roadLegal;
   if (roadLegal(m) && ctx.state.machines.filter(roadLegal).length <= 1) {

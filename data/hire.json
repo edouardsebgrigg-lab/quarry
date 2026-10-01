@@ -1,0 +1,10 @@
+{
+  "fromMachines": 3,
+  "chancePerDay": 0.3,
+  "offerDays": 2,
+  "days": [2, 5],
+  "dayRateOfPrice": 0.04,
+  "wearPerDay": 3,
+  "types": ["miniDigger", "excavator", "dumper", "tractor", "truck"],
+  "clients": ["Greenway Groundworks", "Wolds Drainage", "Hilltop Farm", "Ashby Builders", "County Highways", "Mill Lane Landscapes"]
+}

@@ -4,11 +4,12 @@ import { money } from '../../format.js';
 import { machinesAt, machineName, resaleValue } from '../../../machinery/index.js';
 import { machineLog } from '../../../game/logbook.js';
 import { weeklyInsurance } from '../../../economy/index.js';
+import { hireState, hireCandidates, machinesOnHire } from '../../../hire/index.js';
 
 export function fleetApp({ game, feedback, photos, openApp, setHead }) {
   const { data } = game;
   const ctx = game.ctx;
-  setHead('Your fleet', 'Every machine in the yard, how it’s holding up and what it’s done');
+  setHead('Your fleet', 'Every machine in the yard, how it’s holding up and what it’s done, and machines out on hire');
   const ms = machinesAt(ctx, game.state.currentSiteId);
   const pending = [];
   const totalV = el('div', { class: 'lt-stat-value' });
@@ -46,7 +47,43 @@ export function fleetApp({ game, feedback, photos, openApp, setHead }) {
       call);
   });
 
+  // Hire: a contractor's enquiry (send a machine or turn it down), and machines away on hire.
+  const hireBox = el('div', { class: 'lt-hire' });
+  let hireKey = '';
+  function renderHire() {
+    const e = hireState(ctx).enquiry;
+    const away = machinesOnHire(ctx);
+    const cands = hireCandidates(ctx);
+    const k = JSON.stringify([e?.id, cands.map((m) => m.id), away.map((m) => [m.id, m.onHire.until])]);
+    if (k === hireKey) return;
+    hireKey = k;
+    hireBox.replaceChildren();
+    hireBox.style.display = e || away.length ? '' : 'none';
+    if (e) {
+      const typeName = data.machines.types[e.type].name.toLowerCase();
+      const send = cands.map((m) => el('button', { class: 'btn btn-primary lt-buy', onClick: () => {
+        const r = game.actions.acceptHire(m.id);
+        feedback.message(r.ok ? `${machineName(data, m)} is off to ${e.client}` : r.reason, r.ok ? 'good' : 'warn');
+        if (r.ok) openApp('fleet'); // (rebuilt without it in the yard list)
+        else refresh();
+      } }, `Send ${machineName(data, m)}`));
+      const no = el('button', { class: 'btn lt-buy', onClick: () => { game.actions.declineHire(); refresh(); } }, 'Turn it down');
+      hireBox.append(el('div', { class: 'lt-job regular lt-hire-ask' },
+        el('div', { class: 'lt-job-head' }, el('b', {}, `${e.client} wants to hire a ${typeName}`), el('span', { class: 'lt-job-bonus' }, `+${money(e.total)}`)),
+        el('div', { class: 'lt-job-foot' }, el('span', {}, `${e.days} days at ${money(e.rate)} a day, paid when it comes back · about ${data.hire.wearPerDay * e.days}% wear`),
+          el('span', {}, `Answer by day ${e.expires}`)),
+        el('div', { class: 'lt-regular-actions' }, send.length ? send : el('span', { class: 'lt-muted-row' }, `No ${typeName} free to send (busy, broken, loaded, or your last road vehicle)`), no)));
+    }
+    for (const m of away) {
+      hireBox.append(el('div', { class: 'lt-row' },
+        el('div', { class: 'lt-row-main' }, el('b', {}, machineName(data, m)),
+          el('span', {}, `On hire to ${m.onHire.client} · back on day ${m.onHire.until + 1} · ${money(m.onHire.rate * m.onHire.days)} when it returns`)),
+        el('span', { class: 'lt-fl-status busy' }, 'On hire')));
+    }
+  }
+
   function refresh() {
+    renderHire();
     let total = 0;
     let attention = 0;
     for (const c of cells) {
@@ -79,6 +116,7 @@ export function fleetApp({ game, feedback, photos, openApp, setHead }) {
         el('div', { class: 'lt-stat-note' }, `${Object.keys(data.machines.types).filter((k) => ms.some((m) => m.type === k)).length} kinds`)),
       el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Fleet value'), totalV, el('div', { class: 'lt-stat-note' }, `Insurance ${money(weeklyInsurance(ctx))} a week`)),
       el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Need attention'), attnV, attnN)),
+    hireBox,
     el('div', { class: 'lt-rows' }, rows),
     el('button', { class: 'lt-link', onClick: () => openApp('dealer') }, 'Buy, upgrade or sell machines at the plant dealer →'));
 

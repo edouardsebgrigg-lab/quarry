@@ -12,6 +12,7 @@ import { createGround } from '../ground/index.js';
 import { logbookOnEvent } from './logbook.js';
 import { contractsOnEvent, contractsDaily } from '../contracts/index.js';
 import { weatherOnEvent, weatherState } from '../weather/index.js';
+import { hireOnEvent } from '../hire/index.js';
 import { careerOnEvent, careerState } from '../career/index.js';
 import { happeningsDaily, happeningsHourly } from '../happenings/index.js';
 
@@ -36,6 +37,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
   events.on('*', (type, payload) => logbookOnEvent(ctx, type, payload));
   events.on('*', (type, payload) => contractsOnEvent(ctx, type, payload));
   events.on('*', (type) => weatherOnEvent(ctx, type));
+  events.on('*', (type) => hireOnEvent(ctx, type));
   weatherState(ctx);
   if (!ctx.state.contracts) contractsDaily(ctx); // (a new game, or an old save: fill the board)
   events.on('dayStarted', () => {

@@ -13,6 +13,7 @@ export function mechanicQuote(ctx, machineId) {
   const m = getMachine(ctx, machineId);
   if (!m) return { reason: 'No such machine' };
   if (m.job) return { reason: 'It’s busy' };
+  if (m.onHire) return { reason: 'It’s out on hire' };
   const stats = getStats(ctx.data, m);
   const k = buildingMultiplier(ctx, 'workshop', 'maintenanceCostMultiplier', m.siteId);
   const fee = ctx.data.economy.mechanicCallOut;

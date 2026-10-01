@@ -182,6 +182,17 @@ export function logbookOnEvent(ctx, type, e) {
       trim(lb);
       break;
     }
+    case 'hireEnquiry':
+    case 'machineReturned': {
+      const lb = logbook(ctx);
+      const { day, hour, minute } = getDate(ctx.state, ctx.data);
+      const text = type === 'hireEnquiry'
+        ? `Have you a ${e.typeName.toLowerCase()} we could hire? ${e.days} days at $${e.rate} a day ($${e.total}), paid when it comes back. (laptop: Fleet)`
+        : `Your ${e.name} is back with you. Thanks: $${e.total} for the hire. It's done some work, so it'll want a look over.`;
+      lb.messages.push({ day, hour, minute, from: e.client, text, kind: type === 'hireEnquiry' ? 'tip' : 'good' });
+      trim(lb);
+      break;
+    }
     case 'creditRatingChanged': {
       const lb = logbook(ctx);
       const { day, hour, minute } = getDate(ctx.state, ctx.data);

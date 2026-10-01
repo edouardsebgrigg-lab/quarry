@@ -20,6 +20,7 @@ const REASONS = {
   callout: 'Mechanic call-out',
   contract: 'Job bonus',
   insurance: 'Machine insurance (weekly)',
+  hire: 'Machine hire',
   dev: 'Adjustment',
 };
 function describe(reason) {

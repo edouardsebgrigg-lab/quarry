@@ -7,6 +7,7 @@ import { getDate } from '../../../core/index.js';
 import { lineIcon } from './icons.js';
 import { unreadMessages } from '../../../game/logbook.js';
 import { contractsState } from '../../../contracts/index.js';
+import { hireState } from '../../../hire/index.js';
 import { homeApp } from './home.js';
 import { dealerApp } from './dealer.js';
 import { pricesApp } from './prices.js';
@@ -97,7 +98,8 @@ export function openLaptop(overlays, { game, feedback, world, app = 'home' }) {
         const offers = c.active.length < game.data.contracts.maxActive ? c.offers.length : 0;
         if (active?.id === 'milestones') markMilestonesSeen(game.ctx);
         const reached = unseenMilestones(game.ctx);
-        for (const [id, n] of [['messages', unread], ['jobs', offers], ['milestones', reached]]) {
+        const hireAsk = hireState(game.ctx).enquiry ? 1 : 0; // (a contractor wants to hire a machine)
+        for (const [id, n] of [['messages', unread], ['jobs', offers], ['milestones', reached], ['fleet', hireAsk]]) {
           const bdg = badges.get(id);
           setText(bdg, n ? String(n) : '');
           bdg.style.display = n ? '' : 'none';

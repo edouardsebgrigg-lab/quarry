@@ -9,6 +9,7 @@ import { lineIcon } from './icons.js';
 import { forecast } from '../../../weather/index.js';
 import { nextInspection, inspectionReport, dealerOffer } from '../../../happenings/index.js';
 import { contractsState } from '../../../contracts/index.js';
+import { hireState } from '../../../hire/index.js';
 import { milestones } from '../../../career/index.js';
 import { machinePrice } from '../../../machinery/index.js';
 
@@ -62,6 +63,8 @@ export function homeApp({ game, openApp, setHead }) {
       const left = a.weekEnd - getDate(game.state, data).day;
       rows.push({ kind: left <= 1 ? 'warn' : '', title: `Weekly order for ${a.client}: ${a.delivered} of ${a.tonnesPerWeek} t`, sub: `Clean ${mat(a.material)}, week ${a.week} of ${a.weeks}, ${left <= 0 ? 'ends today' : `ends day ${a.weekEnd}`}`, app: 'jobs' });
     }
+    const ask = hireState(ctx).enquiry;
+    if (ask) rows.push({ kind: 'good', title: `${ask.client} wants to hire a ${(data.machines.types[ask.type]?.name ?? ask.type).toLowerCase()}: +${money(ask.total)}`, sub: `${ask.days} days at ${money(ask.rate)} a day; answer by day ${ask.expires}`, app: 'fleet' });
     const rush = contractsState(ctx).offers.find((o) => o.rush);
     if (rush) rows.push({ kind: 'good', title: `Rush job for ${rush.client}: +${money(rush.bonus)}`, sub: `${rush.tonnes} t of clean ${(data.materials[rush.material]?.name ?? rush.material).toLowerCase()}, take it today`, app: 'jobs' });
     const next = milestones(ctx).filter((m) => !m.reached).sort((a, b) => b.progress - a.progress)[0];

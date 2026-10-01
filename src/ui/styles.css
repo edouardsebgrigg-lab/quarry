@@ -1002,3 +1002,8 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .lt-credit-bar i { display: block; height: 100%; background: var(--accent); transition: width 0.4s; }
 .lt-stat-value[data-band="excellent"], .lt-stat-value[data-band="good"] { color: var(--good); }
 .lt-stat-value[data-band="poor"], .lt-stat-value[data-band="bad"] { color: var(--bad); }
+
+/* Fleet: hiring out */
+.lt-hire { display: flex; flex-direction: column; gap: 0.6rem; }
+.lt-hire-ask { max-width: 46rem; }
+.lt-hire .lt-regular-actions { flex-wrap: wrap; align-items: center; }

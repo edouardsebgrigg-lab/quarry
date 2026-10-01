@@ -178,8 +178,9 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   // Site machines (not road-legal) stay on your land.
   let blockedNoteT = 0;
   const onYourLand = (x, z) => inRect(home.boundary, x, z);
-  function addVehicle(machine) {
-    const spot = saved.machines?.[machine.id] ?? parkingSpot(machine.type);
+  // (`fresh`: just back from hire, so it's parked in its spot, not where it was left)
+  function addVehicle(machine, { fresh = false } = {}) {
+    const spot = (!fresh && saved.machines?.[machine.id]) || parkingSpot(machine.type);
     const stats = () => getStats(data, getMachine(game.ctx, machine.id) ?? machine);
     const live = () => getMachine(game.ctx, machine.id);
     const args = { physics, scene, terrain, machine, spawn: spot, stats, live, surfaceAt: groundSurface };
@@ -582,12 +583,16 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const m = getMachine(game.ctx, e.machineId);
       if (m && m.siteId === siteId) addVehicle(m);
     }),
-    game.events.on('machineSold', (e) => {
+    ...['machineSold', 'machineHiredOut'].map((type) => game.events.on(type, (e) => {
       const v = vehicles.get(e.machineId);
       if (!v) return;
       if (current() === v) exit();
       v.destroy();
       vehicles.delete(e.machineId);
+    })),
+    game.events.on('machineReturned', (e) => {
+      const m = getMachine(game.ctx, e.machineId);
+      if (m && m.siteId === siteId && !vehicles.has(m.id)) addVehicle(m, { fresh: true });
     }),
   ];
 

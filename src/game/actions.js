@@ -9,6 +9,7 @@ import { shovelDig, shovelDump, tipBarrow } from '../handtools/index.js';
 import { buyBuilding } from '../buildings/index.js';
 import { planEarthworks, buildEarthworks } from '../earthworks/index.js';
 import { acceptContract, acceptStandingOrder, declineStandingOrder } from '../contracts/index.js';
+import { acceptHire, declineHire } from '../hire/index.js';
 
 export const DEFAULT_COMPANY = 'Wolds Quarry Co.';
 
@@ -100,6 +101,8 @@ export function createActions(ctx) {
     acceptContract: (offerId) => acceptContract(ctx, offerId),
     acceptStandingOrder: () => acceptStandingOrder(ctx),
     declineStandingOrder: () => declineStandingOrder(ctx),
+    acceptHire: (machineId) => acceptHire(ctx, machineId),
+    declineHire: () => declineHire(ctx),
 
     buyMachine: (type, tier) => fleetBuyMachine(ctx, type, tier),
     sellMachine: (id) => fleetSellMachine(ctx, id),

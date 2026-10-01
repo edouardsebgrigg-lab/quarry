@@ -84,6 +84,10 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       (painted steel now), bales were flat yellow (straw texture; black-wrapped silage at some
       farms); farms.mjs check
 - [x] Cab views (cabs.mjs): windscreen dust with wiper arcs, black plastic darkened to charcoal
+- [x] D10 Hiring out machines: from three machines, contractors ask to hire a kind you own
+      for a few days (about 4% of its price a day, paid on return, some wear); the machine
+      leaves the yard and comes back; Fleet app card and badge, Coming up, Messages, bank
+      statement; tested; hire.mjs check
 - [x] V2 Depot and yards: weathered grey blocks, working-sized heaps in the bays (capped), and
       yards worn through to packed dirt in patches, darker where driven hard; farms.mjs
 - [x] Wet ground stops the dust: low dark mud spray from wheels in the rain (not
