@@ -70,4 +70,13 @@ describe('early-game pacing', () => {
     const reward = data.objectives.steps.find((s) => s.id === 'buildWorks').reward;
     expect(reward).toBeGreaterThanOrEqual(cost('level', 8) * 0.8);
   });
+
+  // Milestones (data/milestones.json) pay rewards too. The ones a player can reach while still
+  // climbing the first machine ladder shouldn't buy the ladder for them: at most a quarter of it.
+  it('early milestone rewards stay under a quarter of the machine ladder', () => {
+    const ladder = ['miniDigger', 'tractor', 'excavator', 'truck'].reduce((a, t) => a + tier(t).price, 0);
+    const early = ['clean5', 'sold25', 'works1', 'dug50'];
+    const rewards = data.milestones.list.filter((m) => early.includes(m.id)).reduce((a, m) => a + m.reward, 0);
+    expect(rewards).toBeLessThanOrEqual(ladder * 0.25);
+  });
 });
