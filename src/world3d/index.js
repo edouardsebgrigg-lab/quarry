@@ -8,7 +8,7 @@ import { createCountryside, planWorld, preloadCountryside } from './countryside.
 import { ownsBuilding, stockpileLoad, stockpileConfig } from '../buildings/index.js';
 import { createYardStockpiles } from './stockpiles.js';
 import { buildPlaces } from './places.js';
-import { buildFarms, farmClearRect, farmTrees, farmTrack } from './farms.js';
+import { buildFarms, farmClearRect, farmWorkRect, farmTrees, farmTrack } from './farms.js';
 import { createParticles } from './particles.js';
 import { createPlayer } from './player.js';
 import { createTruck } from './truck.js';
@@ -112,6 +112,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     [{ x0: MAP.depot.driveway.x0, x1: MAP.depot.driveway.x1, z0: MAP.depot.yard.z1, z1: MAP.depot.yard.z1 + 10 }, 1],
     ...houseRects.map((r) => [r, 0]),
     ...plan.farms.map((f) => [farmClearRect(f), 0]),
+    ...plan.farms.map(farmWorkRect).filter(Boolean).map((r) => [r, 0]),
   ];
   // (no tufts in the ruts of the farm tracks either)
   const farmTracks = plan.farms.map((f) => farmTrack(plan, f)).filter(Boolean).map((t) => t.points);

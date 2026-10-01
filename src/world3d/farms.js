@@ -4,7 +4,7 @@
 // (countryside.js, "flat places") and trees keep clear of it (world3d/index.js).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { glbProp } from './glbModels.js';
+import { glbProp, glbTractor, glbTrailer } from './glbModels.js';
 import { createGroundMaterial } from './groundMaterial.js';
 
 // A farm's yard, in its own frame (x across, z towards the front): used for levelling.
@@ -16,6 +16,12 @@ export function farmPoint(f, lx, lz) {
   const c = Math.cos(f.yaw);
   const s = Math.sin(f.yaw);
   return { x: f.x + lx * c + lz * s, z: f.z - lx * s + lz * c };
+}
+// Keep tall tufts out of parked machinery, including its trailer, without clearing the field.
+export function farmWorkRect(f) {
+  if (!f.fieldWork) return null;
+  const p = farmPoint(f, f.fieldWork.x, f.fieldWork.z);
+  return { x0: p.x - 10, x1: p.x + 10, z0: p.z - 10, z1: p.z + 10 };
 }
 // Trees round the farmhouse and the yard, just outside the keep-out square.
 export const farmTrees = (f) => [[-34, 12], [-30, -22], [36, -20], [8, -36]].map(([lx, lz]) => farmPoint(f, lx, lz));
@@ -267,6 +273,38 @@ export function buildFarms({ scene, physics, plan, heightAt }) {
       addBale(b);
     }
     collider(3, 1.5, 1, stack.x, sy + 1.5, stack.z, f.yaw);
+
+    // A neighbour's empty tractor/trailer and scattered bales in the field. These are static
+    // scenery, with solid bodies, and never enter the player's fleet or economy/save state.
+    if (f.fieldWork) {
+      const work = f.fieldWork;
+      const p = at(work.x, work.z);
+      const yaw = f.yaw + work.yaw;
+      const tractor = glbTractor(work.tier, 0);
+      const trailer = glbTrailer(work.tier);
+      if (tractor && trailer) {
+        const group = new THREE.Group();
+        group.name = `farm-field-machinery-${i}`;
+        group.add(tractor.root, trailer.root);
+        trailer.root.position.x = -1.32 - 3.3; // hitch to towing eye, as in the working fleet
+        group.position.set(p.x, heightAt(p.x, p.z), p.z);
+        group.rotation.y = yaw;
+        scene.add(group);
+        collider(1.7, 1.3, 1, p.x, group.position.y + 1.3, p.z, yaw);
+        const tp = { x: p.x - 4.62 * Math.cos(yaw), z: p.z + 4.62 * Math.sin(yaw) };
+        collider(2.1, 1.2, 1.15, tp.x, group.position.y + 1.2, tp.z, yaw);
+      }
+      // Fixed placements add no draws to the saved/economic RNG; merged with yard bales.
+      for (const [dx, dz, turn] of [[-12,-8,.2],[-3,-13,1.3],[11,-5,-.5],[15,8,.6],[-15,13,1.7],[6,17,-.2]]) {
+        const b = baleGeometry();
+        const bp = at(work.x + dx, work.z + dz);
+        for (const g of [b.side, b.ends]) {
+          g.rotateY(f.yaw + turn);
+          g.translate(bp.x, heightAt(bp.x, bp.z) + .75, bp.z);
+        }
+        addBale(b);
+      }
+    }
   }
 
   // Tracks down to the road: two gravel wheel ruts with grass up the middle, fading into the

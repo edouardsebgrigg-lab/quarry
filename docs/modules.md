@@ -138,3 +138,9 @@ M2 model production: `blender/review_models.py` now includes Used-only access jo
 fasteners and soft transparent recess grime for truck/excavator. New details follow the
 existing Cab/House/Bed parents. Only those two compressed production GLBs changed;
 protected rig transforms are guarded by the builder and fleet asset tests.
+
+V1 field scenery: `map.js` farm `fieldWork` entries place static tractors and empty hitched
+trailers in Mill/Westfield fields. `farms.js` reuses the game GLBs, adds solid colliders,
+merges scattered bales with farm batches and supplies `farmWorkRect` to keep tall tufts
+out of the machinery. No fleet entries, saved RNG draws or economic work are created.
+`farm-fields.mjs` checks scenery presence, unchanged fleet and two field screenshots.

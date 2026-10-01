@@ -86,8 +86,8 @@ export const MAP = {
   // They sit back from the lanes you drive along, like real farms; the first is across Mill Lane
   // from your gate.
   farms: [
-    { name: 'Mill Farm', x: 80, z: -140, yaw: 0 },
-    { name: 'Westfield Farm', x: -470, z: -150, yaw: 0.15, house: 'house_bungalow' },
+    { name: 'Mill Farm', x: 80, z: -140, yaw: 0, fieldWork: { x: -45, z: -42, yaw: .4, tier: 'used' } },
+    { name: 'Westfield Farm', x: -470, z: -150, yaw: 0.15, house: 'house_bungalow', fieldWork: { x: 38, z: -42, yaw: -.6, tier: 'rusty' } },
     { name: 'Quarry Farm', x: 420, z: -720, yaw: Math.PI, house: 'house_semi' },
     { name: 'Grange Farm', x: 350, z: 150, yaw: -Math.PI / 2 },
   ],
