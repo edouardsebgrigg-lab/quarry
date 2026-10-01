@@ -3,7 +3,7 @@
 Codex continues this backlog after T9, T5, T6, T7 and D14, on `codex/continue`.
 Verify tests and build before every push; inspect a bounded screenshot for visual changes.
 Record commits and actual verification in `docs/CODEX-CHECKPOINT.md`. All areas below
-are now Codex’s responsibility. Ask Edouard before starting D7.
+are now Codex’s responsibility. D7’s independent 20-minute visual cycle was approved by Edouard.
 
 Design direction: clean and quiet, like the in-vehicle and menu UI of Euro Truck Simulator 2,
 Farming Simulator 25's shop and Forza Horizon's menus. Big clear numbers, few colours, one
@@ -23,14 +23,14 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       bog when a digger's lever is held at the end of its stroke (with a clunk as it bottoms out),
       stronger wind and no birdsong in rain. Tractor PTO and distinct raising/lowering ram
       loops added; subjective listening remains unverified. No gearbox whine.
-- [x] M2 Blender (`048d7d7`): the biggest remaining model issues from the studio shots (the used truck and
-      excavator look too clean and toy-like up close: panel gaps, grime in recesses)
+- [x] M2 Blender (`048d7d7`): used truck/excavator rebuilt with panel joints,
+      access fasteners and subtle grime at shut lines, handles, bed/vent recesses; rigs retained.
 - [x] V1 Countryside (`6888038`): hedges, field patchwork, farmsteads (with gravel-rutted tracks) and a
       patchy home field done. Parked tractors/empty trailers and scattered bales now in
       Mill/Westfield fields; solid scenery separate from the player’s fleet.
-- [ ] D7 Time of day: the sun never moves. The clock runs a whole day in two minutes, so a
-      moving sun would sweep the sky every minute; needs a decision on day length (and night)
-      before the light can follow the clock
+- [x] D7 Time of day (`49d20a1`): approved independent 20-minute visual cycle, saved phase,
+      moving sun, dawn/dusk/night, weather-aware night sky and automatic work light.
+      Economic day stays two minutes; speed controls leave daylight at normal pace.
 
 ## Done
 
@@ -86,7 +86,7 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       bay; the vehicle leaves and comes back), sales (more per load, takes board jobs), fitter
       (services and repairs, cheaper); wages daily, agency fee, notice; tested; staff.mjs (laptop)
       and stafffield.mjs (the operator digging and heaping, the truck gone to the depot) checked
-- [x] D14 Staff, next (`72f506e`): a driver could also deliver to jobs-board customers and fill a regular
+- [x] D14 Staff (`72f506e`): a driver could also deliver to jobs-board customers and fill a regular
       customer's order on purpose; morale or experience that grows with work; an operator
       loading the truck directly (digger and driver working together)
 - [x] D12 Insurance cover is a choice (Fleet app): none, basic (half of each repair paid, the

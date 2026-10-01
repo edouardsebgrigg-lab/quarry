@@ -1,7 +1,16 @@
-# Codex checkpoint — 30 September 2026
+# Codex checkpoint — 1 October 2026
 
-Branch: `codex/step-7-safety-and-yard-buildings`.
-Claude owns `docs/TASKS.md`; Codex has not edited it.
+Current branch: `codex/continue`, created after fetch from `origin/claude/coordination`
+(`ad7a7ed`). Codex now maintains TASKS/POLISH. This pass covers T9, the bounded T5
+opening check, T6, T7, D14, M1, S2, M2, V1 and the approved D7 visual cycle. Current
+validation: 275 tests and production build pass; actual browser checks and limitations
+are recorded per task below. Full normal-money first-sale/machine timing and subjective
+sound listening remain unverified. Publication is blocked by GitHub account write access.
+
+## Historical checkpoint — 30 September 2026
+
+The following entries describe prior work on `codex/step-7-safety-and-yard-buildings`
+and earlier ownership; the current takeover entries start under “Codex takeover”.
 
 ## Ready for review
 
@@ -462,3 +471,29 @@ Publication remains blocked by repository account access.
 
 D7 decision received: retain the 120-second economy day; separate 20-minute visual
 daylight/night cycle with playable nights. No economic timings should change.
+
+### D7 — completed locally after Edouard’s decision
+
+Implementation commit: `49d20a1`. Saved 1200-second visual cycle, advanced by active
+real-frame time through the existing pause/focus gate. Economy day remains 120 seconds;
+economic ticks, speed controls and dev skips leave daylight independent. Old saves default
+the optional phase to morning. Moving solar direction, warm horizons, night sky/stars,
+weather-aware fog and moonlit ambient floor; pooled view-following automatic work light,
+no new bird calls at night, HUD visual-period labels and business-calendar tooltip.
+README/modules updated. Environment map is reused with reduced night intensity.
+Actually ran: `npm test` (275 passing in 42 files), `npm run build` (passed),
+`git diff --check`, native Metal `daylight.mjs`: P pause freezes the visual clock, resume
+advances it, noon/dusk/night views, zero sunlight and positive moon/ambient at night,
+held-key night walk, actual shovel animation/dig and UI Continue preserving the saved
+night phase; no page errors. Inspected six 960×540 screenshots in
+`docs/handover/screenshots/d7/`. Reduced the initial work light after close-up review.
+Four unit tests cover separate timing, unchanged economic calendar, save/legacy defaults,
+invalid/paused durations and smooth/wrapped solar boundaries. Initial test expectations
+were corrected for midnight wrapping and a smooth near-horizon difference. Browser
+fixture initially treated the void shovel control as a result, then aimed out of reach;
+corrected the aim and let the animation finish. A synthetic mouse click was intercepted
+by the small-viewport HUD; the final shovel check invokes the existing debug control.
+Code teleports/aims, phase/weather fixtures, held keys, pointer-lock stub and forced time
+gate are used; P still pauses. Full natural 20-minute cycle, native focus/pointer capture,
+manual night driving/cab digging, subjective audio and high/ultra graphics not verified.
+Publication remains blocked by repository account write access.

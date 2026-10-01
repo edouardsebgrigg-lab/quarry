@@ -178,9 +178,9 @@ reason; every changed file loads in the browser (`docs/handover/browser-checks/m
 screenshot checked, no page errors). **Codex: run `npm test` and `npm run build` after your merge
 and say in your checkpoint if anything fails.**
 
-**Still open from earlier reviews:** the `worksBuilt` event carries a function
-(`touchesChangedCell`); make it plain data when T9 is in that code. `main` now has everything (merged
-at Edouard's request on 1 October).
+**Earlier review status, resolved by T9:** `worksBuilt` now carries plain data.
+The handoff source is `claude/coordination`; the earlier claim that main held everything
+was superseded by Edouard’s takeover instructions. Never publish this queue to main.
 
 **Needs Edouard:**
 - Play the first ten minutes with a real mouse and say what felt wrong (the biggest gap, as before).
