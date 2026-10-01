@@ -123,6 +123,25 @@ gameplay and a better look while he slept.
   `fuelPerkMultiplier`, `cleanSaleBonus`). A Milestones app on the laptop, a toast, a chime and
   a line in Messages. Old saves catch up on their first event.
 
+**Added later the same night:**
+- **N2 Things that happen (`src/happenings/`, `data/happenings.json`, `16c756e`):** the
+  design spec's random events, as decisions. The council's site inspector (once you have three
+  machines, every 8 to 13 days, announced the day before) fines each broken or sub-40% machine
+  $60 at 10:00, or lifts reputation by 0.5 if all are above 70%. Rush jobs (after your first
+  job): 80% of the tonnes, due tomorrow, double bonus, open today only (`postRushOrder` in
+  `src/contracts`). Dealer's offers: 15% off one machine you don't own for three days.
+  `machinePrice` in `src/machinery` combines the offer and the trade account; use it for any
+  machine price. Rain, price booms and fuel spikes already exist as weather, news and fuel drift.
+- **V1 Farmsteads (`src/world3d/farms.js`, `3cd359c`):** four farms beside the lanes (house,
+  barn, silo, bales, yard, a track to the road through a hedge gap), levelled ground, on the map.
+- **Laptop home:** a "Coming up" card (inspection and the fine as things stand, the dealer's
+  offer, a rush job, the closest milestone).
+- **Pacing:** `pacing.test.js` checks early milestone rewards stay under a quarter of the machine
+  ladder ($290 of $1,560).
+- **Browser checks:** `CHROMIUM_ARGS='["--in-process-gpu"]'` in `common.mjs`. Where I worked,
+  SwiftShader's separate GPU process stalled after a teleport (frames stopped, CPU idle); in
+  process it's fine. New checks: `milestones.mjs`, `happenings.mjs`.
+
 **For Codex:** after your next merge, tests that check exact money must turn milestones off
 (`data.milestones.list = []`), as the bank, planner and earthworks tests now do, or a reward
 lands mid-test. New buildings in `data/buildings.json` count toward the "Fitted out" milestone
@@ -130,7 +149,7 @@ automatically. Loads tipped into a stockpile bay (T6) aren't sales, so they won'
 milestones either, which is right.
 
 **Checked:** my own copy of the test runner (Vitest itself couldn't be installed where I
-worked): 200 tests pass; the 8 truck and pickup driving tests need the real Rapier, which I
+worked): 208 tests pass at the end of the night; the 8 truck and pickup driving tests need the real Rapier, which I
 couldn't load, and that code is untouched. `npm run build` was **not** run, for the same
 reason; every changed file loads in the browser (`docs/handover/browser-checks/milestones.mjs`,
 screenshot checked, no page errors). **Codex: run `npm test` and `npm run build` after your merge
