@@ -85,7 +85,7 @@ dealer, the bank, the depot's prices, your fleet, your messages).
 - [x] Cab views (cabs.mjs): windscreen dust with wiper arcs, black plastic darkened to charcoal
 - [x] D12 Insurance cover is a choice (Fleet app): none, basic (half of each repair paid, the
       old weekly rate, the default) or full (85% paid, dearer); changes start at the weekly
-      renewal so it can't be switched on for one repair; tested
+      renewal so it can't be switched on for one repair; tested; cover.mjs shot checked
 - [x] Milestones for hire, regular orders and the credit rating; tipping oil sound
 - [x] U12 Pause screen: scene darkened from the left, HUD hidden, a card with the company,
       day, weather, balance, machines, earnings and current goal; notifications move to the

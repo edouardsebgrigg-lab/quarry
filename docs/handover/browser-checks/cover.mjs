@@ -13,7 +13,7 @@ await page.keyboard.press('KeyB');
 await frames(4);
 await page.locator('.lt-dock-app', { hasText: 'Fleet' }).click();
 await frames(12);
-await page.locator('.lt-cover-opt', { hasText: 'Full' }).click();
+await page.locator('.lt-cover-opt').nth(2).click(); // (Full)
 await frames(2);
 await page.locator('.lt-cover').scrollIntoViewIfNeeded();
 await shot('fleet');
