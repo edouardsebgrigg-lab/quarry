@@ -11,6 +11,16 @@ const OPEN_SURFACE = /(^|_)Rims$/; // materials on open (one-sided) surfaces
 // Lamps are exported glowing; by day they're switched off: a clear lens over a silver
 // reflector, a dark red tail lens, and the beacon (it turns while the machine works) a bit less
 // blinding.
+// The black plastic and rubber of cab interiors, frames and trim is exported mid grey and reads
+// blue-grey under the sky; real dashboards and pillars are near charcoal.
+function blackTrim(material) {
+  if (!/(?:^|_)Black$/.test(material?.name ?? '') || material.userData.trim) return;
+  material.userData.trim = true;
+  material.color.multiplyScalar(0.16); // (linear: about 45% as bright to the eye)
+  material.roughness = Math.max(material.roughness, 0.72);
+  material.envMapIntensity = 0.5;
+}
+
 const LAMPS = { Headlight: { color: 0xd8dcdf, emissive: 0.06, metalness: 0.55, roughness: 0.06 }, TailLight: { emissive: 0.18 }, Beacon: { emissive: 0.6 } };
 function daylightLamp(material) {
   const kind = /(?:^|_)(Headlight|TailLight|Beacon)$/.exec(material?.name ?? '')?.[1];
@@ -54,6 +64,7 @@ export async function preloadModels({ onProgress } = {}) {
           // sides, or you see straight through the left-hand wheels.
           if (OPEN_SURFACE.test(o.material?.name ?? '')) o.material.side = THREE.DoubleSide;
           daylightLamp(o.material);
+          blackTrim(o.material);
         }
       });
       weatherModel(gltf.scene, name); // machines only: rust, chips, fade and mud by tier
