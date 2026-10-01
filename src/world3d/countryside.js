@@ -366,12 +366,17 @@ export function createCountryside({ scene, physics, ground, plan, asphalt = asph
         v += t * 0.5;
         g *= 1 - t * 0.8;
       }
+      // Yards: gravel, worn through to packed dirt in patches where the wheels go, and darker
+      // where it's been driven hard (so a yard isn't one bright, even sheet).
+      let yardT = 0;
+      const worn = smoothstep(0.45, 0.8, fbm(x * 0.06 - 9.7, z * 0.06 + 3.3, 61));
       for (const [y, fall] of yards) {
         const t = 1 - smoothstep(0, 1.5 + fall, rectDistance(y, x, z));
         if (t > 0) {
-          v = Math.max(v, t * 0.85);
-          d = Math.max(d, t * 0.35);
+          v = Math.max(v, t * (0.85 - 0.35 * worn));
+          d = Math.max(d, t * (0.3 + 0.55 * worn));
           g *= 1 - t;
+          yardT = Math.max(yardT, t);
         }
       }
       if (slope > 0.45) {
@@ -382,7 +387,7 @@ export function createCountryside({ scene, physics, ground, plan, asphalt = asph
       }
       const sum = g + d + v + rock || 1;
       splat.set([g / sum, d / sum, v / sum, rock / sum], k * 4);
-      const shade = 0.93 + 0.12 * n1;
+      const shade = (0.93 + 0.12 * n1) * (1 - yardT * (0.06 + 0.12 * smoothstep(0.35, 0.8, n2)));
       color.set([shade * 0.98, shade, shade * 0.9], k * 3);
     }
   }
