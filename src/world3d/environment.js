@@ -5,6 +5,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { solarState } from '../core/visualClock.js';
 import { createGroundMaterial, paintGround } from './groundMaterial.js';
 
 // ao: ambient occlusion (soft contact shadows where things meet), worked out at half or full
@@ -101,7 +102,9 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
   const pmrem = new THREE.PMREMGenerator(renderer);
   const envScene = new THREE.Scene();
   envScene.add(sky.clone());
-  scene.environment = pmrem.fromScene(envScene, 0, 1, 20000).texture;
+  const environmentTarget = pmrem.fromScene(envScene, 0, 1, 20000);
+  scene.environment = environmentTarget.texture;
+  pmrem.dispose();
   scene.environmentIntensity = 0.55;
 
   scene.fog = new THREE.Fog(0xc9d6df, 160, Math.max(900, hillDistance[1] * 0.75));
@@ -118,6 +121,11 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
   sun.shadow.bias = -0.0004;
   sun.shadow.normalBias = 0.03;
   scene.add(sun, sun.target);
+  // Broad cool moonlight keeps paths, machines and cut edges readable without flattening
+  // the night into daylight. No second shadow map or per-frame environment-map rebuild.
+  const moon = new THREE.DirectionalLight(0x9bb5ed, 0);
+  const moonDir = new THREE.Vector3(.45, .75, -.48).normalize();
+  scene.add(moon, moon.target);
 
   // Grass beyond the map: four strips around it.
   const ground = createGroundMaterial({ fields: true });
@@ -138,17 +146,23 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
   // horizon (so distant hills melt into it) and darker overhead, under the rain clouds. The sky
   // shader alone can't go grey.
   const overcastMat = new THREE.ShaderMaterial({
-    uniforms: { uAmount: { value: 0 }, uHorizon: { value: new THREE.Color() } },
+    uniforms: { uAmount: { value: 0 }, uHorizon: { value: new THREE.Color() }, uNight: { value: 0 }, uCloud: { value: 0 } },
     vertexShader: `varying vec3 vDir;
       void main() {
         vDir = normalize(position);
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         gl_Position.z = gl_Position.w; // (always at the back, like the sky)
       }`,
-    fragmentShader: `uniform float uAmount; uniform vec3 uHorizon; varying vec3 vDir;
+    fragmentShader: `uniform float uAmount, uNight, uCloud; uniform vec3 uHorizon; varying vec3 vDir;
       void main() {
         float up = smoothstep(-0.02, 0.6, vDir.y);
-        gl_FragColor = vec4(uHorizon * mix(1.0, 0.72, up), uAmount);
+        vec3 colour = uHorizon * mix(1.0, mix(0.72, 0.22, uNight), up);
+        // Deterministic tiny stars in the night dome; clouds hide them. No game RNG draws.
+        vec2 cell = vDir.xz * 260.0;
+        float hash = fract(sin(dot(floor(cell), vec2(127.1, 311.7))) * 43758.5453);
+        float star = step(0.997, hash) * (1.0 - smoothstep(0.02, 0.16, length(fract(cell) - 0.5)));
+        colour += vec3(1.3, 1.4, 1.6) * star * smoothstep(0.05, 0.3, vDir.y) * uNight * pow(1.0 - uCloud, 2.0);
+        gl_FragColor = vec4(colour, uAmount);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`,
@@ -166,9 +180,22 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
   const fogClear = scene.fog.color.clone();
   const fogGrey = new THREE.Color(0x9ba4ad);
   const now = { cloud: 0, rain: 0 };
+  const nightFog = new THREE.Color(0x202d40);
+  const duskFog = new THREE.Color(0xdab5a3);
+  const daySky = hemi.color.clone();
+  const nightSky = new THREE.Color(0x899fcf);
+  const dayGround = hemi.groundColor.clone();
+  const nightGround = new THREE.Color(0x364356);
+  const daySun = sun.color.clone();
+  const duskSun = new THREE.Color(0xffb26f);
+  let lighting = solarState(7);
 
   return {
-    weather(dt, { cloud = 0, rain = 0 }) {
+    weather(dt, { cloud = 0, rain = 0 }, hour = 7) {
+      lighting = solarState(hour);
+      const { daylight, night, warmth, direction } = lighting;
+      sunDir.set(direction.x, direction.y, direction.z).normalize();
+      u.sunPosition.value.copy(sunDir);
       const k = Math.min(1, dt * 0.25);
       now.cloud += (cloud - now.cloud) * k;
       now.rain += (rain - now.rain) * k;
@@ -177,16 +204,28 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
       u.turbidity.value = clear.turbidity + c * 7;
       u.rayleigh.value = clear.rayleigh + c * 1.6;
       u.mieCoefficient.value = clear.mie + c * 0.012;
-      sun.intensity = clear.sun * (1 - 0.72 * c);
-      hemi.intensity = clear.hemi * (1 + 0.6 * c);
-      scene.environmentIntensity = clear.env * (1 - 0.3 * c);
-      scene.fog.color.copy(fogClear).lerp(fogGrey, c);
-      overcastMat.uniforms.uAmount.value = Math.min(1, c * 1.05);
+      sun.color.copy(daySun).lerp(duskSun, warmth);
+      sun.intensity = clear.sun * (1 - 0.72 * c) * daylight * (.35 + .65 * Math.max(0, sunDir.y));
+      hemi.intensity = clear.hemi * (1 + 0.6 * c) * (.6 + .4 * daylight);
+      hemi.color.copy(daySky).lerp(nightSky, night);
+      hemi.groundColor.copy(dayGround).lerp(nightGround, night);
+      moon.intensity = .45 * night * (1 - .45 * c);
+      scene.environmentIntensity = clear.env * (1 - 0.3 * c) * (.18 + .82 * daylight);
+      scene.fog.color.copy(fogClear).lerp(duskFog, warmth * (1 - c) * .6).lerp(fogGrey, c).lerp(nightFog, night);
+      overcastMat.uniforms.uAmount.value = Math.max(night, Math.min(1, c * 1.05));
+      overcastMat.uniforms.uNight.value = night;
+      overcastMat.uniforms.uCloud.value = c;
       overcastMat.uniforms.uHorizon.value.copy(scene.fog.color);
-      overcast.visible = c > 0.02;
+      overcast.visible = c > 0.02 || night > .001;
       scene.fog.near = clear.fogNear * (1 - 0.65 * r);
       scene.fog.far = clear.fogFar * (1 - 0.55 * r);
       return now;
+    },
+    lighting: () => ({ ...lighting, sunIntensity: sun.intensity, moonIntensity: moon.intensity, ambientIntensity: hemi.intensity }),
+    dispose() {
+      environmentTarget.dispose();
+      sky.geometry.dispose(); sky.material.dispose();
+      overcast.geometry.dispose(); overcastMat.dispose();
     },
     // Height of the countryside outside the site (grass level, or up a hill).
     groundHeight(x, z) {
@@ -203,6 +242,8 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
     follow(target) {
       sun.position.copy(target).addScaledVector(sunDir, 120);
       sun.target.position.copy(target);
+      moon.position.copy(target).addScaledVector(moonDir, 120);
+      moon.target.position.copy(target);
     },
   };
 }

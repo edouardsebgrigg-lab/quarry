@@ -5,6 +5,7 @@ import {
 } from '../core/index.js';
 import { marketHourly, chargeDailyInterest, fuelDaily, addMoney, recordMoney, bankDaily, overheadsDaily, newsDaily } from '../economy/index.js';
 import { tickJobs, fixAllMachines } from '../machinery/index.js';
+import { visualClock, advanceVisualClock } from '../core/visualClock.js';
 import { createNewState } from './state.js';
 import { createActions } from './actions.js';
 import { objectivesOnEvent, mentorOnEvent } from '../progression/index.js';
@@ -23,6 +24,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
   const ctx = { data, events, state: null, rng: null };
   ctx.rng = createRng(() => ctx.state);
   ctx.state = state ?? createNewState(data, seed);
+  visualClock(ctx.state, data);
   ctx.state.stockpiles ??= {}; // old saves start with empty yard bays
 
   // The diggable ground of the current site (if it has one), rebuilt from its seed plus
@@ -83,6 +85,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
     events,
     get state() { return ctx.state; },
     tick,
+    advanceVisualTime: (dt) => advanceVisualClock(ctx.state, data, dt),
     advance,
     // The state to save: the plain game state plus the ground's changes.
     snapshot() {

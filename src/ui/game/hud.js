@@ -2,6 +2,7 @@
 // a one-line goal top left (details show when a goal is new, or with J).
 import { el, setText, icon } from '../dom.js';
 import { money, clockTime } from '../format.js';
+import { visualHour } from '../../core/visualClock.js';
 import { getDate } from '../../core/index.js';
 import { getSiteData } from '../../quarry/index.js';
 import { keyLabel } from '../../input/index.js';
@@ -15,7 +16,8 @@ const DETAIL_TIME = 9; // seconds a new goal stays expanded
 const SUN = '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/>';
 const CLOUD = '<path d="M7 18.5h10.2a4 4 0 0 0 .4-8 5.6 5.6 0 0 0-10.8 1.3A3.4 3.4 0 0 0 7 18.5z"/>';
 const RAIN = '<path d="M7 14.5h10.2a4 4 0 0 0 .4-8 5.6 5.6 0 0 0-10.8 1.3A3.4 3.4 0 0 0 7 14.5z"/><path d="M8.5 17.5l-1 3M12.5 17.5l-1 3M16.5 17.5l-1 3"/>';
-const WEATHER_ICONS = { sunny: SUN, cloudy: CLOUD, showers: RAIN, rain: RAIN };
+const MOON = '<path d="M19.5 15.5A8 8 0 0 1 8.5 4.5a8 8 0 1 0 11 11z"/>';
+const WEATHER_ICONS = { sunny: SUN, night: MOON, cloudy: CLOUD, showers: RAIN, rain: RAIN };
 function weatherIcon(id) {
   const span = el('span', { class: 'hs-wicon' });
   span.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WEATHER_ICONS[id] ?? SUN}</svg>`;
@@ -25,7 +27,7 @@ function weatherIcon(id) {
 export function createHud({ game, runtime, settings }) {
   const moneyText = el('div', { class: 'hs-money' });
   const debtTag = el('span', { class: 'hs-debt' }, 'DEBT');
-  const dateText = el('span', { class: 'hs-date' });
+  const dateText = el('span', { class: 'hs-date', title: 'Business calendar: wages, prices and deadlines follow this clock. Daylight has its own slower cycle.' });
   const siteText = el('span', { class: 'hs-site' });
   const weatherText = el('span', { class: 'hs-weather' });
   let weatherId = '';
@@ -88,9 +90,12 @@ export function createHud({ game, runtime, settings }) {
       setText(dateText, clockTime(getDate(game.state, game.data)));
       setText(siteText, getSiteData(game.data, game.state.currentSiteId).name);
       const w = currentWeather(game.ctx);
-      if (w.kind !== weatherId) {
-        weatherId = w.kind;
-        weatherText.replaceChildren(weatherIcon(w.kind), w.name);
+      const hour = visualHour(game.state, game.data);
+      const period = hour < 5.5 || hour >= 19 ? 'Night' : hour < 7 ? 'Dawn' : hour >= 17 ? 'Dusk' : '';
+      const id = `${w.kind}:${period}`;
+      if (id !== weatherId) {
+        weatherId = id;
+        weatherText.replaceChildren(weatherIcon(w.kind === 'sunny' && period === 'Night' ? 'night' : w.kind), `${w.kind === 'sunny' && period === 'Night' ? 'Clear' : w.name}${period ? ` · ${period}` : ''}`);
         weatherText.classList.toggle('wet', w.rain > 0);
       }
       for (const b of speedButtons) b.node.classList.toggle('active', b.isActive());

@@ -199,6 +199,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     running = timeRunning({
       userPaused, overlayPausing, overlayOpen, locked: !!info?.locked, started, windowActive: windowActive(), forced,
     });
+    game.advanceVisualTime(running ? realDt : 0);
     const speed = devFast ? data.game.devSpeed : data.game.speeds[speedIndex];
     for (let i = ticker.frame(realDt, speed, running); i > 0; i--) game.tick();
     world?.update(realDt, { paused: paused || overlayOpen, keyboard });

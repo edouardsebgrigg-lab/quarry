@@ -15,5 +15,6 @@
       "type": "pickup",
       "tier": "rusty"
     }
-  ]
+  ],
+  "visualDayLengthSeconds": 1200
 }

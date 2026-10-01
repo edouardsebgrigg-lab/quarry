@@ -226,3 +226,11 @@ operator under Loading to receive buckets directly. A full bed leaves for delive
 leftover bucket material stays with the operator. Heaps remain available as a loading choice.
 Completed digging, round trips, sales and fitter jobs earn experience and raise the
 matching skill up to five stars. The agreed daily wage stays fixed; progress appears in Staff.
+
+Daylight follows a separate **20-minute cycle** of active play, with a moving sun, dusk,
+night and dawn. The business calendar keeps its two-minute day: wages, prices, contracts
+and deadlines still follow the date/clock shown in the HUD. Changing economic speed
+leaves daylight at its normal pace. Both clocks stop when play pauses or loses focus.
+Night has moonlit ambient light and an automatic work light following your view; the
+weather label shows Dawn/Dusk/Night. The daylight phase is saved; older saves start it
+at morning.

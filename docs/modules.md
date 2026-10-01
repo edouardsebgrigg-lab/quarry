@@ -144,3 +144,16 @@ trailers in Mill/Westfield fields. `farms.js` reuses the game GLBs, adds solid c
 merges scattered bales with farm batches and supplies `farmWorkRect` to keep tall tufts
 out of the machinery. No fleet entries, saved RNG draws or economic work are created.
 `farm-fields.mjs` checks scenery presence, unchanged fleet and two field screenshots.
+
+D7 daylight: `data/game.json.visualDayLengthSeconds` is 1200 while economic
+`dayLengthSeconds` stays 120. `core/visualClock.js` defaults old saves' optional
+`state.time.visualSeconds`, wraps active elapsed time and computes smooth solar phases.
+`game.advanceVisualTime(dt)` is called once per active real frame by `gameScreen.js`
+through the existing time gate; economic ticks/speed/dev skips do not advance it.
+`environment.js` combines solar direction, warm horizons, night fog/dome/stars,
+moonlight and ambient floors with eased weather. It reuses the daylight environment map
+at reduced intensity at night, avoiding repeated PMREM renders. `workLight.js` pools one
+shadow-free view-following night light; `sounds.js` suppresses new bird calls at night.
+The HUD marks the visual period and explains the business clock in its date tooltip.
+`visualClock.test.js` covers separate timing, cyclic boundaries and save/legacy behaviour;
+`daylight.mjs` checks real pause/resume, lighting views, a night walk/dig and UI Continue.

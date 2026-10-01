@@ -206,7 +206,7 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
   }
 
   let rainVoice = null;
-  function ambience(dt, listener, inCab, rainAmount = 0) {
+  function ambience(dt, listener, inCab, rainAmount = 0, night = 0) {
     if (!wind) wind = audio.loopVoice('wind', 'ambient');
     // Rain: a hiss outside, a muffled drumming from inside a cab.
     if (rainAmount > 0.02 && !rainVoice) rainVoice = audio.loopVoice('rain', 'ambient');
@@ -216,7 +216,7 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
     wind?.set({ gain: (inCab ? 0.1 : 0.32) * gust * blow, rate: 0.9 + 0.1 * gust + rainAmount * 0.1, cutoff: inCab ? 700 : 16000 });
     // Birds singing somewhere around you (they go quiet in the rain).
     birdT -= dt;
-    if (birdT <= 0 && rainAmount > 0.25) birdT = 4;
+    if (birdT <= 0 && (rainAmount > 0.25 || night > .5)) birdT = 4;
     if (birdT <= 0) {
       birdT = 2 + Math.random() * 7;
       const a = Math.random() * Math.PI * 2;
@@ -291,7 +291,7 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
   }
 
   return {
-    update(dt, { camera, vehicles, current, player, jobOf, tierOf, rain = 0 }) {
+    update(dt, { camera, vehicles, current, player, jobOf, tierOf, rain = 0, night = 0 }) {
       if (!audio.ready()) return;
       t += dt;
       camera.getWorldDirection(fwd);
@@ -314,7 +314,7 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
           machines.delete(id);
         }
       }
-      ambience(dt, L, !!current, rain);
+      ambience(dt, L, !!current, rain, night);
       footsteps(dt, current ? null : player);
     },
     // UI sounds.

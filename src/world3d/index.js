@@ -23,9 +23,11 @@ import { createGroundView } from './groundChunks.js';
 import { createHandTools } from './handTools.js';
 import { createPlanner } from './planner.js';
 import { createThumbnails } from './thumbnails.js';
+import { createWorkLight } from './workLight.js';
 import { createRain } from './rain.js';
 import { groundWeather } from './groundMaterial.js';
 import { workerFor } from '../staff/index.js';
+import { visualHour } from '../core/visualClock.js';
 import { currentWeather } from '../weather/index.js';
 import { createHeadSway } from './headSway.js';
 import { MAP, inRect } from './map.js';
@@ -100,6 +102,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   buildFarms({ scene, physics, plan, heightAt });
   const particles = createParticles(scene);
   const rain = createRain(scene);
+  const workLight = createWorkLight(scene);
   let weatherGrip = 1; // (rain makes everything slippery)
   let rainFelt = 0;
   let weatherSettle = false;
@@ -910,7 +913,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const w = currentWeather(game.ctx);
     const settle = weatherSettle; // (debug: jump straight to the weather, for screenshots)
     weatherSettle = false;
-    const felt = env.weather(paused ? 0 : settle ? 10 : dt, w);
+    const felt = env.weather(paused ? 0 : settle ? 10 : dt, w, visualHour(game.state, data));
     weatherGrip = w.grip;
     groundWeather.wet.value += ((felt.rain > 0.05 ? Math.min(1, felt.rain * 1.3) : 0) - groundWeather.wet.value) * (settle ? 1 : Math.min(1, dt * (felt.rain > 0.05 ? 0.08 : 0.02)));
     rain.update(paused ? 0 : dt, camera, felt.rain);
@@ -919,8 +922,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     vegetation.update(dt, here);
     trees.update(dt);
     placeCamera(dt);
+    workLight.update(camera, env.lighting().night);
     sounds?.update(dt, {
       rain: rainFelt,
+      night: env.lighting().night,
       camera,
       vehicles,
       current: v,
@@ -1142,6 +1147,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     mode: () => mode.kind,
     scene,
     camera,
+    lighting: () => env.lighting(),
     look: () => ({ ...look, foot: { ...player.look } }),
     vehicle: (id) => vehicles.get(id),
     // Ground testing: dig a bowl or drop material at a spot.
@@ -1193,6 +1199,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       yardStockpiles.destroy();
       land.dispose();
       rain.dispose();
+      env.dispose();
+      workLight.dispose();
       frameRenderer.dispose();
       renderer.dispose();
       physics.destroy();
