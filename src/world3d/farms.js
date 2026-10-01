@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { glbProp } from './glbModels.js';
+import { createGroundMaterial } from './groundMaterial.js';
 
 // A farm's yard, in its own frame (x across, z towards the front): used for levelling.
 export const FARM_SIZE = { hx: 30, hz: 24 };
@@ -34,6 +35,10 @@ export function farmTrack(plan, f) {
   const pts = Array.from({ length: n + 1 }, (_, i) => ({ x: gate.x + (end.x - gate.x) * (i / n), z: gate.z + (end.z - gate.z) * (i / n) }));
   return { points: pts, meets: { x: best.x, z: best.z } };
 }
+// A track's cross-section: offsets from its middle, and the ground there [grass, dirt, gravel].
+const TRACK_ACROSS = [-2.1, -0.9, 0, 0.9, 2.1];
+const TRACK_SPLAT = [[1, 0, 0], [0.05, 0.35, 0.6], [0.8, 0.2, 0], [0.05, 0.35, 0.6], [1, 0, 0]];
+
 // (a square that holds the yard whichever way the farm faces)
 const REACH = Math.ceil(Math.hypot(FARM_SIZE.hx, FARM_SIZE.hz)) + 2;
 export const farmRect = (f, pad = 0) => ({ x0: f.x - REACH - pad, x1: f.x + REACH + pad, z0: f.z - REACH - pad, z1: f.z + REACH + pad });
@@ -49,12 +54,59 @@ function rng(seed) {
   };
 }
 
+// Straw for the bales, drawn once: fibres wrapped round the side, a spiral on the ends.
+function strawTexture(end) {
+  const c = document.createElement('canvas');
+  c.width = end ? 128 : 256;
+  c.height = 128;
+  const g = c.getContext('2d');
+  const r = rng(end ? 77 : 55);
+  g.fillStyle = end ? '#a88a45' : '#c6a75a';
+  g.fillRect(0, 0, c.width, c.height);
+  if (end) {
+    for (let k = 0; k < 900; k++) {
+      const a = r() * Math.PI * 2;
+      const rad = r() * 62;
+      g.strokeStyle = r() < 0.5 ? `rgba(220, 190, 110, ${0.3 + r() * 0.4})` : `rgba(110, 84, 36, ${0.2 + r() * 0.4})`;
+      g.lineWidth = 0.6 + r();
+      g.beginPath();
+      g.arc(64, 64, rad, a, a + 0.25 + r() * 0.5);
+      g.stroke();
+    }
+  } else {
+    for (let k = 0; k < 1400; k++) {
+      const x = r() * c.width;
+      const y = r() * c.height;
+      g.strokeStyle = r() < 0.55 ? `rgba(232, 204, 124, ${0.25 + r() * 0.45})` : `rgba(120, 92, 40, ${0.2 + r() * 0.4})`;
+      g.lineWidth = 0.6 + r() * 0.9;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.lineTo(x + 8 + r() * 26, y + (r() - 0.5) * 3);
+      g.stroke();
+    }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = THREE.RepeatWrapping;
+  if (!end) t.repeat.set(3, 1);
+  t.anisotropy = 4;
+  return t;
+}
+
 // Materials shared by every farm.
 function farmMaterials() {
+  const ground = createGroundMaterial(); // (the yard and tracks: the game's own gravel, dirt and grass)
+  ground.polygonOffset = true;
+  ground.polygonOffsetFactor = -2;
+  ground.polygonOffsetUnits = -2;
   return {
-    yard: new THREE.MeshStandardMaterial({ color: 0x6a604f, roughness: 1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
-    straw: new THREE.MeshStandardMaterial({ color: 0xc8a95c, roughness: 0.95 }),
-    strawEnd: new THREE.MeshStandardMaterial({ color: 0xb09047, roughness: 1 }),
+    ground,
+    straw: new THREE.MeshStandardMaterial({ map: strawTexture(false), roughness: 0.95 }),
+    strawEnd: new THREE.MeshStandardMaterial({ map: strawTexture(true), roughness: 1 }),
+    // (silage bales wrapped in black plastic, as most farms round here have too)
+    wrap: new THREE.MeshStandardMaterial({ color: 0x141618, roughness: 0.32, metalness: 0 }),
+    // (painted steel, not bare metal: the shed's own cladding mirrors the sky and reads mint)
+    cladding: new THREE.MeshStandardMaterial({ color: 0x5d6b5f, roughness: 0.72, metalness: 0.12 }),
     silo: new THREE.MeshStandardMaterial({ color: 0x9aa39b, roughness: 0.55, metalness: 0.35 }),
     siloRoof: new THREE.MeshStandardMaterial({ color: 0x6f7872, roughness: 0.6, metalness: 0.3 }),
     barn: new THREE.MeshStandardMaterial({ color: 0x55635a, roughness: 0.7, metalness: 0.2 }),
@@ -62,11 +114,32 @@ function farmMaterials() {
   };
 }
 
-// A round bale lying on its side (1.5 m across, 1.2 m long), as one merged geometry per farm.
+// A round bale lying on its side (1.5 m across, 1.2 m long): its rolled side and its two ends,
+// as separate geometries (they take different materials once merged per farm).
 function baleGeometry() {
-  const g = new THREE.CylinderGeometry(0.75, 0.75, 1.2, 14, 1);
-  g.rotateZ(Math.PI / 2);
-  return g;
+  const side = new THREE.CylinderGeometry(0.75, 0.75, 1.2, 16, 1, true);
+  side.rotateZ(Math.PI / 2);
+  const ends = [-0.6, 0.6].map((x) => {
+    const e = new THREE.CircleGeometry(0.75, 16);
+    e.rotateY(x > 0 ? Math.PI / 2 : -Math.PI / 2);
+    e.translate(x, 0, 0);
+    return e;
+  });
+  return { side, ends: mergeGeometries(ends) };
+}
+
+// Give a geometry the ground shader's attributes, per vertex: fn(x, y) -> [grass, dirt, gravel].
+function paintVerts(geo, fn) {
+  const p = geo.attributes.position;
+  const s = new Float32Array(p.count * 4);
+  const c = new Float32Array(p.count * 3).fill(1);
+  for (let i = 0; i < p.count; i++) {
+    const [grass, dirt, gravel] = fn(p.getX(i), p.getY(i), i);
+    s.set([grass, dirt, gravel, 0], i * 4);
+  }
+  geo.setAttribute('splat', new THREE.BufferAttribute(s, 4));
+  geo.setAttribute('color', new THREE.BufferAttribute(c, 3));
+  return geo;
 }
 
 export function buildFarms({ scene, physics, plan, heightAt }) {
@@ -79,6 +152,8 @@ export function buildFarms({ scene, physics, plan, heightAt }) {
       .setRotation({ x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) }),
   );
   const baleGeos = [];
+  const baleEnds = [];
+  const wrapGeos = [];
   const siloGeos = [];
   const roofGeos = [];
 
@@ -87,8 +162,16 @@ export function buildFarms({ scene, physics, plan, heightAt }) {
     const at = (lx, lz) => farmPoint(f, lx, lz);
     const y = heightAt(f.x, f.z);
 
-    // The yard: packed earth and hardcore.
-    const yard = new THREE.Mesh(new THREE.PlaneGeometry(FARM_SIZE.hx * 1.4, FARM_SIZE.hz * 1.3), mats.yard);
+    // The yard: packed earth and hardcore, patchy, going back to grass at its edges.
+    const W = FARM_SIZE.hx * 1.4;
+    const H = FARM_SIZE.hz * 1.3;
+    const yardGeo = paintVerts(new THREE.PlaneGeometry(W, H, 16, 12), (x, yy) => {
+      const edge = Math.min(1 - Math.abs(x) / (W / 2), 1 - Math.abs(yy) / (H / 2));
+      const grass = 1 - Math.min(1, Math.max(0, edge / 0.16));
+      const gravel = 0.35 + r() * 0.45;
+      return [grass, (1 - grass) * (1 - gravel), (1 - grass) * gravel];
+    });
+    const yard = new THREE.Mesh(yardGeo, mats.ground);
     yard.rotation.set(-Math.PI / 2, 0, f.yaw);
     yard.position.set(f.x, y + 0.04, f.z);
     yard.receiveShadow = true;
@@ -122,6 +205,7 @@ export function buildFarms({ scene, physics, plan, heightAt }) {
       barn.position.set(bp.x, by - 0.05, bp.z);
       barn.rotation.y = barnYaw;
       barn.scale.setScalar(scale);
+      barn.traverse((o) => { if (o.isMesh && /Cladding/.test(o.material?.name ?? '')) o.material = mats.cladding; });
       scene.add(barn);
     } else {
       const box = new THREE.Mesh(new THREE.BoxGeometry(24 * scale, 7 * scale, 16 * scale), mats.barn);
@@ -147,31 +231,46 @@ export function buildFarms({ scene, physics, plan, heightAt }) {
       siloGeos.push(hopper);
     }
 
-    // Round bales: a stack two high in the front yard, and a few lying about.
+    // Round bales: a stack two high in the front yard, and a few lying about; straw at some farms,
+    // black-wrapped silage at others.
+    const silage = r() < 0.5;
+    const addBale = (b) => {
+      if (silage) wrapGeos.push(b.side, b.ends);
+      else {
+        baleGeos.push(b.side);
+        baleEnds.push(b.ends);
+      }
+    };
     const stack = at(-4, 13);
     const sy = heightAt(stack.x, stack.z);
     const rows = 3 + Math.floor(r() * 3);
     for (let k = 0; k < rows; k++) {
       for (let level = 0; level < 2; level++) {
         if (level === 1 && k === rows - 1) continue;
-        const g = baleGeometry();
-        g.rotateY(f.yaw);
+        const b = baleGeometry();
         const p = at(-4 + (k + level * 0.5) * 1.3, 13);
-        g.translate(p.x, sy + 0.75 + level * 1.4, p.z);
-        baleGeos.push(g);
+        for (const g of [b.side, b.ends]) {
+          g.rotateY(f.yaw);
+          g.translate(p.x, sy + 0.75 + level * 1.4, p.z);
+        }
+        addBale(b);
       }
     }
     for (let k = 0; k < 3; k++) {
-      const g = baleGeometry();
-      g.rotateY(f.yaw + r() * Math.PI);
+      const b = baleGeometry();
+      const turn = f.yaw + r() * Math.PI;
       const p = at(-10 + r() * 26, 19 + r() * 4);
-      g.translate(p.x, heightAt(p.x, p.z) + 0.72, p.z);
-      baleGeos.push(g);
+      for (const g of [b.side, b.ends]) {
+        g.rotateY(turn);
+        g.translate(p.x, heightAt(p.x, p.z) + 0.72, p.z);
+      }
+      addBale(b);
     }
     collider(3, 1.5, 1, stack.x, sy + 1.5, stack.z, f.yaw);
   }
 
-  // Dirt tracks down to the road, laid over the ground.
+  // Tracks down to the road: two gravel wheel ruts with grass up the middle, fading into the
+  // field at the edges (five vertices across).
   const trackGeos = [];
   for (const f of farms) {
     const t = farmTrack(plan, f);
@@ -185,21 +284,31 @@ export function buildFarms({ scene, physics, plan, heightAt }) {
       const len = Math.hypot(b.x - a.x, b.z - a.z) || 1;
       const nx = -(b.z - a.z) / len;
       const nz = (b.x - a.x) / len;
-      for (const side of [-1, 1]) {
-        const x = pts[i].x + nx * 1.8 * side;
-        const z = pts[i].z + nz * 1.8 * side;
-        pos.push(x, heightAt(x, z) + 0.06, z);
+      for (const off of TRACK_ACROSS) {
+        const x = pts[i].x + nx * off;
+        const z = pts[i].z + nz * off;
+        pos.push(x, heightAt(x, z) + 0.05, z);
       }
-      if (i) idx.push(2 * i - 2, 2 * i - 1, 2 * i, 2 * i - 1, 2 * i + 1, 2 * i);
+      if (i) {
+        const a0 = (i - 1) * 5;
+        const b0 = i * 5;
+        for (let k = 0; k < 4; k++) idx.push(a0 + k, a0 + k + 1, b0 + k, a0 + k + 1, b0 + k + 1, b0 + k);
+      }
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     g.setIndex(idx);
     g.computeVertexNormals();
+    if (g.attributes.normal.getY(0) < 0) { // (keep the faces up whichever way the track runs)
+      const ix = g.index.array;
+      for (let k = 0; k < ix.length; k += 3) [ix[k + 1], ix[k + 2]] = [ix[k + 2], ix[k + 1]];
+      g.computeVertexNormals();
+    }
+    paintVerts(g, (x, y, vi) => TRACK_SPLAT[vi % 5]);
     trackGeos.push(g);
   }
   if (trackGeos.length) {
-    const m = new THREE.Mesh(mergeGeometries(trackGeos), mats.yard);
+    const m = new THREE.Mesh(mergeGeometries(trackGeos), mats.ground);
     m.receiveShadow = true;
     scene.add(m);
   }
@@ -212,6 +321,8 @@ export function buildFarms({ scene, physics, plan, heightAt }) {
     scene.add(m);
   };
   add(baleGeos, mats.straw);
+  add(baleEnds, mats.strawEnd);
+  add(wrapGeos, mats.wrap);
   add(siloGeos, mats.silo);
   add(roofGeos, mats.siloRoof);
   return { farms };

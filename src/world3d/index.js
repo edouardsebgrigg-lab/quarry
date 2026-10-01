@@ -109,11 +109,14 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     ...houseRects.map((r) => [r, 0]),
     ...plan.farms.map((f) => [farmClearRect(f), 0]),
   ];
+  // (no tufts in the ruts of the farm tracks either)
+  const farmTracks = plan.farms.map((f) => farmTrack(plan, f)).filter(Boolean).map((t) => t.points);
+  const onFarmTrack = (x, z) => farmTracks.some((pts) => pts.some((p) => Math.abs(p.x - x) < 3 && Math.abs(p.z - z) < 3 && Math.hypot(p.x - x, p.z - z) < 2.6));
   const vegetation = createVegetation({
     scene,
     quality: settings.graphics,
     surfaceAt,
-    blocked: (x, z) => noGrowth.some(([r, m]) => inRect(r, x, z, m)),
+    blocked: (x, z) => noGrowth.some(([r, m]) => inRect(r, x, z, m)) || onFarmTrack(x, z),
   });
   const trees = createTrees({
     scene,

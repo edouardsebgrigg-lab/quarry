@@ -78,6 +78,12 @@ dealer, the bank, the depot's prices, your fleet, your messages).
 - [x] W1 Weather checked in the game: grey overcast (a dome in the fog's colour, tone-mapped
       like the rest), hills melting into the mist, wet dark grass without the frosty sky
       reflections, rain streaks; weather.mjs jumps straight to the rain
+- [x] Farmsteads (from the overnight pass) checked in the game and fixed: the yard and tracks
+      were flat grey slabs with grass tufts on them (now the game's ground: gravel wheel ruts
+      with grass up the middle, packed earth fading to grass), the barn read as mint glass
+      (painted steel now), bales were flat yellow (straw texture; black-wrapped silage at some
+      farms); farms.mjs check
+- [x] Cab views (cabs.mjs): windscreen dust with wiper arcs, black plastic darkened to charcoal
 - [x] D8 Regular customers: standing orders from reputation 4 (weekly quota, paid each week
       it's met, reputation lost for a short week), on the Jobs board and the home Coming up
       card; tested; checked in regular.mjs shots
