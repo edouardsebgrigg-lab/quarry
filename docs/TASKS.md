@@ -281,7 +281,7 @@ dark. In-game shots on "high" are in `docs/handover/screenshots/graphics/`. Edou
 judge by eye; tune the numbers in `BAKED_TIERS` rather than the textures. Don't change the
 weathering, renderer or ground material files without a task.
 
-### T6: Step 8b: stockpile bays at the home yard
+### T6: Step 8b: stockpile bays at the home yard — DONE (`8eb45b8`)
 The design's "hold or sell" choice (`docs/design-spec.md`: yard stockpile with a limit).
 - Buy once per site, like the workshop, from the Yard buildings shop tab. Fixed bays in the
   yard (three is enough), each with a capacity in tonnes in `data/buildings.json`.

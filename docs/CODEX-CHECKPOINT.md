@@ -339,3 +339,21 @@ The empty-barrow hint was unreachable because the tailgate query was skipped for
 empty load. Querying it for both empty and loaded barrows makes the backing hint visible.
 This correction was included in the T6 full test run (257 passing) and successful build;
 a new manual barrow-control check was not run.
+
+### T6 — completed locally
+
+- Implementation commit: `8eb45b8`. Three commissioned 25 t bays with per-material
+  saved inventory, capacity reservations for simultaneous tips, and proportional
+  reloads in Assisted and Direct modes. No sales or fresh-dig statistics from storage.
+- Yard walls/heaps and physics track ownership and inventory; Tab map shows capacity,
+  materials and depot purity grade. README/modules updated.
+- Actually ran: `npm test` (257 passing in 38 files), `npm run build` (passed),
+  `git diff --check`, bounded `stockpiles.mjs` with native ANGLE Metal. Browser tipped
+  an actual 3 t ground cut via world T action, then extracted a bucket via held LMB;
+  both materials conserved, zero `productSold`, no page errors. Inspected the heap
+  and scrolled map screenshots under `docs/handover/screenshots/t6/`.
+- Browser used development money, code placement/entry, game ticks for job completion
+  and stubbed pointer lock; transient notifications hidden for the final screenshots.
+  Direct controls, manual pointer lock and UI Continue reload: **not verified**.
+  Unit tests cover Direct rules and JSON save/load (including in-progress tips and legacy defaults).
+- Push still blocked by the CLI account's repository write permission; no publication claimed.
