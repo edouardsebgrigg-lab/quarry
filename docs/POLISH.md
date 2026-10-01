@@ -89,7 +89,8 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       (digs the field where the digger's parked, the arm animates, sorts heaps by material if
       skilled), haulage driver (loads from the heaps, drives to the depot and sells in the best
       bay; the vehicle leaves and comes back), sales (more per load, takes board jobs), fitter
-      (services and repairs, cheaper); wages daily, agency fee, notice; tested; staff.mjs check
+      (services and repairs, cheaper); wages daily, agency fee, notice; tested; staff.mjs (laptop)
+      and stafffield.mjs (the operator digging and heaping, the truck gone to the depot) checked
 - [ ] D14 Staff, next: a driver could also deliver to jobs-board customers and fill a regular
       customer's order on purpose; morale or experience that grows with work; an operator
       loading the truck directly (digger and driver working together)
