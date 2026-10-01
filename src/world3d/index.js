@@ -760,6 +760,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         });
       }
     }
+    // (wet ground doesn't raise dust: the wheels throw up low, dark spray instead)
+    const wet = groundWeather.wet.value;
     if (veh.road) {
       const speed = Math.abs(f.speed);
       const dusty = DUSTY[f.surface] ?? 0.8;
@@ -768,18 +770,22 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         st.dust -= 1;
         st.side = -st.side;
         const at = veh.tailgateWorld().add(new THREE.Vector3(0, -0.5, st.side * 0.8));
-        particles.spawn(at, {
-          count: 1, spread: 0.5, up: 0.45, life: 2.4, size: 1.1 + speed * 0.09,
-          color: 0xb7a07c, opacity: Math.min(0.4, 0.14 + speed * 0.012) * Math.min(1, dusty),
-        });
+        if (Math.random() < wet) {
+          particles.spawn(at, { count: 2, spread: 0.4, up: 0.25, life: 0.7, size: 0.35 + speed * 0.02, color: 0x3e3326, opacity: 0.4 * Math.min(1, dusty) });
+        } else {
+          particles.spawn(at, {
+            count: 1, spread: 0.5, up: 0.45, life: 2.4, size: 1.1 + speed * 0.09,
+            color: 0xb7a07c, opacity: Math.min(0.4, 0.14 + speed * 0.012) * Math.min(1, dusty),
+          });
+        }
       }
     } else {
-      st.dust += dt * ((f.digging ? 9 : 0) + f.travel * 5);
+      st.dust += dt * ((f.digging ? 9 : 0) + f.travel * 5) * (1 - 0.8 * wet);
       while (st.dust > 1) {
         st.dust -= 1;
         const r = veh.radius;
         const at = f.digging ? veh.teethWorld() : veh.model.root.localToWorld(new THREE.Vector3(-0.75 * r * Math.sign(veh.speed() || 1), 0.2, (Math.random() - 0.5) * r));
-        particles.spawn(at, { count: 1, spread: 0.6, up: f.digging ? 0.8 : 0.3, life: 2, size: 1, color: 0xb7a07c, opacity: 0.28 });
+        particles.spawn(at, { count: 1, spread: 0.6, up: f.digging ? 0.8 : 0.3, life: 2, size: 1, color: wet > 0.5 ? 0x6a5a46 : 0xb7a07c, opacity: 0.28 * (1 - 0.5 * wet) });
       }
     }
   }
