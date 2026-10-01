@@ -2,7 +2,10 @@
 // stops the landscapers buying topsoil. A story runs for a few days, one per material at a time,
 // and while it runs the depot pays more (or less) for that material. Stories come from
 // `data/market.json` (news); they use their own random numbers, so they change no other luck.
+// A story can depend on the weather (`weather`: the kinds today or tomorrow must include one of),
+// so a wet week isn't reported in a heatwave.
 import { createRng, getDate } from '../core/index.js';
+import { forecast } from '../weather/index.js';
 
 const MAX_LOG = 20;
 
@@ -38,7 +41,9 @@ export function newsDaily(ctx) {
   const rng = createRng(() => n);
   if (n.active.length >= cfg.maxActive || !rng.chance(cfg.chancePerDay)) return null;
   const busy = new Set(n.active.map((a) => a.product));
-  const choices = cfg.stories.filter((s) => !busy.has(s.product) && s.id !== n.log[n.log.length - 1]?.id);
+  const f = forecast(ctx);
+  const fits = (s) => !s.weather || s.weather.includes(f.today.kind) || s.weather.includes(f.tomorrow.kind);
+  const choices = cfg.stories.filter((s) => !busy.has(s.product) && s.id !== n.log[n.log.length - 1]?.id && fits(s));
   if (!choices.length) return null;
   const story = rng.pick(choices);
   const days = story.days[0] + Math.floor(rng.next() * (story.days[1] - story.days[0] + 1));

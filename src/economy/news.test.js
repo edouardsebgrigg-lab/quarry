@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createGame } from '../game/index.js';
 import { loadData } from '../core/index.js';
-import { newsState, newsMultiplier, activeNews } from './news.js';
+import { newsState, newsMultiplier, activeNews, newsDaily } from './news.js';
 import { currentPrice } from './market.js';
 
 describe('market news', () => {
@@ -45,5 +45,29 @@ describe('market news', () => {
     b.dev.skipDays(6);
     expect(a.state.market.products.sand.trend).toBe(b.state.market.products.sand.trend);
     expect(newsState(b.ctx).active).toHaveLength(0);
+  });
+
+  it('only reports weather stories that fit the forecast', () => {
+    const game = createGame({ seed: 9 });
+    const seen = (kind) => {
+      const w = game.state.weather;
+      w.today = kind;
+      w.tomorrow = kind;
+      const ids = new Set();
+      for (let i = 0; i < 300; i++) {
+        const n = newsState(game.ctx);
+        n.active = [];
+        n.log = [];
+        const item = newsDaily(game.ctx);
+        if (item) ids.add(item.id);
+      }
+      return ids;
+    };
+    const dry = seen('sunny');
+    expect(dry.has('wetSpell')).toBe(false);
+    expect(dry.has('gardenShow')).toBe(true);
+    const wet = seen('rain');
+    expect(wet.has('wetSpell')).toBe(true);
+    expect(wet.has('gardenShow')).toBe(false);
   });
 });
