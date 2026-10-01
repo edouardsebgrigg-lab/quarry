@@ -430,3 +430,20 @@ loop seam jump; made its envelope smooth and repeated the full checks successful
 Subjective listening, in-cab loudness and a real tipping session with audible output
 are **not verified**. README controls unchanged; module guide updated. Push blocked by
 repository account access.
+
+### M2 — completed locally
+
+Implementation commit: `048d7d7`. Rebuilt only the used truck and excavator with Blender
+5.2.0 LTS: subtle grime at cab handles/shut lines, a bed floor/wall dirt seam, engine access
+panel joint/fasteners and vent/gasket recess dirt. Shared material keys preserve patch
+strength. Compressed both GLBs and documented the rebuild/install recipe. Rusty assets
+and protected animation rigs retained.
+Actually ran: Blender rebuild (both rig_preserved checks true), PNG-to-JPEG texture
+compression, `npm test` (271 passing, including fleet asset/40 MB budget checks),
+`npm run build` (passed), `git diff --check`, native Metal `modelshots.mjs` (16 views,
+no page errors). Inspected before/after close-ups in `docs/handover/screenshots/m2/`.
+First review showed rectangular bed stains and a joint crossing lettering; softened the
+dirt and lowered the joint, rebuilt and repeated checks. First sandbox Blender invocation
+crashed; the permitted local invocation completed. Manual driving, cab motion and tipper
+animation are not newly verified; exporter checks cover rig identity. Publication still
+blocked by GitHub account write access.

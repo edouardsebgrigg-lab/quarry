@@ -16,13 +16,14 @@ dealer, the bank, the depot's prices, your fleet, your messages).
 - [x] M1 Decal review completed (`70e279f`): big studio shots of every machine, rendered by the
       game (`docs/handover/browser-checks/modelshots.mjs`). Done so far: rams read as steel, chips
       scale with wear, rubber stays dark, trailer hitched properly in product photos, decals
-      (model lettering, hazard chevrons, warning stickers, number plates). Next: check the
-      decals on every machine and fix placement
+      (model lettering, hazard chevrons, warning stickers, number plates). All machine/tier
+      combinations reviewed; pickup plate, truck cab lettering and excavator stickers corrected.
 - [x] S2 PTO/tipper sound (`699f1dd`): listen-free checks only so far. Done: turbo whistle (used excavator, truck),
       load layers in the engine note, gravel crunch under tracks, relief-valve squeal and engine
       bog when a digger's lever is held at the end of its stroke (with a clunk as it bottoms out),
-      stronger wind and no birdsong in rain. Next: the tractor's PTO and a proper tipper-ram sound. Edouard rejected gearbox whine; do not add it
-- [ ] M2 Blender: the biggest remaining model issues from the studio shots (the used truck and
+      stronger wind and no birdsong in rain. Tractor PTO and distinct raising/lowering ram
+      loops added; subjective listening remains unverified. No gearbox whine.
+- [x] M2 Blender (`048d7d7`): the biggest remaining model issues from the studio shots (the used truck and
       excavator look too clean and toy-like up close: panel gaps, grime in recesses)
 - [ ] V1 Countryside: hedges, field patchwork, farmsteads (with gravel-rutted tracks) and a
       patchy home field done. Next: farm animals or machinery in the fields
