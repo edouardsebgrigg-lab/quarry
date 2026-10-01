@@ -9,6 +9,8 @@ import { createHeap, setHeap } from './piles.js';
 import { planks } from './textures.js';
 import { inRect } from './map.js';
 
+const BAY_HEAP_MAX = 170; // tonnes: the most a depot bay's heap shows (it fills the bay)
+
 function rng(seed) {
   let s = seed >>> 0;
   return () => {
@@ -354,9 +356,10 @@ export function buildPlaces({ scene, physics, plan, heightAt, materials, bayName
     const heap = createHeap(60 + i);
     heap.position.set(cxb, heightAt(cxb, bz.z0 + 5), bz.z0 + 5);
     scene.add(heap);
-    return { id: b.id, name: bayNames[b.id] ?? b.id, rect: { x0: b.x0, x1: b.x1, z0: bz.z0, z1: bz.z1 }, heap, stock: 18 + r() * 25 };
+    // (a working depot's bays hold a good heap each: 60 to 120 t, about 4 m tall at the top)
+    return { id: b.id, name: bayNames[b.id] ?? b.id, rect: { x0: b.x0, x1: b.x1, z0: bz.z0, z1: bz.z1 }, heap, stock: 60 + r() * 60 };
   });
-  for (const b of bayInfo) setHeap(b.heap, b.stock, b.id === 'mixed' ? { topsoil: 1, clay: 1, gravel: 1 } : { [b.id]: 1 }, materials);
+  for (const b of bayInfo) setHeap(b.heap, Math.min(b.stock, BAY_HEAP_MAX), b.id === 'mixed' ? { topsoil: 1, clay: 1, gravel: 1 } : { [b.id]: 1 }, materials);
   for (const [x, z, id, size] of dp.stockpiles) {
     const heap = createHeap(90 + x);
     heap.position.set(x, heightAt(x, z), z);
@@ -381,7 +384,7 @@ export function buildPlaces({ scene, physics, plan, heightAt, materials, bayName
       const b = bayInfo.find((x) => x.id === bayId);
       if (!b) return;
       b.stock += tonnes;
-      setHeap(b.heap, b.stock);
+      setHeap(b.heap, Math.min(b.stock, BAY_HEAP_MAX)); // (the depot ships out as much as comes in)
     },
     // The weighbridge light: green while a vehicle can drive on, red while one is weighing.
     setLight(green) {

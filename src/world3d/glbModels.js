@@ -18,6 +18,15 @@ function paintedCladding(material) {
   material.color.multiplyScalar(0.55); // (a weathered green-grey, not pastel)
 }
 
+// Concrete blocks and plinths are exported nearly white and glare in the sun; weathered
+// concrete is a mid grey.
+function weatheredConcrete(material) {
+  if (!/(?:^|_)Concrete$/.test(material?.name ?? '') || material.userData.weathered) return;
+  material.userData.weathered = true;
+  material.color.multiplyScalar(0.58);
+  material.roughness = Math.max(material.roughness, 0.92);
+}
+
 // Lamps are exported glowing; by day they're switched off: a clear lens over a silver
 // reflector, a dark red tail lens, and the beacon (it turns while the machine works) a bit less
 // blinding.
@@ -76,6 +85,7 @@ export async function preloadModels({ onProgress } = {}) {
           daylightLamp(o.material);
           blackTrim(o.material);
           paintedCladding(o.material);
+          weatheredConcrete(o.material);
         }
       });
       weatherModel(gltf.scene, name); // machines only: rust, chips, fade and mud by tier
