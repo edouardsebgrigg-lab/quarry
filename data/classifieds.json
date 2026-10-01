@@ -1,0 +1,18 @@
+{
+  "name": "Wolds Trader",
+  "fromMachines": 2,
+  "maxListings": 4,
+  "newPerDay": [0, 2],
+  "listingDays": [2, 4],
+  "condition": [22, 84],
+  "honesty": 0.6,
+  "overclaim": [8, 26],
+  "priceFactor": [0.8, 1.0],
+  "inspectionFee": 25,
+  "types": ["miniDigger", "dumper", "tractor", "excavator", "truck"],
+  "sellers": ["Dave (Ashby)", "R. Holmes Plant", "Kirby Grange Farm", "Steve's Groundworks", "Bob at the Old Forge", "Clarke & Son", "Westfield Farm", "A private seller"],
+  "notes": {
+    "honest": ["Serviced every year, starts first time.", "Been sat in the barn since the job finished.", "Runs and drives, a few dents.", "Retiring, everything must go.", "Never missed a beat."],
+    "dodgy": ["Runs lovely, just needs a wash.", "Starts first time (when warm).", "Minor hydraulic weep, nothing serious.", "Good for its age, no time wasters.", "Quick sale wanted, cash only."]
+  }
+}

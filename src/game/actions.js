@@ -10,6 +10,7 @@ import { buyBuilding } from '../buildings/index.js';
 import { planEarthworks, buildEarthworks } from '../earthworks/index.js';
 import { acceptContract, acceptStandingOrder, declineStandingOrder } from '../contracts/index.js';
 import { acceptHire, declineHire } from '../hire/index.js';
+import { inspectListing, buyListing } from '../classifieds/index.js';
 
 export const DEFAULT_COMPANY = 'Wolds Quarry Co.';
 
@@ -103,6 +104,8 @@ export function createActions(ctx) {
     declineStandingOrder: () => declineStandingOrder(ctx),
     acceptHire: (machineId) => acceptHire(ctx, machineId),
     declineHire: () => declineHire(ctx),
+    inspectListing: (id) => inspectListing(ctx, id),
+    buyListing: (id) => buyListing(ctx, id),
 
     buyMachine: (type, tier) => fleetBuyMachine(ctx, type, tier),
     sellMachine: (id) => fleetSellMachine(ctx, id),

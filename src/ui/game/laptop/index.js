@@ -10,6 +10,8 @@ import { contractsState } from '../../../contracts/index.js';
 import { hireState } from '../../../hire/index.js';
 import { homeApp } from './home.js';
 import { dealerApp } from './dealer.js';
+import { classifiedsApp } from './classifieds.js';
+import { classifiedsState } from '../../../classifieds/index.js';
 import { pricesApp } from './prices.js';
 import { bankApp } from './bank.js';
 import { fleetApp } from './fleet.js';
@@ -21,6 +23,7 @@ import { unseenMilestones, markMilestonesSeen } from '../../../career/index.js';
 const APPS = [
   { id: 'home', label: 'Home', icon: 'home', make: homeApp },
   { id: 'dealer', label: 'Plant dealer', icon: 'digger', make: dealerApp },
+  { id: 'classifieds', label: 'Wolds Trader', icon: 'tag', make: classifiedsApp },
   { id: 'jobs', label: 'Jobs board', icon: 'clipboard', make: jobsApp },
   { id: 'milestones', label: 'Milestones', icon: 'trophy', make: milestonesApp },
   { id: 'prices', label: 'Depot prices', icon: 'chart', make: pricesApp },
@@ -99,7 +102,8 @@ export function openLaptop(overlays, { game, feedback, world, app = 'home' }) {
         if (active?.id === 'milestones') markMilestonesSeen(game.ctx);
         const reached = unseenMilestones(game.ctx);
         const hireAsk = hireState(game.ctx).enquiry ? 1 : 0; // (a contractor wants to hire a machine)
-        for (const [id, n] of [['messages', unread], ['jobs', offers], ['milestones', reached], ['fleet', hireAsk]]) {
+        const newAds = active?.id === 'classifieds' ? 0 : classifiedsState(game.ctx).listings.filter((l) => l.listed === d.day).length; // (today's adverts)
+        for (const [id, n] of [['messages', unread], ['jobs', offers], ['milestones', reached], ['fleet', hireAsk], ['classifieds', newAds]]) {
           const bdg = badges.get(id);
           setText(bdg, n ? String(n) : '');
           bdg.style.display = n ? '' : 'none';

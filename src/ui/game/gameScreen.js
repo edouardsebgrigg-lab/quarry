@@ -154,6 +154,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
       else feedback.message(e.good ? 'Inspection passed: everything in good order (reputation up)' : 'Inspection passed', 'good');
     }),
     game.events.on('rushOrder', (e) => feedback.message(`Rush job from ${e.client}: $${e.bonus} bonus, today only (laptop: Jobs board)`, 'good')),
+    game.events.on('listingNotAsDescribed', (e) => feedback.message(`It’s not as described: ${e.actual}%, not the ${e.claimed}% ${e.seller} claimed`, 'warn')),
     game.events.on('hireEnquiry', (e) => feedback.message(`${e.client} wants to hire a ${e.typeName.toLowerCase()}: $${e.total} for ${e.days} days (laptop: Fleet)`, 'good')),
     game.events.on('machineHiredOut', (e) => feedback.message(`${e.name} is off on hire to ${e.client} until day ${e.until}`, 'good')),
     game.events.on('machineReturned', (e) => feedback.message(`${e.name} is back from hire: +$${e.total}`, 'good')),

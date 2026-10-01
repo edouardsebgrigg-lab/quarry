@@ -1007,3 +1007,17 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .lt-hire { display: flex; flex-direction: column; gap: 0.6rem; }
 .lt-hire-ask { max-width: 46rem; }
 .lt-hire .lt-regular-actions { flex-wrap: wrap; align-items: center; }
+
+/* Wolds Trader: second-hand adverts */
+.lt-ad { cursor: default; }
+.lt-ad:hover { transform: none; }
+.lt-ad-seller { font-size: 0.76rem; color: var(--muted); }
+.lt-ad-note { font-size: 0.82rem; color: #c8ced6; font-style: italic; line-height: 1.35; }
+.lt-ad-cond { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.78rem; margin-top: 0.2rem; }
+.lt-ad-claim { color: var(--muted); }
+.lt-ad-claim.good { color: var(--good); }
+.lt-ad-claim.bad { color: #ff9a8a; }
+.lt-ad .lt-cond { width: 100%; }
+.lt-ad-dealer { font-size: 0.72rem; color: var(--muted); }
+.lt-ad-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.5rem; margin-top: 0.4rem; }
+.lt-ad-actions .lt-buy { width: 100%; min-width: 0; padding-left: 0.4rem; padding-right: 0.4rem; font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

@@ -21,6 +21,7 @@ const REASONS = {
   contract: 'Job bonus',
   insurance: 'Machine insurance (weekly)',
   hire: 'Machine hire',
+  inspection: 'Machine looked over',
   dev: 'Adjustment',
 };
 function describe(reason) {

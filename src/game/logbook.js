@@ -182,6 +182,15 @@ export function logbookOnEvent(ctx, type, e) {
       trim(lb);
       break;
     }
+    case 'listingNotAsDescribed': {
+      const lb = logbook(ctx);
+      const { day, hour, minute } = getDate(ctx.state, ctx.data);
+      const m = ctx.state.machines.find((x) => x.id === e.machineId);
+      const name = m ? `${ctx.data.machines.tiers[m.tier]?.name ?? m.tier} ${ctx.data.machines.types[m.type]?.name ?? m.type}` : 'machine';
+      lb.messages.push({ day, hour, minute, from: 'Ray', kind: 'bad', text: `That ${name.toLowerCase()} from ${e.seller} isn't what the advert said: it's more like ${e.actual}%, not ${e.claimed}%. Sold as seen, I'm afraid. Next time, have it looked over first.` });
+      trim(lb);
+      break;
+    }
     case 'hireEnquiry':
     case 'machineReturned': {
       const lb = logbook(ctx);

@@ -71,7 +71,9 @@ rating (`creditRating` in `src/economy/bank.js`: it moves each morning, so a tes
 an exact borrowing limit or loan rate after days pass should pin `state.bank.credit`), and
 hiring out (`src/hire/`: a machine on hire has `onHire` set and `siteId` 'hire', so
 `machinesAt(ctx, siteId)` leaves it out; it can't be sold, serviced or given jobs until it's
-back. Anything new that walks `state.machines` directly should skip `m.onHire`). For T6 (stockpiles): a load tipped into a bay is not a sale, so it shouldn't
+back. Anything new that walks `state.machines` directly should skip `m.onHire`), and second-hand
+adverts (`src/classifieds/`: `buyListing` creates a machine with the advert's real condition and
+emits `machineBought` with `secondHand: true`, so anything listening for purchases already works). For T6 (stockpiles): a load tipped into a bay is not a sale, so it shouldn't
 emit `productSold` (contracts count sales).
 
 ## State of the game (Claude's review, 30 September 2026)

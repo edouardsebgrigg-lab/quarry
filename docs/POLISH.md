@@ -84,6 +84,10 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       (painted steel now), bales were flat yellow (straw texture; black-wrapped silage at some
       farms); farms.mjs check
 - [x] Cab views (cabs.mjs): windscreen dust with wiper arcs, black plastic darkened to charcoal
+- [x] D11 Wolds Trader (second-hand adverts) on the laptop: private sellers list machines for a
+      few days, cheaper than the dealer for the condition they claim, but some overclaim; a
+      mechanic's look ($25) shows the truth; bought machines arrive in their real condition
+      (Ray tells you if you were had); tested; trader.mjs check
 - [x] D10 Hiring out machines: from three machines, contractors ask to hire a kind you own
       for a few days (about 4% of its price a day, paid on return, some wear); the machine
       leaves the yard and comes back; Fleet app card and badge, Coming up, Messages, bank
