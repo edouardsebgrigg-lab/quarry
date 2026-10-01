@@ -954,3 +954,13 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
   color: var(--accent-ink); background: var(--accent); border-radius: 99px; padding: 0.08rem 0.45rem; vertical-align: 0.1em; }
 .lt-offer { margin-left: auto; margin-right: 0.35rem; font-size: 0.72rem; font-weight: 700; color: var(--accent-ink); background: var(--accent);
   border-radius: 6px; padding: 0.05rem 0.4rem; font-variant-numeric: tabular-nums; }
+
+/* Laptop home: coming up */
+.lt-upcoming .lt-rows { margin-top: 0.6rem; }
+.lt-row.lt-up { font: inherit; color: inherit; text-align: left; cursor: pointer; width: 100%;
+  background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-left: 3px solid var(--line-strong); }
+.lt-row.lt-up:hover { background: rgba(255, 255, 255, 0.06); }
+.lt-row.lt-up.warn { border-left-color: var(--bad); }
+.lt-row.lt-up.good { border-left-color: var(--accent); }
+.lt-row.lt-up.ok { border-left-color: var(--good); }
+.lt-up-go { transform: rotate(180deg); color: var(--muted); }

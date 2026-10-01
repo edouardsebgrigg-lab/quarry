@@ -1,4 +1,4 @@
-// Happenings on the laptop: a rush job on the jobs board, a dealer's offer in the plant dealer,
+// Happenings on the laptop: the home screen's "Coming up", a rush job on the jobs board, a dealer's offer in the plant dealer,
 // and the inspector's notice in Messages. The render loop is held for the screenshots (the
 // laptop is page UI), as in milestones.mjs.
 // OUT=<dir> TAG=<name> node docs/handover/browser-checks/happenings.mjs
@@ -46,6 +46,9 @@ console.log('happened', got.join(', '));
 await frames(3);
 await page.keyboard.press('KeyB');
 await frames(3);
+await page.locator('.lt-dock-app', { hasText: 'Home' }).click();
+await frames(3);
+await shot('home');
 await page.locator('.lt-dock-app', { hasText: 'Jobs board' }).click();
 await frames(3);
 await shot('jobs');

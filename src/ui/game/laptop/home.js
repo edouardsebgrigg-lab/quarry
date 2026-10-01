@@ -7,6 +7,10 @@ import { currentPrice, activeNews } from '../../../economy/index.js';
 import { machinesAt } from '../../../machinery/index.js';
 import { lineIcon } from './icons.js';
 import { forecast } from '../../../weather/index.js';
+import { nextInspection, inspectionReport, dealerOffer } from '../../../happenings/index.js';
+import { contractsState } from '../../../contracts/index.js';
+import { milestones } from '../../../career/index.js';
+import { machinePrice } from '../../../machinery/index.js';
 
 export function homeApp({ game, openApp, setHead }) {
   const { data } = game;
@@ -29,6 +33,35 @@ export function homeApp({ game, openApp, setHead }) {
   const goalText = el('div', { class: 'lt-goal-text' });
   // The latest story moving a price, as a one-line ticker into the prices app.
   const newsLine = el('button', { class: 'lt-ticker', onClick: () => openApp('prices') });
+  // Coming up: the inspector, the dealer's offer, a rush job, the closest milestone.
+  const upcoming = el('div', { class: 'lt-rows' });
+  const upcomingCard = el('div', { class: 'lt-card lt-upcoming' }, el('div', { class: 'lt-card-label' }, 'Coming up'), upcoming);
+  let upcomingKey = '';
+  function comingUp() {
+    const rows = [];
+    const visit = nextInspection(ctx);
+    if (visit?.announced) {
+      const r = inspectionReport(ctx);
+      rows.push({ kind: r.fine ? 'warn' : 'ok', title: `Site inspection, day ${visit.day} at ${visit.hour}:00`,
+        sub: r.fine ? `As things stand: ${r.poor.length} machine${r.poor.length > 1 ? 's' : ''} broken or under ${data.happenings.inspector.badCondition}%, a ${money(r.fine)} fine. Service them first.` : r.good ? 'Everything in good order: a clean bill would lift your reputation.' : 'Nothing to fine as things stand.',
+        app: 'fleet' });
+    }
+    const offer = dealerOffer(ctx);
+    if (offer) {
+      const name = `${data.machines.tiers[offer.tier]?.name ?? offer.tier} ${data.machines.types[offer.type]?.name ?? offer.type}`;
+      rows.push({ kind: 'good', title: `Ashby Plant: ${name} for ${money(machinePrice(ctx, offer.type, offer.tier))}`, sub: `${Math.round(offer.discount * 100)}% off until day ${offer.until}`, app: 'dealer' });
+    }
+    const rush = contractsState(ctx).offers.find((o) => o.rush);
+    if (rush) rows.push({ kind: 'good', title: `Rush job for ${rush.client}: +${money(rush.bonus)}`, sub: `${rush.tonnes} t of clean ${(data.materials[rush.material]?.name ?? rush.material).toLowerCase()}, take it today`, app: 'jobs' });
+    const next = milestones(ctx).filter((m) => !m.reached).sort((a, b) => b.progress - a.progress)[0];
+    if (next) rows.push({ kind: '', title: `Closest milestone: ${next.title} (${Math.floor(next.progress * 100)}%)`, sub: `${next.text} +${money(next.reward)}`, app: 'milestones' });
+    const key = JSON.stringify(rows);
+    if (key === upcomingKey) return;
+    upcomingKey = key;
+    upcoming.replaceChildren(...rows.map((r) => el('button', { class: `lt-row lt-up ${r.kind}`, onClick: () => openApp(r.app) },
+      el('div', { class: 'lt-row-main' }, el('b', {}, r.title), el('span', {}, r.sub)), lineIcon('back', 'lt-up-go'))));
+    upcomingCard.style.display = rows.length ? '' : 'none';
+  }
 
   function refresh() {
     bal.set(money(game.state.money), game.state.money < 0 ? 'Overdrawn: the bank charges interest every day' : 'Ready to spend');
@@ -58,6 +91,7 @@ export function homeApp({ game, openApp, setHead }) {
     const step = data.objectives.steps[game.state.objectives.index];
     setText(goalTitle, step ? step.title : 'All goals done');
     setText(goalText, step ? step.text : 'You’ve worked through every goal. Keep growing the quarry.');
+    comingUp();
   }
   refresh();
 
@@ -68,6 +102,7 @@ export function homeApp({ game, openApp, setHead }) {
     el('div', { class: 'lt-stats four' }, bal.node, best.node, fleet.node, weather.node),
     newsLine,
     el('div', { class: 'lt-card lt-goal' }, el('div', { class: 'lt-card-label' }, 'Current goal'), goalTitle, goalText),
+    upcomingCard,
     el('div', { class: 'lt-shortcuts' },
       shortcut('digger', 'Plant dealer', 'Machines, upgrades, yard buildings', 'dealer'),
       shortcut('clipboard', 'Jobs board', 'Bonuses for clean loads, on time', 'jobs'),
