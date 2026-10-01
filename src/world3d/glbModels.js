@@ -7,8 +7,33 @@ import { weatherModel } from './weathering.js';
 import { addDecals } from './decals.js';
 
 // (a build for hosts that won't serve .glb files sets VITE_MODEL_EXT=gltf.json and ships each
-// model as the same glTF in JSON form, its data embedded)
+// model as glTF JSON, its geometry embedded and its textures as image files beside it: see
+// docs/handover/web-models.mjs)
 const MODEL_EXT = import.meta.env?.VITE_MODEL_EXT || 'glb';
+
+// Such hosts also refuse a fetch of a data: URL, which is how the loader would read the
+// embedded geometry; so decode it here and hand the loader a .glb put together in memory.
+async function loadEmbedded(loader, url) {
+  const gltf = await (await fetch(url)).json();
+  const bin = Uint8Array.from(atob(gltf.buffers[0].uri.split(',')[1]), (c) => c.charCodeAt(0));
+  delete gltf.buffers[0].uri;
+  const json = new TextEncoder().encode(JSON.stringify(gltf));
+  const jsonLength = (json.length + 3) & ~3;
+  const binLength = (bin.length + 3) & ~3;
+  const glb = new Uint8Array(12 + 8 + jsonLength + 8 + binLength);
+  const view = new DataView(glb.buffer);
+  view.setUint32(0, 0x46546c67, true); // 'glTF'
+  view.setUint32(4, 2, true);
+  view.setUint32(8, glb.length, true);
+  view.setUint32(12, jsonLength, true);
+  view.setUint32(16, 0x4e4f534a, true); // 'JSON'
+  glb.fill(0x20, 20, 20 + jsonLength); // (JSON padding is spaces)
+  glb.set(json, 20);
+  view.setUint32(20 + jsonLength, binLength, true);
+  view.setUint32(24 + jsonLength, 0x004e4942, true); // 'BIN'
+  glb.set(bin, 28 + jsonLength);
+  return loader.parseAsync(glb.buffer, url.slice(0, url.lastIndexOf('/') + 1));
+}
 
 const OPEN_SURFACE = /(^|_)Rims$/; // materials on open (one-sided) surfaces
 
@@ -73,7 +98,8 @@ export async function preloadModels({ onProgress } = {}) {
   const report = () => onProgress?.([...part.values()].reduce((a, b) => a + b, 0) / Math.max(1, todo.length));
   await Promise.all(todo.map(async (name) => {
     try {
-      const gltf = await loader.loadAsync(`models/${name}.${MODEL_EXT}`, (e) => {
+      const url = `models/${name}.${MODEL_EXT}`;
+      const gltf = MODEL_EXT === 'gltf.json' ? await loadEmbedded(loader, url) : await loader.loadAsync(url, (e) => {
         if (e.total > 0) {
           part.set(name, Math.min(0.99, e.loaded / e.total));
           report();
