@@ -217,3 +217,12 @@ a loaded road vehicle on the steel deck: its load, purity and current best depot
 appear with the ticket. You can then drive straight to the depot bays. The quote can
 change on the journey. Adding/removing material invalidates the ticket; field or
 stockpile tipping clears it. The depot bridge still weighs loads normally.
+
+In **Staff**, haulage drivers have Customer and Loading choices. Select an accepted
+jobs-board customer or regular order to haul its clean material on purpose. Finished
+jobs wait for a new choice; regular drivers wait once this week's quota is filled.
+Park a truck bed within the digger's reach, assign both workers, and choose that
+operator under Loading to receive buckets directly. A full bed leaves for delivery;
+leftover bucket material stays with the operator. Heaps remain available as a loading choice.
+Completed digging, round trips, sales and fitter jobs earn experience and raise the
+matching skill up to five stars. The agreed daily wage stays fixed; progress appears in Staff.

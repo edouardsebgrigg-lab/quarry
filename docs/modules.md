@@ -114,3 +114,15 @@ and road legality and returns `bestDeliveryQuote`. Both bridges share `state.dep
 stale tickets, and depot tip completion checks again before transferring inventory.
 Repeated weighing of an unchanged load emits no duplicate receipt. Timing is in
 `data/depot.json` (`weighSeconds`); home price is in `data/buildings.json`.
+
+D14 staff additions: workers default `experience`, `delivery` and `partnerId` for legacy
+saves. `configureHaul` validates active customer/pair choices and locks changes during
+trips. Driver `spot.bed` is a plain world-supplied loading position; pairing only transfers
+within configured reach to a waiting, available same-site carrier. Customer loads choose
+the requested heap material and must meet clean grade. Saved trip target/material drive
+`productSold.deliveryTarget`; contracts credit that chosen order rather than an earlier
+one. Untargeted sales retain deadline allocation. Missing/completed targets wait; regular
+quota completion waits until the next week. Bucket remainders are retained and dumped
+before another cut. `staffOnEvent` earns dig/sell/fix experience from completed events;
+round-trip return earns drive experience. Thresholds in `data/staff.json` multiply by the
+current star, cap at five, and never change the agreed wage.

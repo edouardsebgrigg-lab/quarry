@@ -11,7 +11,7 @@ import { planEarthworks, buildEarthworks } from '../earthworks/index.js';
 import { acceptContract, acceptStandingOrder, declineStandingOrder } from '../contracts/index.js';
 import { acceptHire, declineHire } from '../hire/index.js';
 import { inspectListing, buyListing } from '../classifieds/index.js';
-import { hireApplicant, assignWorker, dismissWorker } from '../staff/index.js';
+import { hireApplicant, assignWorker, dismissWorker, configureHaul } from '../staff/index.js';
 
 export const DEFAULT_COMPANY = 'Wolds Quarry Co.';
 
@@ -110,6 +110,7 @@ export function createActions(ctx) {
     setInsuranceCover: (id) => setInsuranceCover(ctx, id),
     hireStaff: (applicantId) => hireApplicant(ctx, applicantId),
     assignStaff: (workerId, role, opts) => assignWorker(ctx, workerId, role, opts),
+    configureStaffHaul: (workerId, opts) => configureHaul(ctx, workerId, opts),
     dismissStaff: (workerId) => dismissWorker(ctx, workerId),
     declineHire: () => declineHire(ctx),
     inspectListing: (id) => inspectListing(ctx, id),

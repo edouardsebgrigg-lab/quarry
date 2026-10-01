@@ -174,10 +174,12 @@ export function contractsOnSale(ctx, sale) {
   const c = contractsState(ctx);
   const clean = sale.purity >= ctx.data.depot.grades[0].minPurity - 1e-9 && sale.productId === sale.bayId;
   if (!clean) return;
-  const job = c.active.filter((a) => a.material === sale.productId).sort((a, b) => a.deadline - b.deadline)[0];
+  const target = sale.deliveryTarget;
+  const job = c.active.filter((a) => a.material === sale.productId && (!target || (target.kind === 'job' && a.id === target.id))).sort((a, b) => a.deadline - b.deadline)[0];
   // (a regular customer's quota still open this week competes by its week's end)
   const st = c.standing.active;
-  const standingOpen = st && st.material === sale.productId && !st.paidThisWeek;
+  const standingOpen = st && st.material === sale.productId && !st.paidThisWeek &&
+    (!target || (target.kind === 'standing' && st.client === target.client && st.material === target.material));
   if (standingOpen && (!job || st.weekEnd < job.deadline)) {
     standingOnSale(ctx, sale.tonnes);
     return;

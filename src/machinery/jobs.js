@@ -31,7 +31,7 @@ export const JOBS = {
         if (!stockpileConfig(ctx, params.stockpileBay) || !ownsBuilding(ctx, 'stockpiles', m.siteId)) return 'Commission the stockpile bays first';
         if (pileTotal(stockpileLoad(ctx, params.stockpileBay, m.siteId)) <= 0) return 'Stockpile bay is empty';
       } else if (!ctx.ground || !ctx.ground.workable(params.x, params.z)) return 'You can only dig on your own land';
-      if (pileTotal(m.load) >= 0.01) return 'The bucket is full. Dump it first.';
+      if (pileTotal(m.load) > 1e-9) return 'The bucket is full. Dump it first.';
       return null;
     },
     begin(ctx, m, stats) {

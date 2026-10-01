@@ -5,7 +5,9 @@ import { money } from '../../format.js';
 import { machineName } from '../../../machinery/index.js';
 import {
   SKILLS, staffState, openSlots, nextSlot, hiringFee, machinesFor, roleNeeds,
+  experienceProgress,
 } from '../../../staff/index.js';
+import { contractsState } from '../../../contracts/index.js';
 import { lineIcon } from './icons.js';
 
 const stars = (n) => el('span', { class: 'st-stars' }, Array.from({ length: 5 }, (_, i) => el('i', { class: i < n ? 'on' : '' })));
@@ -45,6 +47,22 @@ export function staffApp({ game, feedback, world, setHead }) {
         class: `lt-chip${w.machineId === x.id ? ' active' : ''}`, disabled: away || x.broken,
         onClick: () => assign(w, w.role, x.id),
       }, machineName(data, x), x.broken ? ' (broken)' : ''))) : null;
+    const c = contractsState(ctx);
+    const destinations = [[null,'Best depot bay'], ...c.active.map(a=>[{kind:'job',id:a.id},`${a.client}: ${data.materials[a.material].name}`])];
+    const regular = c.standing.active;
+    if (regular) destinations.push([{kind:'standing',client:regular.client,material:regular.material},`${regular.client} (regular): ${data.materials[regular.material].name}`]);
+    const deliveryChips = w.role === 'haul' ? el('div',{class:'st-machines'},el('span',{class:'st-label'},'Customer'),destinations.map(([delivery,label])=>el('button',{
+      class:`lt-chip${JSON.stringify(w.delivery)===JSON.stringify(delivery)?' active':''}`,disabled:away || w.phase==='out',
+      onClick:()=>act(game.actions.configureStaffHaul(w.id,{delivery}),`${w.name}: ${label}`),
+    },label))) : null;
+    const partners = [[null,'Load field heaps'], ...staffState(ctx).workers.filter(p=>p.role==='dig').map(p=>[p.id,p.name])];
+    const partnerChips = w.role === 'haul' ? el('div',{class:'st-machines'},el('span',{class:'st-label'},'Loading'),partners.map(([partnerId,label])=>el('button',{
+      class:`lt-chip${w.partnerId===partnerId?' active':''}`,disabled:away || w.phase==='out',
+      onClick:()=>act(game.actions.configureStaffHaul(w.id,{partnerId,spot:world?.machinePlacement?.(w.machineId)}),`${w.name}: ${label}`),
+    },label))) : null;
+    const skill = cfg.roles[w.role]?.skill;
+    const xp = skill ? experienceProgress(ctx,w,skill) : null;
+    const units = {dig:'t dug',drive:'round trips',sell:'t sold',fix:'jobs completed'};
     const done = [w.stats.dug ? `${w.stats.dug.toFixed(1)} t dug` : null, w.stats.loads ? `${w.stats.loads} load${w.stats.loads > 1 ? 's' : ''} · ${money(w.stats.sold)} sold` : null,
       w.stats.fixed ? `${w.stats.fixed} machine${w.stats.fixed > 1 ? 's' : ''} seen to` : null].filter(Boolean).join(' · ');
     return el('div', { class: 'lt-card st-worker' },
@@ -53,9 +71,11 @@ export function staffApp({ game, feedback, world, setHead }) {
         el('div', { class: 'st-name' }, el('b', {}, w.name), el('span', {}, `${money(w.wage)} a day · since day ${w.hired}`)),
         el('span', { class: `st-status ${w.role ? (away ? 'away' : 'on') : ''}` }, w.role ? w.status : 'No job')),
       skillRows(w),
+      xp ? el('p',{class:'st-role-text'},xp.max ? `${cfg.skills[skill]}: maximum skill` : `${cfg.skills[skill]} experience: ${xp.have.toFixed(1)} / ${xp.need} ${units[skill]} to the next star`) : null,
       el('div', { class: 'st-label' }, 'Job'), roleChips,
       w.role ? el('p', { class: 'st-role-text' }, cfg.roles[w.role].text) : null,
       machineChips,
+      deliveryChips, partnerChips,
       el('div', { class: 'st-foot' }, el('span', {}, done || 'Nothing done yet'),
         el('button', { class: 'lt-link st-letgo', disabled: away, onClick: () => {
           const r = game.actions.dismissStaff(w.id);
@@ -65,7 +85,7 @@ export function staffApp({ game, feedback, world, setHead }) {
 
   function assign(w, role, machineId) {
     // (a digger operator works where the machine stands now)
-    const spot = role === 'dig' ? world?.machinePlacement?.(machineId) ?? null : null;
+    const spot = world?.machinePlacement?.(machineId) ?? null;
     const m = game.state.machines.find((x) => x.id === machineId);
     act(game.actions.assignStaff(w.id, role, { machineId, spot }), `${w.name}: ${cfg.roles[role].name.toLowerCase()} on the ${machineName(data, m)}`);
   }
@@ -79,7 +99,7 @@ export function staffApp({ game, feedback, world, setHead }) {
   function render() {
     const st = staffState(ctx);
     const open = openSlots(ctx);
-    const k = JSON.stringify([open, st.applicants.map((a) => a.id), st.workers.map((w) => [w.id, w.role, w.machineId, w.status, w.stats]),
+    const k = JSON.stringify([open, st.applicants.map((a) => a.id), st.workers.map((w) => [w.id, w.role, w.machineId, w.status, w.stats, w.skills, w.delivery, w.partnerId, Object.values(w.experience).map(Math.floor)]),contractsState(ctx).active,contractsState(ctx).standing.active,
       game.state.machines.map((m) => [m.id, m.operator, m.away, m.broken])]);
     if (k === key) return;
     key = k;
@@ -113,7 +133,7 @@ export function staffApp({ game, feedback, world, setHead }) {
               act(r, `${a.name} starts today (agency fee ${money(fee)})`);
             } }, `Hire · ${money(fee)} fee`));
         })) : el('div', { class: 'lt-muted-row' }, 'No one applying today. New applicants come every few days.')) : null,
-      el('p', { class: 'lt-note' }, `Wages are paid every morning. A digger operator works the digger where it's parked: park it where you want the field dug first. A driver hauls whatever's heaped on the field. You can't use a machine while someone's working it; give them another job (or none) first.`),
+      el('p', { class: 'lt-note' }, `Wages are paid every morning. Experience earns stars through completed work; the agreed wage stays fixed. Park the digger and truck within arm's reach before assigning them, then choose the operator under Loading. A customer delivery needs clean material; a completed order waits for a new choice, and a regular customer waits for next week's quota. You can't use a worked machine; give its worker another job (or none) first.`),
     ].filter(Boolean));
   }
 

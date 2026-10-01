@@ -88,7 +88,7 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
 
   const forward = (yaw) => new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
   const houseWorldYaw = () => s.yaw + s.houseYaw;
-  const reach = () => stats().reach;
+  const reach = () => live?.()?.operator && s.operatorReach != null ? s.operatorReach : stats().reach;
 
   // Bucket teeth in world space for joint angles (ignoring the machine's tilt).
   function teethAtAngles(angles) {

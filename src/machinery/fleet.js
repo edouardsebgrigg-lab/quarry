@@ -129,7 +129,7 @@ export function dumpBucket(ctx, diggerId, target = {}, share = 1) {
   const ex = getMachine(ctx, diggerId);
   if (!ex || !isDigger(ctx.data, ex.type)) return { ok: false, reason: 'Not a digger' };
   const amount = pileTotal(ex.load) * Math.min(1, Math.max(0, share));
-  if (pileTotal(ex.load) < 0.01) return { ok: false, reason: 'The bucket is empty' };
+  if (pileTotal(ex.load) <= 1e-9) return { ok: false, reason: 'The bucket is empty' };
   let moved = 0;
   if (target.stockpileBay) {
     if (!stockpileConfig(ctx, target.stockpileBay)) return { ok: false, reason: 'Unknown stockpile bay' };
@@ -144,7 +144,7 @@ export function dumpBucket(ctx, diggerId, target = {}, share = 1) {
     if (!cap) return { ok: false, reason: 'That has nowhere to put it' };
     if (bed.job) return { ok: false, reason: 'Wait for it to finish' };
     const room = Math.max(0, cap - pileTotal(bed.load));
-    if (room < 0.01) return { ok: false, reason: `The ${typeName(ctx.data, bed.type).toLowerCase()} is full` };
+    if (room <= 1e-9) return { ok: false, reason: `The ${typeName(ctx.data, bed.type).toLowerCase()} is full` };
     moved = Math.min(room, amount);
     if (pileTotal(ex.load) - moved < 0.01 && room >= pileTotal(ex.load) - 1e-9) moved = pileTotal(ex.load); // the last few crumbs go in too
     addToPile(bed.load, takeProportional(ex.load, moved));
@@ -155,7 +155,7 @@ export function dumpBucket(ctx, diggerId, target = {}, share = 1) {
     if (all) ex.load = {};
     moved = ctx.ground.deposit({ x: target.x, z: target.z, tonnes: out, radius: target.radius ?? 0.7 });
   }
-  if (pileTotal(ex.load) < 1e-6) ex.load = {};
+  if (pileTotal(ex.load) <= 1e-9) ex.load = {};
   ctx.events.emit('bucketDumped', { machineId: diggerId, truckId: target.machineId ?? null, tonnes: moved });
   return { ok: true, tonnes: moved };
 }

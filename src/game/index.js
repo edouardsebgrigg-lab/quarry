@@ -42,7 +42,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
   events.on('*', (type) => weatherOnEvent(ctx, type));
   events.on('*', (type) => hireOnEvent(ctx, type));
   events.on('*', (type) => classifiedsOnEvent(ctx, type));
-  events.on('*', (type) => staffOnEvent(ctx, type));
+  events.on('*', (type, payload) => staffOnEvent(ctx, type, payload));
   weatherState(ctx);
   if (!ctx.state.contracts) contractsDaily(ctx); // (a new game, or an old save: fill the board)
   events.on('dayStarted', () => {

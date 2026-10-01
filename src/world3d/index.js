@@ -624,9 +624,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const p = veh.position();
       const want = Math.atan2(-(e.z - p.z), e.x - p.x) - veh.yaw();
       const s = veh.state;
+      s.operatorReach = Math.hypot(e.x-p.x,e.z-p.z);
       s.targetHouseYaw = s.houseYaw + Math.atan2(Math.sin(want - s.houseYaw), Math.cos(want - s.houseYaw));
     }),
-    game.events.on('operatorDump', (e) => vehicles.get(e.machineId)?.startDump?.(heightAt(e.x, e.z))),
+    game.events.on('operatorDump', (e) => vehicles.get(e.machineId)?.startDump?.(e.intoMachineId ? vehicles.get(e.intoMachineId)?.bedWorld().y ?? heightAt(e.x,e.z) : heightAt(e.x, e.z))),
     game.events.on('machineReturned', (e) => {
       const m = getMachine(game.ctx, e.machineId);
       if (m && m.siteId === siteId && !vehicles.has(m.id)) addVehicle(m, { fresh: true });
@@ -1170,7 +1171,12 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     unlockMouse: () => mouse.unlock(),
     isMouseLocked: () => mouse.locked(),
     // Where a machine stands in the world ({ x, z, yaw }), or null (for staff: a digger's work spot).
-    machinePlacement: (id) => vehicles.get(id)?.placement?.() ?? null,
+    machinePlacement: (id) => {
+      const v = vehicles.get(id), p = v?.placement?.();
+      if (!p) return null;
+      const bed = v.bedWorld?.();
+      return { ...p, ...(bed ? { bed:{x:bed.x,y:bed.y,z:bed.z} } : {}) };
+    },
     // Product photos of the machines (for the laptop); dispose() the result when done.
     createProductPhotos: (opts) => createThumbnails(opts),
     destroy() {

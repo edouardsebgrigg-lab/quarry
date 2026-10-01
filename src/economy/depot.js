@@ -64,7 +64,7 @@ export function quoteDelivery(ctx, bayId, load, tonnes = pileTotal(load)) {
 }
 
 // Pay for `load` ({ material: tonnes }, already taken off the vehicle) tipped in a bay.
-export function sellLoad(ctx, machineId, bayId, load) {
+export function sellLoad(ctx, machineId, bayId, load, { deliveryTarget = null } = {}) {
   const tonnes = pileTotal(load);
   const q = quoteDelivery(ctx, bayId, load, tonnes);
   applySaleToMarket(ctx, q.product, tonnes);
@@ -74,6 +74,7 @@ export function sellLoad(ctx, machineId, bayId, load) {
   ctx.state.stats.tonnesSold += tonnes;
   const sale = {
     machineId, bayId, productId: q.product, tonnes, revenue: q.gross, pricePerTonne: q.perTonne, grade: q.grade, purity: q.purity,
+    ...(deliveryTarget ? { deliveryTarget } : {}),
   };
   ctx.events.emit('productSold', sale);
   return { ok: true, ...sale };
