@@ -1,6 +1,7 @@
 // Big studio photos of every machine, rendered by the game itself (the laptop's product-photo
 // renderer, with the game's models and weathering), from a few angles, for model reviews.
 // OUT=<dir> TAG=<name> [ONLY=type,type] node docs/handover/browser-checks/modelshots.mjs
+import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import { start } from './common.mjs';
 const TAG = process.env.TAG ?? 'model';
@@ -17,11 +18,12 @@ for (const type of ['miniDigger', 'excavator', 'dumper', 'tractor', 'truck', 'pi
         window.__photos ??= window.__quarry.world.createProductPhotos({ width: 1200, height: 750 });
         return window.__photos.photo(type, tier, view);
       }, [type, tier, view]);
-      if (!url) { console.log('no photo', type, tier); continue; }
+      assert.ok(url, `Missing photo: ${type} ${tier}`);
       writeFileSync(`${process.env.OUT}/${TAG}-${type}-${tier}-${name}.png`, Buffer.from(url.split(',')[1], 'base64'));
       console.log('shot', type, tier, name);
     }
   }
 }
+assert.deepEqual(errors, []);
 console.log('errors', errors.slice(0, 10).join('\n') || '(none)');
 await browser.close();

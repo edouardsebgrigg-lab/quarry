@@ -23,10 +23,10 @@ const SPECS = {
     { part: 'HouseBody', sides: ['back'], u: 0.5, v: 0.6, h: 0.09, art: ['warning'] },
   ],
   excavator: [
-    { part: 'HouseBody', sides: ['left', 'right'], u: 0.4, v: 0.5, h: 0.24, art: ['model', 'QX 75'] },
+    { part: 'HouseBody', sides: ['left', 'right'], u: 0.4, v: 0.86, h: 0.14, art: ['model', 'QX 75'] },
     { part: 'BoomBody', sides: ['left', 'right'], u: 0.33, v: 0.55, h: 0.26, art: ['model', 'QX 75'] },
     { part: 'Counterweight', sides: ['back'], u: 0.5, v: 0.45, h: 0.2, wFit: 0.85, art: ['hazard'] },
-    { part: 'HouseBody', sides: ['left'], u: 0.35, v: 0.6, h: 0.12, art: ['warning'] },
+    { part: 'HouseBody', sides: ['right'], u: 0.22, v: 0.45, h: 0.12, art: ['warning'] },
     { part: 'CabGlass', sides: ['front'], u: 0.5, v: 0.55, h: 1.0, wFit: 0.9, art: ['wiper', 1] },
   ],
   dumper: [
@@ -38,7 +38,7 @@ const SPECS = {
     { part: 'Bonnet', sides: ['left', 'right'], u: 0.55, v: 0.6, h: 0.08, art: ['model', 'FIELDMASTER 70'] },
   ],
   truck: [
-    { part: 'Cab', sides: ['left', 'right'], u: 0.5, v: 0.42, h: 0.16, art: ['model', 'WOLDS'] },
+    { part: 'Cab', sides: ['left', 'right'], u: 0.25, v: 0.26, h: 0.16, art: ['model', 'WOLDS'] },
     { part: 'Bumper', sides: ['front'], u: 0.5, v: 0.5, h: 0.11, art: ['plate', 'front'] },
     { part: 'Bed', sides: ['back'], u: 0.5, v: 0.28, h: 0.18, wFit: 0.9, art: ['hazard'] },
     { part: 'Bed', sides: ['top'], u: 0.45, hFit: 0.8, wFit: 0.84, art: ['scrape'] },
@@ -51,7 +51,7 @@ const SPECS = {
   ],
   vehicle: [
     { part: 'Tailgate', sides: ['back'], u: 0.5, v: 0.3, h: 0.1, art: ['plate', 'rear'] },
-    { part: 'Trim', sides: ['front'], u: 0.5, v: 0.4, h: 0.1, art: ['plate', 'front'] },
+    { part: 'Chrome', sides: ['front'], u: 0.5, y: 0.5, h: 0.1, art: ['plate', 'front'] },
     { part: 'Glass', sides: ['front'], u: 0.5, v: 0.6, h: 0.5, wFit: 0.8, art: ['wiper', 2] },
   ],
 };
@@ -334,7 +334,7 @@ export function addDecals(scene, name) {
       const top = side === 'top';
       const p = new THREE.Vector3(
         along === 'x' ? box.min.x + size.x * spec.u : (n.x > 0 ? box.max.x : box.min.x),
-        top ? box.max.y : box.min.y + size.y * spec.v,
+        top ? box.max.y : spec.y ?? box.min.y + size.y * spec.v,
         top ? box.min.z + size.z * 0.5 : along === 'z' ? box.min.z + size.z * spec.u : (n.z > 0 ? box.max.z : box.min.z),
       );
       const origin = p.clone().addScaledVector(n, 2);
