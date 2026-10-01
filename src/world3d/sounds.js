@@ -42,6 +42,7 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
           road: audio.loopVoice('road'),
           beeper: v.type === 'truck' ? audio.loopVoice('beeper') : null,
           ram: v.type === 'truck' || v.type === 'tractor' ? audio.whineVoice() : null,
+          ramOil: v.type === 'truck' || v.type === 'tractor' ? audio.loopVoice('hydraulic') : null, // (oil rushing through the tipping valve)
         }
         : {
           tracks: audio.loopVoice('tracks'), crunch: audio.loopVoice('gravel'), hyd: audio.loopVoice('hydraulic'), scrape: audio.loopVoice('scrape'), pump: audio.whineVoice(),
@@ -118,6 +119,8 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
     // Tipping: the ram whines up, the load slides out, the bed comes down with a bang.
     const bedUp = f.bedAngle > 0.05;
     m.extra.ram?.set({ freq: 95 + f.bedAngle * 30, gain: f.bedSpeed > 0.01 ? 0.12 : (bedUp && f.bedSpeed < -0.01 ? 0.05 : 0), pos: body });
+    // Raising pushes oil hard (louder, the engine's pump working); lowering lets it drain back.
+    m.extra.ramOil?.set({ gain: f.bedSpeed > 0.01 ? 0.32 : (bedUp && f.bedSpeed < -0.01 ? 0.14 : 0), rate: f.bedSpeed > 0.01 ? 1.05 : 0.8, pos: body, cutoff: inside ? 3000 : 16000 });
     if (job?.type === 'tip' && f.bedAngle > 0.35 && !m.tipPoured) {
       m.tipPoured = true;
       audio.play('pourLong', { pos: v3(v.unload().point), gain: 1 });
