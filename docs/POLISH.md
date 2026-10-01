@@ -34,6 +34,8 @@ dealer, the bank, the depot's prices, your fleet, your messages).
 - [ ] V1 Countryside: hedges, field patchwork and four farmsteads done. Next: farm animals or
       machinery in the fields, a track surface that matches the ground shader, and some variety
       in the big home field (it reads as one flat, even lawn in the in-world shots)
+- [ ] V2 The depot reads as a big pale flat yard with small cone heaps and a white cabin; the
+      heaps want to be bigger stockpiles in bays with block walls, and the yard some wear
 - [ ] D7 Time of day: the sun never moves. The clock runs a whole day in two minutes, so a
       moving sun would sweep the sky every minute; needs a decision on day length (and night)
       before the light can follow the clock

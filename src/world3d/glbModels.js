@@ -8,6 +8,16 @@ import { addDecals } from './decals.js';
 
 const OPEN_SURFACE = /(^|_)Rims$/; // materials on open (one-sided) surfaces
 
+// The sheds' wall cladding is painted steel, but is exported 40% metallic and so mirrors the
+// sky, and its colour is pale enough to read mint; painted and weathered, it's darker and dull.
+function paintedCladding(material) {
+  if (!/(?:^|_)Cladding$/.test(material?.name ?? '') || material.userData.painted) return;
+  material.userData.painted = true;
+  material.metalness = 0.12;
+  material.roughness = Math.max(material.roughness, 0.7);
+  material.color.multiplyScalar(0.55); // (a weathered green-grey, not pastel)
+}
+
 // Lamps are exported glowing; by day they're switched off: a clear lens over a silver
 // reflector, a dark red tail lens, and the beacon (it turns while the machine works) a bit less
 // blinding.
@@ -65,6 +75,7 @@ export async function preloadModels({ onProgress } = {}) {
           if (OPEN_SURFACE.test(o.material?.name ?? '')) o.material.side = THREE.DoubleSide;
           daylightLamp(o.material);
           blackTrim(o.material);
+          paintedCladding(o.material);
         }
       });
       weatherModel(gltf.scene, name); // machines only: rust, chips, fade and mud by tier

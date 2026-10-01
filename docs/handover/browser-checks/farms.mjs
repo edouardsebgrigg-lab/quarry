@@ -1,4 +1,5 @@
-// Two of the farmsteads by the lanes, seen from the road side: house, barn, silo, bales, yard.
+// Two of the farmsteads by the lanes, seen from the road side (house, barn, silo, bales, yard),
+// then the dealer's yard and the depot, which use the same shed and yard pieces.
 // OUT=<dir> TAG=<name> node docs/handover/browser-checks/farms.mjs
 import { start } from './common.mjs';
 const TAG = process.env.TAG ?? 'farm';
@@ -12,7 +13,7 @@ const shot = async (name) => {
 await newGame();
 await q(() => { for (const s of ['.hud', '.hud3d', '.feedback']) document.querySelectorAll(s).forEach((e) => { e.style.visibility = 'hidden'; }); });
 // (standing about 45 m off each farm, looking at it)
-for (const [name, x, z, fx, fz] of [['mill', 80, -95, 80, -140], ['grange', 300, 150, 350, 150]]) {
+for (const [name, x, z, fx, fz] of [['mill', 80, -95, 80, -140], ['grange', 300, 150, 350, 150], ['dealer', 630, -575, 680, -580], ['depot', 183, -650, 183, -720]]) {
   await q(([x, z, fx, fz]) => { const d = window.__quarry.world.debug; d.teleportPlayer(x, z); d.aimAt(fx, fz); d.setFootPitch(-0.05); }, [x, z, fx, fz]);
   await frames(16);
   await shot(name);
