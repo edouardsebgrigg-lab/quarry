@@ -287,3 +287,16 @@ Baseline: `npm ci`, `npm test` (246 passing), `npm run build` (passed).
 - Browser portability: `CHROMIUM_EXECUTABLE` allows the installed Mac browser to be selected;
   bundled Playwright expects a different browser revision. Global cloud path not used.
 - Natural later slumping around parked machines and real mouse/pointer-lock play: **not verified**.
+
+
+### T9 verification follow-up
+
+Repeated `spoil.mjs` at a readable 960×540 screenshot size, looking across the works
+rather than standing over the marker. Ran with Mac native ANGLE Metal
+(`CHROMIUM_ARGS='["--use-angle=metal"]'`); all assertions passed, no browser errors.
+Inspected updated `spoil-preview.png`: amber ring, grading strip/posts and matching card
+are visible. This supersedes the earlier “ring appearance not verified” limitation.
+`git push -u origin codex/continue` failed with HTTP 403: CLI account
+`edouardgrigg-sketch` has no write access. Correct-account authentication requested;
+all commits remain local, no publication claimed. Fresh pre-push tests: 250 passing;
+production build passed.

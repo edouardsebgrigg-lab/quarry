@@ -19,17 +19,18 @@ try {
     const pickup = game.state.machines.find(m => m.type === 'pickup');
     d.placeVehicle(pickup.id, first.spoilAt.x, first.spoilAt.z, 0);
     const p = d.planner.set({ mode: 'level', a: { x: 40, z: 60 }, b: { x: 60, z: 60 }, width: 8 });
-    d.teleportPlayer(p.spoilAt.x, p.spoilAt.z, 0);
-    d.aimAt(50, 60);
+    d.teleportPlayer(32, 44, 0);
+    d.aimAt(50, 58);
     window.__spoilPlan = p;
     return { first: first.spoilAt, planned: p.spoilAt, ok: p.ok, reason: p.reason };
   });
   assert.ok(R.ok, JSON.stringify(R));
   assert.notDeepEqual(R.planned, R.first);
   await frames(2);
-  await shot('spoil-preview', { big: false });
+  await shot('spoil-preview');
   const built = await q(() => {
     const { game, world } = window.__quarry; const d = world.debug;
+    d.teleportPlayer(window.__spoilPlan.spoilAt.x, window.__spoilPlan.spoilAt.z, 0);
     const before = d.feet()[1];
     const done = d.planner.confirm();
     return { ok: done.ok, at: done.spoilAt, before, feet: d.feet(), surface: game.ctx.ground.heightAt(done.spoilAt.x, done.spoilAt.z) };
