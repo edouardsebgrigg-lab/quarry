@@ -4,6 +4,7 @@ import { getStats, tickJobs } from './index.js';
 import { pileTotal } from '../quarry/index.js';
 import { looseVolume } from '../handtools/index.js';
 import { createSaveSystem, createMemoryStorage, migrations } from '../core/index.js';
+import { loadCarrier, combinationStats } from './trailers.js';
 
 function setup() {
   const game = createTestGame(1);
@@ -111,26 +112,30 @@ describe('the machine ladder: mini digger, dumper, tractor and trailer', () => {
     const { game, ctx } = setup();
     const mini = buy(game, 'miniDigger');
     const tractor = buy(game, 'tractor');
+    const trailer = buy(game, 'trailer');
+    expect(game.actions.attachTrailer(tractor.id, trailer.id).ok).toBe(true);
     game.actions.scoop(mini.id, { x: 30, z: 30 });
     finish(ctx, mini);
     const dug = pileTotal(mini.load);
     expect(game.actions.dumpBucket(mini.id, { machineId: tractor.id }).ok).toBe(true);
-    expect(pileTotal(tractor.load)).toBeCloseTo(dug);
+    expect(pileTotal(loadCarrier(ctx, tractor).load)).toBeCloseTo(dug);
   });
 
   it('only road vehicles can deliver to the depot; site machines tip on your land', () => {
     const { game, ctx } = setup();
     const dumper = buy(game, 'dumper');
     const tractor = buy(game, 'tractor');
+    const trailer = buy(game, 'trailer');
+    expect(game.actions.attachTrailer(tractor.id, trailer.id).ok).toBe(true);
     dumper.load = { gravel: 1 };
     expect(game.actions.tip(dumper.id, { bay: 'gravel' }).reason).toMatch(/road vehicles/);
     expect(game.actions.tip(dumper.id, { x: 70, z: 70 }).ok).toBe(true);
     expect(dumper.job.duration).toBeCloseTo(getStats(ctx.data, dumper).tipTime);
     finish(ctx, dumper);
-    tractor.load = { gravel: 3 };
+    trailer.load = { gravel: 3 };
     game.actions.weighIn(tractor.id);
     expect(game.actions.tip(tractor.id, { bay: 'gravel' }).ok).toBe(true);
-    expect(tractor.job.duration).toBeCloseTo(getStats(ctx.data, tractor).tipTime);
+    expect(tractor.job.duration).toBeCloseTo(combinationStats(ctx, tractor).tipTime);
   });
 });
 

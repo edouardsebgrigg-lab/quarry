@@ -12,6 +12,8 @@ import { acceptContract, acceptStandingOrder, declineStandingOrder } from '../co
 import { acceptHire, declineHire } from '../hire/index.js';
 import { inspectListing, buyListing } from '../classifieds/index.js';
 import { hireApplicant, assignWorker, dismissWorker, configureHaul } from '../staff/index.js';
+import { attachTrailer, detachTrailer } from '../machinery/trailers.js';
+import { setDiggerAttachment } from '../machinery/fleet.js';
 
 export const DEFAULT_COMPANY = 'Wolds Quarry Co.';
 
@@ -40,13 +42,16 @@ export function createActions(ctx) {
 
     // ---- machines on the ground ----
     // Assisted digging: one bucket out of the ground at { x, z } (where the digger's bucket is).
-    scoop: (diggerId, at) => startJob(ctx, diggerId, 'dig', { params: { x: at.x, z: at.z, stockpileBay: at.stockpileBay } }),
+    scoop: (diggerId, at) => startJob(ctx, diggerId, 'dig', { params: { x: at.x, z: at.z, stockpileBay: at.stockpileBay, physical: !!at.physical, depth: at.depth, groundY: at.groundY } }),
     // Direct digging: the teeth cut a little bowl { x, z, bottomY, radius } as they move.
     bucketCut: (diggerId, cut) => fleetBucketCut(ctx, diggerId, cut),
     // Empty the bucket (or a `share` of it) into a bed ({ machineId }) or onto the ground ({ x, z }).
     dumpBucket: (diggerId, target, share = 1) => fleetDumpBucket(ctx, diggerId, target, share),
     // Empty a carrier: { bay } at the depot (sells it) or { x, z } onto your ground.
     tip: (machineId, where) => startJob(ctx, machineId, 'tip', { params: { ...where } }),
+    attachTrailer: (tractorId, trailerId) => attachTrailer(ctx, tractorId, trailerId),
+    detachTrailer: (tractorId) => detachTrailer(ctx, tractorId),
+    setDiggerAttachment: (machineId, attachment) => setDiggerAttachment(ctx, machineId, attachment),
     // World verifies physical placement; home tickets use the same load identity as depot tickets.
     weighIn(machineId, { home = false } = {}) {
       const m = getMachine(ctx, machineId);

@@ -44,11 +44,39 @@ const clamp01 = (t) => clamp(t, 0, 1);
 // going into ground that can't be).
 export function createExcavator({ physics, scene, terrain, machine, spawn, stats, live, allowedAt = null, onBlocked = null, canDigAt = null }) {
   const { RAPIER, world } = physics;
-  const spec = DIGGERS[machine.type];
+  const base = DIGGERS[machine.type];
+  const size = stats().modelScale ?? 1;
+  const a = base.arm.spec;
+  const spec = { ...base, arm: makeArm({ ...a, pivot: { x: a.pivot.x * size, y: a.pivot.y * size }, boom: a.boom * size, stick: a.stick * size, teeth: { x: a.teeth.x * size, y: a.teeth.y * size } }),
+    houseY: base.houseY * size, scale: base.scale * size, radius: base.radius * size,
+    collider: Object.fromEntries(Object.entries(base.collider).map(([k, v]) => [k, v * size])),
+    tracks: { ...base.tracks, gauge: base.tracks.gauge * size, corners: base.tracks.corners.map(p => p.map(v => v * size)), step: base.tracks.step * size, spread: base.tracks.spread * size } };
   const { armPoints, solveArm } = spec.arm;
   const limits = spec.arm.spec.limits;
-  const model = spec.model(machine.tier);
+  const model = spec.model(machine.tier, stats());
   scene.add(model.root);
+  const bucketMeshes = [];
+  model.bucketPivot.traverse(o => { if (o.isMesh) bucketMeshes.push(o); });
+  const attachment = new THREE.Group();
+  model.bucketPivot.add(attachment);
+  const steel = new THREE.MeshStandardMaterial({color:0x626c73,metalness:.7,roughness:.45});
+  const hammerPaint = new THREE.MeshStandardMaterial({color:0xd1a12f,metalness:.3,roughness:.7});
+  const hammer = new THREE.Group(); attachment.add(hammer);
+  const baseTeeth = base.arm.spec.teeth;
+  const direction = new THREE.Vector3(baseTeeth.x,baseTeeth.y,0).normalize();
+  const hammerLength = Math.hypot(baseTeeth.x,baseTeeth.y);
+  const housing = new THREE.Mesh(new THREE.BoxGeometry(hammerLength*.62,.27,.3),hammerPaint);
+  housing.position.copy(direction).multiplyScalar(hammerLength*.32);
+  housing.rotation.z = Math.atan2(direction.y,direction.x);
+  const chisel = new THREE.Mesh(new THREE.CylinderGeometry(.035,.055,hammerLength*.48,6),steel);
+  chisel.rotation.z = Math.atan2(direction.y,direction.x)-Math.PI/2;
+  chisel.position.copy(direction).multiplyScalar(hammerLength*.76);
+  hammer.add(housing,chisel);
+  const gradingLip = new THREE.Mesh(new THREE.BoxGeometry(.24,.055,1.1),steel);
+  gradingLip.position.set(baseTeeth.x-.08,baseTeeth.y,0);
+  gradingLip.scale.z = (machine.type === 'miniDigger' ? .46 : 1.1) / 1.1;
+  attachment.add(gradingLip);
+  let lastAttachment = null;
 
   const body = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased()
     .setTranslation(spawn.x, terrain.heightAt(spawn.x, spawn.z), spawn.z));
@@ -66,9 +94,9 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
     vR: 0,
     sL: 0, // track distance travelled (for the shoes)
     sR: 0,
-    houseYaw: 0, // relative to the tracks
+    houseYaw: spawn.houseYaw ?? 0, // relative to the tracks
     houseVel: 0,
-    targetHouseYaw: 0,
+    targetHouseYaw: spawn.houseYaw ?? 0,
     dumpT: 0,
     dumpY: 0, // height to dump at (bed or ground)
     rock: { p: 0, pv: 0, r: 0, rv: 0 }, // body rocking (pitch, roll) on the suspension of the tracks
@@ -78,8 +106,16 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
     lastPhase: '',
     idleT: 0,
     lastColor: null,
+    aimReach: clamp(spawn.aimReach ?? stats().reach, stats().reach*.4, stats().reach),
+    cutDepth: clamp(spawn.cutDepth ?? 0.35, .05, stats().digDepth ?? .8),
+    resistance: 0,
+    dumpTarget: null,
+    dumpReady: false,
+    lastDump: spawn.lastDump ?? null,
+    repeatDump: null,
   };
-  const joints = createJoints(CARRY);
+  const savedArm = Array.isArray(spawn.arm) && spawn.arm.length === 3 && spawn.arm.every(Number.isFinite) ? spawn.arm.map((a,i)=>clamp(a,...limits[i])) : CARRY;
+  const joints = createJoints(savedArm);
   const engine = createEngineLife();
   const tracks = createTrackDrive({ model, terrain, spec: spec.tracks, s, engine, stats, allowedAt, onBlocked });
 
@@ -88,13 +124,14 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
 
   const forward = (yaw) => new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
   const houseWorldYaw = () => s.yaw + s.houseYaw;
-  const reach = () => live?.()?.operator && s.operatorReach != null ? s.operatorReach : stats().reach;
+  const reach = () => live?.()?.operator && s.operatorReach != null ? s.operatorReach : s.aimReach;
 
   // Bucket teeth in world space for joint angles (ignoring the machine's tilt).
   function teethAtAngles(angles) {
     const t = armPoints(angles).teeth;
-    const f = forward(houseWorldYaw());
-    return { x: s.x + f.x * t.x, y: s.y + spec.houseY + t.y, z: s.z + f.z * t.x };
+    model.root.updateMatrixWorld(true);
+    const p = model.house.localToWorld(new THREE.Vector3(t.x / size, t.y / size, 0));
+    return { x: p.x, y: p.y, z: p.z };
   }
 
   // Where the bucket digs or dumps in Assisted mode: on the ground in front of the house.
@@ -112,7 +149,7 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
   // The arm's goal for this moment: [boom, stick, bucket] angles and the phase name.
   function armGoal(job) {
     const R = reach();
-    const gy = groundBelowTarget();
+    const gy = job?.params.physical && job.params.groundY != null ? job.params.groundY - (s.y + spec.houseY) : groundBelowTarget();
     const sc = spec.scale;
     if (job?.type === 'dig') {
       const p = clamp01(job.elapsed / job.duration);
@@ -120,8 +157,8 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
       const path = [
         { t: 0.0, x: R - 1.8 * sc, y: gy + 2.2 * sc, phi: -1.6 },
         { t: 0.28, x: R + 0.1 * sc, y: gy + 0.7 * sc, phi: -0.75, phase: 'reach' },
-        { t: 0.42, x: R - 0.1 * sc, y: gy - 0.32 * sc, phi: -1.2, phase: 'bite' },
-        { t: 0.66, x: R - 1.5 * sc, y: gy - 0.28 * sc, phi: -2.05, phase: 'drag' },
+        { t: 0.42, x: R - 0.1 * sc, y: gy - (job.params.depth ?? 0.32 * sc), phi: -1.2, phase: 'bite' },
+        { t: 0.66, x: R - 1.5 * sc, y: gy - (job.params.depth ?? 0.28 * sc), phi: -2.05, phase: 'drag' },
         { t: 0.82, x: R - 1.7 * sc, y: gy + 1.5 * sc, phi: -2.65, phase: 'curl' },
       ];
       if (p >= 0.82) {
@@ -177,11 +214,13 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
     s.relief = relief;
   }
 
-  function update(dt, { job, bucketFull, bucketColor, occupied }) {
+  function update(dt, { job, bucketFull, bucketLoaded = bucketFull, bucketFraction = 1, bucketColor, occupied }) {
     const m = live?.();
     engine.update(dt, { occupied, broken: !!m?.broken });
     const running = engine.running();
-    const speedScale = (stats().swingSpeed ?? 1) / 1.25 * (running ? 1 : 0);
+    const force = stats().breakoutForce ?? 60;
+    const resistanceScale = Math.max(0.2, force / Math.max(force, s.resistance));
+    const speedScale = (stats().hydraulicSpeed ?? (stats().swingSpeed ?? 1) / 1.25) * resistanceScale * (running ? 1 : 0);
 
     // ---- swing: winds up, then eases to a stop on the target
     const diff = s.targetHouseYaw - s.houseYaw;
@@ -201,7 +240,7 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
     if (direct.on && !job && s.dumpT === 0) directTargets(bucketFull);
     else s.relief = false;
     const goal = armGoal(job);
-    const armWork = joints.step(goal.angles, dt, Math.max(0.05, speedScale) * 1.6);
+    const armWork = dt > 0 ? joints.step(goal.angles, dt, speedScale * 1.6) : 0;
     if (goal.phase !== s.lastPhase) {
       if (goal.phase === 'bite') s.rock.pv -= 0.05; // bucket bites: the nose dips
       if (goal.phase === 'curl') s.rock.pv += 0.03 * (bucketFull ? 1.5 : 1); // breaking out lifts it
@@ -209,7 +248,13 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
     }
     s.digging = goal.phase === 'bite' || goal.phase === 'drag';
     s.pour = goal.phase === 'dump' ? 1 : 0;
-    if (s.dumpT > 0) s.dumpT = Math.max(0, s.dumpT - dt);
+    if (s.dumpTarget && goal.phase === 'dump' && joints.angle.reduce((sum,a)=>sum+a,0) > POUR_ANGLE) s.dumpReady = true;
+    if (s.dumpT > 0) {
+      s.dumpT = Math.max(0, s.dumpT - dt);
+      // Hydraulics may lag a planned path under load. Hold the open target until the
+      // real bucket reaches a pouring angle, rather than transferring cargo early.
+      if (s.dumpTarget && !s.dumpReady) s.dumpT = Math.max(s.dumpT, DUMP_TIME * .32);
+    }
     s.work = Math.min(1, armWork * 1.4 + Math.abs(s.houseVel) * 0.5 + (tracks.moving() ? 0.6 : 0) + (s.digging ? 0.4 : 0));
     s.idleT = s.work > 0.05 || tracks.input.move || tracks.input.turn ? 0 : s.idleT + dt;
 
@@ -223,7 +268,7 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
     r.rv += (-stiff * r.r - damp * r.rv) * dt;
     r.p += r.pv * dt;
     r.r += r.rv * dt;
-    if (s.digging) r.pv += (Math.random() - 0.5) * 0.05; // judder while the teeth drag
+    if (s.digging && dt > 0) r.pv += (Math.random() - 0.5) * 0.05; // judder while the teeth drag
 
     body.setNextKinematicTranslation({ x: s.x, y: s.y, z: s.z });
     body.setNextKinematicRotation({ x: 0, y: Math.sin(s.yaw / 2), z: 0, w: Math.cos(s.yaw / 2) });
@@ -234,6 +279,15 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
     model.boomPivot.rotation.z = b1;
     model.stickPivot.rotation.z = b2;
     model.bucketPivot.rotation.z = b3;
+    model.bucketPivot.scale.z = (stats().bucketWidth ?? (machine.type === 'miniDigger' ? 0.46 : 1.1) * size) / ((machine.type === 'miniDigger' ? 0.46 : 1.1) * size);
+    const tool = m?.attachment ?? 'standard';
+    if (lastAttachment !== tool) {
+      for (const mesh of bucketMeshes) mesh.visible = tool !== 'breaker';
+      hammer.visible = tool === 'breaker';
+      gradingLip.visible = tool === 'grading';
+      lastAttachment = tool;
+    }
+    hammer.scale.z = 1 / Math.max(.01,model.bucketPivot.scale.z);
     if (model.bucketLink) model.bucketLink.rotation.z = LINK_RATIO * b3 + LINK_OFFSET;
     if (model.rams.length) {
       model.root.updateMatrixWorld(true);
@@ -241,15 +295,14 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
     }
     // The game empties the bucket the moment you click; the model keeps the load until it tips.
     if (bucketColor) s.lastColor = bucketColor;
-    const showLoad = (bucketFull && (s.dumpT === 0 || direct.on)) || goal.phase === 'raise' || (goal.phase === 'dump' && s.dumpT > DUMP_TIME * 0.45);
-    model.setBucketLoad(showLoad, bucketColor ?? s.lastColor);
+    const showLoad = bucketLoaded || (!s.dumpTarget && (goal.phase === 'raise' || (goal.phase === 'dump' && s.dumpT > DUMP_TIME * 0.45)));
+    model.setBucketLoad(showLoad && tool !== 'breaker', bucketColor ?? s.lastColor, bucketLoaded ? bucketFraction : 1);
   }
 
   // Bucket teeth in world space (for dust where they dig).
   function teethWorld() {
-    const { teeth } = armPoints(joints.angle);
-    model.root.updateMatrixWorld(true);
-    return model.house.localToWorld(new THREE.Vector3(teeth.x, teeth.y, 0.35 * spec.scale ** 0.5));
+    const t = teethAtAngles(joints.angle);
+    return new THREE.Vector3(t.x, t.y, t.z);
   }
 
   return {
@@ -268,9 +321,31 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
       s.targetHouseYaw += delta;
     },
     // Dump the bucket over a spot at world height y (a truck bed, or the ground).
-    startDump(y = null) {
+    startDump(y = null, target = null) {
       s.dumpT = DUMP_TIME;
       s.dumpY = y ?? terrain.heightAt(bucketTarget().x, bucketTarget().z);
+      s.dumpTarget = target;
+      s.dumpReady = false;
+      if (target) s.lastDump = { ...target };
+    },
+    aimDump(x,z) {
+      const distance = Math.hypot(x-s.x,z-s.z);
+      if (distance > stats().reach+.3 || distance < stats().reach*.35) return false;
+      const angle = Math.atan2(-(z-s.z),x-s.x)-s.yaw;
+      s.targetHouseYaw = s.houseYaw + Math.atan2(Math.sin(angle-s.houseYaw),Math.cos(angle-s.houseYaw));
+      s.aimReach = clamp(distance,stats().reach*.4,stats().reach);
+      return true;
+    },
+    takeDumpTarget() {
+      if (!s.dumpReady) return null;
+      const target = s.dumpTarget;
+      s.dumpTarget = null;
+      s.dumpReady = false;
+      return target;
+    },
+    adjustAim(delta, depth = false) {
+      if (depth) s.cutDepth = clamp(s.cutDepth + delta, 0.05, stats().digDepth ?? 0.8);
+      else s.aimReach = clamp(s.aimReach + delta, stats().reach * 0.4, stats().reach);
     },
     busy: () => s.dumpT > 0,
 
@@ -305,10 +380,11 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
     },
     // The game reports what happened: teeth cutting, the load running out (0..1), or the
     // ground refusing to be cut (rock).
-    directReport({ cutting = false, pouring = 0, stuck = false }) {
+    directReport({ cutting = false, pouring = 0, stuck = false, resistance = 0 }) {
       direct.cutting = cutting;
       direct.pouring = pouring;
       direct.stuck = stuck;
+      s.resistance = resistance;
     },
 
     feel() {
@@ -342,9 +418,11 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
       model.root.updateMatrixWorld(true);
       return model.house.localToWorld(new THREE.Vector3(...spec.exhaust));
     },
-    placement: () => ({ x: s.x, z: s.z, yaw: s.yaw }),
+    placement: () => ({ x: s.x, z: s.z, yaw: s.yaw, houseYaw:s.houseYaw, arm:[...joints.angle], aimReach:s.aimReach, cutDepth:s.cutDepth, lastDump:s.lastDump }),
     radius: spec.radius,
     destroy() {
+      attachment.traverse(o => o.geometry?.dispose());
+      steel.dispose();hammerPaint.dispose();
       scene.remove(model.root);
       world.removeRigidBody(body);
     },

@@ -6,6 +6,7 @@ import { tierData, typeName, tierName, getStats, isDigger } from './stats.js';
 import { applyWear } from './wear.js';
 import { dealerPrice } from '../career/index.js';
 import { offerPrice } from '../happenings/index.js';
+import { loadCarrier, combinationStats, canDeliver, cargoRoom } from './trailers.js';
 
 export function createMachine(state, data, type, tier, siteId) {
   const td = tierData(data, type, tier);
@@ -15,6 +16,7 @@ export function createMachine(state, data, type, tier, siteId) {
     id: `m${state.nextMachineId++}`,
     type,
     tier,
+    modelId: td.modelId ?? `${type}_${tier}`,
     number: state.counters[type],
     siteId,
     condition: td.startCondition,
@@ -22,6 +24,7 @@ export function createMachine(state, data, type, tier, siteId) {
     mods: [],
     job: null,
     load: {}, // material in a digger's bucket or a carrier's bed
+    ...(type === 'tractor' ? { trailerId: null } : type === 'trailer' ? { attachedTo: null } : {}),
   };
   state.machines.push(machine);
   return machine;
@@ -32,7 +35,7 @@ export function getMachine(ctx, id) {
 }
 
 export function machineName(data, m) {
-  return `${tierName(data, m.tier)} ${typeName(data, m.type)} #${m.number}`;
+  return `${getStats(data, m).modelName ?? `${tierName(data, m.tier)} ${typeName(data, m.type)}`} #${m.number}`;
 }
 
 export function machinesAt(ctx, siteId) {
@@ -73,6 +76,7 @@ export function buyMachine(ctx, type, tier) {
 }
 
 export function resaleValue(ctx, m) {
+  if (m.rental) return 0;
   const price = tierData(ctx.data, m.type, m.tier).price;
   const conditionFactor = 0.4 + 0.6 * (m.condition / 100);
   const brokenFactor = m.broken ? 0.5 : 1;
@@ -82,12 +86,14 @@ export function resaleValue(ctx, m) {
 export function sellMachine(ctx, id) {
   const m = getMachine(ctx, id);
   if (!m) return { ok: false, reason: 'No such machine' };
+  if (m.rental) return { ok: false, reason: 'Return rented equipment through the hire desk' };
+  if (m.attachedTo || m.trailerId) return { ok: false, reason: 'Unhitch the trailer before selling' };
+  if (pileTotal(m.load) > 0.001) return { ok: false, reason: 'Empty the machine before selling' };
   if (m.job) return { ok: false, reason: 'Machine is busy' };
   if (m.onHire) return { ok: false, reason: 'It’s out on hire' };
   if (m.operator) return { ok: false, reason: 'Someone’s working it: give them another job first (laptop: Staff)' };
   // Keep one road vehicle, or you'd have no way to get anything to the depot.
-  const roadLegal = (x) => !!ctx.data.machines.types[x.type]?.roadLegal;
-  if (roadLegal(m) && ctx.state.machines.filter(roadLegal).length <= 1) {
+  if (canDeliver(ctx, m) && ctx.state.machines.filter(x => !x.rental && !x.onHire && canDeliver(ctx, x)).length <= 1) {
     return { ok: false, reason: 'You need at least one road vehicle to get loads to the depot' };
   }
   const value = resaleValue(ctx, m);
@@ -111,6 +117,7 @@ export function buyMod(ctx, machineId, modId) {
   const m = getMachine(ctx, machineId);
   const mod = ctx.data.mods[modId];
   if (!m || !mod) return { ok: false, reason: 'Unknown machine or upgrade' };
+  if (m.rental) return { ok: false, reason: 'Return rented equipment unchanged' };
   if (mod.machineType !== m.type) return { ok: false, reason: 'Does not fit this machine' };
   if (m.mods.includes(modId)) return { ok: false, reason: 'Already fitted' };
   const price = dealerPrice(ctx, mod.price);
@@ -139,11 +146,12 @@ export function dumpBucket(ctx, diggerId, target = {}, share = 1) {
     const r = storeStockpile(ctx, target.stockpileBay, shareLoad, ex.siteId);
     if (!r.ok) return r;
   } else if (target.machineId) {
-    const bed = getMachine(ctx, target.machineId);
-    const cap = bed ? getStats(ctx.data, bed).capacity ?? 0 : 0;
+    const vehicle = getMachine(ctx, target.machineId);
+    const bed = loadCarrier(ctx, vehicle);
+    const cap = bed ? combinationStats(ctx, vehicle).capacity ?? 0 : 0;
     if (!cap) return { ok: false, reason: 'That has nowhere to put it' };
     if (bed.job) return { ok: false, reason: 'Wait for it to finish' };
-    const room = Math.max(0, cap - pileTotal(bed.load));
+    const room = cargoRoom(ctx, vehicle, ex.load);
     if (room <= 1e-9) return { ok: false, reason: `The ${typeName(ctx.data, bed.type).toLowerCase()} is full` };
     moved = Math.min(room, amount);
     if (pileTotal(ex.load) - moved < 0.01 && room >= pileTotal(ex.load) - 1e-9) moved = pileTotal(ex.load); // the last few crumbs go in too
@@ -163,24 +171,36 @@ export function dumpBucket(ctx, diggerId, target = {}, share = 1) {
 // Direct control: the bucket's teeth are in the ground and moving. Cuts a small bowl at
 // { x, z } down to `bottomY` (radius `radius`), but only as much as still fits in the bucket.
 // Fuel and wear are charged by the share of a full bucket. Returns { ok, tonnes, full }.
-export function bucketCut(ctx, diggerId, { x, z, bottomY, radius, stockpileBay }) {
+export function bucketCut(ctx, diggerId, { x, z, bottomY, radius, stockpileBay, from, to, attack = 1, moisture = 0, tool = 'bucket' }) {
   const m = getMachine(ctx, diggerId);
   if (!m || !isDigger(ctx.data, m.type)) return { ok: false, reason: 'Not a digger' };
   if (m.broken) return { ok: false, reason: `${machineName(ctx.data, m)} is broken down. Repair it first.` };
-  if (m.job) return { ok: false, reason: `${machineName(ctx.data, m)} is busy` };
+  if (m.job && !(m.job.type === 'dig' && m.job.params.physical)) return { ok: false, reason: `${machineName(ctx.data, m)} is busy` };
   if (!stockpileBay && (!ctx.ground || !ctx.ground.workable(x, z))) return { ok: false, reason: 'You can only dig on your own land' };
   const stats = getStats(ctx.data, m);
+  const breaking = m.attachment === 'breaker';
+  if (breaking && stockpileBay) return {ok:true,tonnes:0,full:false,blocked:true,resistance:0};
+  if (breaking && !stockpileBay) {
+    const surface = ctx.ground.materialResponseAt(x,z,{moisture});
+    if (surface.loose || surface.material !== 'rock') return {ok:true,tonnes:0,full:false,blocked:true,resistance:surface.resistance};
+  }
   const room = stats.bucketVolume - ctx.ground.looseVolume(m.load);
   if (room < 0.002) return { ok: true, tonnes: 0, full: true };
-  const r = stockpileBay ? scoopStockpile(ctx, stockpileBay, room, m.siteId) : ctx.ground.dig({ x, z, radius, bottomY, maxVolume: room });
-  if (r.total <= 0) return { ok: true, tonnes: 0, full: false };
-  addToPile(m.load, r.tonnes);
+  const r = stockpileBay ? scoopStockpile(ctx, stockpileBay, room * attack, m.siteId)
+    : from && to ? ctx.ground.cutSweep({ from, to, width: stats.bucketWidth ?? Math.max(0.35, Math.cbrt(stats.bucketVolume)), maxVolume: room, force: stats.breakoutForce ?? 60, attack, moisture, tool: m.attachment === 'breaker' ? 'breaker' : tool })
+      : ctx.ground.dig({ x, z, radius, bottomY, maxVolume: room });
+  if (r.total <= 0) return { ok: true, tonnes: 0, full: false, resistance: r.resistance ?? 0, blocked: !!r.blocked };
+  if (breaking) {
+    // A hammer leaves rubble on the ground for a bucket to collect; it has no scoop.
+    const dx = Math.max(ctx.ground.x0+ctx.ground.cellSize*2,Math.min(ctx.ground.x0+ctx.ground.nx*ctx.ground.cellSize-ctx.ground.cellSize*2,x));
+    ctx.ground.deposit({x:dx,z,tonnes:r.tonnes,radius:.6});
+  } else addToPile(m.load, r.tonnes);
   const share = r.volume / stats.bucketVolume;
   chargeFuel(ctx, stats.fuelPerJob * share, m.siteId);
   if (!stockpileBay) ctx.state.stats.tonnesDug += r.total;
   ctx.events.emit(stockpileBay ? 'stockpileScooped' : 'rockDug', { machineId: m.id, tonnes: r.total, materials: { ...r.tonnes }, x, z, direct: true });
   applyWear(ctx, m, stats, share);
-  return { ok: true, tonnes: r.total, full: room - r.volume < 0.002 };
+  return { ok: true, tonnes: r.total, full: room - r.volume < 0.002, resistance: r.resistance ?? 0, blocked: !!r.blocked };
 }
 
 // Dev helper: every machine back to perfect condition.
@@ -190,4 +210,16 @@ export function fixAllMachines(ctx) {
     m.broken = false;
   }
   ctx.events.emit('machinesFixed', {});
+}
+
+export function setDiggerAttachment(ctx, machineId, attachment) {
+  const m = getMachine(ctx, machineId);
+  if (!m || !isDigger(ctx.data, m.type)) return { ok: false, reason: 'Choose a digger' };
+  if (m.rental) return { ok: false, reason: 'Return rented equipment unchanged' };
+  if (m.job || pileTotal(m.load) > 1e-6) return { ok: false, reason: 'Finish work and empty the bucket before changing attachments' };
+  const choices = tierData(ctx.data, m.type, m.tier).attachments ?? ['standard', 'trench', 'grading'];
+  if (!choices.includes(attachment)) return { ok: false, reason: 'This attachment does not fit' };
+  m.attachment = attachment;
+  ctx.events.emit('diggerAttachmentChanged', { machineId, attachment });
+  return { ok: true };
 }

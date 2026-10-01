@@ -100,14 +100,14 @@ function createClods(scene) {
   }
   let next = 0;
   return {
-    spawn(at, color, { count = 6, spread = 0.15, up = 1.2, dir = null } = {}) {
+    spawn(at, color, { count = 6, spread = 0.15, up = 1.2, dir = null, size = 1 } = {}) {
       for (let i = 0; i < count; i++) {
         const c = pool[next];
         next = (next + 1) % pool.length;
         c.m.position.set(at.x + (Math.random() - 0.5) * spread, at.y + Math.random() * 0.05, at.z + (Math.random() - 0.5) * spread);
         c.vel.set((Math.random() - 0.5) * 0.8, up * (0.3 + Math.random() * 0.7), (Math.random() - 0.5) * 0.8);
         if (dir) c.vel.addScaledVector(dir, 1);
-        c.m.scale.setScalar(0.5 + Math.random() * 0.9);
+        c.m.scale.setScalar((0.5 + Math.random() * 0.9) * size);
         c.m.rotation.set(Math.random() * 6, Math.random() * 6, 0);
         c.m.material.color.copy(color);
         c.m.visible = true;
@@ -447,7 +447,9 @@ export function createHandTools({
       const at = tg.point.clone();
       at.y = heightAt(at.x, at.z);
       sfx('shovel', at, { gain: 0.9, rate: 0.9 + Math.random() * 0.2 });
-      clods.spawn(at, colorOf(r.materials), { count: 5, up: 1.4 });
+      const material = Object.entries(r.materials).sort((a,b)=>b[1]-a[1])[0]?.[0];
+      const flow = data.ground.materials[material]?.flow ?? .6;
+      clods.spawn(at, colorOf(r.materials), { count: flow > .8 ? 9 : 5, up: flow > .8 ? .7 : 1.4, size: flow > .8 ? .45 : 1 });
       particles.spawn(at, { count: 2, spread: 0.3, up: 0.3, life: 1.2, size: 0.5, color: 0xa08a6a, opacity: 0.25 });
       return;
     }
@@ -481,7 +483,8 @@ export function createHandTools({
     }
     anim.kind = tg.kind === 'dig' ? 'dig' : 'dump';
     anim.t = 0;
-    anim.dur = tg.kind === 'dig' ? shovelSpec.digTime : shovelSpec.dumpTime;
+    const resistance = tg.kind === 'dig' ? ground.digResistanceAt(tg.point.x, tg.point.z) : 0;
+    anim.dur = tg.kind === 'dig' ? shovelSpec.digTime * Math.min(2.5, Math.max(1, resistance / (shovelSpec.force ?? 24))) : shovelSpec.dumpTime;
     anim.target = tg;
     anim.done = false;
   }
@@ -630,7 +633,7 @@ export function createHandTools({
     },
 
     // After physics: place the barrow, animate, aim.
-    update(dt, { onFoot, clicked, paused }) {
+    update(dt, { onFoot, clicked, paused, repeat = false }) {
       const feet = player.feet();
       walkSpeed = lastFeet && dt > 0 ? Math.min(10, Math.hypot(feet.x - lastFeet.x, feet.z - lastFeet.z) / dt) : 0;
       lastFeet = feet.clone();
@@ -684,7 +687,7 @@ export function createHandTools({
       poseShovel(dt, walkSpeed);
 
       target = onFoot && !b.held ? aim() : null;
-      if (onFoot && !b.held && clicked && !paused) useShovel();
+      if (onFoot && !b.held && (clicked || repeat) && !paused) useShovel();
       const show = target && !anim.kind;
       marker.visible = !!show;
       if (show) {
@@ -741,6 +744,17 @@ export function createHandTools({
 
     // Where the barrow is (saved with the game).
     placement: () => ({ x: b.x, z: b.z, yaw: b.yaw }),
+    recoverAt(x, z, yaw = b.yaw) {
+      // Recovery changes only placement. Partially completed pours keep their real cargo.
+      b.held = false;
+      b.tipT = -1;
+      b.speed = 0;
+      Object.assign(b, { x, z, yaw });
+      collider.setEnabled(true);
+      player.input.maxSpeed = null;
+      player.input.moveYaw = null;
+      anim.kind = null;
+    },
     // For play tests: put the barrow somewhere, or move yourself while holding it.
     placeBarrow(x, z, yaw = b.yaw) {
       letGo();

@@ -99,6 +99,8 @@ export function openSettings(overlays, { settings, onChange, keyboard }) {
         controls: () => [
           row('Mouse sensitivity', range('mouseSensitivity', 0.2, 3, 0.1, (v) => `${v.toFixed(1)}×`)),
           row('Invert mouse Y', toggle('invertY')),
+          row('Digger lever sensitivity', range('diggerSensitivity', 0.2, 2, 0.1, (v) => `${v.toFixed(1)}×`)),
+          row('Hold mouse to repeat shovel', toggle('repeatShovel'), 'Repeats a dig or pour while held; release to stop'),
           row('Digger controls', choice('diggerControls', [
             ['assisted', 'Assisted', 'Aim the bucket and click: the arm does the rest. The easy way to start.'],
             ['direct', 'Direct', 'Boom, stick, bucket and swing each on their own controls, like the real levers. G switches in the cab.'],

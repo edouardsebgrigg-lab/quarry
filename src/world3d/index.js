@@ -12,6 +12,7 @@ import { buildFarms, farmClearRect, farmWorkRect, farmTrees, farmTrack } from '.
 import { createParticles } from './particles.js';
 import { createPlayer } from './player.js';
 import { createTruck } from './truck.js';
+import { createParkedTrailer } from './trailer.js';
 import { createExcavator, POUR_ANGLE } from './excavator.js';
 import { createDumper } from './dumper.js';
 import { createMouse } from './mouse.js';
@@ -33,10 +34,13 @@ import { createHeadSway } from './headSway.js';
 import { MAP, inRect } from './map.js';
 import { createGuideBeacon } from './guideBeacon.js';
 import { currentObjective } from '../progression/index.js';
+import { entryModel } from '../progression/objectives.js';
 import { contractsState } from '../contracts/index.js';
 import { barrowFill } from '../handtools/index.js';
 import { keyLabel } from '../input/index.js';
 import { pileTotal } from '../quarry/index.js';
+import { bucketFill, cuttingAttack } from '../machinery/digging.js';
+import { loadCarrier, combinationStats, attachedTrailer } from '../machinery/trailers.js';
 import {
   getStats, machinesAt, machineName, getMachine, JOBS, jobProgress, isDigger, bucketRadius, typeName, machinePrice,
 } from '../machinery/index.js';
@@ -135,6 +139,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   });
 
   const saved = game.state.positions ?? {};
+  const cargoLoad = (m) => loadCarrier(game.ctx, m)?.load ?? {};
   const spawn = saved.player ?? home.playerSpawn;
   const player = createPlayer({ physics, spawn: { ...spawn, y: heightAt(spawn.x, spawn.z) } });
   player.look.yaw = spawn.yaw ?? 0;
@@ -165,6 +170,13 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   function groundSurface(x, z) {
     if (!onPlot(x, z) && land.onRoad(x, z)) return weatherGrip < 1 ? { ...ASPHALT, grip: ASPHALT.grip * (0.5 + 0.5 * weatherGrip) } : ASPHALT;
     const s = surfaceAt(x, z);
+    if (onPlot(x,z)) {
+      const i = Math.floor((x-ground.x0)/ground.cellSize), j = Math.floor((z-ground.z0)/ground.cellSize);
+      if (!s.grass && !ground.cellBuilt(i,j)) {
+        const r = ground.materialResponseAt(x,z);
+        return { grip: r.traction, roll: r.rollingResistance, name: r.material };
+      }
+    }
     let grip = 0;
     let roll = 0;
     let name = 'dirt';
@@ -189,9 +201,9 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   // (`fresh`: just back from hire, so it's parked in its spot, not where it was left)
   function addVehicle(machine, { fresh = false } = {}) {
     const spot = (!fresh && saved.machines?.[machine.id]) || parkingSpot(machine.type);
-    const stats = () => getStats(data, getMachine(game.ctx, machine.id) ?? machine);
+    const stats = () => combinationStats(game.ctx, getMachine(game.ctx, machine.id) ?? machine);
     const live = () => getMachine(game.ctx, machine.id);
-    const args = { physics, scene, terrain, machine, spawn: spot, stats, live, surfaceAt: groundSurface };
+    const args = { physics, scene, terrain, machine, spawn: spot, stats, live, liveTrailer: () => attachedTrailer(game.ctx, machine), surfaceAt: groundSurface };
     // Site machines aren't road-legal: they stay on your land.
     const site = {
       allowedAt: onYourLand,
@@ -204,10 +216,13 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     let v;
     if (isDigger(data, machine.type)) v = createExcavator({ ...args, ...site, canDigAt: (x, z) => ground?.workable(x, z) });
     else if (machine.type === 'dumper') v = createDumper({ ...args, ...site });
+    else if (machine.type === 'trailer') v = createParkedTrailer(args);
     else v = createTruck(args);
     vehicles.set(machine.id, v);
   }
-  for (const m of machinesAt(game.ctx, siteId)) if (!m.away) addVehicle(m); // (not one out on the road with a driver)
+  for (const m of machinesAt(game.ctx, siteId)) if (!m.away && !m.attachedTo) addVehicle(m); // (not one out on the road with a driver)
+  game.ctx.machinePlacement = id => vehicles.get(id)?.placement();
+  game.ctx.machineSpeed = id => vehicles.get(id)?.speed() ?? 0;
 
   // Your shovel and wheelbarrow (the shovel is drawn in front of the camera).
   scene.add(camera);
@@ -265,6 +280,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   }
 
   function enter(v) {
+    if (v.towable) {
+      notify('Drive a tractor nearby and hitch this trailer from Fleet', 'warn');
+      return;
+    }
     // (one of your staff is working it: they keep it until you give them another job)
     const op = workerFor(game.ctx, getMachine(game.ctx, v.machineId));
     if (op?.role) {
@@ -272,6 +291,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       return;
     }
     game.state.player.driving = v.machineId;
+    if (game.state.player.navigationMachineId === v.machineId || getMachine(game.ctx, game.state.player.navigationMachineId)?.attachedTo === v.machineId) game.actions.navigateFleet?.(null);
     mode = { kind: v.type, v };
     player.setEnabled(false);
     game.actions.selectMachine(v.machineId);
@@ -361,6 +381,22 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         if (v) camMode = camMode === 'cab' ? 'chase' : 'cab';
         return true;
       case 'tip': {
+        if (v?.digger) {
+          if (pileTotal(cargoLoad(m)) > 1e-6 && settings.diggerControls === 'assisted' && v.state.lastDump) {
+            const destination = v.state.lastDump;
+            const bed = destination.machineId ? vehicles.get(destination.machineId) : null;
+            const point = bed?.bedWorld() ?? (destination.x != null ? destination : null);
+            if (!point || !v.aimDump(point.x,point.z)) notify('Reposition the digger within reach of the last dump target', 'warn');
+            else { v.state.repeatDump = {destination,height:bed?.bedWorld().y??null}; notify('Returning to the last dump target', 'good'); }
+            return true;
+          }
+          const choices = getStats(data, m).attachments ?? ['standard', 'trench', 'grading'];
+          const attachment = choices[(Math.max(0, choices.indexOf(m.attachment ?? 'standard')) + 1) % choices.length];
+          const r = game.actions.setDiggerAttachment(m.id, attachment);
+          if (r.ok) notify(`Attachment: ${attachment}`, 'good');
+          else report(r);
+          return true;
+        }
         if (!v && hands.holding()) {
           hands.tip();
           return true;
@@ -389,6 +425,26 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       }
       case 'recover':
         if (v?.road) v.recover();
+        else if (!v) {
+          const p = player.feet();
+          let safe = null;
+          for (const radius of [2.5, 4, 6, 8]) {
+            for (let i = 0; i < 12 && !safe; i++) {
+              const angle = i * Math.PI / 6;
+              const x = p.x + Math.cos(angle) * radius, z = p.z + Math.sin(angle) * radius;
+              const h = heightAt(x, z);
+              const clear = [...vehicles.values()].every(veh => veh.position().distanceTo(new THREE.Vector3(x, h, z)) > veh.radius + 2);
+              const flat = [[1,0],[-1,0],[0,1],[0,-1]].every(([dx,dz]) => Math.abs(heightAt(x+dx,z+dz)-h) < .25);
+              if (clear && flat && onYourLand(x,z)) safe = { x,z,h };
+            }
+            if (safe) break;
+          }
+          if (safe) {
+            hands.recoverAt(safe.x, safe.z, player.look.yaw);
+            player.teleport(safe.x + 1.4, heightAt(safe.x + 1.4, safe.z) + .1, safe.z);
+            notify('Wheelbarrow recovered with its load', 'good');
+          } else notify('Walk to clear level ground before recovering the barrow', 'warn');
+        }
         return true;
       default:
         return false;
@@ -415,7 +471,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   }
 
   // What a digger's bucket is over: a carrier's bed, or the ground.
-  const bedUnder = (t) => [...vehicles.values()].find((tr) => tr.carrier && tr.isOverBed(t)) ?? null;
+  const bedUnder = (t, raised = false) => [...vehicles.values()].find((tr) => tr.carrier && tr.isOverBed(t) && (!raised || t.y >= (tr.bedFloorWorldY?.() ?? tr.bedWorld().y))) ?? null;
 
   // Tracked machines with no physics vehicle (the dumper): W/S drive, A/D turn on the spot.
   function controlDumper(v, m, keys, d, sens, dt) {
@@ -436,7 +492,12 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   function controlDirect(v, m, keys, d, sens, dt) {
     const st = directState.get(m.id) ?? { cutT: 0, pourT: 0, pour: 0, cutting: false, note: 0 };
     directState.set(m.id, st);
-    look.pitch = -0.35;
+    const precision = keys('precision') ? 0.3 : 1;
+    const freeLook = keys('freeLook');
+    if (freeLook) {
+      look.yaw = THREE.MathUtils.clamp(look.yaw - d.x * sens, -2.3, 2.3);
+      look.pitch = THREE.MathUtils.clamp(look.pitch - d.y * sens, -1.2, 0.8);
+    }
     st.note = Math.max(0, st.note - dt);
     if (m.broken || m.job) {
       v.drive(dt, 0, 0);
@@ -444,45 +505,31 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       v.directReport({});
       return;
     }
-    v.swingBy(-d.x * sens);
+    v.swingBy((freeLook ? 0 : -d.x * sens * precision) + ((keys('slewLeft') ? 1 : 0) - (keys('slewRight') ? 1 : 0)) * dt * precision);
     v.drive(dt, (keys('forward') ? 1 : 0) - (keys('back') ? 1 : 0), (keys('left') ? 1 : 0) - (keys('right') ? 1 : 0));
     const wheel = mouse.takeWheel();
     v.directInput(testInput ?? {
-      boom: (keys('boomUp') ? 1 : 0) - (keys('boomDown') ? 1 : 0),
-      bucket: (mouse.isRightDown() || keys('bucketDump') ? 1 : 0) - (mouse.isDown() || keys('bucketCurl') ? 1 : 0),
-      stickDelta: -d.y * sens * 1.2,
-      boomDelta: THREE.MathUtils.clamp(-wheel / 100, -3, 3) * 0.1,
+      boom: ((keys('boomUp') ? 1 : 0) - (keys('boomDown') ? 1 : 0)) * precision,
+      stick: ((keys('stickOut') ? 1 : 0) - (keys('stickIn') ? 1 : 0)) * precision,
+      bucket: ((mouse.isRightDown() || keys('bucketDump') ? 1 : 0) - (mouse.isDown() || keys('bucketCurl') ? 1 : 0)) * precision,
+      stickDelta: freeLook ? 0 : -d.y * sens * 1.2 * precision,
+      boomDelta: THREE.MathUtils.clamp(-wheel / 100, -3, 3) * 0.1 * precision,
     });
 
     const s = v.directState();
     const stats = getStats(data, m);
-    const full = pileTotal(m.load) > 0.01;
+    const loaded = bucketFill(ground, stats, cargoLoad(m)).loaded;
     const tp = new THREE.Vector3(s.teeth.x, s.teeth.y, s.teeth.z);
-    // Teeth in the ground, moving: cut a little bowl, as much as still fits.
-    st.cutT -= dt;
-    if (!s.under) st.stuck = false;
-    if (s.under && !full && s.moving) {
-      if (st.cutT <= 0) {
-        st.cutT = 0.07;
-        const r = game.actions.bucketCut(m.id, { x: s.teeth.x, z: s.teeth.z, bottomY: s.teeth.y, radius: bucketRadius(stats), stockpileBay: yardStockpiles.bayAt(s.teeth.x, s.teeth.z)?.id });
-        st.cutting = r.ok && r.tonnes > 0;
-        st.stuck = r.ok && r.tonnes === 0 && !r.full; // rock, or the edge of your land
-        if (st.cutting) particles.spawn(tp, { count: 1, spread: 0.4, life: 1.2, up: 0.5 });
-        if (!r.ok && st.note <= 0) {
-          notify(r.reason, 'warn');
-          st.note = 4;
-        }
-      }
-    } else if (!s.under || !s.moving) st.cutting = false;
     // Bucket tilted open with a load in it: the load runs out (faster the further it's tipped).
     let pouring = 0;
-    if (full && s.phi > POUR_ANGLE && !s.under) { // (in the ground, the earth holds it in)
+    if (dt > 0 && loaded && s.phi > POUR_ANGLE && !s.under) { // (in the ground, the earth holds it in)
       pouring = THREE.MathUtils.clamp((s.phi - POUR_ANGLE) / 0.9, 0, 1);
-      st.pour += 1 - Math.exp(-2.2 * pouring * dt);
+      const flow = Object.entries(cargoLoad(m)).reduce((sum,[id,tonnes]) => sum + tonnes * (data.ground.materials[id]?.flow ?? .7),0) / Math.max(.000001,pileTotal(cargoLoad(m)));
+      st.pour += 1 - Math.exp(-2.2 * pouring * Math.max(.15,flow) * dt);
       st.pourT -= dt;
       if (st.pourT <= 0) {
         st.pourT = 0.1;
-        const bed = bedUnder(tp);
+        const bed = bedUnder(tp, true);
         const store = yardStockpiles.bayAt(s.teeth.x, s.teeth.z);
         const spot = bed ? { machineId: bed.machineId } : store ? { stockpileBay: store.id } : ground?.workable(s.teeth.x, s.teeth.z) ? { x: s.teeth.x, z: s.teeth.z, radius: 0.5 } : null;
         if (spot) {
@@ -500,7 +547,37 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         }
       }
     } else st.pour = 0;
-    v.directReport({ cutting: st.cutting, pouring, stuck: st.stuck });
+    st.pouring = pouring;
+  }
+
+  // Both control modes use the same real tooth trajectory. Bound terrain work to 14 Hz,
+  // retaining the previous sample so cuts remain continuous at varying frame rates.
+  const cuts = new Map();
+  const traffic = new Map();
+  function collectBucket(v, m, dt) {
+    const s = v.directState();
+    let c = cuts.get(m.id);
+    if (!c) cuts.set(m.id, c = { from: s.teeth, time: 0 });
+    c.time += dt;
+    if (dt <= 0) return;
+    const stats = getStats(data, m);
+    const fill = bucketFill(ground, stats, cargoLoad(m));
+    const enabled = (v === current() && v.isDirect()) || (m.job?.type === 'dig' && m.job.params.physical);
+    if (!enabled || fill.full || !s.under) {
+      c.from = s.teeth; c.time = 0;
+      v.directReport({ pouring: directState.get(m.id)?.pouring ?? 0 });
+      return;
+    }
+    if (c.time < 0.07) return;
+    c.time = 0;
+    const attack = cuttingAttack(c.from, s.teeth, v.houseWorldYaw(), s.phi);
+    const distance = Math.hypot(s.teeth.x - c.from.x, s.teeth.y - c.from.y, s.teeth.z - c.from.z);
+    const r = attack > 0.05 && distance < 2 ? game.actions.bucketCut(m.id, { x: s.teeth.x, z: s.teeth.z, from: c.from, to: s.teeth, attack, moisture: groundWeather.wet.value,
+      stockpileBay: yardStockpiles.bayAt(s.teeth.x, s.teeth.z)?.id }) : { ok: true, tonnes: 0 };
+    c.from = s.teeth;
+    const cutting = r.ok && r.tonnes > 0;
+    v.directReport({ cutting, stuck: !!r.blocked, resistance: r.resistance ?? 0, pouring: directState.get(m.id)?.pouring ?? 0 });
+    if (cutting) particles.spawn(new THREE.Vector3(s.teeth.x, s.teeth.y, s.teeth.z), { count: 1, spread: 0.4, life: 1.2, up: 0.5 });
   }
 
   let digHintShown = false;
@@ -511,22 +588,32 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       controlDirect(v, m, keys, d, sens, dt);
       return;
     }
-    look.pitch = THREE.MathUtils.clamp(look.pitch - d.y * sens, -1.2, 0.6);
+    const freeLook = keys('freeLook');
+    if (freeLook) look.yaw = THREE.MathUtils.clamp(look.yaw - d.x * sens, -2.3, 2.3);
+    look.pitch = THREE.MathUtils.clamp(look.pitch - (freeLook ? d.y : 0) * sens, -1.2, 0.6);
     const working = !!m.job || v.busy();
+    if (!working && v.state.repeatDump && Math.abs(v.state.targetHouseYaw-v.state.houseYaw)<.06 && dt>0) {
+      const remembered=v.state.repeatDump; v.state.repeatDump=null;
+      v.startDump(remembered.height,remembered.destination);
+      return;
+    }
     if (!m.broken && !working) {
-      v.swingBy(-d.x * sens);
+      const precision = keys('precision') ? 0.3 : 1;
+      if (!v.state.repeatDump) v.swingBy((freeLook ? 0 : -d.x * sens * precision) + ((keys('slewLeft') ? 1 : 0) - (keys('slewRight') ? 1 : 0)) * dt * precision);
+      const wheel = mouse.takeWheel();
+      if (dt > 0) v.adjustAim(-wheel / 100 * (keys('precision') ? 0.05 : 0.2), keys('precision'));
       const move = (keys('forward') ? 1 : 0) - (keys('back') ? 1 : 0);
       const turn = (keys('left') ? 1 : 0) - (keys('right') ? 1 : 0);
       v.drive(dt, move, turn);
     } else v.drive(dt, 0, 0);
-    if (m.broken || working) return;
+    if (m.broken || working || dt <= 0) return;
 
     const target = v.bucketTarget();
-    const full = pileTotal(m.load) > 0.01;
+    const full = pileTotal(cargoLoad(m)) > 0.01;
     const store = yardStockpiles.bayAt(target.x, target.z);
     if (!full && mouse.isDown()) {
       if (store || ground?.workable(target.x, target.z)) {
-        const r = game.actions.scoop(m.id, { x: target.x, z: target.z, stockpileBay: store?.id });
+        const r = game.actions.scoop(m.id, { x: target.x, z: target.z, stockpileBay: store?.id, physical: true, depth: v.state.cutDepth, groundY: heightAt(target.x, target.z) });
         if (!r.ok && clicked) notify(r.reason, 'warn');
       } else if (clicked && !digHintShown) {
         notify('Swing the bucket over your field to dig', 'warn');
@@ -534,14 +621,9 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       }
     } else if (full && clicked) {
       const bed = bedUnder(target);
-      const r = bed
-        ? game.actions.dumpBucket(m.id, { machineId: bed.machineId })
-        : game.actions.dumpBucket(m.id, store ? { stockpileBay: store.id } : { x: target.x, z: target.z });
-      if (r.ok) {
-        v.startDump(bed ? bed.bedWorld().y : null);
-        const at = bed ? bed.bedWorld() : target.setY(heightAt(target.x, target.z));
-        particles.spawn(at, { count: 12, spread: 1.5, life: 1.8 });
-      } else notify(r.reason, 'warn');
+      const destination = { x:target.x,z:target.z,...(bed ? { machineId: bed.machineId } : store ? { stockpileBay: store.id } : {}) };
+      if (!bed && !store && !ground?.workable(target.x, target.z)) notify('Swing over your field or a truck to dump', 'warn');
+      else v.startDump(bed ? bed.bedWorld().y : null, destination);
     }
   }
 
@@ -556,7 +638,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const p = v.position();
       const homeBridge = onHomeBridge(p.x, p.z);
       const on = homeBridge || places.onWeighbridge(p.x, p.z);
-      if (!on || !m || pileTotal(m.load) < data.depot.minLoad || hasTicket(game.ctx, m.id) || Math.abs(v.speed()) > 0.4) {
+      if (!on || !m || pileTotal(cargoLoad(m)) < data.depot.minLoad || hasTicket(game.ctx, m.id) || Math.abs(v.speed()) > 0.4) {
         weigh.delete(v.machineId);
         continue;
       }
@@ -567,7 +649,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         weigh.delete(v.machineId);
         const r = game.actions.weighIn(m.id, { home: homeBridge });
         if (r.ok) {
-          const mix = Object.entries(m.load).sort((a, b) => b[1] - a[1])
+          const mix = Object.entries(cargoLoad(m)).sort((a, b) => b[1] - a[1])
             .map(([id, tt]) => `${data.materials[id]?.name.toLowerCase() ?? id} ${Math.round((tt / r.tonnes) * 100)}%`).join(', ');
           const quote = r.quote ? ` ${data.depot.bays[r.quote.bay].name}: ${r.quote.grade}, current quote $${r.quote.gross.toFixed(2)}. Drive straight to the depot bays (T).` : ' Unload in the right bay (T).';
           notify(`Weighed in: ${r.tonnes.toFixed(2)} t (${mix}).${quote}`, 'good');
@@ -579,7 +661,29 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   }
 
   // ---- game events -> effects ----
+  function rebuildTow(e, detached = false) {
+    const tractor = vehicles.get(e.machineId);
+    const parked = vehicles.get(e.trailerId);
+    const wasDriving = current() === tractor;
+    const at = tractor?.placement();
+    const trailerAt = tractor?.trailerPlacement?.() ?? parked?.placement() ?? at;
+    if (wasDriving) exit();
+    if (tractor) { tractor.destroy(); vehicles.delete(e.machineId); }
+    if (parked) { parked.destroy(); vehicles.delete(e.trailerId); }
+    saved.machines ??= {};
+    if (at) saved.machines[e.machineId] = at;
+    if (trailerAt) saved.machines[e.trailerId] = trailerAt;
+    const tow = getMachine(game.ctx, e.machineId);
+    if (tow) addVehicle(tow);
+    if (detached) {
+      const trailer = getMachine(game.ctx, e.trailerId);
+      if (trailer) addVehicle(trailer);
+    }
+    if (wasDriving && vehicles.has(e.machineId)) enter(vehicles.get(e.machineId));
+  }
   const offs = [
+    game.events.on('trailerAttached', e => rebuildTow(e)),
+    game.events.on('trailerDetached', e => rebuildTow(e, true)),
     game.events.on('worksBuilt', () => {
       const feet = player.feet();
       // Grading, heap sourcing and spare spoil can all change the ground underfoot.
@@ -602,7 +706,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     }),
     game.events.on('rockHauled', (e) => {
       const v = vehicles.get(e.machineId);
-      if (v?.carrier) particles.spawn(v.unload().point, { count: 20, spread: 2.5, life: 2.6, size: 1.6 });
+      if (v?.carrier && v.unload) particles.spawn(v.unload().point, { count: 20, spread: 2.5, life: 2.6, size: 1.6 });
     }),
     game.events.on('productSold', (e) => places.delivered(e.bayId, e.tonnes)),
     game.events.on('machineBought', (e) => {
@@ -645,6 +749,11 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const dominant = (load) => Object.entries(load).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
   const onField = (p) => !!ground && ground.inside(p.x, p.z);
   function guideTarget() {
+    const navigation = getMachine(game.ctx, game.state.player.navigationMachineId);
+    if (navigation) {
+      const target = vehicles.get(navigation.attachedTo ?? navigation.id);
+      if (target) { const p = target.position(); return { x:p.x,z:p.z,label:machineName(data,navigation),near:target.radius+1.5 }; }
+    }
     const o = currentObjective(game.ctx);
     if (!o?.guide) return null;
     const v = current();
@@ -664,12 +773,12 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const depotFor = (veh) => {
       const m = getMachine(game.ctx, veh.machineId);
       if (!hasTicket(game.ctx, m.id)) return at((wb.x0 + wb.x1) / 2, (wb.z0 + wb.z1) / 2, 'Weighbridge', 6);
-      const bayId = dominant(m.load);
+      const bayId = dominant(cargoLoad(m));
       const bay = MAP.depot.bays.find((b) => b.id === bayId) ?? MAP.depot.bays.find((b) => b.id === data.depot.mixedProduct);
       return at((bay.x0 + bay.x1) / 2, (MAP.depot.bayZ.z0 + MAP.depot.bayZ.z1) / 2, `${data.depot.bays[bay.id].name} bay`, 5);
     };
-    const affordable = (type) => game.state.money >= machinePrice(game.ctx, type, 'rusty');
-    const loadedRoad = () => (v?.road && pileTotal(currentMachine().load) >= data.depot.minLoad ? v : null);
+    const affordable = (type) => game.state.money >= machinePrice(game.ctx, type, entryModel(data,type)) + (type === 'tractor' ? machinePrice(game.ctx,'trailer',entryModel(data,'trailer')) : 0);
+    const loadedRoad = () => (v?.road && pileTotal(cargoLoad(currentMachine())) >= data.depot.minLoad ? v : null);
     switch (o.id) {
       case 'firstShovel': return field();
       case 'fillBarrow': return hands.holding() ? null : barrow();
@@ -701,7 +810,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         const veh = vehicleOf(type);
         const m = veh && getMachine(game.ctx, veh.machineId);
         if (!m) return null;
-        const full = pileTotal(m.load) >= (o.target ?? getStats(data, m).capacity * 0.5);
+        const full = pileTotal(cargoLoad(m)) >= (o.target ?? getStats(data, m).capacity * 0.5);
         if (!full) return v === veh ? field() : onMachine(veh, `Load the ${typeName(data, type).toLowerCase()}`);
         return v === veh ? depotFor(veh) : onMachine(veh, `Your ${typeName(data, type).toLowerCase()}`);
       }
@@ -736,7 +845,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   function placeCamera(dt) {
     const v = current();
-    for (const veh of vehicles.values()) veh.model.setFirstPerson(veh === v && camMode === 'cab');
+    for (const veh of vehicles.values()) veh.model.setFirstPerson?.(veh === v && camMode === 'cab');
     if (!v) {
       camera.position.copy(player.eye());
       camera.rotation.set(player.look.pitch, player.look.yaw, 0);
@@ -783,6 +892,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const DUSTY = { gravel: 1, dirt: 1.2, grass: 0.25, rock: 0.6, asphalt: 0 };
   function vehicleEffects(dt, veh) {
     const f = veh.feel();
+    if (veh.towable) return;
     const mm = getMachine(game.ctx, veh.machineId);
     let st = fx.get(veh.machineId);
     if (!st) fx.set(veh.machineId, st = { smoke: 0, dust: 0, prev: f.engine, side: 1 });
@@ -851,17 +961,18 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
     const v = current();
     const m = currentMachine();
+    if (!paused) ground?.setMoisture(groundWeather.wet.value);
     if (!v && hands.holding()) hands.controlHeld(paused ? 0 : dt, keys, delta, sens);
     else if (!v) controlFoot(keys, delta, sens);
     else if (v.road) controlTruck(v, m, keys, delta, sens);
-    else if (v.digger) controlExcavator(v, m, keys, delta, sens, clicked && !paused, paused ? 0 : dt);
+    else if (v.digger) controlExcavator(v, m, keys, delta, sens * (settings.diggerSensitivity ?? 1), clicked && !paused, paused ? 0 : dt);
     else controlDumper(v, m, keys, delta, sens, paused ? 0 : dt);
 
     if (!paused) physics.step(dt);
     groundView?.update();
     if (planning && (v || hands.holding())) planner.cancel();
     // (while planning, the shovel is put away and the clicks belong to the planner)
-    hands.update(paused ? 0 : dt, { onFoot: !v && !planner?.active, clicked: clicked && !paused && !planner?.active, paused });
+    hands.update(paused ? 0 : dt, { onFoot: !v && !planner?.active, clicked: clicked && !paused && !planner?.active, paused, repeat: !!settings.repeatShovel && mouse.isDown() });
     planner?.update(paused ? 0 : dt, { clicked: clicked && !paused, rightPressed: rightPressed && !paused, wheel: paused ? 0 : wheelNotch });
     if (!paused) updateWeighbridge(dt);
 
@@ -869,23 +980,46 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     for (const veh of vehicles.values()) {
       const mm = getMachine(game.ctx, veh.machineId);
       if (!mm) continue;
-      if (veh.carrier) {
-        const cap = getStats(data, mm).capacity;
-        const tonnes = pileTotal(mm.load);
+      if (!paused && onPlot(veh.position().x, veh.position().z)) {
+        let t = traffic.get(mm.id);
+        const p = veh.position();
+        if (!t) traffic.set(mm.id, t = { x: p.x, z: p.z, time: 0 });
+        t.time += dt;
+        const distance = Math.hypot(p.x - t.x, p.z - t.z);
+        if (t.time >= 0.25 && distance >= 0.5) {
+          const physical = combinationStats(game.ctx,mm);
+          ground.applyTraffic({ x: p.x, z: p.z, heading: -veh.yaw(), width: veh.radius * 0.7, weight: ((physical.mass ?? 2000) + (physical.trailerMass ?? 0)) / 1000 + pileTotal(cargoLoad(mm)), distance: Math.min(distance, 2), moisture: groundWeather.wet.value, slip: veh.feel().slip ?? 0 });
+          Object.assign(t, { x: p.x, z: p.z, time: 0 });
+        }
+      }
+      if (veh.carrier || veh.road || veh.towable) {
+        const cap = combinationStats(game.ctx, mm).capacity;
+        const tonnes = pileTotal(cargoLoad(mm));
         veh.setCargo(tonnes);
-        veh.update(dt, { job: mm.job, fill: tonnes / cap, color: bedColor(mm.load), occupied: veh === v });
+        veh.update(paused ? 0 : dt, { job: mm.job, fill: cap > 0 ? tonnes / cap : 0, color: bedColor(cargoLoad(mm)), occupied: veh === v });
         if (veh !== v) {
           if (veh.road) {
             veh.control.throttle = 0;
             veh.control.handbrake = true;
-          } else veh.drive(dt, 0, 0);
+          } else veh.drive?.(dt, 0, 0);
         }
       } else {
         if (veh !== v) {
           veh.drive(dt, 0, 0);
           veh.directInput({});
         }
-        veh.update(dt, { job: mm.job, bucketFull: pileTotal(mm.load) > 0.01, bucketColor: bedColor(mm.load), occupied: veh === v });
+        const fill = bucketFill(ground, getStats(data, mm), cargoLoad(mm));
+        veh.update(paused ? 0 : dt, { job: mm.job, bucketFull: fill.full, bucketLoaded: fill.loaded, bucketFraction:fill.fraction, bucketColor: bedColor(cargoLoad(mm)), occupied: veh === v });
+        collectBucket(veh, mm, paused ? 0 : dt);
+        const destination = paused ? null : veh.takeDumpTarget();
+        if (destination) {
+          const teeth = veh.teethWorld();
+          const bed = bedUnder(teeth,true);
+          const store = yardStockpiles.bayAt(teeth.x,teeth.z);
+          const actual = bed ? { machineId:bed.machineId } : store ? { stockpileBay:store.id } : {x:teeth.x,z:teeth.z};
+          const r = game.actions.dumpBucket(mm.id, actual);
+          if (!r.ok && veh === v) notify(r.reason, 'warn');
+        }
       }
     }
 
@@ -896,11 +1030,11 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const s = v.directState();
       marker.visible = true;
       marker.position.set(s.teeth.x, s.ground + 0.08, s.teeth.z);
-      marker.material.color.set(pileTotal(m.load) > 0.01 ? 0xf2b632 : 0x7ee07e);
+      marker.material.color.set(bucketFill(ground,getStats(data,m),cargoLoad(m)).full ? 0xf2b632 : 0x7ee07e);
     } else if (v?.digger && !m.job) {
       const t = v.bucketTarget();
       const bed = bedUnder(t);
-      const full = pileTotal(m.load) > 0.01;
+      const full = pileTotal(cargoLoad(m)) > 0.01;
       const store = yardStockpiles.bayAt(t.x, t.z);
       const diggable = !!store || ground?.workable(t.x, t.z);
       marker.visible = true;
@@ -979,14 +1113,15 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       job = { label, progress: jobProgress(m.job) };
     } else if (v.digger && v.isDirect()) {
       const s = v.directState();
-      if (pileTotal(m.load) > 0.01) {
+      const fill = bucketFill(ground,getStats(data,m),cargoLoad(m));
+      if (!fill.full && s.under) prompt = { key:'LMB',text:`Curl and pull inward to fill the bucket (${Math.round(fill.fraction*100)}%)` };
+      else if (fill.loaded) {
         prompt = s.phi > POUR_ANGLE && !s.under ? { key: null, text: 'Emptying the bucket…' }
           : { key: 'RMB', text: 'Tilt the bucket over a truck or your field to empty it' };
-      } else prompt = s.under ? { key: 'LMB', text: 'Curl the bucket in to fill it' }
-        : { key: 'Wheel', text: 'Lower the boom, push the stick out, then curl the bucket in' };
+      } else prompt = { key: 'Wheel', text: 'Lower the boom, push the stick out, then curl and pull in' };
     } else if (v.digger) {
       const t = v.bucketTarget();
-      const full = pileTotal(m.load) > 0.01;
+      const full = pileTotal(cargoLoad(m)) > 0.01;
       const bed = bedUnder(t);
       const store = yardStockpiles.bayAt(t.x, t.z);
       const diggable = !!store || ground?.workable(t.x, t.z);
@@ -998,7 +1133,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       else if (diggable) prompt = { key: 'LMB', text: 'Dump here' };
       else prompt = { key: null, text: 'Swing over your field or a truck to dump' };
     } else if (v.road) {
-      const loaded = pileTotal(m.load) >= data.depot.minLoad;
+      const loaded = pileTotal(cargoLoad(m)) >= data.depot.minLoad;
       const p = v.position();
       if (loaded) {
         const spot = unloadSpot(v);
@@ -1009,7 +1144,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         } else if (spot.bay) {
           if (!hasTicket(game.ctx, m.id)) prompt = { key: null, text: 'Weigh in on the weighbridge first' };
           else {
-            const qd = quoteDelivery(game.ctx, spot.bay, m.load);
+            const qd = quoteDelivery(game.ctx, spot.bay, cargoLoad(m));
             prompt = { key: key('tip'), text: `Unload in the ${spot.name} bay: ${qd.grade}, $${qd.perTonne.toFixed(2)}/t` };
           }
         } else if (onHomeBridge(p.x, p.z) || places.onWeighbridge(p.x, p.z)) {
@@ -1022,14 +1157,14 @@ export async function createWorld3D({ container, game, settings, audio = null, n
           prompt = { key: null, text: `Take it to ${MAP.depot.name} to sell (Tab: map)` };
         }
       }
-    } else if (v.type === 'dumper' && pileTotal(m.load) >= data.depot.minLoad) {
+    } else if (v.type === 'dumper' && pileTotal(cargoLoad(m)) >= data.depot.minLoad) {
       const spot = unloadSpot(v);
       prompt = spot.reason ? { key: null, text: spot.reason } : { key: key('tip'), text: spot.stockpileBay ? `Store in ${spot.name}` : 'Tip the skip here' };
     }
 
     let machine = null;
     if (m) {
-      const stats = getStats(data, m);
+      const stats = combinationStats(game.ctx, m);
       machine = {
         name: machineName(data, m),
         tier: m.tier,
@@ -1038,8 +1173,12 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         carrier: !!v.carrier,
         condition: m.condition,
         broken: m.broken,
-        load: pileTotal(m.load),
-        capacity: v.digger ? stats.bucketVolume * 1.6 : stats.capacity,
+        load: pileTotal(cargoLoad(m)),
+        capacity: v.digger ? stats.bucketVolume : stats.capacity,
+        bucketVolume: v.digger ? ground.looseVolume(cargoLoad(m)) : null,
+        cutDepth: v.digger ? v.state.cutDepth : null,
+        aimReach: v.digger ? v.state.aimReach : null,
+        resistance: v.digger ? v.state.resistance : null,
         direct: !!v.digger && v.isDirect(),
         speedKmh: Math.abs(v.speed()) * 3.6,
         camera: camMode,
@@ -1069,6 +1208,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   function writePositions(state) {
     const machines = {};
     for (const [id, veh] of vehicles) machines[id] = veh.placement();
+    for (const veh of vehicles.values()) {
+      const attached = attachedTrailer(game.ctx, veh.machineId);
+      if (attached && veh.trailerPlacement) machines[attached.id] = veh.trailerPlacement();
+    }
     const feet = current() ? current().position() : player.feet();
     state.positions = {
       barrow: hands.placement(),
@@ -1107,7 +1250,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     },
     placeVehicle(id, x, z, yaw = 0) {
       const veh = vehicles.get(id);
-      if (veh?.road) veh.reset(x, z, yaw);
+      if (veh?.road || veh?.towable) veh.reset(x, z, yaw);
       else if (veh?.tracked) Object.assign(veh.state, { x, z, yaw });
     },
     enterVehicle(id) {
@@ -1163,6 +1306,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     setDirectInput: (i) => { testInput = i; },
     // Hold some actions down without a keyboard, e.g. ['forward', 'left'] ([]: real input only).
     setKeys: (list) => { testKeys = new Set(list); },
+    bucketState: id => vehicles.get(id)?.directState?.() ?? null,
   };
 
   return {

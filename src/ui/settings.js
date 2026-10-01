@@ -15,6 +15,8 @@ export function defaultSettings() {
     mouseSensitivity: 1,
     invertY: false,
     diggerControls: 'assisted', // or 'direct': boom, stick, bucket and swing each on their own keys
+    diggerSensitivity: 1,
+    repeatShovel: false,
     graphics: 'high',
   };
 }

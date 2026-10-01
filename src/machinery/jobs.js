@@ -9,6 +9,8 @@ import { staffMaintenanceMultiplier } from '../staff/perks.js';
 import { getStats, typeName, isDigger, isRoadLegal, unloadSeconds } from './stats.js';
 import { applyWear, serviceCost } from './wear.js';
 import { getMachine, machineName } from './fleet.js';
+import { loadCarrier, combinationStats } from './trailers.js';
+import { serviceSupport } from './serviceSupport.js';
 
 const MIN_LOAD = 0.02;
 
@@ -34,11 +36,14 @@ export const JOBS = {
       if (pileTotal(m.load) > 1e-9) return 'The bucket is full. Dump it first.';
       return null;
     },
-    begin(ctx, m, stats) {
-      chargeFuel(ctx, stats.fuelPerJob, m.siteId);
+    begin(ctx, m, stats, job) {
+      if (!job.params.physical) chargeFuel(ctx, stats.fuelPerJob, m.siteId);
       return stats.cycleTime;
     },
     finish(ctx, m, stats, job) {
+      // Cab-controlled cycles collect progressively through game.actions.bucketCut.
+      // Reloading or leaving the cab cannot conjure a second bucket at completion.
+      if (job.params.physical) return;
       const { x, z } = job.params;
       const r = job.params.stockpileBay ? scoopStockpile(ctx, job.params.stockpileBay, stats.bucketVolume, m.siteId) : ctx.ground.dig({
         x, z, radius: bucketRadius(stats), bottomY: ctx.ground.heightAt(x, z) - (stats.digDepth ?? 0.7), maxVolume: stats.bucketVolume,
@@ -53,12 +58,14 @@ export const JOBS = {
   // Empty the bed: params { bay } in a depot bay (sold), or { x, z } onto your own ground
   // as a heap. Trucks, trailers and dumpers tip; a pickup is shovelled off by hand (slower).
   tip: {
-    can: (data, m) => getStats(data, m).capacity > 0,
+    can: (data, m) => m.type === 'tractor' || getStats(data, m).capacity > 0,
     label: 'Tipping',
     check(ctx, m, stats, params) {
-      if (pileTotal(m.load) < MIN_LOAD) return `The ${typeName(ctx.data, m.type).toLowerCase()} is empty`;
+      const cargo = loadCarrier(ctx, m);
+      if (!cargo) return 'Hitch a trailer first';
+      if (pileTotal(cargo.load) < MIN_LOAD) return `The ${typeName(ctx.data, m.type).toLowerCase()} is empty`;
       if (params.stockpileBay && params.bay) return 'Choose one tipping destination';
-      if (params.stockpileBay) return whyCannotStore(ctx, params.stockpileBay, pileTotal(m.load), m.siteId, m.id);
+      if (params.stockpileBay) return whyCannotStore(ctx, params.stockpileBay, pileTotal(cargo.load), m.siteId, m.id);
       if (params.bay) {
         if (!ctx.data.depot.bays[params.bay]) return 'Not a depot bay';
         if (!isRoadLegal(ctx.data, m.type)) return 'Only road vehicles can deliver to the depot';
@@ -70,10 +77,12 @@ export const JOBS = {
     },
     begin(ctx, m, stats) {
       chargeFuel(ctx, stats.fuelPerJob, m.siteId);
-      return unloadSeconds(stats, pileTotal(m.load));
+      return unloadSeconds(combinationStats(ctx, m), pileTotal(loadCarrier(ctx, m)?.load ?? {}));
     },
     finish(ctx, m, stats, job) {
-      const load = m.load;
+      const cargo = loadCarrier(ctx, m);
+      if (!cargo) return;
+      const load = cargo.load;
       const tonnes = pileTotal(load);
       if (job.params.bay && !hasTicket(ctx, m.id)) {
         ctx.events.emit('jobFailed', { machineId: m.id, reason: 'Load changed: weigh in again before selling' });
@@ -83,7 +92,7 @@ export const JOBS = {
         const stored = storeStockpile(ctx, job.params.stockpileBay, load, m.siteId, m.id);
         if (!stored.ok) { ctx.events.emit('jobFailed', { machineId: m.id, reason: stored.reason }); return; }
       }
-      m.load = {};
+      cargo.load = {};
       if (job.params.bay) {
         sellLoad(ctx, m.id, job.params.bay, load);
       } else if (!job.params.stockpileBay) {
@@ -103,9 +112,9 @@ export const JOBS = {
       return null;
     },
     begin(ctx, m, stats, job) {
-      job.cost = serviceCost(stats, m) * buildingMultiplier(ctx, 'workshop', 'maintenanceCostMultiplier', m.siteId) * staffMaintenanceMultiplier(ctx);
+      job.cost = serviceCost(stats, m) * buildingMultiplier(ctx, 'workshop', 'maintenanceCostMultiplier', m.siteId) * staffMaintenanceMultiplier(ctx) * serviceSupport(ctx, m).cost;
       spendMoney(ctx, job.cost, 'service');
-      return stats.serviceTime * buildingMultiplier(ctx, 'workshop', 'maintenanceTimeMultiplier', m.siteId);
+      return stats.serviceTime * buildingMultiplier(ctx, 'workshop', 'maintenanceTimeMultiplier', m.siteId) * serviceSupport(ctx, m).time;
     },
     finish(ctx, m) {
       m.condition = 100;
@@ -122,9 +131,9 @@ export const JOBS = {
     },
     begin(ctx, m, stats, job) {
       // (the insurance pays its share of the bill)
-      job.cost = stats.repairCost * buildingMultiplier(ctx, 'workshop', 'maintenanceCostMultiplier', m.siteId) * repairShare(ctx) * staffMaintenanceMultiplier(ctx);
+      job.cost = stats.repairCost * buildingMultiplier(ctx, 'workshop', 'maintenanceCostMultiplier', m.siteId) * repairShare(ctx) * staffMaintenanceMultiplier(ctx) * serviceSupport(ctx, m).cost;
       spendMoney(ctx, job.cost, 'repair');
-      return stats.repairTime * buildingMultiplier(ctx, 'workshop', 'maintenanceTimeMultiplier', m.siteId);
+      return stats.repairTime * buildingMultiplier(ctx, 'workshop', 'maintenanceTimeMultiplier', m.siteId) * serviceSupport(ctx, m).time;
     },
     finish(ctx, m, stats) {
       m.broken = false;

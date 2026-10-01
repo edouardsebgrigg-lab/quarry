@@ -76,12 +76,12 @@ export function createHud3d({ settings }) {
       rows = [[[k('forward'), k('back')], 'Drive'], [[k('left'), k('right')], 'Turn'], [[k('tip')], 'Tip the skip'],
         [[k('camera')], 'Camera'], [[k('interact')], 'Get out']];
     } else if (mode === 'digger') {
-      rows = [[['Mouse'], 'Swing'], [['LMB'], 'Dig / dump'], [[k('forward'), k('left'), k('back'), k('right')], 'Tracks'],
-        [[k('controls')], 'Direct controls'], [[k('camera')], 'Camera'], [[k('interact')], 'Get out']];
+      rows = [[['Mouse ←→'], 'Swing'], [['Wheel'], 'Adjust reach'], [[k('precision'), 'Wheel'], 'Cut depth'], [['LMB'], 'Dig / dump'], [[k('freeLook')], 'Hold: look around'], [[k('precision')], 'Precision'], [[k('forward'), k('left'), k('back'), k('right')], 'Tracks'],
+        [[k('tip')], 'Last dump target / attachment'], [[k('controls')], 'Direct controls'], [[k('camera')], 'Camera'], [[k('interact')], 'Get out']];
     } else if (mode === 'digger-direct') {
       rows = [[['Mouse ←→'], 'Swing'], [['Mouse ↑↓'], 'Stick out / in'], [['Wheel'], 'Boom up / down'], [['LMB'], 'Curl bucket in'],
-        [['RMB'], 'Open bucket'], [[k('forward'), k('left'), k('back'), k('right')], 'Tracks'],
-        [[k('controls')], 'Assisted controls'], [[k('camera')], 'Camera'], [[k('interact')], 'Get out']];
+        [['RMB'], 'Open bucket'], [[k('stickOut'), k('stickIn')], 'Stick'], [[k('slewLeft'), k('slewRight')], 'Slew'], [[k('boomUp'), k('boomDown')], 'Boom'], [[k('freeLook')], 'Hold: look around'], [[k('precision')], 'Precision'], [[k('forward'), k('left'), k('back'), k('right')], 'Tracks'],
+        [[k('tip')], 'Change attachment (empty)'], [[k('controls')], 'Assisted controls'], [[k('camera')], 'Camera'], [[k('interact')], 'Get out']];
     } else {
       rows = [[[k('forward'), k('left'), k('back'), k('right')], 'Move'], [[k('sprint')], 'Sprint'], [[k('jump')], 'Jump'],
         [['LMB'], 'Dig / tip the shovel'], [[k('interact')], 'Use / get in / take barrow'], [[k('repair')], 'Service / repair'],
@@ -210,16 +210,17 @@ export function createHud3d({ settings }) {
       }
       cond.node.style.display = '';
       const engineStatus = { off: 'Engine off', cranking: 'Starting', stopping: 'Engine off', stall: 'Stalled' }[m.engine];
-      const status = m.broken ? 'Broken' : j ? j.label : engineStatus ?? (m.ticket ? 'Weighed in' : 'Ready');
+      const status = m.broken ? 'Broken' : j ? j.label : engineStatus ?? (m.resistance > 0 ? `Resistance ${Math.round(m.resistance)} kN` : m.aimReach != null ? `${m.aimReach.toFixed(1)} m reach · ${m.cutDepth.toFixed(2)} m cut` : m.ticket ? 'Weighed in' : 'Ready');
       setText(mStatus, status);
       mStatus.className = `md-status ${m.broken ? 'bad' : j ? 'busy' : engineStatus ? 'off' : ''}`;
       cond.fill.style.width = `${Math.round(m.condition)}%`;
       cond.fill.style.background = conditionColor(m.condition, m.broken);
       setText(cond.val, `${Math.round(m.condition)}%`);
       setText(load.lab, m.carrier ? 'Load' : 'Bucket');
-      load.fill.style.width = `${Math.round(Math.min(1, m.load / m.capacity) * 100)}%`;
+      const amount = m.bucketVolume ?? m.load;
+      load.fill.style.width = `${Math.round(Math.min(1, amount / m.capacity) * 100)}%`;
       const dp = m.capacity < 1 ? 2 : 1; // (small buckets need the extra digit)
-      setText(load.val, `${m.load.toFixed(dp)}/${m.capacity.toFixed(dp)} t`);
+      setText(load.val, `${amount.toFixed(dp)}/${m.capacity.toFixed(dp)} ${m.bucketVolume != null ? 'm³' : 't'}`);
       drive.style.display = m.road ? '' : 'none';
       if (m.road) {
         setText(speedValue, String(Math.round(m.speedKmh)).padStart(2, '0'));

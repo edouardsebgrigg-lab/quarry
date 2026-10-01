@@ -1,0 +1,652 @@
+{
+  "checks": [
+    {
+      "label": "Assisted teeth progressively collect material through real world controls",
+      "passed": true
+    },
+    {
+      "label": "Assisted terrain and bucket conserve mass",
+      "passed": true
+    },
+    {
+      "label": "Assisted dump keeps cargo until the bucket opens",
+      "passed": true
+    },
+    {
+      "label": "Assisted dump actually transfers material when bucket opens",
+      "passed": true
+    },
+    {
+      "label": "Dump conserves material",
+      "passed": true
+    },
+    {
+      "label": "Remembered-dump fixture collects a real small load from a ground cell",
+      "passed": true
+    },
+    {
+      "label": "T returns to the remembered Assisted dump target and pours",
+      "passed": true
+    },
+    {
+      "label": "Remembered dumping conserves material",
+      "passed": true
+    },
+    {
+      "label": "Direct levers continue filling an already partly loaded bucket",
+      "passed": true
+    },
+    {
+      "label": "Direct cuts conserve mass",
+      "passed": true
+    },
+    {
+      "label": "Independent slew key moves the house",
+      "passed": true
+    },
+    {
+      "label": "Separate tractor and trailer can be hitched nearby",
+      "passed": true
+    },
+    {
+      "label": "Trailer can be unhitched without losing its entity",
+      "passed": true
+    },
+    {
+      "label": "Barrow recovery retains its cargo",
+      "passed": true
+    },
+    {
+      "label": "Saved arm joint pose restores correctly",
+      "passed": true
+    },
+    {
+      "label": "Saved reach and depth guides restore",
+      "passed": true
+    },
+    {
+      "label": "Remembered dump target survives save/reload",
+      "passed": true
+    },
+    {
+      "label": "Recovered barrow cargo survives save/reload",
+      "passed": true
+    },
+    {
+      "label": "No browser runtime errors",
+      "passed": true
+    }
+  ],
+  "samples": [
+    {
+      "tonnes": 0,
+      "all": 439400.0622646143,
+      "job": true,
+      "bucket": {
+        "teeth": {
+          "x": 44.80289002037959,
+          "y": 1.3684889530753575,
+          "z": 39.996597502101785
+        },
+        "phi": -2.0345630403512027,
+        "ground": 0.0691623138427368,
+        "under": false,
+        "moving": true
+      },
+      "hud": {
+        "name": "Utility 80 #1",
+        "tier": "utility80",
+        "type": "excavator",
+        "road": false,
+        "carrier": false,
+        "condition": 95,
+        "broken": false,
+        "load": 0,
+        "capacity": 0.4,
+        "bucketVolume": 0,
+        "cutDepth": 0.35,
+        "aimReach": 6.8,
+        "resistance": 0,
+        "direct": false,
+        "speedKmh": 0,
+        "camera": "cab",
+        "ticket": false,
+        "engine": "running"
+      }
+    },
+    {
+      "tonnes": 0,
+      "all": 439400.0622646143,
+      "job": true,
+      "bucket": {
+        "teeth": {
+          "x": 45.61233054281002,
+          "y": 2.079993990758437,
+          "z": 39.99479800884933
+        },
+        "phi": -1.298524685095202,
+        "ground": 0.07027145095965141,
+        "under": false,
+        "moving": true
+      },
+      "hud": {
+        "name": "Utility 80 #1",
+        "tier": "utility80",
+        "type": "excavator",
+        "road": false,
+        "carrier": false,
+        "condition": 95,
+        "broken": false,
+        "load": 0,
+        "capacity": 0.4,
+        "bucketVolume": 0,
+        "cutDepth": 0.35,
+        "aimReach": 6.8,
+        "resistance": 0,
+        "direct": false,
+        "speedKmh": 0,
+        "camera": "cab",
+        "ticket": false,
+        "engine": "running"
+      }
+    },
+    {
+      "tonnes": 0,
+      "all": 439400.0622646143,
+      "job": true,
+      "bucket": {
+        "teeth": {
+          "x": 46.60120644944506,
+          "y": 2.45074710169959,
+          "z": 39.99385953477918
+        },
+        "phi": -0.7032989718813695,
+        "ground": 0.07217427767986215,
+        "under": false,
+        "moving": true
+      },
+      "hud": {
+        "name": "Utility 80 #1",
+        "tier": "utility80",
+        "type": "excavator",
+        "road": false,
+        "carrier": false,
+        "condition": 95,
+        "broken": false,
+        "load": 0,
+        "capacity": 0.4,
+        "bucketVolume": 0,
+        "cutDepth": 0.35,
+        "aimReach": 6.8,
+        "resistance": 0,
+        "direct": false,
+        "speedKmh": 0,
+        "camera": "cab",
+        "ticket": false,
+        "engine": "running"
+      }
+    },
+    {
+      "tonnes": 0,
+      "all": 439400.0622646143,
+      "job": true,
+      "bucket": {
+        "teeth": {
+          "x": 47.018276002577295,
+          "y": 1.3932118418385542,
+          "z": 39.99652148480619
+        },
+        "phi": -0.6533898195043116,
+        "ground": 0.07313039324016933,
+        "under": false,
+        "moving": true
+      },
+      "hud": {
+        "name": "Utility 80 #1",
+        "tier": "utility80",
+        "type": "excavator",
+        "road": false,
+        "carrier": false,
+        "condition": 95,
+        "broken": false,
+        "load": 0,
+        "capacity": 0.4,
+        "bucketVolume": 0,
+        "cutDepth": 0.35,
+        "aimReach": 6.8,
+        "resistance": 0,
+        "direct": false,
+        "speedKmh": 0,
+        "camera": "cab",
+        "ticket": false,
+        "engine": "running"
+      }
+    },
+    {
+      "tonnes": 0,
+      "all": 439400.0622646143,
+      "job": true,
+      "bucket": {
+        "teeth": {
+          "x": 46.89033135491358,
+          "y": 0.15653932176411878,
+          "z": 39.9996347928956
+        },
+        "phi": -1.013859633294388,
+        "ground": 0.07282225795694729,
+        "under": false,
+        "moving": true
+      },
+      "hud": {
+        "name": "Utility 80 #1",
+        "tier": "utility80",
+        "type": "excavator",
+        "road": false,
+        "carrier": false,
+        "condition": 95,
+        "broken": false,
+        "load": 0,
+        "capacity": 0.4,
+        "bucketVolume": 0,
+        "cutDepth": 0.35,
+        "aimReach": 6.8,
+        "resistance": 0,
+        "direct": false,
+        "speedKmh": 0,
+        "camera": "cab",
+        "ticket": false,
+        "engine": "running"
+      }
+    },
+    {
+      "tonnes": 0.3204736015806672,
+      "all": 439400.062264592,
+      "job": true,
+      "bucket": {
+        "teeth": {
+          "x": 46.4866811547218,
+          "y": -0.35771950955874643,
+          "z": 40.00097285672422
+        },
+        "phi": -1.3443472376721277,
+        "ground": -0.13426182136443016,
+        "under": true,
+        "moving": true
+      },
+      "hud": {
+        "name": "Utility 80 #1",
+        "tier": "utility80",
+        "type": "excavator",
+        "road": false,
+        "carrier": false,
+        "condition": 94.83026768508876,
+        "broken": false,
+        "load": 0.3204736015806672,
+        "capacity": 0.4,
+        "bucketVolume": 0.30860420892953133,
+        "cutDepth": 0.35,
+        "aimReach": 6.8,
+        "resistance": 65,
+        "direct": false,
+        "speedKmh": 0,
+        "camera": "cab",
+        "ticket": false,
+        "engine": "running"
+      }
+    },
+    {
+      "tonnes": 0.4183369159228863,
+      "all": 439400.06226459926,
+      "job": true,
+      "bucket": {
+        "teeth": {
+          "x": 45.87145127323584,
+          "y": -0.2639741422545687,
+          "z": 40.00064059760307
+        },
+        "phi": -1.7162484527852628,
+        "ground": 0.0210651350554869,
+        "under": true,
+        "moving": true
+      },
+      "hud": {
+        "name": "Utility 80 #1",
+        "tier": "utility80",
+        "type": "excavator",
+        "road": false,
+        "carrier": false,
+        "condition": 94.78000000008569,
+        "broken": false,
+        "load": 0.4183369159228863,
+        "capacity": 0.4,
+        "bucketVolume": 0.3999999998441965,
+        "cutDepth": 0.35,
+        "aimReach": 6.8,
+        "resistance": 0,
+        "direct": false,
+        "speedKmh": 0,
+        "camera": "cab",
+        "ticket": false,
+        "engine": "running"
+      }
+    },
+    {
+      "tonnes": 0.4183369159228863,
+      "all": 439400.06226459926,
+      "job": true,
+      "bucket": {
+        "teeth": {
+          "x": 45.307236520171955,
+          "y": -0.2921915840974816,
+          "z": 40.000753897108495
+        },
+        "phi": -2.0435988135775447,
+        "ground": 0.06948736612236461,
+        "under": true,
+        "moving": true
+      },
+      "hud": {
+        "name": "Utility 80 #1",
+        "tier": "utility80",
+        "type": "excavator",
+        "road": false,
+        "carrier": false,
+        "condition": 94.78000000008569,
+        "broken": false,
+        "load": 0.4183369159228863,
+        "capacity": 0.4,
+        "bucketVolume": 0.3999999998441965,
+        "cutDepth": 0.35,
+        "aimReach": 6.8,
+        "resistance": 0,
+        "direct": false,
+        "speedKmh": 0,
+        "camera": "cab",
+        "ticket": false,
+        "engine": "running"
+      }
+    },
+    {
+      "tonnes": 0.4183369159228863,
+      "all": 439400.06226459926,
+      "job": true,
+      "bucket": {
+        "teeth": {
+          "x": 45.25590642491414,
+          "y": 0.33074171185015255,
+          "z": 39.999130051803284
+        },
+        "phi": -2.2475904256897143,
+        "ground": 0.06968532162647027,
+        "under": false,
+        "moving": true
+      },
+      "hud": {
+        "name": "Utility 80 #1",
+        "tier": "utility80",
+        "type": "excavator",
+        "road": false,
+        "carrier": false,
+        "condition": 94.78000000008569,
+        "broken": false,
+        "load": 0.4183369159228863,
+        "capacity": 0.4,
+        "bucketVolume": 0.3999999998441965,
+        "cutDepth": 0.35,
+        "aimReach": 6.8,
+        "resistance": 0,
+        "direct": false,
+        "speedKmh": 0,
+        "camera": "cab",
+        "ticket": false,
+        "engine": "running"
+      }
+    },
+    {
+      "tonnes": 0.4183369159228863,
+      "all": 439400.06226459926,
+      "job": true,
+      "bucket": {
+        "teeth": {
+          "x": 45.172205210581076,
+          "y": 1.3514517099861907,
+          "z": 39.99656245975788
+        },
+        "phi": -2.525155008459288,
+        "ground": 0.06961526277067914,
+        "under": false,
+        "moving": true
+      },
+      "hud": {
+        "name": "Utility 80 #1",
+        "tier": "utility80",
+        "type": "excavator",
+        "road": false,
+        "carrier": false,
+        "condition": 94.78000000008569,
+        "broken": false,
+        "load": 0.4183369159228863,
+        "capacity": 0.4,
+        "bucketVolume": 0.3999999998441965,
+        "cutDepth": 0.35,
+        "aimReach": 6.8,
+        "resistance": 0,
+        "direct": false,
+        "speedKmh": 0,
+        "camera": "cab",
+        "ticket": false,
+        "engine": "running"
+      }
+    },
+    {
+      "tonnes": 0.4183369159228863,
+      "all": 439400.06226459926,
+      "job": true,
+      "bucket": {
+        "teeth": {
+          "x": 44.82083225757765,
+          "y": 1.3823397103271964,
+          "z": 39.9964905096354
+        },
+        "phi": -2.714151277890681,
+        "ground": 0.06918444007436601,
+        "under": false,
+        "moving": true
+      },
+      "hud": {
+        "name": "Utility 80 #1",
+        "tier": "utility80",
+        "type": "excavator",
+        "road": false,
+        "carrier": false,
+        "condition": 94.78000000008569,
+        "broken": false,
+        "load": 0.4183369159228863,
+        "capacity": 0.4,
+        "bucketVolume": 0.3999999998441965,
+        "cutDepth": 0.35,
+        "aimReach": 6.8,
+        "resistance": 0,
+        "direct": false,
+        "speedKmh": 0,
+        "camera": "cab",
+        "ticket": false,
+        "engine": "running"
+      }
+    },
+    {
+      "tonnes": 0.4183369159228863,
+      "all": 439400.06226459926,
+      "job": false,
+      "bucket": {
+        "teeth": {
+          "x": 44.65512475068904,
+          "y": 1.061102143113723,
+          "z": 39.99730318995642
+        },
+        "phi": -2.522136052306551,
+        "ground": 0.06900812546402998,
+        "under": false,
+        "moving": true
+      },
+      "hud": {
+        "name": "Utility 80 #1",
+        "tier": "utility80",
+        "type": "excavator",
+        "road": false,
+        "carrier": false,
+        "condition": 94.78000000008569,
+        "broken": false,
+        "load": 0.4183369159228863,
+        "capacity": 0.4,
+        "bucketVolume": 0.3999999998441965,
+        "cutDepth": 0.35,
+        "aimReach": 6.8,
+        "resistance": 0,
+        "direct": false,
+        "speedKmh": 0,
+        "camera": "cab",
+        "ticket": false,
+        "engine": "running"
+      }
+    }
+  ],
+  "rememberedBefore": {
+    "tonnes": 0.02076922953128815,
+    "all": 439400.0622645982,
+    "job": false,
+    "bucket": {
+      "teeth": {
+        "x": 45.1677641319553,
+        "y": 0.857391107436982,
+        "z": 39.99788883016724
+      },
+      "phi": -1.9066143775809683,
+      "ground": 0.06960836941601702,
+      "under": false,
+      "moving": true
+    },
+    "hud": {
+      "name": "Utility 80 #1",
+      "tier": "utility80",
+      "type": "excavator",
+      "road": false,
+      "carrier": false,
+      "condition": 94.78000000008569,
+      "broken": false,
+      "load": 0.02076922953128815,
+      "capacity": 0.4,
+      "bucketVolume": 0.019999998807907104,
+      "cutDepth": 0.35,
+      "aimReach": 6.8,
+      "resistance": 0,
+      "direct": false,
+      "speedKmh": 0,
+      "camera": "cab",
+      "ticket": false,
+      "engine": "running"
+    }
+  },
+  "rememberedAfter": {
+    "tonnes": 0,
+    "all": 439400.0622645866,
+    "job": false,
+    "bucket": {
+      "teeth": {
+        "x": 44.92290697964371,
+        "y": 0.9160458707614425,
+        "z": 39.997740968307724
+      },
+      "phi": -2.1735820733906843,
+      "ground": 0.06930820428125681,
+      "under": false,
+      "moving": true
+    },
+    "hud": {
+      "name": "Utility 80 #1",
+      "tier": "utility80",
+      "type": "excavator",
+      "road": false,
+      "carrier": false,
+      "condition": 94.78000000008569,
+      "broken": false,
+      "load": 0,
+      "capacity": 0.4,
+      "bucketVolume": 0,
+      "cutDepth": 0.35,
+      "aimReach": 6.799999999999997,
+      "resistance": 0,
+      "direct": false,
+      "speedKmh": 0,
+      "camera": "cab",
+      "ticket": false,
+      "engine": "running"
+    }
+  },
+  "rememberedRig": {
+    "pose": {
+      "x": 40,
+      "z": 40,
+      "yaw": 0,
+      "houseYaw": 0,
+      "arm": [
+        0.55,
+        -1.6,
+        -1.123582073390684
+      ],
+      "aimReach": 6.799999999999997,
+      "cutDepth": 0.35,
+      "lastDump": {
+        "x": 46.8,
+        "z": 40
+      }
+    },
+    "state": {
+      "x": 40,
+      "z": 40,
+      "y": 0.02496994882822036,
+      "yaw": 0,
+      "pitch": -0.0005503986847502103,
+      "roll": -0.0025275486403387617,
+      "vL": 0,
+      "vR": 0,
+      "sL": 0,
+      "sR": 0,
+      "houseYaw": 0,
+      "houseVel": 0,
+      "targetHouseYaw": 0,
+      "dumpT": 0,
+      "dumpY": 0.06022102290085365,
+      "rock": {
+        "p": -1.292750321304488e-12,
+        "pv": -3.5706065600644243e-12,
+        "r": 6.607859793940812e-8,
+        "rv": -0.0000011114249063900633
+      },
+      "work": 0.3498991996321459,
+      "digging": false,
+      "pour": 0,
+      "lastPhase": "carry",
+      "idleT": 0,
+      "lastColor": {
+        "isColor": true,
+        "r": 0.11193242782769693,
+        "g": 0.06847816983662762,
+        "b": 0.036889450395083165
+      },
+      "aimReach": 6.799999999999997,
+      "cutDepth": 0.35,
+      "resistance": 0,
+      "dumpTarget": null,
+      "dumpReady": false,
+      "lastDump": {
+        "x": 46.8,
+        "z": 40
+      },
+      "repeatDump": null,
+      "relief": false
+    },
+    "toasts": []
+  },
+  "errors": []
+}

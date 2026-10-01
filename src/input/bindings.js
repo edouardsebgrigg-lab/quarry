@@ -30,6 +30,12 @@ export const DEFAULT_BINDINGS = {
   boomDown: 'ArrowDown',
   bucketCurl: 'ArrowLeft',
   bucketDump: 'ArrowRight',
+  stickOut: 'KeyI',
+  stickIn: 'KeyK',
+  slewLeft: 'KeyU',
+  slewRight: 'KeyO',
+  freeLook: 'KeyX',
+  precision: 'ShiftRight',
   dev: 'F1',
 };
 
@@ -60,6 +66,12 @@ export const ACTION_LABELS = {
   boomDown: 'Digger (Direct): boom down',
   bucketCurl: 'Digger (Direct): curl bucket in',
   bucketDump: 'Digger (Direct): open bucket (dump)',
+  stickOut: 'Digger: stick out',
+  stickIn: 'Digger: stick in',
+  slewLeft: 'Digger: slew left',
+  slewRight: 'Digger: slew right',
+  freeLook: 'Digger: hold to look around',
+  precision: 'Digger: precision / adjust cut depth',
   dev: 'Dev panel',
 };
 
@@ -69,7 +81,8 @@ export function keyLabel(code) {
   if (code.startsWith('Digit')) return code.slice(5);
   if (code.startsWith('Numpad')) return `Num ${code.slice(6)}`;
   if (code.startsWith('Arrow')) return `${code.slice(5)} arrow`;
-  if (code === 'ShiftLeft' || code === 'ShiftRight') return 'Shift';
+  if (code === 'ShiftLeft') return 'Shift';
+  if (code === 'ShiftRight') return 'Right Shift';
   if (code === 'ControlLeft' || code === 'ControlRight') return 'Ctrl';
   return code;
 }
