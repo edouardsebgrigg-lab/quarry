@@ -1,5 +1,5 @@
 // The jobs board with a regular customer: first the offer, then the order part way through a
-// week. Backdrop blur off for speed, as in laptop2.mjs.
+// week, and the laptop home's Coming up card showing it. Backdrop blur off for speed, as in laptop2.mjs.
 // OUT=<dir> TAG=<name> node docs/handover/browser-checks/regular.mjs
 import { start } from './common.mjs';
 const TAG = process.env.TAG ?? 'regular';
@@ -28,5 +28,8 @@ await q(() => {
 });
 await frames(4);
 await shot('active');
+await page.locator('.lt-dock-app', { hasText: 'Home' }).click();
+await frames(3);
+await shot('home');
 console.log('errors', errors.slice(0, 10).join('\n') || '(none)');
 await browser.close();

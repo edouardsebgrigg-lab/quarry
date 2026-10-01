@@ -33,7 +33,8 @@ export function homeApp({ game, openApp, setHead }) {
   const goalText = el('div', { class: 'lt-goal-text' });
   // The latest story moving a price, as a one-line ticker into the prices app.
   const newsLine = el('button', { class: 'lt-ticker', onClick: () => openApp('prices') });
-  // Coming up: the inspector, the dealer's offer, a rush job, the closest milestone.
+  // Coming up: the inspector, the dealer's offer, a regular customer, a rush job, the closest
+  // milestone.
   const upcoming = el('div', { class: 'lt-rows' });
   const upcomingCard = el('div', { class: 'lt-card lt-upcoming' }, el('div', { class: 'lt-card-label' }, 'Coming up'), upcoming);
   let upcomingKey = '';
@@ -50,6 +51,16 @@ export function homeApp({ game, openApp, setHead }) {
     if (offer) {
       const name = `${data.machines.tiers[offer.tier]?.name ?? offer.tier} ${data.machines.types[offer.type]?.name ?? offer.type}`;
       rows.push({ kind: 'good', title: `Ashby Plant: ${name} for ${money(machinePrice(ctx, offer.type, offer.tier))}`, sub: `${Math.round(offer.discount * 100)}% off until day ${offer.until}`, app: 'dealer' });
+    }
+    // A regular customer: an offer waiting, or this week's quota until it's met.
+    const st = contractsState(ctx).standing ?? {};
+    const mat = (m) => (data.materials[m]?.name ?? m).toLowerCase();
+    if (st.offer) {
+      rows.push({ kind: 'good', title: `${st.offer.client} wants a regular supply: +${money(st.offer.weeklyBonus)} a week`, sub: `${st.offer.tonnesPerWeek} t of clean ${mat(st.offer.material)} every week for ${st.offer.weeks} weeks; answer by day ${st.offer.expires}`, app: 'jobs' });
+    } else if (st.active && !st.active.paidThisWeek) {
+      const a = st.active;
+      const left = a.weekEnd - getDate(game.state, data).day;
+      rows.push({ kind: left <= 1 ? 'warn' : '', title: `${a.client}'s weekly order: ${a.delivered} of ${a.tonnesPerWeek} t`, sub: `Clean ${mat(a.material)}, week ${a.week} of ${a.weeks}, ${left <= 0 ? 'ends today' : `ends day ${a.weekEnd}`}`, app: 'jobs' });
     }
     const rush = contractsState(ctx).offers.find((o) => o.rush);
     if (rush) rows.push({ kind: 'good', title: `Rush job for ${rush.client}: +${money(rush.bonus)}`, sub: `${rush.tonnes} t of clean ${(data.materials[rush.material]?.name ?? rush.material).toLowerCase()}, take it today`, app: 'jobs' });
