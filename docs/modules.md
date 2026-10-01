@@ -189,7 +189,7 @@ Ground `inspectAt(x,z)` reads the actual top-to-bottom loose, compacted and natu
 
 Career `pinnedMilestone`, `pinMilestone` and `unpinMilestone` expose an optional saved focus through `game.actions`. Unknown legacy IDs clear safely; selection does not emit gameplay events or change automatic milestone payouts. HUD/Home reuse their existing goal surface and Milestones exposes choose/switch/clear. Narrow HUDs suppress mentor cards while a goal is visible; those messages remain in Messages.
 
-## F4 / Q2 / T11 hauling, tools and planning
+## F4 / Q2 / E1 hauling, tools and planning
 
 `cruiseControl.js` is a runtime-only speed controller using JSON tuning in `handling.vehicle.cruise`. `truckPhysics` sends contact/grip/slip, shift and manual-pedal state; the helper requests ordinary throttle/brake forces without setting velocity. Active speed targets can only decrease with physical limits and clear on pedal intent, engine stop or recovery. World key actions also cancel immediately so brief taps work between physics frames; exit/unoccupied/job/broken boundaries clear assistance. HUD telemetry stays read-only.
 

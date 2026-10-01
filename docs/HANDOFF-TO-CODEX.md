@@ -152,4 +152,4 @@ Use `f3-feel.mjs` for actual keyboard walking/jump/barrow/reverse checks, `game-
 
 ### Hauling, quick tools and planning checks
 
-Use `haul-planning.mjs` for actual Z/pedal/pause/exit/recovery, read-only material shortage previews and a conserved paid road built through real mouse clicks. Use `digger-tools.mjs` for actual Q selection, blocked moving/loaded/rented states, same-cab return and Save/Continue. Inspect phone and 130% quotes/tool controls for overlays obscuring content. Their pointer-lock shim models transitions, not operating-system capture permission. Final review/evidence and task IDs F4/Q2/T11 are in the checkpoint.
+Use `haul-planning.mjs` for actual Z/pedal/pause/exit/recovery, read-only material shortage previews and a conserved paid road built through real mouse clicks. Use `digger-tools.mjs` for actual Q selection, blocked moving/loaded/rented states, same-cab return and Save/Continue. Inspect phone and 130% quotes/tool controls for overlays obscuring content. Their pointer-lock shim models transitions, not operating-system capture permission. Final review/evidence and task IDs F4/Q2/E1 are in the checkpoint.

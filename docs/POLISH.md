@@ -158,6 +158,8 @@ F3/P3/D16/H1 implementation: `b17280d`; per-task verification receipts are in CO
 
 - [x] F4 Z cruise follows existing power/brakes/load/grip/towing; immediate pedal cancellation, pause retention, exit/recovery/engine/air cancellation; local dash feedback.
 - [x] Q2 Q digger tools: compatible tools, purpose and actual stats; moving/stroke/full/rental restrictions; same-cab return and Save/Continue.
-- [x] T11 Quantitative exact material readiness and grade run; planning action keycaps in the quote, narrow/larger-text clearance and visible build success.
+- [x] E1 Quantitative exact material readiness and grade run; planning action keycaps in the quote, narrow/larger-text clearance and visible build success.
 
 See CODEX-CHECKPOINT.md for implementation commit and actually verified checks; handover/haul-tools-planning-review.md records independent review and limits.
+
+Implementation `09bd6a9`; per-task verification is recorded in `CODEX-CHECKPOINT.md`.
