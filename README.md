@@ -204,3 +204,10 @@ Earthworks preview: the amber ring marks where spare spoil will be heaped. Move 
 and the wheelbarrow clear; occupied heap cells cannot supply works material.
 
 After tipping a barrow into the pickup, hold S to back away from the tailgate before turning.
+
+Buy Stockpile bays in the laptop’s Yard buildings category. Back a carrier’s tail into
+one of the three bays at the south end of the yard and press T to store its load.
+Each bay holds 25 t. With a digger bucket over a bay, hold LMB in Assisted mode
+(or cut into the heap in Direct mode) to reload stored material. Dump the bucket into
+a carrier as usual. Mixing stays mixed, and storing earns no sale income. Tab shows each
+bay’s contents and grade; inventory survives saving and loading.

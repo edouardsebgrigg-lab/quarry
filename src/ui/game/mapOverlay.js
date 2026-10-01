@@ -1,5 +1,7 @@
 // The map (Tab): the countryside from above, with a panel listing your machines and how far
 // things are.
+import { ownsBuilding, stockpileLoad } from '../../buildings/index.js';
+import { quoteDelivery } from '../../economy/index.js';
 import { el, clear, setText } from '../dom.js';
 import { createMapView } from './mapView.js';
 import { machinesAt, machineName, getStats, isDigger } from '../../machinery/index.js';
@@ -19,6 +21,7 @@ export function toggleMap(overlays, { game, world }) {
       view = createMapView({ world });
       const places = el('div', { class: 'map-places' });
       const fleet = el('div', { class: 'fleet' });
+      const stores = el('div', { class: 'map-stores' });
       const map = world.plan.map;
       const spots = [
         ['Your yard', (map.home.yard.x0 + map.home.yard.x1) / 2, (map.home.yard.z0 + map.home.yard.z1) / 2],
@@ -42,6 +45,14 @@ export function toggleMap(overlays, { game, world }) {
           const m = Math.hypot(x - you.x, z - you.z);
           setText(rows[i], m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
         });
+        clear(stores);
+        if (ownsBuilding(game.ctx, 'stockpiles')) for (const b of game.data.buildings.stockpiles.bays) {
+          const load = stockpileLoad(game.ctx, b.id), total = pileTotal(load);
+          const main = Object.entries(load).sort((a,b)=>b[1]-a[1])[0]?.[0];
+          const q = main ? quoteDelivery(game.ctx, main, load) : null;
+          stores.append(el('div', {class:'small'}, `${b.name}: ${total.toFixed(1)} / ${b.capacity} t`,
+            el('div',{class:'muted'}, main ? `${q.grade} · ${Object.entries(load).map(([id,t]) => `${game.data.materials[id]?.name ?? id} ${t.toFixed(1)} t`).join(', ')}` : 'Empty')));
+        }
         clear(fleet);
         for (const m of machinesAt(game.ctx, game.state.currentSiteId)) {
           const cap = isDigger(game.data, m.type) ? null : getStats(game.data, m).capacity;
@@ -57,6 +68,7 @@ export function toggleMap(overlays, { game, world }) {
         el('div', { class: 'sidebar' },
           el('section', { class: 'panel' }, el('h3', {}, 'Places'), places),
           el('section', { class: 'panel' }, el('h3', {}, 'Your machines'), fleet),
+          el('section', { class: 'panel' }, el('h3', {}, 'Stockpile bays'), stores),
           el('section', { class: 'panel' }, el('h3', {}, 'Key'),
             el('div', { class: 'small muted map-key' },
               el('span', { class: 'key-you' }, '▶ you'), el('span', { class: 'key-pickup' }, '● pickup'),

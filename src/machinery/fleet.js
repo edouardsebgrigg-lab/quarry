@@ -1,3 +1,4 @@
+import { stockpileRoom, stockpileConfig, storeStockpile, scoopStockpile } from '../buildings/index.js';
 // Owning machines: create, buy, sell, fit mods.
 import { canAfford, spendMoney, addMoney, isInDebt, chargeFuel } from '../economy/index.js';
 import { pileTotal, addToPile, takeProportional } from '../quarry/index.js';
@@ -130,7 +131,14 @@ export function dumpBucket(ctx, diggerId, target = {}, share = 1) {
   const amount = pileTotal(ex.load) * Math.min(1, Math.max(0, share));
   if (pileTotal(ex.load) < 0.01) return { ok: false, reason: 'The bucket is empty' };
   let moved = 0;
-  if (target.machineId) {
+  if (target.stockpileBay) {
+    if (!stockpileConfig(ctx, target.stockpileBay)) return { ok: false, reason: 'Unknown stockpile bay' };
+    moved = Math.min(amount, stockpileRoom(ctx, target.stockpileBay, ex.siteId));
+    if (moved <= 1e-9) return { ok: false, reason: 'Stockpile bay is full or not commissioned' };
+    const shareLoad = takeProportional(ex.load, moved);
+    const r = storeStockpile(ctx, target.stockpileBay, shareLoad, ex.siteId);
+    if (!r.ok) return r;
+  } else if (target.machineId) {
     const bed = getMachine(ctx, target.machineId);
     const cap = bed ? getStats(ctx.data, bed).capacity ?? 0 : 0;
     if (!cap) return { ok: false, reason: 'That has nowhere to put it' };
@@ -155,22 +163,22 @@ export function dumpBucket(ctx, diggerId, target = {}, share = 1) {
 // Direct control: the bucket's teeth are in the ground and moving. Cuts a small bowl at
 // { x, z } down to `bottomY` (radius `radius`), but only as much as still fits in the bucket.
 // Fuel and wear are charged by the share of a full bucket. Returns { ok, tonnes, full }.
-export function bucketCut(ctx, diggerId, { x, z, bottomY, radius }) {
+export function bucketCut(ctx, diggerId, { x, z, bottomY, radius, stockpileBay }) {
   const m = getMachine(ctx, diggerId);
   if (!m || !isDigger(ctx.data, m.type)) return { ok: false, reason: 'Not a digger' };
   if (m.broken) return { ok: false, reason: `${machineName(ctx.data, m)} is broken down. Repair it first.` };
   if (m.job) return { ok: false, reason: `${machineName(ctx.data, m)} is busy` };
-  if (!ctx.ground || !ctx.ground.workable(x, z)) return { ok: false, reason: 'You can only dig on your own land' };
+  if (!stockpileBay && (!ctx.ground || !ctx.ground.workable(x, z))) return { ok: false, reason: 'You can only dig on your own land' };
   const stats = getStats(ctx.data, m);
   const room = stats.bucketVolume - ctx.ground.looseVolume(m.load);
   if (room < 0.002) return { ok: true, tonnes: 0, full: true };
-  const r = ctx.ground.dig({ x, z, radius, bottomY, maxVolume: room });
+  const r = stockpileBay ? scoopStockpile(ctx, stockpileBay, room, m.siteId) : ctx.ground.dig({ x, z, radius, bottomY, maxVolume: room });
   if (r.total <= 0) return { ok: true, tonnes: 0, full: false };
   addToPile(m.load, r.tonnes);
   const share = r.volume / stats.bucketVolume;
   chargeFuel(ctx, stats.fuelPerJob * share, m.siteId);
-  ctx.state.stats.tonnesDug += r.total;
-  ctx.events.emit('rockDug', { machineId: m.id, tonnes: r.total, materials: { ...r.tonnes }, x, z, direct: true });
+  if (!stockpileBay) ctx.state.stats.tonnesDug += r.total;
+  ctx.events.emit(stockpileBay ? 'stockpileScooped' : 'rockDug', { machineId: m.id, tonnes: r.total, materials: { ...r.tonnes }, x, z, direct: true });
   applyWear(ctx, m, stats, share);
   return { ok: true, tonnes: r.total, full: room - r.volume < 0.002 };
 }

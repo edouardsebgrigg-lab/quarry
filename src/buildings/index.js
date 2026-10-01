@@ -24,3 +24,5 @@ export function buyBuilding(ctx, id) {
   ctx.events.emit('buildingBought', { buildingId: id, siteId, cost: price });
   return { ok: true, buildingId: id, cost: price };
 }
+
+export { stockpileLoad, stockpileConfig, stockpileRoom, whyCannotStore, storeStockpile, scoopStockpile } from './stockpiles.js';

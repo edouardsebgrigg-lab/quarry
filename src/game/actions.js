@@ -40,7 +40,7 @@ export function createActions(ctx) {
 
     // ---- machines on the ground ----
     // Assisted digging: one bucket out of the ground at { x, z } (where the digger's bucket is).
-    scoop: (diggerId, at) => startJob(ctx, diggerId, 'dig', { params: { x: at.x, z: at.z } }),
+    scoop: (diggerId, at) => startJob(ctx, diggerId, 'dig', { params: { x: at.x, z: at.z, stockpileBay: at.stockpileBay } }),
     // Direct digging: the teeth cut a little bowl { x, z, bottomY, radius } as they move.
     bucketCut: (diggerId, cut) => fleetBucketCut(ctx, diggerId, cut),
     // Empty the bucket (or a `share` of it) into a bed ({ machineId }) or onto the ground ({ x, z }).

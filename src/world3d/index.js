@@ -5,7 +5,8 @@ import * as THREE from 'three';
 import { createPhysics } from './physics.js';
 import { createRenderer, createEnvironment, createFrameRenderer } from './environment.js';
 import { createCountryside, planWorld, preloadCountryside } from './countryside.js';
-import { ownsBuilding } from '../buildings/index.js';
+import { ownsBuilding, stockpileLoad, stockpileConfig } from '../buildings/index.js';
+import { createYardStockpiles } from './stockpiles.js';
 import { buildPlaces } from './places.js';
 import { buildFarms, farmClearRect, farmTrees, farmTrack } from './farms.js';
 import { createParticles } from './particles.js';
@@ -76,7 +77,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const env = createEnvironment(scene, renderer, q, { x0: -half, x1: half, z0: -half, z1: half }, { outsideY: 28, hillDistance: [1300, 2200] });
   // Your field: its own chunked mesh and colliders, following the ground as it changes.
   const groundView = ground ? createGroundView({ scene, physics, ground }) : null;
-  const heightAt = (x, z) => land.heightAt(x, z);
+  let yardStockpiles = null;
+  const heightAt = (x, z) => Math.max(land.heightAt(x, z), yardStockpiles?.surfaceAt(x, z) ?? -Infinity);
   const onPlot = (x, z) => ground && ground.inside(x, z);
   // Height and surface mix anywhere (your field uses the real ground's top material).
   function surfaceAt(x, z) {
@@ -94,6 +96,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const bayNames = Object.fromEntries(Object.entries(data.depot.bays).map(([id, b]) => [id, b.name]));
   const places = buildPlaces({ scene, physics, plan, heightAt, materials: data.materials, bayNames });
   for (const id of Object.keys(data.buildings)) places.setBuilding(id, ownsBuilding(game.ctx, id, siteId));
+  yardStockpiles = createYardStockpiles({ scene, physics, game, map: MAP, siteId, heightAt: (x,z) => land.heightAt(x,z) });
+  yardStockpiles.setOwned(ownsBuilding(game.ctx, 'stockpiles', siteId));
   buildFarms({ scene, physics, plan, heightAt });
   const particles = createParticles(scene);
   const rain = createRain(scene);
@@ -316,6 +320,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const u = v.unload();
     const bay = v.road ? places.bayAt(u.point.x, u.point.z) : null;
     if (bay) return { bay: bay.id, name: bay.name };
+    const store = yardStockpiles.bayAt(u.point.x, u.point.z);
+    if (store) return { stockpileBay: store.id, name: stockpileConfig(game.ctx, store.id).name };
     const x = u.point.x + u.out.x * (v.road ? 1.2 : 1.4);
     const z = u.point.z + u.out.z * (v.road ? 1.2 : 1.4);
     if (ground?.workable(x, z)) return { x, z };
@@ -363,7 +369,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         }
         const spot = unloadSpot(v);
         if (spot.reason) notify(spot.reason, 'warn');
-        else report(game.actions.tip(m.id, spot.bay ? { bay: spot.bay } : { x: spot.x, z: spot.z }));
+        else report(game.actions.tip(m.id, spot.stockpileBay ? { stockpileBay: spot.stockpileBay } : spot.bay ? { bay: spot.bay } : { x: spot.x, z: spot.z }));
         return true;
       }
       case 'repair': {
@@ -455,7 +461,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     if (s.under && !full && s.moving) {
       if (st.cutT <= 0) {
         st.cutT = 0.07;
-        const r = game.actions.bucketCut(m.id, { x: s.teeth.x, z: s.teeth.z, bottomY: s.teeth.y, radius: bucketRadius(stats) });
+        const r = game.actions.bucketCut(m.id, { x: s.teeth.x, z: s.teeth.z, bottomY: s.teeth.y, radius: bucketRadius(stats), stockpileBay: yardStockpiles.bayAt(s.teeth.x, s.teeth.z)?.id });
         st.cutting = r.ok && r.tonnes > 0;
         st.stuck = r.ok && r.tonnes === 0 && !r.full; // rock, or the edge of your land
         if (st.cutting) particles.spawn(tp, { count: 1, spread: 0.4, life: 1.2, up: 0.5 });
@@ -474,7 +480,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       if (st.pourT <= 0) {
         st.pourT = 0.1;
         const bed = bedUnder(tp);
-        const spot = bed ? { machineId: bed.machineId } : ground?.workable(s.teeth.x, s.teeth.z) ? { x: s.teeth.x, z: s.teeth.z, radius: 0.5 } : null;
+        const store = yardStockpiles.bayAt(s.teeth.x, s.teeth.z);
+        const spot = bed ? { machineId: bed.machineId } : store ? { stockpileBay: store.id } : ground?.workable(s.teeth.x, s.teeth.z) ? { x: s.teeth.x, z: s.teeth.z, radius: 0.5 } : null;
         if (spot) {
           const r = game.actions.dumpBucket(m.id, spot, Math.min(1, st.pour));
           if (r.ok) {
@@ -513,9 +520,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
     const target = v.bucketTarget();
     const full = pileTotal(m.load) > 0.01;
+    const store = yardStockpiles.bayAt(target.x, target.z);
     if (!full && mouse.isDown()) {
-      if (ground?.workable(target.x, target.z)) {
-        const r = game.actions.scoop(m.id, { x: target.x, z: target.z });
+      if (store || ground?.workable(target.x, target.z)) {
+        const r = game.actions.scoop(m.id, { x: target.x, z: target.z, stockpileBay: store?.id });
         if (!r.ok && clicked) notify(r.reason, 'warn');
       } else if (clicked && !digHintShown) {
         notify('Swing the bucket over your field to dig', 'warn');
@@ -525,7 +533,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const bed = bedUnder(target);
       const r = bed
         ? game.actions.dumpBucket(m.id, { machineId: bed.machineId })
-        : game.actions.dumpBucket(m.id, { x: target.x, z: target.z });
+        : game.actions.dumpBucket(m.id, store ? { stockpileBay: store.id } : { x: target.x, z: target.z });
       if (r.ok) {
         v.startDump(bed ? bed.bedWorld().y : null);
         const at = bed ? bed.bedWorld() : target.setY(heightAt(target.x, target.z));
@@ -574,8 +582,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       }
     }),
     game.events.on('buildingBought', e => {
-      if (e.siteId === siteId) places.setBuilding(e.buildingId, true);
+      if (e.siteId === siteId) { places.setBuilding(e.buildingId, true); if(e.buildingId === 'stockpiles') yardStockpiles.setOwned(true); }
     }),
+    game.events.on('stockpileChanged', e => { if(e.siteId === siteId) yardStockpiles.refresh(); }),
+    game.events.on('jobFailed', e => notify(e.reason, 'warn')),
     game.events.on('rockDug', (e) => {
       const v = vehicles.get(e.machineId);
       if (v?.digger && !e.direct) {
@@ -884,7 +894,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const t = v.bucketTarget();
       const bed = bedUnder(t);
       const full = pileTotal(m.load) > 0.01;
-      const diggable = ground?.workable(t.x, t.z);
+      const store = yardStockpiles.bayAt(t.x, t.z);
+      const diggable = !!store || ground?.workable(t.x, t.z);
       marker.visible = true;
       marker.position.set(t.x, (bed ? bed.bedWorld().y : heightAt(t.x, t.z)) + 0.08, t.z);
       marker.material.color.set(full ? (bed ? 0x4fc3f7 : (diggable ? 0xf2b632 : 0x888888)) : (diggable ? 0x7ee07e : 0x888888));
@@ -968,10 +979,11 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const t = v.bucketTarget();
       const full = pileTotal(m.load) > 0.01;
       const bed = bedUnder(t);
-      const diggable = ground?.workable(t.x, t.z);
+      const store = yardStockpiles.bayAt(t.x, t.z);
+      const diggable = !!store || ground?.workable(t.x, t.z);
       if (!full) {
         prompt = diggable
-          ? { key: 'Hold LMB', text: `Dig ${(data.ground.materials[ground.surfaceAt(t.x, t.z)]?.name ?? '').toLowerCase()}` }
+          ? { key: 'Hold LMB', text: store ? `Load from ${stockpileConfig(game.ctx, store.id).name}` : `Dig ${(data.ground.materials[ground.surfaceAt(t.x, t.z)]?.name ?? '').toLowerCase()}` }
           : { key: null, text: 'Swing the bucket over your field to dig' };
       } else if (bed) prompt = { key: 'LMB', text: `Dump into ${machineName(data, getMachine(game.ctx, bed.machineId))}` };
       else if (diggable) prompt = { key: 'LMB', text: 'Dump here' };
@@ -981,7 +993,11 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const p = v.position();
       if (loaded) {
         const spot = unloadSpot(v);
-        if (spot.bay) {
+        if (spot.stockpileBay) {
+          const total = pileTotal(stockpileLoad(game.ctx, spot.stockpileBay));
+          const cfg = stockpileConfig(game.ctx, spot.stockpileBay);
+          prompt = { key: key('tip'), text: `Store in ${cfg.name}: ${total.toFixed(1)} / ${cfg.capacity} t` };
+        } else if (spot.bay) {
           if (!hasTicket(game.ctx, m.id)) prompt = { key: null, text: 'Weigh in on the weighbridge first' };
           else {
             const qd = quoteDelivery(game.ctx, spot.bay, m.load);
@@ -999,7 +1015,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       }
     } else if (v.type === 'dumper' && pileTotal(m.load) >= data.depot.minLoad) {
       const spot = unloadSpot(v);
-      prompt = spot.reason ? { key: null, text: spot.reason } : { key: key('tip'), text: 'Tip the skip here' };
+      prompt = spot.reason ? { key: null, text: spot.reason } : { key: key('tip'), text: spot.stockpileBay ? `Store in ${spot.name}` : 'Tip the skip here' };
     }
 
     let machine = null;
@@ -1165,6 +1181,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       beacon.destroy();
       for (const veh of vehicles.values()) veh.destroy();
       player.destroy();
+      yardStockpiles.destroy();
       land.dispose();
       rain.dispose();
       frameRenderer.dispose();

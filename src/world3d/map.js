@@ -31,7 +31,8 @@ export const MAP = {
   home: {
     name: 'Home Field',
     plot: { x0: 0, x1: 152, z0: 0, z1: 152 },
-    yard: { x0: 158, x1: 204, z0: -14, z1: 36 },
+    yard: { x0: 158, x1: 204, z0: -14, z1: 54 },
+    stockpiles: [{ id: 'west', x0: 166, x1: 175, z0: 42, z1: 52 }, { id: 'middle', x0: 178, x1: 187, z0: 42, z1: 52 }, { id: 'east', x0: 190, x1: 199, z0: 42, z1: 52 }],
     // Your property: site machines (not road-legal) can't go outside it.
     boundary: { x0: -2, x1: 206, z0: -16, z1: 154 },
     driveway: { x0: 176, x1: 184 }, // from the yard's north edge out to Mill Lane

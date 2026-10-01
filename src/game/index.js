@@ -23,6 +23,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
   const ctx = { data, events, state: null, rng: null };
   ctx.rng = createRng(() => ctx.state);
   ctx.state = state ?? createNewState(data, seed);
+  ctx.state.stockpiles ??= {}; // old saves start with empty yard bays
 
   // The diggable ground of the current site (if it has one), rebuilt from its seed plus
   // the saved changes.

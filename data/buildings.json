@@ -11,5 +11,27 @@
     "price": 300,
     "description": "Commission the yard tank with a bulk delivery contract. Machine job fuel at this site costs 15% less. No free fuel or storage inventory is created.",
     "fuelCostMultiplier": 0.85
+  },
+  "stockpiles": {
+    "name": "Stockpile bays",
+    "price": 600,
+    "description": "Three 25 t yard bays. Store tipped material and reload it with a digger when prices improve. Mixing lowers purity; storing is not a sale.",
+    "bays": [
+      {
+        "id": "west",
+        "name": "West bay",
+        "capacity": 25
+      },
+      {
+        "id": "middle",
+        "name": "Middle bay",
+        "capacity": 25
+      },
+      {
+        "id": "east",
+        "name": "East bay",
+        "capacity": 25
+      }
+    ]
   }
 }

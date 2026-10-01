@@ -2,7 +2,7 @@
 // through startJob(). Digging and tipping work on the real ground (src/ground); tipping in
 // a depot bay sells the load. Which machines can do a job goes by what they are (a digger
 // has a bucket, a carrier has a bed), not by their exact type.
-import { buildingMultiplier } from '../buildings/index.js';
+import { buildingMultiplier, stockpileConfig, stockpileLoad, whyCannotStore, storeStockpile, scoopStockpile, ownsBuilding } from '../buildings/index.js';
 import { pileTotal } from '../quarry/index.js';
 import { chargeFuel, spendMoney, hasTicket, sellLoad, repairShare } from '../economy/index.js';
 import { staffMaintenanceMultiplier } from '../staff/perks.js';
@@ -27,7 +27,10 @@ export const JOBS = {
     can: (data, m) => isDigger(data, m.type),
     label: 'Digging',
     check(ctx, m, stats, params) {
-      if (!ctx.ground || !ctx.ground.workable(params.x, params.z)) return 'You can only dig on your own land';
+      if (params.stockpileBay) {
+        if (!stockpileConfig(ctx, params.stockpileBay) || !ownsBuilding(ctx, 'stockpiles', m.siteId)) return 'Commission the stockpile bays first';
+        if (pileTotal(stockpileLoad(ctx, params.stockpileBay, m.siteId)) <= 0) return 'Stockpile bay is empty';
+      } else if (!ctx.ground || !ctx.ground.workable(params.x, params.z)) return 'You can only dig on your own land';
       if (pileTotal(m.load) >= 0.01) return 'The bucket is full. Dump it first.';
       return null;
     },
@@ -37,12 +40,12 @@ export const JOBS = {
     },
     finish(ctx, m, stats, job) {
       const { x, z } = job.params;
-      const r = ctx.ground.dig({
+      const r = job.params.stockpileBay ? scoopStockpile(ctx, job.params.stockpileBay, stats.bucketVolume, m.siteId) : ctx.ground.dig({
         x, z, radius: bucketRadius(stats), bottomY: ctx.ground.heightAt(x, z) - (stats.digDepth ?? 0.7), maxVolume: stats.bucketVolume,
       });
       m.load = { ...r.tonnes };
-      ctx.state.stats.tonnesDug += r.total;
-      ctx.events.emit('rockDug', { machineId: m.id, tonnes: r.total, materials: { ...r.tonnes }, x, z });
+      if (!job.params.stockpileBay) ctx.state.stats.tonnesDug += r.total;
+      ctx.events.emit(job.params.stockpileBay ? 'stockpileScooped' : 'rockDug', { machineId: m.id, tonnes: r.total, materials: { ...r.tonnes }, x, z });
       applyWear(ctx, m, stats);
     },
   },
@@ -54,6 +57,8 @@ export const JOBS = {
     label: 'Tipping',
     check(ctx, m, stats, params) {
       if (pileTotal(m.load) < MIN_LOAD) return `The ${typeName(ctx.data, m.type).toLowerCase()} is empty`;
+      if (params.stockpileBay && params.bay) return 'Choose one tipping destination';
+      if (params.stockpileBay) return whyCannotStore(ctx, params.stockpileBay, pileTotal(m.load), m.siteId, m.id);
       if (params.bay) {
         if (!ctx.data.depot.bays[params.bay]) return 'Not a depot bay';
         if (!isRoadLegal(ctx.data, m.type)) return 'Only road vehicles can deliver to the depot';
@@ -69,14 +74,19 @@ export const JOBS = {
     },
     finish(ctx, m, stats, job) {
       const load = m.load;
-      m.load = {};
       const tonnes = pileTotal(load);
+      if (job.params.stockpileBay) {
+        const stored = storeStockpile(ctx, job.params.stockpileBay, load, m.siteId, m.id);
+        if (!stored.ok) { ctx.events.emit('jobFailed', { machineId: m.id, reason: stored.reason }); return; }
+      }
+      m.load = {};
       if (job.params.bay) {
         sellLoad(ctx, m.id, job.params.bay, load);
-      } else {
+      } else if (!job.params.stockpileBay) {
         const at = snap(ctx.ground, job.params.x, job.params.z);
         ctx.ground.deposit({ ...at, tonnes: load, radius: Math.min(1.6, 0.4 + tonnes * 0.35) });
       }
+      if (!job.params.bay) delete ctx.state.depot?.tickets?.[m.id];
       ctx.events.emit('rockHauled', { machineId: m.id, tonnes, bay: job.params.bay ?? null });
       applyWear(ctx, m, stats);
     },

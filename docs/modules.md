@@ -95,3 +95,14 @@ places a new footprint, creates free material or changes existing collision shap
 
 The home workshop container is positioned explicitly by `MAP.home.workshop`, clear of the
 driveway. An empty barrow at the pickup tailgate prompts backing away before turning.
+
+
+`src/buildings/stockpiles.js` owns per-site, per-bay inventory (`state.stockpiles`),
+capacity reservations for pending carrier tips, and proportional bucket extraction by
+loose volume. Old saves default to empty inventory. Store transfers consume their supplied
+load and emit `stockpileChanged`, never `productSold`. Reloading emits `stockpileScooped`
+and does not count the same material as newly dug. `src/world3d/stockpiles.js` builds the
+three fixed bays, saved-inventory heaps and matching cone colliders/surface heights;
+wall and heap collisions are enabled only when commissioned. Assisted/Direct digger
+controls and carrier T dispatch detect the same mapped bay rectangles. The map panel
+reports each bay’s material mix and normal depot purity grade.
