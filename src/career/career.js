@@ -62,6 +62,7 @@ const METRICS = {
   hiresDone: (ctx, c) => c.hiresDone,
   regularWeeks: (ctx, c) => c.regularWeeks,
   creditScore: (ctx) => creditRating(ctx).score,
+  staffCount: (ctx) => ctx.state.staff?.workers.length ?? 0,
   reputation: (ctx) => reputation(ctx).level,
   loansCleared: (ctx, c) => c.loansCleared,
 };

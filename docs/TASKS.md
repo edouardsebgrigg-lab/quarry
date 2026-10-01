@@ -77,7 +77,15 @@ emits `machineBought` with `secondHand: true`, so anything listening for purchas
 cover (`insuranceCover`/`repairShare` in `src/economy/overheads.js`: repairs, at the workshop or by
 call-out, now cost `repairCost x workshop x repairShare`; basic cover, the default, pays half. A
 test that checks an exact repair price should set `state.insurance = { cover: 'none', next: null }`,
-as `buildings.test.js` now does). For T6 (stockpiles): a load tipped into a bay is not a sale, so it shouldn't
+as `buildings.test.js` now does), and **staff** (`src/staff/`,
+`data/staff.json`): employees with four skills and a daily wage, in posts that open with progress
+(first at $3,000 earned and 3 machines). Roles: digger operator (runs `startJob('dig')` on a digger
+where it's parked and dumps beside it), haulage driver (loads from loose heaps on the field,
+`weighIn` + `sellLoad` at the depot, the vehicle has `m.away` while on the road), sales (a bonus in
+`quoteDelivery`, takes board jobs) and fitter (services and repairs, a multiplier on their cost).
+A machine someone works has `m.operator` (a worker id): it can't be sold, hired out or entered.
+`state.player.driving` is the machine the player is in (set by the world). `staffTick` runs after
+`tickJobs` every tick. For T6 (stockpiles): a load tipped into a bay is not a sale, so it shouldn't
 emit `productSold` (contracts count sales).
 
 ## State of the game (Claude's review, 30 September 2026)

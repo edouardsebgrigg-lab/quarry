@@ -83,6 +83,16 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       (painted steel now), bales were flat yellow (straw texture; black-wrapped silage at some
       farms); farms.mjs check
 - [x] Cab views (cabs.mjs): windscreen dust with wiper arcs, black plastic darkened to charcoal
+- [x] D13 Staff (laptop Staff app): posts open with progress ($3k earned and 3 machines; then
+      $20k, 5 machines, reputation 4; then $60k, 7 machines, reputation 7); applicants with four
+      skills (digging, driving, selling, fixing) and a wage to match; roles: digger operator
+      (digs the field where the digger's parked, the arm animates, sorts heaps by material if
+      skilled), haulage driver (loads from the heaps, drives to the depot and sells in the best
+      bay; the vehicle leaves and comes back), sales (more per load, takes board jobs), fitter
+      (services and repairs, cheaper); wages daily, agency fee, notice; tested; staff.mjs check
+- [ ] D14 Staff, next: a driver could also deliver to jobs-board customers and fill a regular
+      customer's order on purpose; morale or experience that grows with work; an operator
+      loading the truck directly (digger and driver working together)
 - [x] D12 Insurance cover is a choice (Fleet app): none, basic (half of each repair paid, the
       old weekly rate, the default) or full (85% paid, dearer); changes start at the weekly
       renewal so it can't be switched on for one repair; tested; cover.mjs shot checked

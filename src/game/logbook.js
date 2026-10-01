@@ -182,6 +182,23 @@ export function logbookOnEvent(ctx, type, e) {
       trim(lb);
       break;
     }
+    case 'staffSlotOpened':
+    case 'staffTookJob':
+    case 'staffLeft': {
+      const lb = logbook(ctx);
+      const { day, hour, minute } = getDate(ctx.state, ctx.data);
+      const mat = (m) => ctx.data.materials[m]?.name.toLowerCase() ?? m;
+      const msg = {
+        staffSlotOpened: () => ({ from: 'Ray', kind: 'good', text: e.slots === 1
+          ? 'You\'ve enough work on to take someone on. Have a look at who\'s applying (laptop: Staff). A good operator on the digger and a driver on the truck, and the quarry works while you\'re busy elsewhere.'
+          : 'The business can carry another wage now. There\'s a new post open (laptop: Staff).' }),
+        staffTookJob: () => ({ from: 'Office', kind: 'tip', text: `I've taken on a job for ${e.client}: ${e.tonnes} t of clean ${mat(e.material)}, $${e.bonus} bonus. It's on the jobs board.` }),
+        staffLeft: () => ({ from: 'Office', kind: 'tip', text: `${e.name} has left, with $${Math.round(e.pay)} notice pay.` }),
+      }[type]();
+      lb.messages.push({ day, hour, minute, ...msg });
+      trim(lb);
+      break;
+    }
     case 'listingNotAsDescribed': {
       const lb = logbook(ctx);
       const { day, hour, minute } = getDate(ctx.state, ctx.data);

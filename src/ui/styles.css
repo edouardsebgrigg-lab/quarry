@@ -1055,3 +1055,37 @@ body:has(.overlay) .toasts { top: auto; bottom: 5.5rem; right: 3rem; }
 .lt-cover-tag.next { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
 .lt-cover-price { font-family: var(--display); font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .lt-cover-text { font-size: 0.76rem; color: var(--muted); line-height: 1.35; }
+
+/* Staff */
+.st-posts { display: grid; grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr)); gap: 0.9rem; }
+.st-post { display: flex; flex-direction: column; gap: 0.35rem; justify-content: center; min-height: 9rem; }
+.st-post b { font-size: 1rem; }
+.st-post span { font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
+.st-post.open { border-style: dashed; border-color: rgba(245, 184, 46, 0.5); align-items: center; text-align: center; }
+.st-post.locked { opacity: 0.85; }
+.st-post-icon { width: 1.6rem; height: 1.6rem; color: var(--muted); }
+.st-req { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.4rem; }
+.st-req-row { display: grid; grid-template-columns: 6rem 1fr auto; gap: 0.6rem; align-items: center; font-size: 0.76rem; }
+.st-req-row b { font-variant-numeric: tabular-nums; font-size: 0.76rem; }
+.st-later { font-style: italic; }
+.st-worker { display: flex; flex-direction: column; gap: 0.55rem; }
+.st-head { display: flex; align-items: center; gap: 0.7rem; }
+.st-name { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.st-name span { font-size: 0.75rem; color: var(--muted); }
+.st-status { font-size: 0.72rem; color: var(--muted); text-align: right; max-width: 11rem; }
+.st-status.on { color: var(--good); }
+.st-status.away { color: #7fc6ff; }
+.st-skills { display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem 1rem; }
+.st-skill { display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; color: #c8ced6; }
+.st-stars { display: inline-flex; gap: 2px; }
+.st-stars i { width: 0.55rem; height: 0.55rem; border-radius: 2px; background: rgba(255, 255, 255, 0.12); }
+.st-stars i.on { background: var(--accent); }
+.st-label { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-top: 0.2rem; }
+.st-roles, .st-machines { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+.st-machines .st-label { margin: 0 0.3rem 0 0; }
+.st-role-text { font-size: 0.78rem; color: var(--muted); margin: 0; line-height: 1.4; }
+.st-foot { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; font-size: 0.76rem; color: var(--muted); margin-top: 0.2rem; }
+.st-letgo { font-size: 0.74rem; color: #ff9a8a; }
+.st-applicant { gap: 0.6rem; }
+.st-wage { font-family: var(--display); font-size: 1.1rem; font-weight: 700; }
+.st-best { font-size: 0.78rem; color: var(--good); }

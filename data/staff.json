@@ -1,0 +1,24 @@
+{
+  "slots": [
+    { "earned": 3000, "machines": 3, "reputation": 0, "text": "Earn $3,000 and own 3 machines" },
+    { "earned": 20000, "machines": 5, "reputation": 4, "text": "Earn $20,000, own 5 machines and reach reputation 4" },
+    { "earned": 60000, "machines": 7, "reputation": 7, "text": "Earn $60,000, own 7 machines and reach reputation 7" }
+  ],
+  "applicants": 3,
+  "refreshDays": 4,
+  "wage": { "base": 10, "perStar": 4 },
+  "hiringFeeDays": 3,
+  "noticeDays": 2,
+  "roles": {
+    "dig": { "name": "Digger operator", "skill": "dig", "text": "Digs out your field with a digger and heaps it beside, sorted by material if they're good at it." },
+    "haul": { "name": "Haulage driver", "skill": "drive", "text": "Loads material from your heaps, drives it to the depot and sells it in the best bay." },
+    "sales": { "name": "Sales and office", "skill": "sell", "text": "Gets a better price for every load sold, and takes on work from the jobs board." },
+    "mechanic": { "name": "Fitter", "skill": "fix", "text": "Services and repairs your machines without being asked, and cuts the cost of the work." }
+  },
+  "skills": { "dig": "Digging", "drive": "Driving", "sell": "Selling", "fix": "Fixing" },
+  "names": ["Dave Harland", "Sue Pickering", "Tom Whitaker", "Gemma Lund", "Ian Croft", "Rachel Barker", "Neil Atkinson", "Kerry Nolan", "Phil Dobson", "Jo Mallinson", "Mick Teasdale", "Lucy Wray", "Gary Fenwick", "Amy Clayton", "Rob Stainton"],
+  "dig": { "swingSeconds": 1.3, "maxDepthOfReach": 0.5 },
+  "trip": { "metres": 850, "speedFactor": 0.9, "loadSecondsPerTonne": 2.5, "unloadSeconds": 15, "minLoad": 0.4, "checkEvery": 8 },
+  "mechanic": { "below": 60, "checkEvery": 6, "costByFix": [0.9, 0.82, 0.75, 0.68, 0.6] },
+  "sales": { "bonusPerStar": 0.01 }
+}

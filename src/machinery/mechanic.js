@@ -6,6 +6,7 @@ import { getMachine } from './fleet.js';
 import { getStats } from './stats.js';
 import { serviceCost } from './wear.js';
 import { startJob } from './jobs.js';
+import { staffMaintenanceMultiplier } from '../staff/perks.js';
 
 // What a call-out would be for this machine: { kind: 'repair' | 'service', cost, fee, total } or
 // { reason } when there's nothing to do.
@@ -15,7 +16,7 @@ export function mechanicQuote(ctx, machineId) {
   if (m.job) return { reason: 'It’s busy' };
   if (m.onHire) return { reason: 'It’s out on hire' };
   const stats = getStats(ctx.data, m);
-  const k = buildingMultiplier(ctx, 'workshop', 'maintenanceCostMultiplier', m.siteId);
+  const k = buildingMultiplier(ctx, 'workshop', 'maintenanceCostMultiplier', m.siteId) * staffMaintenanceMultiplier(ctx);
   const fee = ctx.data.economy.mechanicCallOut;
   if (m.broken) {
     const cost = stats.repairCost * k * repairShare(ctx); // (less the insurer's share)

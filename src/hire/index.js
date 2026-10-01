@@ -29,6 +29,7 @@ export function dayRate(ctx, type) {
 // Why a machine can't go out on hire now (null if it can).
 export function cantHire(ctx, m) {
   if (m.onHire) return 'It’s already out on hire';
+  if (m.operator) return 'One of your staff is working it';
   if (m.broken) return 'It’s broken down';
   if (m.job) return 'It’s busy';
   if (loaded(m)) return 'Empty it first';

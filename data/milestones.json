@@ -48,6 +48,8 @@
     { "id": "jobs3", "group": "business", "title": "Regular customers", "text": "Finish 3 jobs from the jobs board.", "metric": "jobsDone", "target": 3, "reward": 150 },
     { "id": "jobs15", "group": "business", "title": "Trusted supplier", "text": "Finish 15 jobs from the jobs board.", "metric": "jobsDone", "target": 15, "reward": 600 },
     { "id": "rep5", "group": "business", "title": "A name in Ashby", "text": "Reach reputation 5 with your customers.", "metric": "reputation", "target": 5, "reward": 300 },
+    { "id": "staff1", "group": "business", "title": "Taking someone on", "text": "Employ your first member of staff.", "metric": "staffCount", "target": 1, "reward": 150 },
+    { "id": "staff3", "group": "business", "title": "A proper firm", "text": "Employ three people.", "metric": "staffCount", "target": 3, "reward": 1500 },
     { "id": "hire1", "group": "business", "title": "Plant hire", "text": "Hire a machine out and have it back.", "metric": "hiresDone", "target": 1, "reward": 60 },
     { "id": "hire6", "group": "business", "title": "Hire desk", "text": "Hire machines out 6 times.", "metric": "hiresDone", "target": 6, "reward": 300 },
     { "id": "regular4", "group": "business", "title": "Standing order", "text": "Deliver 4 weeks of a regular customer's order in full.", "metric": "regularWeeks", "target": 4, "reward": 300 },

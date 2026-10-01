@@ -14,6 +14,7 @@ import { contractsOnEvent, contractsDaily } from '../contracts/index.js';
 import { weatherOnEvent, weatherState } from '../weather/index.js';
 import { hireOnEvent } from '../hire/index.js';
 import { classifiedsOnEvent } from '../classifieds/index.js';
+import { staffOnEvent, staffTick } from '../staff/index.js';
 import { careerOnEvent, careerState } from '../career/index.js';
 import { happeningsDaily, happeningsHourly } from '../happenings/index.js';
 
@@ -40,6 +41,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
   events.on('*', (type) => weatherOnEvent(ctx, type));
   events.on('*', (type) => hireOnEvent(ctx, type));
   events.on('*', (type) => classifiedsOnEvent(ctx, type));
+  events.on('*', (type) => staffOnEvent(ctx, type));
   weatherState(ctx);
   if (!ctx.state.contracts) contractsDaily(ctx); // (a new game, or an old save: fill the board)
   events.on('dayStarted', () => {
@@ -54,6 +56,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
 
   function tick() {
     tickJobs(ctx, tickSeconds(data));
+    staffTick(ctx, tickSeconds(data));
     ctx.ground?.settle(4000);
     advanceClock(ctx);
   }

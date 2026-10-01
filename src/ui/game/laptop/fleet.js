@@ -5,6 +5,7 @@ import { machinesAt, machineName, resaleValue } from '../../../machinery/index.j
 import { machineLog } from '../../../game/logbook.js';
 import { weeklyInsurance, insuranceState, insuranceCover, nextRenewal } from '../../../economy/index.js';
 import { hireState, hireCandidates, machinesOnHire } from '../../../hire/index.js';
+import { workerFor } from '../../../staff/index.js';
 
 export function fleetApp({ game, feedback, photos, openApp, setHead }) {
   const { data } = game;
@@ -116,9 +117,10 @@ export function fleetApp({ game, feedback, photos, openApp, setHead }) {
       setText(c.value, money(v));
       c.cond.style.width = `${Math.round(c.m.condition)}%`;
       setText(c.condT, `${Math.round(c.m.condition)}%`);
-      const s = c.m.broken ? 'Broken down' : c.m.job ? 'Working' : c.m.condition < 40 ? 'Needs a service' : 'Ready';
+      const op = workerFor(ctx, c.m);
+      const s = c.m.broken ? 'Broken down' : c.m.away ? `${op?.name.split(' ')[0] ?? 'Driver'} on the road` : op?.role ? `${op.name.split(' ')[0]} on it` : c.m.job ? 'Working' : c.m.condition < 40 ? 'Needs a service' : 'Ready';
       setText(c.status, s);
-      c.status.className = `lt-fl-status ${c.m.broken ? 'bad' : c.m.condition < 40 ? 'warn' : c.m.job ? 'busy' : 'ok'}`;
+      c.status.className = `lt-fl-status ${c.m.broken ? 'bad' : c.m.condition < 40 ? 'warn' : c.m.job || op?.role ? 'busy' : 'ok'}`;
       if (c.m.broken || c.m.condition < 40) attention += 1;
       const q = game.actions.mechanicQuote(c.m.id);
       c.call.style.visibility = q.reason ? 'hidden' : '';

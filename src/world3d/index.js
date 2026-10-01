@@ -24,6 +24,7 @@ import { createPlanner } from './planner.js';
 import { createThumbnails } from './thumbnails.js';
 import { createRain } from './rain.js';
 import { groundWeather } from './groundMaterial.js';
+import { workerFor } from '../staff/index.js';
 import { currentWeather } from '../weather/index.js';
 import { createHeadSway } from './headSway.js';
 import { MAP, inRect } from './map.js';
@@ -199,7 +200,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     else v = createTruck(args);
     vehicles.set(machine.id, v);
   }
-  for (const m of machinesAt(game.ctx, siteId)) addVehicle(m);
+  for (const m of machinesAt(game.ctx, siteId)) if (!m.away) addVehicle(m); // (not one out on the road with a driver)
 
   // Your shovel and wheelbarrow (the shovel is drawn in front of the camera).
   scene.add(camera);
@@ -257,6 +258,13 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   }
 
   function enter(v) {
+    // (one of your staff is working it: they keep it until you give them another job)
+    const op = workerFor(game.ctx, getMachine(game.ctx, v.machineId));
+    if (op?.role) {
+      notify(`${op.name} is working the ${typeName(data, v.type).toLowerCase()}: give them another job first (laptop: Staff)`, 'warn');
+      return;
+    }
+    game.state.player.driving = v.machineId;
     mode = { kind: v.type, v };
     player.setEnabled(false);
     game.actions.selectMachine(v.machineId);
@@ -289,6 +297,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     player.look.yaw = yaw - Math.PI / 2;
     player.look.pitch = 0;
     mode = { kind: 'foot' };
+    game.state.player.driving = null;
   }
 
   function bedColor(load) {
@@ -583,13 +592,28 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const m = getMachine(game.ctx, e.machineId);
       if (m && m.siteId === siteId) addVehicle(m);
     }),
-    ...['machineSold', 'machineHiredOut'].map((type) => game.events.on(type, (e) => {
+    ...['machineSold', 'machineHiredOut', 'staffTripOut'].map((type) => game.events.on(type, (e) => {
       const v = vehicles.get(e.machineId);
       if (!v) return;
       if (current() === v) exit();
       v.destroy();
       vehicles.delete(e.machineId);
     })),
+    // Staff at work: a driver's vehicle comes back from the depot; an operator's digger swings to
+    // where it digs or dumps (the dig itself animates from the job, like yours).
+    game.events.on('staffTripBack', (e) => {
+      const m = getMachine(game.ctx, e.machineId);
+      if (m && m.siteId === siteId && !vehicles.has(m.id)) addVehicle(m, { fresh: true });
+    }),
+    game.events.on('operatorAim', (e) => {
+      const veh = vehicles.get(e.machineId);
+      if (!veh?.digger) return;
+      const p = veh.position();
+      const want = Math.atan2(-(e.z - p.z), e.x - p.x) - veh.yaw();
+      const s = veh.state;
+      s.targetHouseYaw = s.houseYaw + Math.atan2(Math.sin(want - s.houseYaw), Math.cos(want - s.houseYaw));
+    }),
+    game.events.on('operatorDump', (e) => vehicles.get(e.machineId)?.startDump?.(heightAt(e.x, e.z))),
     game.events.on('machineReturned', (e) => {
       const m = getMachine(game.ctx, e.machineId);
       if (m && m.siteId === siteId && !vehicles.has(m.id)) addVehicle(m, { fresh: true });
@@ -1126,6 +1150,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     lockMouse: () => mouse.lock(),
     unlockMouse: () => mouse.unlock(),
     isMouseLocked: () => mouse.locked(),
+    // Where a machine stands in the world ({ x, z, yaw }), or null (for staff: a digger's work spot).
+    machinePlacement: (id) => vehicles.get(id)?.placement?.() ?? null,
     // Product photos of the machines (for the laptop); dispose() the result when done.
     createProductPhotos: (opts) => createThumbnails(opts),
     destroy() {

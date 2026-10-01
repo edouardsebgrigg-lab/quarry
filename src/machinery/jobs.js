@@ -5,6 +5,7 @@
 import { buildingMultiplier } from '../buildings/index.js';
 import { pileTotal } from '../quarry/index.js';
 import { chargeFuel, spendMoney, hasTicket, sellLoad, repairShare } from '../economy/index.js';
+import { staffMaintenanceMultiplier } from '../staff/perks.js';
 import { getStats, typeName, isDigger, isRoadLegal, unloadSeconds } from './stats.js';
 import { applyWear, serviceCost } from './wear.js';
 import { getMachine, machineName } from './fleet.js';
@@ -88,7 +89,7 @@ export const JOBS = {
       return null;
     },
     begin(ctx, m, stats, job) {
-      job.cost = serviceCost(stats, m) * buildingMultiplier(ctx, 'workshop', 'maintenanceCostMultiplier', m.siteId);
+      job.cost = serviceCost(stats, m) * buildingMultiplier(ctx, 'workshop', 'maintenanceCostMultiplier', m.siteId) * staffMaintenanceMultiplier(ctx);
       spendMoney(ctx, job.cost, 'service');
       return stats.serviceTime * buildingMultiplier(ctx, 'workshop', 'maintenanceTimeMultiplier', m.siteId);
     },
@@ -107,7 +108,7 @@ export const JOBS = {
     },
     begin(ctx, m, stats, job) {
       // (the insurance pays its share of the bill)
-      job.cost = stats.repairCost * buildingMultiplier(ctx, 'workshop', 'maintenanceCostMultiplier', m.siteId) * repairShare(ctx);
+      job.cost = stats.repairCost * buildingMultiplier(ctx, 'workshop', 'maintenanceCostMultiplier', m.siteId) * repairShare(ctx) * staffMaintenanceMultiplier(ctx);
       spendMoney(ctx, job.cost, 'repair');
       return stats.repairTime * buildingMultiplier(ctx, 'workshop', 'maintenanceTimeMultiplier', m.siteId);
     },

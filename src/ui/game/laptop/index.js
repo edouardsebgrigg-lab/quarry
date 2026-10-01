@@ -11,6 +11,8 @@ import { hireState } from '../../../hire/index.js';
 import { homeApp } from './home.js';
 import { dealerApp } from './dealer.js';
 import { classifiedsApp } from './classifieds.js';
+import { staffApp } from './staff.js';
+import { staffState, openSlots } from '../../../staff/index.js';
 import { classifiedsState } from '../../../classifieds/index.js';
 import { pricesApp } from './prices.js';
 import { bankApp } from './bank.js';
@@ -28,6 +30,7 @@ const APPS = [
   { id: 'milestones', label: 'Milestones', icon: 'trophy', make: milestonesApp },
   { id: 'prices', label: 'Depot prices', icon: 'chart', make: pricesApp },
   { id: 'fleet', label: 'Fleet', icon: 'truck', make: fleetApp },
+  { id: 'staff', label: 'Staff', icon: 'people', make: staffApp },
   { id: 'bank', label: 'Bank', icon: 'bank', make: bankApp },
   { id: 'messages', label: 'Messages', icon: 'mail', make: messagesApp },
 ];
@@ -72,7 +75,7 @@ export function openLaptop(overlays, { game, feedback, world, app = 'home' }) {
       function show(id) {
         const a = APPS.find((x) => x.id === id) ?? APPS[0];
         active?.instance.dispose?.();
-        const instance = a.make({ game, feedback, photos, openApp: show, setHead });
+        const instance = a.make({ game, feedback, photos, world, openApp: show, setHead });
         active = { id: a.id, instance };
         for (const [bid, b] of buttons) {
           b.classList.toggle('active', bid === a.id);
@@ -103,7 +106,9 @@ export function openLaptop(overlays, { game, feedback, world, app = 'home' }) {
         const reached = unseenMilestones(game.ctx);
         const hireAsk = hireState(game.ctx).enquiry ? 1 : 0; // (a contractor wants to hire a machine)
         const newAds = active?.id === 'classifieds' ? 0 : classifiedsState(game.ctx).listings.filter((l) => l.listed === d.day).length; // (today's adverts)
-        for (const [id, n] of [['messages', unread], ['jobs', offers], ['milestones', reached], ['fleet', hireAsk], ['classifieds', newAds]]) {
+        const st = staffState(game.ctx);
+        const freePosts = active?.id === 'staff' ? 0 : Math.max(0, openSlots(game.ctx) - st.workers.length); // (a post to fill)
+        for (const [id, n] of [['messages', unread], ['jobs', offers], ['milestones', reached], ['fleet', hireAsk], ['classifieds', newAds], ['staff', freePosts]]) {
           const bdg = badges.get(id);
           setText(bdg, n ? String(n) : '');
           bdg.style.display = n ? '' : 'none';
