@@ -459,6 +459,30 @@ export function hydraulicHiss(sr, seconds = 1.5, seed = 15) {
   return normalize(loopify(s, fade), 0.7);
 }
 
+// Oil moving through a tipper valve, with dull cylinder/seal friction beneath the hiss.
+export function tipperRam(sr, seconds = 2, seed = 125) {
+  const n = Math.round(seconds * sr), r = rng(seed);
+  const oil = periodicNoise(n,r,'bandpass',850,0.8,sr);
+  const seal = periodicNoise(n,r,'bandpass',165,1.1,sr);
+  const out = mix([oil,0.8],[seal,0.55]);
+  for (let i=0;i<n;i++) out[i] *= 0.85 + 0.15*Math.sin(2*Math.PI*2*i/n);
+  return normalize(out,0.65);
+}
+
+// A 540 rpm PTO shaft: nine dull mechanical pulses per second and modest pump vibration.
+export function ptoDrive(sr, seconds = 2, seed = 126) {
+  const n=Math.round(seconds*sr), r=rng(seed);
+  const texture=periodicNoise(n,r,'lowpass',600,0.7,sr);
+  const out=new Float32Array(n);
+  const turns=Math.round(seconds*9);
+  for(let i=0;i<n;i++) {
+    const phase=turns*i/n, angle=phase*2*Math.PI;
+    const pulse=Math.exp((Math.cos(angle)-1)*7);
+    out[i]=(0.11*Math.sin(angle*6)+0.07*Math.sin(angle*12))*(0.35+pulse)+texture[i]*(0.1+0.45*pulse);
+  }
+  return normalize(out,0.5);
+}
+
 // Wind over open country (loop).
 export function wind(sr, seconds = 8, seed = 16) {
   const n = Math.round(seconds * sr);

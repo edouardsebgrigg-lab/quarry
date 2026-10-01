@@ -41,8 +41,8 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
           gravel: audio.loopVoice('gravel'),
           road: audio.loopVoice('road'),
           beeper: v.type === 'truck' ? audio.loopVoice('beeper') : null,
-          ram: v.type === 'truck' || v.type === 'tractor' ? audio.whineVoice() : null,
-          ramOil: v.type === 'truck' || v.type === 'tractor' ? audio.loopVoice('hydraulic') : null, // (oil rushing through the tipping valve)
+          ram: v.type === 'truck' || v.type === 'tractor' ? audio.loopVoice('tipperRam') : null,
+          pto: v.type === 'tractor' ? audio.loopVoice('pto') : null,
         }
         : {
           tracks: audio.loopVoice('tracks'), crunch: audio.loopVoice('gravel'), hyd: audio.loopVoice('hydraulic'), scrape: audio.loopVoice('scrape'), pump: audio.whineVoice(),
@@ -116,11 +116,15 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
       audio.play('thud', { pos: inside ? null : body, gain: 0.25 + k * 0.5, rate: 0.8 + Math.random() * 0.3 });
       if (v.phys && job?.type !== 'tip') audio.play('clunk', { pos: body, gain: 0.1 * k, rate: 1.4 });
     }
-    // Tipping: the ram whines up, the load slides out, the bed comes down with a bang.
+    // Tipping: pressure/oil and seal friction, a tractor PTO driving the pump, then the load.
     const bedUp = f.bedAngle > 0.05;
-    m.extra.ram?.set({ freq: 95 + f.bedAngle * 30, gain: f.bedSpeed > 0.01 ? 0.12 : (bedUp && f.bedSpeed < -0.01 ? 0.05 : 0), pos: body });
-    // Raising pushes oil hard (louder, the engine's pump working); lowering lets it drain back.
-    m.extra.ramOil?.set({ gain: f.bedSpeed > 0.01 ? 0.32 : (bedUp && f.bedSpeed < -0.01 ? 0.14 : 0), rate: f.bedSpeed > 0.01 ? 1.05 : 0.8, pos: body, cutoff: inside ? 3000 : 16000 });
+    const raising = f.bedSpeed > 0.01, lowering = bedUp && f.bedSpeed < -0.01;
+    const ramAt = v.bedWorld ? v3(v.bedWorld()) : body;
+    const ramMoving = raising || lowering;
+    m.extra.ram?.set({ gain:(raising ? 0.38 : lowering ? 0.18 : 0)*muffle, rate:raising ? 1 : 0.75, pos:ramAt, cutoff:inside ? 2200 : 7000 });
+    m.extra.pto?.set({ gain:raising && job?.type==='tip' ? 0.24*m.level*muffle : 0, rate:Math.max(0.65,Math.min(1.35,rpm/1400)), pos:body, cutoff:inside ? 1500 : 5000 });
+    if (ramMoving && !m.ramMoving) audio.play('clunk',{pos:ramAt,gain:inside ? 0.08 : 0.14,rate:1.6});
+    m.ramMoving=ramMoving;
     if (job?.type === 'tip' && f.bedAngle > 0.35 && !m.tipPoured) {
       m.tipPoured = true;
       audio.play('pourLong', { pos: v3(v.unload().point), gain: 1 });

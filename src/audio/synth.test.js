@@ -43,7 +43,7 @@ describe('sound synthesis', { timeout: 30000 }, () => {
   });
 
   it('builds seamless loops for rolling, tracks, digging, hydraulics and wind', () => {
-    for (const f of [S.gravelRoll, S.roadRoll, S.trackClank, S.scrape, S.hydraulicHiss, S.wind, S.beeper]) {
+    for (const f of [S.gravelRoll, S.roadRoll, S.trackClank, S.scrape, S.hydraulicHiss, S.tipperRam, S.ptoDrive, S.wind, S.beeper]) {
       const buf = f(SR);
       check(buf);
       seamless(buf);

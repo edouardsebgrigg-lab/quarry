@@ -126,3 +126,10 @@ quota completion waits until the next week. Bucket remainders are retained and d
 before another cut. `staffOnEvent` earns dig/sell/fix experience from completed events;
 round-trip return earns drive experience. Thresholds in `data/staff.json` multiply by the
 current star, cap at five, and never change the agreed wage.
+
+S2 tipping audio: `synth.tipperRam` builds filtered valve flow and cylinder/seal friction;
+`ptoDrive` builds a 540 rpm mechanical pulse loop. Web Audio banks these as `tipperRam`
+and `pto`. World truck/trailer bed velocity gates ram gain (lowering is quieter/slower);
+tractor PTO is gated to a raising tip job and engine envelope. Voices stop when machinery
+is removed/destroyed. Gearbox audio is unchanged. Unit checks cover finite/non-clipping
+seamless buffers plus raising/lowering/idle/removal behavior; the browser API check is muted.

@@ -63,6 +63,8 @@ export function createAudio({ volume = 0.8 } = {}) {
       tracks: toBuffer(S.trackClank(sr)),
       scrape: toBuffer(S.scrape(sr)),
       hydraulic: toBuffer(S.hydraulicHiss(sr)),
+      tipperRam: toBuffer(S.tipperRam(sr)),
+      pto: toBuffer(S.ptoDrive(sr)),
       wind: toBuffer(S.wind(sr)),
       beeper: toBuffer(S.beeper(sr)),
       alarm: toBuffer(S.broadbandAlarm(sr)),
