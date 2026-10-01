@@ -84,7 +84,7 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       bay; the vehicle leaves and comes back), sales (more per load, takes board jobs), fitter
       (services and repairs, cheaper); wages daily, agency fee, notice; tested; staff.mjs (laptop)
       and stafffield.mjs (the operator digging and heaping, the truck gone to the depot) checked
-- [ ] D14 Staff, next: a driver could also deliver to jobs-board customers and fill a regular
+- [x] D14 Staff, next (`72f506e`): a driver could also deliver to jobs-board customers and fill a regular
       customer's order on purpose; morale or experience that grows with work; an operator
       loading the truck directly (digger and driver working together)
 - [x] D12 Insurance cover is a choice (Fleet app): none, basic (half of each repair paid, the

@@ -374,3 +374,28 @@ a new manual barrow-control check was not run.
   Manual driveway approach and UI save/reload **not verified**; JSON ticket/ownership
   save/load and the existing depot weighing path covered by unit tests.
 - GitHub publication remains blocked by account write access.
+
+### D14 — completed locally
+
+- Implementation commit: `72f506e`. Drivers select an accepted board job or regular
+  order, load the requested material, require clean grade and credit the chosen customer.
+  Completed/absent orders wait for a new choice; paid regular quotas wait for the next week.
+  Trip targets survive saves and cannot be changed while away. Preloaded trucks now depart.
+- Paired operators transfer buckets to a nearby waiting same-site carrier, preserve tiny
+  partial-bucket remainders and fall back to heaps when the driver is unavailable. World
+  aim includes actual target reach/bed height and allows time for dumping. Staff UI includes
+  Customer/Loading choices and progress toward skill stars. Completed work earns saved
+  experience, caps at five stars, retains agreed wages. Data/README/modules updated.
+- Actually ran: `npm test` (270 passing in 40 files), `npm run build` (passed),
+  `git diff --check`, bounded `staff-pair.mjs` on native Metal. UI clicks selected a board
+  customer and operator. A 0.5 t actual shallow cut placed in the bucket transferred
+  through staff logic into the waiting truck; the trip credited 0.5 t to that exact job.
+  No page errors. Inspected Staff UI and paired-machine screenshots under
+  `docs/handover/screenshots/d14/`. First browser fixture cut was below the 0.4 t minimum
+  haul threshold; increased the cut and repeated successfully. No haul threshold changed.
+- Browser uses development funds/progress, code parking, supplied bucket from an actual
+  cut, operator phase set to dump, game-tick advancement and stubbed pointer lock.
+  Natural multi-day pairing, manual controls and a full visible bucket animation sequence
+  are **not verified**. Unit tests cover targeted heaps/regular priority, unavailable material,
+  capacity/remainder conservation, reach/away guards, real-work skill gain, trip save/reload
+  and legacy defaults. Push remains blocked by repository account access.
