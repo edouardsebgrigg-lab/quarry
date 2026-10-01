@@ -151,3 +151,5 @@ record actual checks and limits in CODEX-CHECKPOINT.md.
 - [x] H1 Bounded machine dash and survey, camera-motion/FOV controls, safe old settings and custom key preservation, narrow goal/mentor overlap fix.
 
 Implementation commit, actual controls/fixture distinction and checks are in CODEX-CHECKPOINT.md. Independent evidence review: handover/game-feel-review.md.
+
+F3/P3/D16/H1 implementation: `b17280d`; per-task verification receipts are in CODEX-CHECKPOINT.md.
