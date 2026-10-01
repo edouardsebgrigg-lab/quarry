@@ -3,7 +3,10 @@
 // transparent background. Uses its own small renderer; call dispose() when the laptop closes.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { modelScene, poseDigger } from './glbModels.js';
+import { modelScene, poseDigger, glbExcavator, glbMiniDigger, glbTractor, glbTrailer, glbPickup } from './glbModels.js';
+import machines from '../../data/machines.json';
+import { buildMobilityModel, upgradePickupModel } from './fleetVariants.js';
+import { fleetProfile } from './fleetProfiles.js';
 
 // Which model files make up each machine type (the tractor comes with its trailer).
 const FILES = {
@@ -11,7 +14,8 @@ const FILES = {
   excavator: ['excavator'],
   dumper: ['dumper'],
   truck: ['truck'],
-  tractor: ['tractor', 'trailer'],
+  tractor: ['tractor'],
+  trailer: ['trailer'],
   pickup: ['vehicle_pickup'], // (one model for every tier)
 };
 const TRAILER_OFFSET = -1.32 - 3.3; // the trailer's origin (its axle) sits this far behind the tractor's
@@ -55,6 +59,24 @@ export function createThumbnails({ width = 480, height = 300 } = {}) {
   }
 
   function build(type, tier) {
+    const spec = machines.types[type]?.tiers[tier] ?? {};
+    let model;
+    if (type === 'miniDigger') model = glbMiniDigger(tier, spec);
+    else if (type === 'excavator') model = glbExcavator(tier, spec);
+    else if (type === 'tractor') model = glbTractor(tier, 0, spec);
+    else if (type === 'trailer') model = glbTrailer(tier, spec);
+    else if (type === 'fourByFour') model = upgradePickupModel(glbPickup(0));
+    else if (['quad','buggy','fourByFour','serviceVan'].includes(type)) {
+      const profile = fleetProfile(type, spec);
+      model = buildMobilityModel(type, 0, profile.shape);
+    }
+    if (model) {
+      const group = model.root;
+      if (type === 'miniDigger' || type === 'excavator') poseDigger(group, DIGGER_POSE);
+      const box = new THREE.Box3().setFromObject(group), centre = box.getCenter(new THREE.Vector3());
+      group.position.set(-centre.x, -box.min.y, -centre.z);
+      return group;
+    }
     const files = FILES[type];
     if (!files) return null;
     const group = new THREE.Group();

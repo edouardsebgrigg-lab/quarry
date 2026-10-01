@@ -13,7 +13,10 @@ import { dealerPrice } from '../../../career/index.js';
 
 const CATEGORIES = [
   { id: 'diggers', label: 'Diggers', icon: 'digger' },
-  { id: 'carriers', label: 'Carriers', icon: 'truck' },
+  { id: 'tractors', label: 'Tractors', icon: 'truck' },
+  { id: 'trailers', label: 'Trailers', icon: 'truck' },
+  { id: 'carriers', label: 'Haulage', icon: 'truck' },
+  { id: 'transport', label: 'Getting around', icon: 'truck' },
   { id: 'upgrades', label: 'Upgrades', icon: 'wrench' },
   { id: 'yard', label: 'Yard buildings', icon: 'building' },
   { id: 'sell', label: 'Sell', icon: 'tag' },
@@ -34,7 +37,7 @@ export function dealerApp({ game, feedback, photos, setHead }) {
   const catBar = el('div', { class: 'lt-cats' });
 
   const owned = () => machinesAt(ctx, game.state.currentSiteId);
-  const typesOfKind = (kind) => Object.entries(data.machines.types).filter(([, t]) => t.shop !== false && t.kind === kind);
+  const typesOfKind = (kind) => Object.entries(data.machines.types).filter(([type, t]) => t.shop !== false && (kind === 'tractors' ? type === 'tractor' : kind === 'trailers' ? type === 'trailer' : kind === 'transport' ? ['quad','buggy','fourByFour','serviceVan'].includes(type) : t.kind === kind && type !== 'tractor' && !['buggy','fourByFour','serviceVan'].includes(type)));
   const bestOfType = (type) => {
     let best = null;
     for (const m of owned().filter((x) => x.type === type)) {
@@ -83,13 +86,14 @@ export function dealerApp({ game, feedback, photos, setHead }) {
     const grid = el('div', { class: 'lt-grid' });
     for (const [type, t] of typesOfKind(kind)) {
       for (const [tier, td] of Object.entries(t.tiers)) {
+        if (td.legacy) continue;
         const count = owned().filter((m) => m.type === type && m.tier === tier).length;
         const lines = describeStats(data, type, td);
         const unlocked = isTierUnlocked(ctx, type, tier);
         grid.append(el('button', { class: `lt-tile ${unlocked ? '' : 'locked'}`, onClick: () => { detail = { type, tier }; render(); } },
           photo(type, tier),
           el('div', { class: 'lt-tile-body' },
-            el('div', { class: 'lt-tile-title' }, el('span', {}, t.name), offerOn(type, tier) ? el('span', { class: 'lt-offer' }, `−${Math.round(offerOn(type, tier).discount * 100)}%`) : null, tierPill(tier)),
+            el('div', { class: 'lt-tile-title' }, el('span', {}, td.modelName ?? t.name), offerOn(type, tier) ? el('span', { class: 'lt-offer' }, `−${Math.round(offerOn(type, tier).discount * 100)}%`) : null, td.modelName ? null : tierPill(tier)),
             el('div', { class: 'lt-tile-specs' }, lines.slice(0, 2).map((l) => `${l.label} ${statValue(l)}`).join('  ·  ')),
             el('div', { class: 'lt-tile-foot' },
               el('span', { class: 'lt-price' }, unlocked ? money(machinePrice(ctx, type, tier)) : 'Locked'),
@@ -120,7 +124,10 @@ export function dealerApp({ game, feedback, photos, setHead }) {
       ['Condition on delivery', `${Math.round(td.startCondition ?? 100)}%`],
       td.enginePower ? ['Engine', `${Math.round(td.enginePower)} kW`] : null,
       td.mass ? ['Operating weight', `${(td.mass / 1000).toFixed(1)} t`] : null,
-      ['On the road', t.roadLegal ? 'Road legal' : 'Site only (stays on your land)'],
+      ['On the road', type === 'trailer' ? 'Tow with a compatible tractor' : t.roadLegal ? 'Road legal' : 'Site only (stays on your land)'],
+      type === 'trailer' ? ['Trailer brakes', td.brakes ? 'Fitted' : 'Unbraked; take care on slopes'] : null,
+      type === 'tractor' ? ['Drive', td.driveWheels === 4 ? 'Four wheel drive' : 'Rear wheel drive'] : null,
+      type === 'tractor' ? ['Tow weight', 'Includes empty trailer and cargo'] : null,
       ['Insurance', `${money(td.price * insuranceCover(ctx).weeklyRate)} a week`],
     ].filter(Boolean);
     body.append(el('div', { class: 'lt-detail' },
@@ -128,7 +135,7 @@ export function dealerApp({ game, feedback, photos, setHead }) {
       el('div', { class: 'lt-detail-grid' },
         photo(type, tier, 'big'),
         el('div', { class: 'lt-detail-info' },
-          el('div', { class: 'lt-detail-title' }, el('h3', {}, t.name), tierPill(tier)),
+          el('div', { class: 'lt-detail-title' }, el('h3', {}, td.modelName ?? t.name), td.modelName ? null : tierPill(tier)),
           t.blurb ? el('p', { class: 'lt-blurb' }, t.blurb) : null,
           el('div', { class: 'lt-buy-row' },
             el('div', {}, el('div', { class: 'lt-buy-label' }, !unlocked ? 'Not available yet'
@@ -137,7 +144,32 @@ export function dealerApp({ game, feedback, photos, setHead }) {
             el('div', { class: 'lt-buy-price' }, money(machinePrice(ctx, type, tier)))),
             unlocked ? buyButton(machinePrice(ctx, type, tier), () => buyMachine(type, tier)) : el('span', { class: 'muted small' }, 'Needs research')),
           el('div', { class: 'lt-specs' }, specRows),
+          rentalOptions(type, tier),
+          type === 'trailer' ? trailerAdvice(td) : null,
           el('div', { class: 'lt-facts' }, facts.map(([k, v]) => el('div', {}, el('span', {}, k), el('b', {}, v))))))));
+  }
+
+  function rentalOptions(type, tier) {
+    if (!game.actions.rentalQuote || type === 'tractor' || type === 'trailer') return null;
+    const quotes = [1, 3].map(days => ({ days, ...game.actions.rentalQuote(type, tier, days) })).filter(q => q.ok);
+    if (!quotes.length) return null;
+    return el('div', { class: 'lt-card' }, el('b', {}, 'Try it on hire'),
+      el('p', { class: 'lt-note' }, 'Short hire lets you use the next machine before buying. Your deposit is returned when the machine comes back.'),
+      ...quotes.map(q => buyButton(q.total ?? q.cost, () => {
+        const r = game.actions.rentMachine(type, tier, q.days);
+        feedback.message(r.ok ? 'Hire machine delivered to your yard' : r.reason, r.ok ? 'good' : 'warn');
+      }, `Hire ${q.days} day${q.days === 1 ? '' : 's'} · ${money(q.total ?? q.cost)} (${money(q.deposit)} deposit)`)));
+  }
+
+  function trailerAdvice(spec) {
+    const tractors = owned().filter(m => m.type === 'tractor');
+    const compatible = tractors.map(m => {
+      const tow = getStats(data, m).maxTowMass;
+      const payload = Math.max(0, Math.min(spec.capacity, (tow - spec.mass) / 1000));
+      return payload > 0 ? `${machineName(data, m)}: up to ${payload.toFixed(1)} t cargo` : null;
+    }).filter(Boolean);
+    return el('div', { class: 'lt-card' }, el('b', {}, 'Your towing options'),
+      el('p', { class: 'lt-note' }, compatible.length ? compatible.join(' · ') : 'You need a tractor with a gross towing limit above this trailer’s empty weight.'));
   }
 
   // ---- upgrades for the machines you own
@@ -177,7 +209,7 @@ export function dealerApp({ game, feedback, photos, setHead }) {
 
   // ---- sell: two clicks, so a machine isn't sold by accident
   function renderSell() {
-    const ms = owned();
+    const ms = owned().filter(m=>!m.rental);
     if (!ms.length) body.append(el('div', { class: 'lt-empty' }, 'Nothing to sell yet.'));
     const rows = ms.map((m) => {
       const value = resaleValue(ctx, m);
@@ -219,13 +251,16 @@ export function dealerApp({ game, feedback, photos, setHead }) {
     if (detail) renderDetail(detail);
     else if (cat === 'diggers') renderGrid('digger');
     else if (cat === 'carriers') renderGrid('carrier');
+    else if (cat === 'tractors') renderGrid('tractors');
+    else if (cat === 'trailers') renderGrid('trailers');
+    else if (cat === 'transport') renderGrid('transport');
     else if (cat === 'upgrades') renderUpgrades();
     else if (cat === 'yard') renderYard();
     else renderSell();
     refreshButtons();
   }
 
-  const offs = ['machineBought', 'machineSold', 'modBought', 'buildingBought', 'unlocksChanged'].map((t) => game.events.on(t, render));
+  const offs = ['machineRented', 'rentalReturned', 'machineBought', 'machineSold', 'modBought', 'buildingBought', 'unlocksChanged'].map((t) => game.events.on(t, render));
   setHead('Ashby Plant', 'Machines, upgrades and yard buildings, delivered to your yard');
   render();
 

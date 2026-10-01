@@ -1,7 +1,7 @@
 // Your fleet: every machine with its condition, what it's done and what it's worth.
 import { el, setText } from '../../dom.js';
 import { money } from '../../format.js';
-import { machinesAt, machineName, resaleValue } from '../../../machinery/index.js';
+import { machinesAt, machineName, resaleValue, attachedTrailer, attachTrailer, detachTrailer, trailerCompatibility } from '../../../machinery/index.js';
 import { machineLog } from '../../../game/logbook.js';
 import { weeklyInsurance, insuranceState, insuranceCover, nextRenewal } from '../../../economy/index.js';
 import { hireState, hireCandidates, machinesOnHire } from '../../../hire/index.js';
@@ -44,9 +44,35 @@ export function fleetApp({ game, feedback, photos, openApp, setHead }) {
         el('span', {}, `${work}${log.breakdowns ? ` · broke down ${log.breakdowns}×` : ''}`)),
       el('div', { class: 'lt-fl-col' }, status),
       el('div', { class: 'lt-fl-col' }, el('div', { class: 'lt-cond' }, cond), condT),
-      el('div', { class: 'lt-fl-col lt-fl-val' }, el('span', {}, 'Worth'), value),
-      call);
+      el('div', { class: 'lt-fl-col lt-fl-val' }, el('span', {}, m.rental ? 'Deposit held' : 'Worth'), value),
+      el('div', { class: 'lt-fl-actions' }, call, towControls(m), rentalControls(m)));
   });
+
+  function resultMessage(result, text) {
+    feedback.message(result.ok ? text : result.reason, result.ok ? 'good' : 'warn');
+    if (result.ok) openApp('fleet');
+  }
+  function towControls(m) {
+    if (m.type !== 'tractor') return null;
+    const hitched = attachedTrailer(ctx, m);
+    if (hitched) return el('div', {}, el('span', { class: 'lt-note' }, machineName(data, hitched)),
+      el('button', { class: 'btn btn-small', onClick: () => resultMessage(
+        game.actions.detachTrailer ? game.actions.detachTrailer(m.id) : detachTrailer(ctx, m.id), 'Trailer parked where you left it') }, 'Unhitch'));
+    const free = ms.filter(t => t.type === 'trailer' && !t.attachedTo && !t.onHire);
+    if (!free.length) return el('span', { class: 'lt-note' }, 'Buy a separate trailer');
+    const options = free.map(t => {
+      const result = trailerCompatibility(ctx, m, t);
+      return el('option', { value: t.id, disabled: !result.ok }, `${machineName(data, t)}${result.ok ? ` · up to ${result.payload.toFixed(1)} t` : ' · too heavy'}`);
+    });
+    const choose = el('select', { class: 'lt-select', 'aria-label': `Trailer for ${machineName(data,m)}`, title: 'Park the tractor within 10 m of the trailer before hitching' }, options);
+    return el('div', {}, choose, el('button', { class: 'btn btn-small', onClick: () => resultMessage(
+      game.actions.attachTrailer ? game.actions.attachTrailer(m.id, choose.value) : attachTrailer(ctx, m.id, choose.value), 'Trailer hitched') }, 'Hitch trailer'));
+  }
+  function rentalControls(m) {
+    if (!m.rental) return null;
+    return el('div', {}, el('span', { class: 'lt-note' }, `Hired · due day ${Math.floor(m.rental.due) + 1}`),
+      el('button', { class: 'btn btn-small', onClick: () => resultMessage(game.actions.returnRental(m.id), 'Hire returned and deposit refunded') }, 'Return hire'));
+  }
 
   // Hire: a contractor's enquiry (send a machine or turn it down), and machines away on hire.
   const hireBox = el('div', { class: 'lt-hire' });
@@ -112,13 +138,13 @@ export function fleetApp({ game, feedback, photos, openApp, setHead }) {
     let total = 0;
     let attention = 0;
     for (const c of cells) {
-      const v = resaleValue(ctx, c.m);
-      total += v;
+      const v = c.m.rental ? c.m.rental.deposit : resaleValue(ctx, c.m);
+      if (!c.m.rental) total += v;
       setText(c.value, money(v));
       c.cond.style.width = `${Math.round(c.m.condition)}%`;
       setText(c.condT, `${Math.round(c.m.condition)}%`);
       const op = workerFor(ctx, c.m);
-      const s = c.m.broken ? 'Broken down' : c.m.away ? `${op?.name.split(' ')[0] ?? 'Driver'} on the road` : op?.role ? `${op.name.split(' ')[0]} on it` : c.m.job ? 'Working' : c.m.condition < 40 ? 'Needs a service' : 'Ready';
+      const s = c.m.attachedTo ? `Hitched to ${machineName(data, game.state.machines.find(m => m.id === c.m.attachedTo))}` : c.m.type === 'tractor' && c.m.trailerId ? 'Trailer hitched' : c.m.type === 'trailer' ? 'Parked trailer' : c.m.broken ? 'Broken down' : c.m.away ? `${op?.name.split(' ')[0] ?? 'Driver'} on the road` : op?.role ? `${op.name.split(' ')[0]} on it` : c.m.job ? 'Working' : c.m.condition < 40 ? 'Needs a service' : 'Ready';
       setText(c.status, s);
       c.status.className = `lt-fl-status ${c.m.broken ? 'bad' : c.m.condition < 40 ? 'warn' : c.m.job || op?.role ? 'busy' : 'ok'}`;
       if (c.m.broken || c.m.condition < 40) attention += 1;
@@ -138,8 +164,8 @@ export function fleetApp({ game, feedback, photos, openApp, setHead }) {
 
   const node = el('div', { class: 'lt-home' },
     el('div', { class: 'lt-stats' },
-      el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Machines'), el('div', { class: 'lt-stat-value' }, String(ms.length)),
-        el('div', { class: 'lt-stat-note' }, `${Object.keys(data.machines.types).filter((k) => ms.some((m) => m.type === k)).length} kinds`)),
+      el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Machines'), el('div', { class: 'lt-stat-value' }, String(ms.filter(m=>!m.rental).length)),
+        el('div', { class: 'lt-stat-note' }, `${ms.filter(m=>m.rental).length} hired · ${Object.keys(data.machines.types).filter((k) => ms.some((m) => !m.rental && m.type === k)).length} owned kinds`)),
       el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Fleet value'), totalV, el('div', { class: 'lt-stat-note' }, `Insurance ${money(weeklyInsurance(ctx))} a week`)),
       el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Need attention'), attnV, attnN)),
     hireBox,

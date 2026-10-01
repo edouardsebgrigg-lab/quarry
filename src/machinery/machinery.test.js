@@ -48,6 +48,11 @@ describe('stats and mods', () => {
       tractor: ['carrier', true],
       excavator: ['digger', false],
       truck: ['carrier', true],
+      trailer: ['trailer', true],
+      quad: ['transport', true],
+      buggy: ['carrier', true],
+      fourByFour: ['carrier', true],
+      serviceVan: ['carrier', true],
     });
   });
 });

@@ -5,6 +5,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createHeap } from './piles.js';
 import { weatherModel } from './weathering.js';
 import { addDecals } from './decals.js';
+import { variantStats, dressVariant } from './fleetVariants.js';
 
 // (a build for hosts that won't serve .glb files sets VITE_MODEL_EXT=gltf.json and ships each
 // model as glTF JSON, its geometry embedded and its textures as image files beside it: see
@@ -301,8 +302,10 @@ function diggerFromFile(name, { cabSeat, scoop }) {
     trackShoe: shoeMesh,
     trackChain: opt('Tracks'),
     trackWheels: { L: [opt('TrackWheelL0'), opt('TrackWheelL1')], R: [opt('TrackWheelR0'), opt('TrackWheelR1')] },
-    setBucketLoad(full, color) {
+    setBucketLoad(full, color, fraction = 1) {
       heap.visible = full;
+      const fill = Math.cbrt(Math.max(.005, Math.min(1, fraction)));
+      heap.scale.set(scoop.scale[0] * fill, scoop.scale[1] * fill, scoop.scale[2] * fill);
       if (color) heap.material.color.copy(color);
     },
     cabSeat, // in house space
@@ -310,12 +313,22 @@ function diggerFromFile(name, { cabSeat, scoop }) {
   };
 }
 
-export const glbExcavator = (tier) => diggerFromFile(`excavator_${tier}`, {
-  cabSeat: new THREE.Vector3(0.4, 1.42, -0.72), scoop: { pos: [0.45, -0.25, 0], scale: [0.38, 0.55, 0.38] },
-});
-export const glbMiniDigger = (tier) => diggerFromFile(`minidigger_${tier}`, {
-  cabSeat: new THREE.Vector3(-0.05, 1.44, 0), scoop: { pos: [0.2, -0.11, 0], scale: [0.17, 0.25, 0.17] },
-});
+export function glbExcavator(tier, supplied) {
+  const spec = variantStats('excavator', tier, supplied);
+  const model = diggerFromFile(`excavator_${tier === 'rusty' ? 'rusty' : 'used'}`, {
+    cabSeat: new THREE.Vector3(0.4, 1.42, -0.72), scoop: { pos: [0.45, -0.25, 0], scale: [0.38, 0.55, 0.38] },
+  });
+  if (model) dressVariant(model.root, spec, 'excavator');
+  return model;
+}
+export function glbMiniDigger(tier, supplied) {
+  const spec = variantStats('miniDigger', tier, supplied);
+  const model = diggerFromFile(`minidigger_${tier === 'rusty' ? 'rusty' : 'used'}`, {
+    cabSeat: new THREE.Vector3(-0.05, 1.44, 0), scoop: { pos: [0.2, -0.11, 0], scale: [0.17, 0.25, 0.17] },
+  });
+  if (model) dressVariant(model.root, spec, 'miniDigger');
+  return model;
+}
 
 // Track parts shared by the tracked machines.
 function trackParts(root) {
@@ -360,9 +373,11 @@ export function glbDumper(tier) {
 
 // The tractor (tractor_<tier>.glb): origin on the ground between the axles, lowered to sit
 // under the physics body's centre like the pickup. The trailer is a separate model.
-export function glbTractor(tier, rideHeight) {
-  const inner = instance(`tractor_${tier}`);
+export function glbTractor(tier, rideHeight, supplied) {
+  const spec = variantStats('tractor', tier, supplied);
+  const inner = instance(`tractor_${tier === 'rusty' ? 'rusty' : 'used'}`);
   if (!inner) return null;
+  dressVariant(inner, spec, 'tractor');
   inner.position.y = -rideHeight;
   const root = new THREE.Group();
   root.add(inner);
@@ -374,10 +389,11 @@ export function glbTractor(tier, rideHeight) {
   return {
     root,
     wheels,
-    wheelOffsetY: rideHeight,
-    hitchLocal: new THREE.Vector3(-1.32, 0.5 - rideHeight, 0),
-    cabSeat: new THREE.Vector3(-0.9, 2.0 - rideHeight, 0),
-    exhaustLocal: new THREE.Vector3(1.15, 1.9 - rideHeight, 0.2),
+    wheelOffsetY: rideHeight / (spec.modelScale ?? 1),
+    wheelScale: spec.modelScale ?? 1,
+    hitchLocal: new THREE.Vector3(-1.32 * (spec.modelScale ?? 1), 0.5 * (spec.modelScale ?? 1) - rideHeight, 0),
+    cabSeat: new THREE.Vector3(-0.9 * (spec.modelScale ?? 1), 2.0 * (spec.modelScale ?? 1) - rideHeight, 0),
+    exhaustLocal: new THREE.Vector3(1.15 * (spec.modelScale ?? 1), 1.9 * (spec.modelScale ?? 1) - rideHeight, 0.2 * (spec.modelScale ?? 1)),
     setFirstPerson() {},
   };
 }
@@ -385,10 +401,25 @@ export function glbTractor(tier, rideHeight) {
 // The tipping trailer (trailer_<tier>.glb): origin on the ground under the axle; the drawbar
 // eye is 3.3 m ahead of it. The bed tips about BedPivot (its rear hinge), and the tailgate
 // hangs from TailgatePivot.
-export function glbTrailer(tier) {
-  const root = instance(`trailer_${tier}`);
+export function glbTrailer(tier, supplied) {
+  const spec = variantStats('trailer', tier, supplied);
+  const scale = spec.modelScale ?? 1;
+  const root = instance(`trailer_${tier === 'rusty' ? 'rusty' : 'used'}`);
   if (!root) return null;
   const wheels = [0, 1].map((i) => node(root, `Wheel${i}`));
+  const axleCount = spec.axles ?? 1;
+  const firstAxle = ((axleCount - 1) * 1.05) / 2;
+  for (const wheel of wheels) wheel.position.x = firstAxle;
+  for (let axle = 1; axle < axleCount; axle++) {
+    for (const source of wheels.slice(0, 2)) {
+      const extra = source.clone(true);
+      extra.name = `${source.name}_Axle${axle + 1}`;
+      extra.position.x -= axle * 1.05;
+      source.parent.add(extra);
+      wheels.push(extra);
+    }
+  }
+  dressVariant(root, spec, 'trailer');
   const bedPivot = node(root, 'BedPivot');
   const tailgatePivot = node(root, 'TailgatePivot');
   const heap = createHeap(29);
@@ -411,7 +442,10 @@ export function glbTrailer(tier) {
     bedFloorY: 1.0,
     tailgateLocal: new THREE.Vector3(-1.75, 1.0, 0),
     eyeLocal: new THREE.Vector3(3.3, 0.5, 0),
-    axleLength: 3.3,
+    axleLength: 3.3 * scale,
+    wheelRadius: .45 * scale,
+    hitchHeight: .5 * scale,
+    colliderHalf: { x: 2 * scale, y: .42 * scale, z: .98 * scale },
   };
 }
 

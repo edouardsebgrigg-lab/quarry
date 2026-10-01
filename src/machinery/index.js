@@ -11,3 +11,5 @@ export {
   JOBS, startJob, tickJobs, whyCannotStart, playerJob, isPlayerBusy, jobProgress, bucketRadius,
 } from './jobs.js';
 export { mechanicQuote, callMechanic } from './mechanic.js';
+export { modelDescriptor, catalogueModels, migrateFleet } from './catalogue.js';
+export { attachedTrailer, loadCarrier, deliveryMachine, combinationStats, canDeliver, trailerCompatibility, attachTrailer, detachTrailer, cargoVolume, cargoRoom } from './trailers.js';

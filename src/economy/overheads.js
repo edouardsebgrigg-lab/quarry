@@ -42,7 +42,7 @@ export function nextRenewal(ctx) {
 export function weeklyInsurance(ctx, coverId) {
   const rate = insuranceCover(ctx, coverId).weeklyRate;
   let total = 0;
-  for (const m of ctx.state.machines) total += (ctx.data.machines.types[m.type]?.tiers[m.tier]?.price ?? 0) * rate;
+  for (const m of ctx.state.machines) if (!m.rental) total += (ctx.data.machines.types[m.type]?.tiers[m.tier]?.price ?? 0) * rate;
   return Math.round(total * 100) / 100;
 }
 
@@ -60,6 +60,6 @@ export function overheadsDaily(ctx) {
   const amount = weeklyInsurance(ctx);
   if (amount <= 0) return 0;
   spendMoney(ctx, amount, 'insurance');
-  ctx.events.emit('overheadsCharged', { amount, machines: ctx.state.machines.length, day });
+  ctx.events.emit('overheadsCharged', { amount, machines: ctx.state.machines.filter(m => !m.rental).length, day });
   return amount;
 }

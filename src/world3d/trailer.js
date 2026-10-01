@@ -22,14 +22,16 @@ export function trailerYawStep(yaw, dx, dz, length) {
 
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
-export function createTrailer({ physics, scene, terrain, tier, yaw = 0 }) {
+export function createTrailer({ physics, scene, terrain, tier, stats = {}, yaw = 0 }) {
   const { RAPIER, world } = physics;
-  const model = buildTrailerModel(tier);
+  const model = buildTrailerModel(tier, stats);
   scene.add(model.root);
   const L = model.axleLength;
 
   const body = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased());
-  world.createCollider(RAPIER.ColliderDesc.cuboid(2.0, 0.42, 0.98).setTranslation(0.2, 1.25, 0)
+  const bounds = model.colliderHalf ?? { x: 2, y: .42, z: .98 };
+  const scale = stats.modelScale ?? 1;
+  world.createCollider(RAPIER.ColliderDesc.cuboid(bounds.x, bounds.y, bounds.z).setTranslation(0.2 * scale, 1.25 * scale, 0)
     .setCollisionGroups(0x0002fffb), body);
 
   const s = { yaw, x: 0, z: 0, y: null, pitch: 0, roll: 0, prev: null, bed: 0, bedSpeed: 0, gate: 0, spin: 0, axle: null };
@@ -58,14 +60,14 @@ export function createTrailer({ physics, scene, terrain, tier, yaw = 0 }) {
     s.x = hitch.x - f.x * L;
     s.z = hitch.z - f.z * L;
     const side = { x: f.z, z: -f.x };
-    const left = terrain.heightAt(s.x + side.x * 0.8, s.z + side.z * 0.8);
-    const right = terrain.heightAt(s.x - side.x * 0.8, s.z - side.z * 0.8);
+    const left = terrain.heightAt(s.x + side.x * .8 * scale, s.z + side.z * .8 * scale);
+    const right = terrain.heightAt(s.x - side.x * .8 * scale, s.z - side.z * .8 * scale);
     const ground = (left + right) / 2;
     const k = Math.min(1, dt * 10);
     s.y = s.y === null ? ground : s.y + (ground - s.y) * k;
-    s.roll += (Math.atan2(right - left, 1.6) - s.roll) * k;
+    s.roll += (Math.atan2(right - left, 1.6 * scale) - s.roll) * k;
     // The drawbar eye is at the hitch's height: the trailer tilts about its axle to reach it.
-    const pitch = THREE.MathUtils.clamp((hitch.y - ground - model.eyeLocal.y) / L, -0.5, 0.5);
+    const pitch = THREE.MathUtils.clamp((hitch.y - ground - (model.hitchHeight ?? model.eyeLocal.y)) / L, -0.5, 0.5);
     s.pitch += (pitch - s.pitch) * k;
 
     model.root.position.set(s.x, s.y, s.z);
@@ -78,20 +80,20 @@ export function createTrailer({ physics, scene, terrain, tier, yaw = 0 }) {
     // Wheels roll with the distance the axle has moved along the trailer; the bed tips at a
     // steady rate and drops back.
     if (s.axle && Math.hypot(s.x - s.axle.x, s.z - s.axle.z) < 6) {
-      s.spin += ((s.x - s.axle.x) * f.x + (s.z - s.axle.z) * f.z) / 0.45;
+      s.spin += ((s.x - s.axle.x) * f.x + (s.z - s.axle.z) * f.z) / (model.wheelRadius ?? .45);
       for (const w of model.wheels) w.rotation.z = -s.spin;
     }
     s.axle = { x: s.x, z: s.z };
-    const target = unloading ? TIP_ANGLE * Math.min(1, (job.elapsed / job.duration) * 1.6) : 0;
+    const target = unloading && job ? TIP_ANGLE * Math.min(1, (job.elapsed / job.duration) * 1.6) : 0;
     const prev = s.bed;
     if (target > s.bed) s.bed = Math.min(target, s.bed + dt * 0.4);
     else s.bed = Math.max(target, s.bed - dt * 0.25);
     s.bedSpeed = (s.bed - prev) / Math.max(dt, 1e-4);
     model.bedPivot.rotation.z = s.bed; // the front of the bed lifts
-    const open = unloading && job.elapsed < job.duration - 0.6 ? 0.5 : 0;
+    const open = unloading && job && job.elapsed < job.duration - 0.6 ? 0.5 : 0;
     s.gate += (open - s.gate) * Math.min(1, dt * 4);
     model.tailgatePivot.rotation.z = -s.bed - s.gate; // hangs, and swings open as the load runs out
-    model.setLoad(unloading ? fill * (1 - job.elapsed / job.duration) : fill, color);
+    model.setLoad(unloading && job ? fill * (1 - job.elapsed / job.duration) : fill, color);
   }
 
   return {
@@ -113,5 +115,27 @@ export function createTrailer({ physics, scene, terrain, tier, yaw = 0 }) {
       scene.remove(model.root);
       world.removeRigidBody(body);
     },
+  };
+}
+
+// Parked trailers are loadable, collidable fleet entities, without a driver seat.
+export function createParkedTrailer({ physics, scene, terrain, machine, spawn, stats, live }) {
+  const spec = typeof stats === 'function' ? stats() : stats;
+  const trailer = createTrailer({ physics, scene, terrain, tier: machine.tier, stats: spec, yaw: spawn.yaw ?? 0 });
+  const pose = { x: spawn.x, z: spawn.z, yaw: spawn.yaw ?? 0 };
+  function update(dt, { fill = 0, color, job } = {}) {
+    const y = terrain.heightAt(pose.x, pose.z);
+    const hitch = { x: pose.x + Math.cos(pose.yaw) * trailer.axleLength,
+      z: pose.z - Math.sin(pose.yaw) * trailer.axleLength, y: y + (trailer.model.hitchHeight ?? .5) };
+    trailer.update(dt, { hitch, tractorYaw: pose.yaw, unloading: job?.type === 'tip', job, fill, color });
+  }
+  update(.016);
+  return { ...trailer, machineId: machine.id, type: 'trailer', road: false, carrier: true, towable: true,
+    radius: 2.4 * (spec.modelScale ?? 1), control: {}, update, speed: () => 0,
+    placement: () => ({ ...pose }), yaw: () => pose.yaw, engineOn: () => false,
+    takeEngineEvents: () => [], feel: () => ({ engine: 'off', travel: 0, work: 0, bedSpeed: trailer.state.bedSpeed, bedAngle: trailer.state.bed }),
+    setCargo() {}, unload: () => ({ point: trailer.tailgateWorld(), out: { x: -Math.cos(pose.yaw), z: Math.sin(pose.yaw) } }),
+    reset(x, z, yaw = pose.yaw) { Object.assign(pose, { x, z, yaw }); trailer.reset(x + Math.cos(yaw) * trailer.axleLength, z - Math.sin(yaw) * trailer.axleLength, yaw); update(.016); },
+    recover() { this.reset(pose.x, pose.z, pose.yaw); },
   };
 }

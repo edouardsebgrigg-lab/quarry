@@ -63,6 +63,20 @@ describe('truck driving', () => {
     expect(stopTime(3)).toBeGreaterThan(empty);
   });
 
+  it('trailer brakes shorten a loaded combination’s stopping distance', () => {
+    const stoppingDistance = (braked) => {
+      const { truck, run } = setup(8);
+      truck.setTowBraking(braked);
+      truck.control.throttle = 1;
+      run(14);
+      const start = truck.body.translation().x;
+      truck.control.throttle = -1;
+      for (let t = 0; t < 10 && truck.speed() > .3; t += .05) run(.05);
+      return truck.body.translation().x - start;
+    };
+    expect(stoppingDistance(true)).toBeLessThan(stoppingDistance(false) * .7);
+  });
+
   it('changes up through the gears and revs within the engine range', () => {
     const { truck, run } = setup(0);
     expect(truck.telemetry().rpm).toBeCloseTo(700, -1); // idling

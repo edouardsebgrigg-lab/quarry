@@ -30,7 +30,8 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
   function voicesFor(v, tier) {
     let m = machines.get(v.machineId);
     if (m) return m;
-    const kind = ENGINE_KIND[v.type][tier] ?? 'truckOld';
+    const kind = ENGINE_KIND[v.type]?.[tier] ?? ENGINE_KIND[v.type]?.used
+      ?? ({ quad: 'pickupOld', buggy: 'pickupOld', fourByFour: 'pickupOld', serviceVan: 'truckTurbo' }[v.type]) ?? 'truckOld';
     const road = !!v.road;
     m = {
       engine: audio.engineVoice(kind),
@@ -301,6 +302,7 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
       const list = [...vehicles.values()];
       const trucks = list.filter((x) => x.carrier);
       for (const v of list) {
+        if (v.towable) continue; // a parked trailer has no engine or hydraulic operator
         v.tier = tierOf(v.machineId);
         const inside = v === current;
         if (v.road) truck(v, dt, inside, jobOf(v.machineId));

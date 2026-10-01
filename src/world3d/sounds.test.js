@@ -20,3 +20,21 @@ it('engages tractor PTO only while raising and stops ram/PTO voices on idle and 
  args.vehicles.clear();sounds.update(0.1,args);expect(loops.get('pto').stopped).toBe(true);expect(loops.get('tipperRam').stopped).toBe(true);
  sounds.destroy();
 });
+
+it('supports new mobility engines and leaves parked trailers silent',()=>{
+ const engineKinds=[];
+ const voice=()=>({set(){},stop(){}});
+ const audio={ready:()=>true,setListener(){},engineVoice(kind){engineKinds.push(kind);return voice();},loopVoice:voice,whineVoice:voice,play(){}};
+ const sounds=createWorldSounds({audio,groundSurface:()=>({name:'grass'})});
+ const vehicles=new Map();
+ for(const type of ['quad','buggy','fourByFour','serviceVan']) {
+  vehicles.set(type,{machineId:type,type,road:true,carrier:type!=='quad',model:{root:new THREE.Group()},
+   feel:()=>({engine:'off',rpm:700,load:0,shifted:0,speed:0,surface:'gravel',slip:0,bedAngle:0,bedSpeed:0,bump:0}),
+   takeEngineEvents:()=>[],position:()=>new THREE.Vector3(),exhaustWorld:()=>new THREE.Vector3(),bedWorld:()=>new THREE.Vector3()});
+ }
+ // No engine/seat/exhaust interface on a parked load-bearing trailer.
+ vehicles.set('trailer',{machineId:'trailer',type:'trailer',towable:true,carrier:true});
+ sounds.update(.016,{camera:new THREE.PerspectiveCamera(),vehicles,current:null,player:null,jobOf:()=>null,tierOf:()=> 'standard'});
+ expect(engineKinds).toEqual(['pickupOld','pickupOld','pickupOld','truckTurbo']);
+ sounds.destroy();
+});

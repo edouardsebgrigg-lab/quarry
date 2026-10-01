@@ -45,12 +45,15 @@
   },
   "sideboards": {
     "name": "Trailer sideboards",
-    "machineType": "tractor",
+    "machineType": "trailer",
     "price": 60,
-    "description": "+1 t load",
+    "description": "+1 t payload and +0.65 m\u00b3 bed volume (tractor tow limit still applies)",
     "effects": {
       "capacity": {
         "add": 1
+      },
+      "bedVolume": {
+        "add": 0.65
       }
     }
   },

@@ -179,8 +179,8 @@ export function buildPickupModel(rideHeight) {
 }
 
 // ---------- excavator ----------
-export function buildExcavatorModel(tier) {
-  const fromFile = glbExcavator(tier);
+export function buildExcavatorModel(tier, stats) {
+  const fromFile = glbExcavator(tier, stats);
   if (fromFile) return fromFile;
   const body = paint(tier);
   const root = new THREE.Group();
@@ -254,8 +254,10 @@ export function buildExcavatorModel(tier) {
     boomPivot,
     stickPivot,
     bucketPivot,
-    setBucketLoad(full, color) {
+    setBucketLoad(full, color, fraction = 1) {
       scoop.visible = full;
+      const fill = Math.cbrt(Math.max(.005, Math.min(1, fraction)));
+      scoop.scale.set(.45 * fill, .6 * fill, .45 * fill);
       if (color) scoop.material.color.copy(color);
     },
     cabSeat: new THREE.Vector3(0.55, 2.45, -0.75), // in house space
@@ -276,7 +278,7 @@ function required(model, what) {
   if (!model) throw new Error(`The ${what} model is missing (assets/models). Run blender/build_models.py.`);
   return model;
 }
-export const buildMiniDiggerModel = (tier) => required(glbMiniDigger(tier), 'mini digger');
+export const buildMiniDiggerModel = (tier, stats) => required(glbMiniDigger(tier, stats), 'mini digger');
 export const buildDumperModel = (tier) => required(glbDumper(tier), 'site dumper');
-export const buildTractorModel = (tier, rideHeight) => required(glbTractor(tier, rideHeight), 'tractor');
-export const buildTrailerModel = (tier) => required(glbTrailer(tier), 'trailer');
+export const buildTractorModel = (tier, rideHeight, stats) => required(glbTractor(tier, rideHeight, stats), 'tractor');
+export const buildTrailerModel = (tier, stats) => required(glbTrailer(tier, stats), 'trailer');

@@ -1,0 +1,349 @@
+{
+  "models": [
+    {
+      "type": "miniDigger",
+      "tier": "micro08",
+      "name": "Micro 08",
+      "id": "m2",
+      "hasVehicle": true,
+      "position": {
+        "x": 58,
+        "z": 20,
+        "yaw": 0,
+        "houseYaw": 0,
+        "arm": [
+          0.55,
+          -1.6,
+          -1.3
+        ],
+        "aimReach": 2.4,
+        "cutDepth": 0.35,
+        "lastDump": null
+      }
+    },
+    {
+      "type": "miniDigger",
+      "tier": "mini16",
+      "name": "Mini 16",
+      "id": "m3",
+      "hasVehicle": true,
+      "position": {
+        "x": 77,
+        "z": 20,
+        "yaw": 0,
+        "houseYaw": 0,
+        "arm": [
+          0.55,
+          -1.6,
+          -1.3
+        ],
+        "aimReach": 3.3,
+        "cutDepth": 0.35,
+        "lastDump": null
+      }
+    },
+    {
+      "type": "miniDigger",
+      "tier": "compact25",
+      "name": "Compact 25",
+      "id": "m4",
+      "hasVehicle": true,
+      "position": {
+        "x": 96,
+        "z": 20,
+        "yaw": 0,
+        "houseYaw": 0,
+        "arm": [
+          0.55,
+          -1.6,
+          -1.3
+        ],
+        "aimReach": 4,
+        "cutDepth": 0.35,
+        "lastDump": null
+      }
+    },
+    {
+      "type": "miniDigger",
+      "tier": "compact35",
+      "name": "Compact 35",
+      "id": "m5",
+      "hasVehicle": true,
+      "position": {
+        "x": 115,
+        "z": 20,
+        "yaw": 0,
+        "houseYaw": 0,
+        "arm": [
+          0.55,
+          -1.6,
+          -1.3
+        ],
+        "aimReach": 4.6,
+        "cutDepth": 0.35,
+        "lastDump": null
+      }
+    },
+    {
+      "type": "tractor",
+      "tier": "yard35",
+      "name": "Yard 35",
+      "id": "m6",
+      "hasVehicle": true,
+      "position": {
+        "x": 20,
+        "z": 45,
+        "yaw": 0
+      }
+    },
+    {
+      "type": "tractor",
+      "tier": "utility60",
+      "name": "Utility 60",
+      "id": "m7",
+      "hasVehicle": true,
+      "position": {
+        "x": 39,
+        "z": 45,
+        "yaw": 0
+      }
+    },
+    {
+      "type": "tractor",
+      "tier": "farm90",
+      "name": "Farm 90",
+      "id": "m8",
+      "hasVehicle": true,
+      "position": {
+        "x": 58,
+        "z": 45,
+        "yaw": 0
+      }
+    },
+    {
+      "type": "tractor",
+      "tier": "heavy140",
+      "name": "Heavy 140",
+      "id": "m9",
+      "hasVehicle": true,
+      "position": {
+        "x": 77,
+        "z": 45,
+        "yaw": 0
+      }
+    },
+    {
+      "type": "tractor",
+      "tier": "haul210",
+      "name": "Haul 210",
+      "id": "m10",
+      "hasVehicle": true,
+      "position": {
+        "x": 96,
+        "z": 45,
+        "yaw": 0
+      }
+    },
+    {
+      "type": "excavator",
+      "tier": "utility80",
+      "name": "Utility 80",
+      "id": "m11",
+      "hasVehicle": true,
+      "position": {
+        "x": 115,
+        "z": 45,
+        "yaw": 0,
+        "houseYaw": 0,
+        "arm": [
+          0.55,
+          -1.6,
+          -1.3
+        ],
+        "aimReach": 6.8,
+        "cutDepth": 0.35,
+        "lastDump": null
+      }
+    },
+    {
+      "type": "excavator",
+      "tier": "production130",
+      "name": "Production 130",
+      "id": "m12",
+      "hasVehicle": true,
+      "position": {
+        "x": 20,
+        "z": 70,
+        "yaw": 0,
+        "houseYaw": 0,
+        "arm": [
+          0.55,
+          -1.6,
+          -1.3
+        ],
+        "aimReach": 8,
+        "cutDepth": 0.35,
+        "lastDump": null
+      }
+    },
+    {
+      "type": "excavator",
+      "tier": "quarry210",
+      "name": "Quarry 210",
+      "id": "m13",
+      "hasVehicle": true,
+      "position": {
+        "x": 39,
+        "z": 70,
+        "yaw": 0,
+        "houseYaw": 0,
+        "arm": [
+          0.55,
+          -1.6,
+          -1.3
+        ],
+        "aimReach": 9.2,
+        "cutDepth": 0.35,
+        "lastDump": null
+      }
+    },
+    {
+      "type": "excavator",
+      "tier": "heavy320",
+      "name": "Heavy 320",
+      "id": "m14",
+      "hasVehicle": true,
+      "position": {
+        "x": 58,
+        "z": 70,
+        "yaw": 0,
+        "houseYaw": 0,
+        "arm": [
+          0.55,
+          -1.6,
+          -1.3
+        ],
+        "aimReach": 10.5,
+        "cutDepth": 0.35,
+        "lastDump": null
+      }
+    },
+    {
+      "type": "trailer",
+      "tier": "yardTipper",
+      "name": "Yard Tipper",
+      "id": "m15",
+      "hasVehicle": true,
+      "position": {
+        "x": 77,
+        "z": 70,
+        "yaw": 0
+      }
+    },
+    {
+      "type": "trailer",
+      "tier": "singleTipper",
+      "name": "Single Axle Tipper",
+      "id": "m16",
+      "hasVehicle": true,
+      "position": {
+        "x": 96,
+        "z": 70,
+        "yaw": 0
+      }
+    },
+    {
+      "type": "trailer",
+      "tier": "tandemTipper",
+      "name": "Tandem Tipper",
+      "id": "m17",
+      "hasVehicle": true,
+      "position": {
+        "x": 115,
+        "z": 70,
+        "yaw": 0
+      }
+    },
+    {
+      "type": "trailer",
+      "tier": "heavyTipper",
+      "name": "Heavy Braked Tipper",
+      "id": "m18",
+      "hasVehicle": true,
+      "position": {
+        "x": 20,
+        "z": 95,
+        "yaw": 0
+      }
+    },
+    {
+      "type": "trailer",
+      "tier": "bulkTipper",
+      "name": "Bulk Tipper",
+      "id": "m19",
+      "hasVehicle": true,
+      "position": {
+        "x": 39,
+        "z": 95,
+        "yaw": 0
+      }
+    },
+    {
+      "type": "quad",
+      "tier": "standard",
+      "name": "Site Quad",
+      "id": "m20",
+      "hasVehicle": true,
+      "position": {
+        "x": 58,
+        "z": 95,
+        "yaw": 0
+      }
+    },
+    {
+      "type": "buggy",
+      "tier": "standard",
+      "name": "Utility Buggy",
+      "id": "m21",
+      "hasVehicle": true,
+      "position": {
+        "x": 77,
+        "z": 95,
+        "yaw": 0
+      }
+    },
+    {
+      "type": "fourByFour",
+      "tier": "standard",
+      "name": "4×4 Pickup",
+      "id": "m22",
+      "hasVehicle": true,
+      "position": {
+        "x": 96,
+        "z": 95,
+        "yaw": 0
+      }
+    },
+    {
+      "type": "serviceVan",
+      "tier": "standard",
+      "name": "Service Van",
+      "id": "m23",
+      "hasVehicle": true,
+      "position": {
+        "x": 115,
+        "z": 95,
+        "yaw": 0
+      }
+    }
+  ],
+  "checks": [
+    "All 22 models render and spawn without browser errors"
+  ],
+  "counts": {
+    "digger": 8,
+    "trailer": 5,
+    "transport": 1
+  },
+  "errors": []
+}

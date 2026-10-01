@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createGame } from '../game/index.js';
-import { sellLoad, quoteDelivery, chargeFuel, weighIn } from '../economy/index.js';
+import { sellLoad, quoteDelivery, chargeFuel, weighIn, weeklyInsurance } from '../economy/index.js';
 import { buyMachine, buyMod } from '../machinery/index.js';
 import { buyBuilding } from '../buildings/index.js';
 import { careerState, milestones, careerMetric, careerMetricNames, dealerPrice, hasPerk } from './index.js';
@@ -181,4 +181,21 @@ describe('milestones for hire, regular customers and credit', () => {
     game.events.emit('loanTaken', { loanId: 1, amount: 250, days: 7, payment: 40 });
     expect(got).toContain('credit80');
   });
+});
+
+it('hired machines are excluded from owned fleet milestones, insurance and borrowing assets',()=>{
+ const {game,ctx,reached}=setup();game.state.money=20000;
+ const credit=game.actions.creditLimit(), insured=weeklyInsurance(ctx);
+ const a=game.actions.rentMachine('excavator','used',1);
+ const b=game.actions.rentMachine('truck','used',1);
+ expect(a.ok).toBe(true);expect(b.ok).toBe(true);
+ expect(careerMetric(ctx,'fleetSize')).toBe(1);
+ expect(careerMetric(ctx,'usedMachines')).toBe(0);
+ expect(game.actions.creditLimit()).toBe(credit);
+ expect(weeklyInsurance(ctx)).toBe(insured);
+ for(let i=0;i<4;i++)expect(buyMachine(ctx,'dumper','rusty').ok).toBe(true);
+ expect(careerMetric(ctx,'fleetSize')).toBe(5);
+ expect(reached.some(e=>e.id==='fleet6')).toBe(false);
+ expect(buyMachine(ctx,'truck','rusty').ok).toBe(true);
+ expect(reached.some(e=>e.id==='fleet6')).toBe(true);
 });

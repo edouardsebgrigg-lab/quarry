@@ -211,6 +211,7 @@ export function createTruckPhysics({ RAPIER, world }, {
   }
 
   let cargoTonnes = 0;
+  let towBraked = false;
   let steer = 0;
   let topSpeed = speedStat * T.topSpeedPerStat;
   let maxTorque = peakTorque(power, T.powerRpm, E);
@@ -324,7 +325,7 @@ export function createTruckPhysics({ RAPIER, world }, {
       : 0;
 
     // ---- per-wheel forces
-    const brakeForce = brake * T.brakeDecel * mass; // fixed brake power: loaded trucks stop slower
+    const brakeForce = brake * T.brakeDecel * (mass + (towBraked ? cargoTonnes * 1000 * .85 : 0)); // fixed brake power: loaded trucks stop slower
     let grip = 0;
     for (let i = 0; i < 4; i++) {
       const surf = surfaceUnder(i);
@@ -337,11 +338,13 @@ export function createTruckPhysics({ RAPIER, world }, {
       const rolling = surf.roll * load;
       let brakeHere = rolling + (front ? T.frontBrakeShare : 1 - T.frontBrakeShare) * brakeForce / 2;
       if (!front && control.handbrake) brakeHere += T.brakeDecel * mass * 0.35;
-      if (!front && throttle === 0) brakeHere += engineDrag / 2;
+      const driven = !front || profile?.driveWheels === 4;
+      const drivenCount = profile?.driveWheels === 4 ? 4 : 2;
+      if (driven && throttle === 0) brakeHere += engineDrag / drivenCount;
       let engineHere = 0;
-      if (!front && driveForce !== 0 && !control.handbrake) {
+      if (driven && driveForce !== 0 && !control.handbrake) {
         // Driven wheels: net of rolling resistance (Rapier ignores the brake while driving).
-        engineHere = driveForce / 2 - Math.sign(v || dir) * rolling;
+        engineHere = driveForce / drivenCount - Math.sign(v || dir) * rolling;
         brakeHere = 0;
       }
       vehicle.setWheelEngineForce(i, engineHere);
@@ -409,6 +412,7 @@ export function createTruckPhysics({ RAPIER, world }, {
       rpm: eng.rpm, gear: eng.gear, shifting: eng.shiftT > 0, load: eng.load, running: eng.running,
       misfire: eng.misfire > 0, ...out,
     }),
+    setTowBraking(braked) { towBraked = !!braked; },
     setCargo(tonnes) {
       if (Math.abs(tonnes - cargoTonnes) < 0.01) return;
       cargoTonnes = tonnes;

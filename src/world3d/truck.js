@@ -4,13 +4,14 @@
 // (trailer.js) tips. `feel()` reports what the sound and camera need.
 import * as THREE from 'three';
 import { buildTruckModel, buildPickupModel, buildTractorModel } from './models.js';
-import { createTruckPhysics, PICKUP, TRACTOR, TRUCK_SHAPE } from './truckPhysics.js';
+import { createTruckPhysics, TRUCK_SHAPE } from './truckPhysics.js';
 import { createEngineLife } from './engineLife.js';
 import { createTrailer } from './trailer.js';
+import { fleetProfile } from './fleetProfiles.js';
+import { buildMobilityModel, upgradePickupModel } from './fleetVariants.js';
 
 const TIP_ANGLE = 0.85; // radians the bed lifts when tipping
 const TAILGATE_OPEN = 1.5; // radians the pickup's tailgate drops
-const PROFILES = { truck: null, pickup: PICKUP, tractor: TRACTOR };
 
 // Brake-light meshes: turned up when braking. Returns a setter.
 function brakeLights(root) {
@@ -33,14 +34,16 @@ function brakeLights(root) {
   };
 }
 
-export function createTruck({ physics, scene, terrain, machine, spawn, stats, live, surfaceAt }) {
+export function createTruck({ physics, scene, terrain, machine, spawn, stats, live, liveTrailer = null, surfaceAt }) {
   const kind = machine.type; // 'truck', 'pickup' or 'tractor'
-  const profile = PROFILES[kind] ?? null;
+  const initial = stats();
+  const profile = fleetProfile(kind, initial);
   const shape = profile?.shape ?? TRUCK_SHAPE;
   const rideHeight = profile?.tuning?.rideHeight;
   const model = kind === 'pickup' ? buildPickupModel(rideHeight)
-    : kind === 'tractor' ? buildTractorModel(machine.tier, rideHeight)
-      : buildTruckModel(machine.tier);
+    : kind === 'fourByFour' ? upgradePickupModel(buildPickupModel(rideHeight))
+    : kind === 'tractor' ? buildTractorModel(machine.tier, rideHeight, initial)
+      : ['quad','buggy','fourByFour','serviceVan'].includes(kind) ? buildMobilityModel(kind, rideHeight, shape) : buildTruckModel(machine.tier);
   scene.add(model.root);
   const y = terrain.heightAt(spawn.x, spawn.z);
   const st = stats();
@@ -49,8 +52,9 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
     mass: st.mass ?? 5000, power: st.enginePower ?? 90, surfaceAt, profile,
   });
   phys.setEngineRunning(false);
-  const trailer = kind === 'tractor'
-    ? createTrailer({ physics, scene, terrain, tier: machine.tier, yaw: spawn.trailerYaw ?? spawn.yaw ?? 0 })
+  const trailerEntity = liveTrailer?.();
+  const trailer = kind === 'tractor' && trailerEntity
+    ? createTrailer({ physics, scene, terrain, tier: trailerEntity.tier, stats: initial.trailerStats ?? {}, yaw: spawn.trailerYaw ?? spawn.yaw ?? 0 })
     : null;
   const offStep = physics.onBeforeStep((dt) => phys.update(dt));
   const setBrakeLights = brakeLights(model.root);
@@ -73,8 +77,10 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
 
   function update(dt, { job, fill, color, occupied }) {
     const m = live();
-    phys.setSpeedStat(stats().speed);
+    const currentStats = stats();
+    phys.setSpeedStat(currentStats.overloaded ? 0.25 : Math.min(currentStats.speed, (currentStats.trailerStats?.roadSpeed ?? Infinity) / 5.04));
     phys.setCondition(m?.condition ?? 100);
+    phys.setTowBraking?.(trailer ? stats().trailerBraked : false);
 
     engine.update(dt, { occupied, broken: !!m?.broken });
     phys.setEngineRunning(engine.running());
@@ -88,7 +94,7 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
       const w = model.wheels[i];
       const susp = phys.vehicle.wheelSuspensionLength(i) ?? shape.suspensionRest;
       const wy = Array.isArray(shape.wheelY) ? shape.wheelY[i] : shape.wheelY;
-      w.steerGroup.position.y = wy - susp + (model.wheelOffsetY ?? 0);
+      w.steerGroup.position.y = (wy - susp) / (model.wheelScale ?? 1) + (model.wheelOffsetY ?? 0);
       w.steerGroup.rotation.y = phys.vehicle.wheelSteering(i) ?? 0;
       w.spin.rotation.z = -(phys.vehicle.wheelRotation(i) ?? 0);
     }
@@ -104,6 +110,7 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
       model.root.updateMatrixWorld(true);
       const hitch = model.root.localToWorld(model.hitchLocal.clone());
       trailer.update(dt, { hitch, tractorYaw: yawNow(), unloading, job, fill, color });
+      if (trailerEntity) trailerEntity.parkedPose = { x: trailer.state.x, z: trailer.state.z, yaw: trailer.state.yaw };
       bedAngle = trailer.state.bed;
       bedSpeed = trailer.state.bedSpeed;
       gate = trailer.state.gate;
@@ -129,21 +136,22 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
   // The bed the load sits in: the truck's own, or the tractor's trailer.
   const bed = trailer ?? {
     isOverBed(point, margin = 0.6) {
+      if (!model.bedCenter || (kind === 'tractor' && !trailer)) return false;
       const local = model.root.worldToLocal(point.clone());
       return Math.abs(local.x - model.bedCenter.x) <= model.bedHalf.x + margin
         && Math.abs(local.z - model.bedCenter.z) <= model.bedHalf.z + margin;
     },
-    bedWorld: () => model.root.localToWorld(model.bedCenter.clone()),
+    bedWorld: () => model.root.localToWorld((model.bedCenter ?? new THREE.Vector3()).clone()),
     // Where you'd tip a barrow in or shovel off: the middle of the tailgate (pickup), or the
     // back of the bed (truck).
     tailgateWorld: () => model.root.localToWorld((model.tailgateLocal ?? new THREE.Vector3(-3.2, 0.3, 0)).clone()),
-    bedFloorWorldY: () => model.root.localToWorld(new THREE.Vector3(model.bedCenter.x, model.bedFloorY ?? 0.2, 0)).y,
+    bedFloorWorldY: () => model.root.localToWorld(new THREE.Vector3(model.bedCenter?.x ?? 0, model.bedFloorY ?? 0.2, 0)).y,
   };
 
   return {
     type: kind,
     road: true, // a road vehicle (driven with the truck controls)
-    carrier: true, // carries a load in a bed
+    carrier: kind === 'tractor' ? !!trailer : (st.capacity ?? 0) > 0, // carries a load in a bed
     machineId: machine.id,
     model,
     phys,
@@ -198,10 +206,13 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
       const p = phys.body.translation();
       return { x: p.x, z: p.z, yaw: yawNow(), trailerYaw: trailer?.state.yaw };
     },
+    trailerPlacement() {
+      return trailer ? { x: trailer.state.x, z: trailer.state.z, yaw: trailer.state.yaw } : null;
+    },
     // Put it (and its trailer) upright and straight at a spot.
     reset(x, z, yaw) {
       phys.reset(x, terrain.heightAt(x, z), z, yaw);
-      trailer?.reset(x - Math.cos(yaw) * 1.32, z + Math.sin(yaw) * 1.32, yaw);
+      trailer?.reset(x + Math.cos(yaw) * model.hitchLocal.x, z - Math.sin(yaw) * model.hitchLocal.x, yaw);
     },
     recover() {
       const p = phys.body.translation();
