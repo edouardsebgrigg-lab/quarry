@@ -399,3 +399,19 @@ a new manual barrow-control check was not run.
   are **not verified**. Unit tests cover targeted heaps/regular priority, unavailable material,
   capacity/remainder conservation, reach/away guards, real-work skill gain, trip save/reload
   and legacy defaults. Push remains blocked by repository account access.
+
+### M1 — completed locally
+
+Implementation commit: 70e279f. Captured and inspected four studio angles of all eleven
+machine/tier combinations, including both hitched trailers (44 initial renders), then
+repeated the changed pickup, trucks and excavators. Fixed pickup front plate's wrong Trim
+target (now Chrome bumper at known height), lowered/moved truck lettering clear of
+windows and mirrors, and moved excavator house lettering above vents with its warning
+sticker on separate clear panel space. Other decal positions retained. Browser modelshots
+now fail for missing photos or page errors.
+Actually ran: `npm test` (270 passing), `npm run build` (passed), `git diff --check`, bounded
+`modelshots.mjs` on native Metal, and a geometry audit of decal bounds/counts. Inspected
+all four diagnostic contact sheets and full-size changed views; final letters, plates and
+warning sticker are readable. Images in `docs/handover/screenshots/m1/`. Product studio
+uses game models/weathering; no manual vehicle movement, Direct motion or cab-camera
+decal check performed. Publication remains blocked by GitHub write access.

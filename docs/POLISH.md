@@ -13,7 +13,7 @@ dealer, the bank, the depot's prices, your fleet, your messages).
 
 ## Now
 
-- [ ] M1 Model realism pass (in progress): big studio shots of every machine, rendered by the
+- [x] M1 Decal review completed (`70e279f`): big studio shots of every machine, rendered by the
       game (`docs/handover/browser-checks/modelshots.mjs`). Done so far: rams read as steel, chips
       scale with wear, rubber stays dark, trailer hitched properly in product photos, decals
       (model lettering, hazard chevrons, warning stickers, number plates). Next: check the
