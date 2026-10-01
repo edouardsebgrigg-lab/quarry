@@ -260,3 +260,30 @@ Destination is only `codex/vehicle-model-integration` in
 Unpublished `ddc8394` remains unavailable; no recovery is claimed. T9 will be
 implemented against the current coordinated source. Preserve Claude's current
 completed T10 weathering.
+
+
+## Codex takeover — 1 October 2026
+
+Fetched origin, created `codex/continue` from `origin/claude/coordination` at `ad7a7ed`.
+Read HANDOFF first, then TASKS, POLISH and modules. Planning ownership is now Codex’s;
+Edouard’s requested full queue supersedes the historical three-task stop. No main/Claude
+branch writes, merges into main, force-pushes or PRs.
+Baseline: `npm ci`, `npm test` (246 passing), `npm run build` (passed).
+
+### T9 — ready for review
+
+- Implementation commit: `ed765fb`.
+- Plans choose a clear spare-spoil footprint using the same machine/barrow clearance,
+  try ordered alternatives and refuse before any mutation if none fits. Occupied source
+  cells are skipped. Preview has an amber ring and matching spoil-card text.
+- `worksBuilt` contains plain data; the world re-seats on-foot players after grading,
+  sourcing and spoil deposition. Updated README/modules and takeover planning files.
+- Actually ran: `npm test` (250 passing in 37 files), `npm run build` (passed),
+  `git diff --check`, bounded `spoil.mjs` via Python subprocess timeout=600.
+  Browser asserts alternative spot, matching build position (1 cm tolerance for settlement),
+  player raised onto spoil, and no browser errors. Development money, code-set placement
+  and aim, stubbed pointer lock. Screenshot inspected at `docs/handover/screenshots/t9/spoil-preview.png`;
+  the 320×180 HUD obscures the ring, so its visual appearance is **not verified**.
+- Browser portability: `CHROMIUM_EXECUTABLE` allows the installed Mac browser to be selected;
+  bundled Playwright expects a different browser revision. Global cloud path not used.
+- Natural later slumping around parked machines and real mouse/pointer-lock play: **not verified**.

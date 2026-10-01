@@ -247,7 +247,7 @@ feet changed.
 
 ## Tasks
 
-### T9: Spoil and heap sourcing respect obstacles (R2)
+### T9: Spoil and heap sourcing respect obstacles (R2): DONE — `ed765fb`
 - Check the spoil spot's footprint (the heap's radius) against the same obstacles (machines,
   barrow) before choosing it. Try the other candidate spots in order; if none is clear,
   refuse the plan with a clear reason ("No room for the spare spoil: move <machine>").
