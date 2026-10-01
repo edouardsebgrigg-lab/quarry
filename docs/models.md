@@ -28,6 +28,48 @@ All models are made in **Blender** by Python scripts in `blender/`, exported as 
 
 Previews for all of them are in `docs/images/models/`.
 
+## Complete Blender cleanup and catalogue (M4)
+
+The current manifest has 42 assets. All original 38 were imported and audited in
+Blender; the 14 fleet exports gained joint hardware, wear rails, access steps,
+wheel fasteners, bed stiffeners and trailer fittings. Quad, buggy and service van
+now have authored Blender bodies, seats, steering, suspension and open cab
+apertures. The 4×4 has a separate clean blue pickup export. These four mobility
+files are `mobility_quad.glb`, `mobility_buggy.glb`, `mobility_serviceVan.glb` and
+`mobility_fourByFour.glb`. Props retain their original shapes.
+
+`blender/clean_fleet.py --out <staging>` imports the installed library and writes
+the refined exports plus editable mobility scenes. Re-running replaces its added
+hardware. Compress embedded textures with `compress_textures.py`, then compact
+each approved GLB with `optimize_glb.py <file.glb>`. The latter retains positions,
+indices and rig transforms, removes unused UVs, and stores normalized short
+normals/tangents and byte colours. `KHR_mesh_quantization` is handled by Three's
+existing GLTF loader; no extra decoder is needed. The complete library is about
+34.63 MB, below the unchanged 40 MB budget.
+
+Check the installed geometry against staging:
+
+```bash
+python3 blender/check_cleanup_geometry.py assets/models <staging> <report.json>
+```
+
+To capture the actual assembled game variants, run
+`docs/handover/browser-checks/export-blender-catalogue.mjs` against the browser
+check server with `BLENDER_OUT=<scratch>`. Then run:
+
+```bash
+blender -b --python blender/catalogue_scene.py -- --variants <scratch> --out <catalogue.blend>
+blender -b --python blender/verify_catalogue.py -- <catalogue.blend>
+```
+
+The packed scene contains 42 named source collections and 19 assembled variants,
+including the extra bodywork from the game. The three unique mobility vehicles
+are already present in the source group. Rams follow the posed arm pins. Review
+holders space models apart; export a production model from its original local
+origin, without that holder. Variant liveries retain their albedo wear, normal
+and roughness maps. Blender catalogue files are delivered separately rather than
+added to the game's download.
+
 ## Refined fleet
 
 The drivable pickup, wheelbarrow and both Rusty/Used variants of the mini digger,

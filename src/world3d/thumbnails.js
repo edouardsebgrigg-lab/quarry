@@ -3,7 +3,7 @@
 // transparent background. Uses its own small renderer; call dispose() when the laptop closes.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { modelScene, poseDigger, glbExcavator, glbMiniDigger, glbTractor, glbTrailer, glbPickup } from './glbModels.js';
+import { modelScene, poseDigger, glbExcavator, glbMiniDigger, glbTractor, glbTrailer, glbPickup, glbMobility } from './glbModels.js';
 import machines from '../../data/machines.json';
 import { buildMobilityModel, upgradePickupModel } from './fleetVariants.js';
 import { fleetProfile } from './fleetProfiles.js';
@@ -65,10 +65,10 @@ export function createThumbnails({ width = 480, height = 300 } = {}) {
     else if (type === 'excavator') model = glbExcavator(tier, spec);
     else if (type === 'tractor') model = glbTractor(tier, 0, spec);
     else if (type === 'trailer') model = glbTrailer(tier, spec);
-    else if (type === 'fourByFour') model = upgradePickupModel(glbPickup(0));
+    else if (type === 'fourByFour') model = upgradePickupModel(glbPickup(0, 'mobility_fourByFour') ?? glbPickup(0));
     else if (['quad','buggy','fourByFour','serviceVan'].includes(type)) {
       const profile = fleetProfile(type, spec);
-      model = buildMobilityModel(type, 0, profile.shape);
+      model = glbMobility(type, 0) ?? buildMobilityModel(type, 0, profile.shape);
     }
     if (model) {
       const group = model.root;

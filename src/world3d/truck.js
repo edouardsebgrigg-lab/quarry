@@ -9,6 +9,7 @@ import { createEngineLife } from './engineLife.js';
 import { createTrailer } from './trailer.js';
 import { fleetProfile } from './fleetProfiles.js';
 import { buildMobilityModel, upgradePickupModel } from './fleetVariants.js';
+import { glbMobility, glbPickup } from './glbModels.js';
 
 const TIP_ANGLE = 0.85; // radians the bed lifts when tipping
 const TAILGATE_OPEN = 1.5; // radians the pickup's tailgate drops
@@ -41,9 +42,9 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
   const shape = profile?.shape ?? TRUCK_SHAPE;
   const rideHeight = profile?.tuning?.rideHeight;
   const model = kind === 'pickup' ? buildPickupModel(rideHeight)
-    : kind === 'fourByFour' ? upgradePickupModel(buildPickupModel(rideHeight))
+    : kind === 'fourByFour' ? upgradePickupModel(glbPickup(rideHeight, 'mobility_fourByFour') ?? buildPickupModel(rideHeight))
     : kind === 'tractor' ? buildTractorModel(machine.tier, rideHeight, initial)
-      : ['quad','buggy','fourByFour','serviceVan'].includes(kind) ? buildMobilityModel(kind, rideHeight, shape) : buildTruckModel(machine.tier);
+      : ['quad','buggy','fourByFour','serviceVan'].includes(kind) ? glbMobility(kind, rideHeight) ?? buildMobilityModel(kind, rideHeight, shape) : buildTruckModel(machine.tier);
   scene.add(model.root);
   const y = terrain.heightAt(spawn.x, spawn.z);
   const st = stats();
@@ -137,15 +138,15 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
   const bed = trailer ?? {
     isOverBed(point, margin = 0.6) {
       if (!model.bedCenter || (kind === 'tractor' && !trailer)) return false;
-      const local = model.root.worldToLocal(point.clone());
+      const local = (model.bedFrame ?? model.root).worldToLocal(point.clone());
       return Math.abs(local.x - model.bedCenter.x) <= model.bedHalf.x + margin
         && Math.abs(local.z - model.bedCenter.z) <= model.bedHalf.z + margin;
     },
-    bedWorld: () => model.root.localToWorld((model.bedCenter ?? new THREE.Vector3()).clone()),
+    bedWorld: () => (model.bedFrame ?? model.root).localToWorld((model.bedCenter ?? new THREE.Vector3()).clone()),
     // Where you'd tip a barrow in or shovel off: the middle of the tailgate (pickup), or the
     // back of the bed (truck).
-    tailgateWorld: () => model.root.localToWorld((model.tailgateLocal ?? new THREE.Vector3(-3.2, 0.3, 0)).clone()),
-    bedFloorWorldY: () => model.root.localToWorld(new THREE.Vector3(model.bedCenter?.x ?? 0, model.bedFloorY ?? 0.2, 0)).y,
+    tailgateWorld: () => (model.bedFrame ?? model.root).localToWorld((model.tailgateLocal ?? new THREE.Vector3(-3.2, 0.3, 0)).clone()),
+    bedFloorWorldY: () => (model.bedFrame ?? model.root).localToWorld(new THREE.Vector3(model.bedCenter?.x ?? 0, model.bedFloorY ?? 0.2, 0)).y,
   };
 
   return {
@@ -218,7 +219,7 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
       const p = phys.body.translation();
       this.reset(p.x, p.z, yawNow());
     },
-    radius: kind === 'pickup' ? 2.8 : kind === 'tractor' ? 2.4 : 3.4,
+    radius: kind === 'tractor' ? 2.4 * (st.modelScale ?? 1) : Math.hypot(shape.halfLength, shape.halfWidth),
     destroy() {
       offStep();
       phys.destroy();

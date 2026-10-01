@@ -185,14 +185,17 @@ export function glbTruck(tier) {
     root,
     wheels,
     bedPivot,
+    bedFrame: bedPivot,
     setLoad(fill, color) {
       heap.visible = fill > 0.02;
       const f = Math.min(1, fill);
       heap.scale.set(2.0 * Math.sqrt(f) + 0.1, 1.6 * f + 0.1, 1.0);
       if (color) heap.material.color.copy(color);
     },
-    bedCenter: new THREE.Vector3(-1.0, 0.8, 0),
+    bedCenter: new THREE.Vector3(2.15, 0.3, 0),
     bedHalf: { x: 2.2, z: 1.2 },
+    bedFloorY: 0.1,
+    tailgateLocal: new THREE.Vector3(-0.02, 0.1, 0),
     cabSeat: new THREE.Vector3(2.3, 1.15, -0.5),
     // The cab shell and glass are one-sided, so from the seat you see out through them.
     setFirstPerson() {},
@@ -201,8 +204,8 @@ export function glbTruck(tier) {
 
 // Your pickup (vehicle_pickup.glb): origin on the ground, so it's lowered to sit under the
 // physics body's centre (`rideHeight` above the ground).
-export function glbPickup(rideHeight) {
-  const inner = instance('vehicle_pickup');
+export function glbPickup(rideHeight, filename = 'vehicle_pickup') {
+  const inner = instance(filename);
   if (!inner) return null;
   inner.position.y = -rideHeight;
   const root = new THREE.Group();
@@ -354,6 +357,7 @@ export function glbDumper(tier) {
   return {
     root,
     skipPivot,
+    bedFrame: skipPivot,
     ...trackParts(root),
     setLoad(fill, color) {
       heap.visible = fill > 0.02;
@@ -362,9 +366,10 @@ export function glbDumper(tier) {
       if (color) heap.material.color.copy(color);
     },
     // In the model's frame: the skip's middle, where a bucket or shovel drops in, and its front lip.
-    bedCenter: new THREE.Vector3(0.67, 0.85, 0),
+    bedCenter: new THREE.Vector3(-0.45, 0.25, 0),
     bedHalf: { x: 0.6, z: 0.5 },
-    lipLocal: new THREE.Vector3(1.2, 0.6, 0),
+    bedFloorY: 0.02,
+    lipLocal: new THREE.Vector3(0.08, 0.02, 0),
     cabSeat: new THREE.Vector3(-0.55, 1.75, 0),
     exhaustLocal: new THREE.Vector3(-0.75, 1.25, 0.32),
     setFirstPerson() {},
@@ -422,6 +427,10 @@ export function glbTrailer(tier, supplied) {
   dressVariant(root, spec, 'trailer');
   const bedPivot = node(root, 'BedPivot');
   const tailgatePivot = node(root, 'TailgatePivot');
+  root.updateMatrixWorld(true);
+  const closedBedBounds = new THREE.Box3().setFromObject(bedPivot);
+  const colliderHalf = closedBedBounds.getSize(new THREE.Vector3()).multiplyScalar(.5);
+  const colliderCenter = closedBedBounds.getCenter(new THREE.Vector3());
   const heap = createHeap(29);
   heap.position.set(1.9, 0.03, 0);
   heap.visible = false;
@@ -430,6 +439,7 @@ export function glbTrailer(tier, supplied) {
     root,
     wheels,
     bedPivot,
+    bedFrame: bedPivot,
     tailgatePivot,
     setLoad(fill, color) {
       heap.visible = fill > 0.02;
@@ -437,19 +447,56 @@ export function glbTrailer(tier, supplied) {
       heap.scale.set(1.75 * Math.sqrt(f) + 0.1, 0.85 * f + 0.04, 0.85);
       if (color) heap.material.color.copy(color);
     },
-    bedCenter: new THREE.Vector3(0.2, 1.3, 0),
+    bedCenter: new THREE.Vector3(1.9, 0.3, 0),
     bedHalf: { x: 1.9, z: 0.95 },
-    bedFloorY: 1.0,
-    tailgateLocal: new THREE.Vector3(-1.75, 1.0, 0),
+    bedFloorY: 0,
+    tailgateLocal: new THREE.Vector3(-0.05, 0, 0),
     eyeLocal: new THREE.Vector3(3.3, 0.5, 0),
     axleLength: 3.3 * scale,
     wheelRadius: .45 * scale,
     hitchHeight: .5 * scale,
-    colliderHalf: { x: 2 * scale, y: .42 * scale, z: .98 * scale },
+    colliderHalf,
+    colliderCenter,
   };
 }
 
 // A site prop (office, fuel tank, block, boulder1..3, cone), or null if not modelled.
 export function glbProp(name) {
   return instance(`prop_${name}`);
+}
+
+// Blender mobility models use the same ground-origin, named axle contract as the pickup.
+// Read authored anchors rather than duplicating cab/cargo dimensions in the runtime.
+export function glbMobility(type, rideHeight = 0) {
+  const inner = instance(`mobility_${type}`);
+  if (!inner) return null;
+  inner.position.y = -rideHeight;
+  const root = new THREE.Group();
+  root.add(inner);
+  root.updateMatrixWorld(true);
+  const anchor = name => root.worldToLocal(node(root, name).getWorldPosition(new THREE.Vector3()));
+  const bedFloor = anchor('BedFloor');
+  const metadata = inner.getObjectByName(`Mobility_${type}`)?.userData ?? {};
+  const heap = createHeap(41);
+  heap.position.copy(bedFloor);
+  heap.visible = false;
+  root.add(heap);
+  const half = { x: metadata.bedHalfX ?? (type === 'buggy' ? .44 : 1), z: metadata.bedHalfZ ?? (type === 'buggy' ? .54 : .75) };
+  const wheels = [0, 1, 2, 3].map(i => {
+    const w = node(inner, `Wheel${i}`);
+    w.rotation.order = 'YXZ';
+    return { steerGroup: w, spin: w };
+  });
+  return {
+    root, wheels, wheelScale: 1, wheelOffsetY: rideHeight,
+    tailgate: root.getObjectByName('TailgatePivot'),
+    cabSeat: anchor('CabEye'), bedCenter: bedFloor.clone().add(new THREE.Vector3(0, .1, 0)),
+    bedHalf: half, bedFloorY: bedFloor.y, tailgateLocal: anchor('BedRear'), exhaustLocal: anchor('Exhaust'),
+    setLoad(fill, color) {
+      heap.visible = type !== 'quad' && fill > .02;
+      heap.scale.set(half.x * .9, .36 * fill + .02, half.z * .85);
+      if (color) heap.material.color.copy(color);
+    },
+    setFirstPerson() {},
+  };
 }

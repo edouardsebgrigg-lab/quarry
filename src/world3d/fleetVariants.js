@@ -2,11 +2,33 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import machines from '../../data/machines.json';
+import { materialRole } from './weathering.js';
 
 export function variantStats(family, tier, supplied = null) {
   return supplied ?? machines.types[family]?.tiers[tier] ?? {};
 }
 const palette = [0xc07837, 0xe9b92b, 0x42a68c, 0xec8a32, 0xc6a927, 0x326caa, 0xd3d6cb, 0xd3573c];
+const neutralMaps = new WeakMap();
+// The approved GLB paint atlases contain coloured paint and dark worn edges. Keep their
+// surface detail while removing the source paint hue before applying each model's livery.
+function neutralPaintMap(texture) {
+  if (!texture?.image || typeof document === 'undefined') return texture;
+  if (neutralMaps.has(texture)) return neutralMaps.get(texture);
+  const source = texture.image;
+  const canvas = document.createElement('canvas');
+  canvas.width = source.width; canvas.height = source.height;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(source, 0, 0);
+  const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  for (let i = 0; i < image.data.length; i += 4) {
+    const shade = Math.max(image.data[i], image.data[i + 1], image.data[i + 2]);
+    image.data[i] = image.data[i + 1] = image.data[i + 2] = shade;
+  }
+  ctx.putImageData(image, 0, 0);
+  const copy = texture.clone(); copy.image = canvas; copy.needsUpdate = true;
+  neutralMaps.set(texture, copy);
+  return copy;
+}
 function box(parent, size, position, material) {
   const mesh = new THREE.Mesh(new RoundedBoxGeometry(...size, 2, Math.min(...size) * .12), material);
   mesh.position.set(...position); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh);
@@ -19,14 +41,27 @@ export function dressVariant(root, spec, family) {
   const color = spec.paintColor ?? palette[variant % palette.length];
   root.traverse(o => {
     if (!o.isMesh || !o.material) return;
+    let repaint = false;
     const update = material => {
       const copy = material.clone();
-      if (/paint|body|bonnet|panel/i.test(copy.name) && !/black|glass|interior/i.test(copy.name)) {
-        copy.color.setHex(color); copy.map = null; copy.roughness = .68; copy.metalness = .16;
+      copy.onBeforeCompile = material.onBeforeCompile;
+      copy.customProgramCacheKey = material.customProgramCacheKey;
+      if (materialRole(copy.name)?.role === 'body') {
+        repaint = true;
+        copy.color.setHex(color); copy.map = neutralPaintMap(copy.map);
       }
       return copy;
     };
     o.material = Array.isArray(o.material) ? o.material.map(update) : update(o.material);
+    if (repaint && o.geometry.getAttribute('color')) {
+      o.geometry = o.geometry.clone();
+      const colors = o.geometry.getAttribute('color');
+      for (let i = 0; i < colors.count; i++) {
+        const shade = Math.max(colors.getX(i), colors.getY(i), colors.getZ(i));
+        colors.setXYZ(i, shade, shade, shade);
+      }
+      colors.needsUpdate = true;
+    }
   });
   const body = new THREE.MeshStandardMaterial({ color, roughness: .7, metalness: .2 });
   const dark = new THREE.MeshStandardMaterial({ color: 0x242c2c, roughness: .85 });
