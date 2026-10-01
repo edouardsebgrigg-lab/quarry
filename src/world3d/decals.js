@@ -1,6 +1,6 @@
 // Decals on the machines: model lettering, black-and-yellow hazard chevrons, warning stickers,
-// number plates and the bare steel where loads have scraped the paint off a tipper's floor,
-// the details that make plant look real. Each is drawn on a canvas and
+// number plates, the bare steel where loads have scraped the paint off a tipper's floor and the
+// dust on a windscreen with the wipers' clean arcs, the details that make plant look real. Each is drawn on a canvas and
 // projected onto the named part of the model (so it follows the surface and moves with the
 // part), once per model file when it loads. On a Rusty machine they're faded and scratched.
 import * as THREE from 'three';
@@ -27,6 +27,7 @@ const SPECS = {
     { part: 'BoomBody', sides: ['left', 'right'], u: 0.33, v: 0.55, h: 0.26, art: ['model', 'QX 75'] },
     { part: 'Counterweight', sides: ['back'], u: 0.5, v: 0.45, h: 0.2, wFit: 0.85, art: ['hazard'] },
     { part: 'HouseBody', sides: ['left'], u: 0.35, v: 0.6, h: 0.12, art: ['warning'] },
+    { part: 'CabGlass', sides: ['front'], u: 0.5, v: 0.55, h: 1.0, wFit: 0.9, art: ['wiper', 1] },
   ],
   dumper: [
     { part: 'Skip', sides: ['left', 'right'], u: 0.5, v: 0.55, h: 0.12, art: ['model', 'QD 15'] },
@@ -41,6 +42,7 @@ const SPECS = {
     { part: 'Bumper', sides: ['front'], u: 0.5, v: 0.5, h: 0.11, art: ['plate', 'front'] },
     { part: 'Bed', sides: ['back'], u: 0.5, v: 0.28, h: 0.18, wFit: 0.9, art: ['hazard'] },
     { part: 'Bed', sides: ['top'], u: 0.45, hFit: 0.8, wFit: 0.84, art: ['scrape'] },
+    { part: 'CabGlass', sides: ['front'], u: 0.5, v: 0.55, h: 0.78, wFit: 0.86, art: ['wiper', 2] },
   ],
   trailer: [
     { part: 'Plate', sides: ['back'], u: 0.5, v: 0.5, h: 0.1, art: ['plate', 'rear'] },
@@ -50,6 +52,7 @@ const SPECS = {
   vehicle: [
     { part: 'Tailgate', sides: ['back'], u: 0.5, v: 0.3, h: 0.1, art: ['plate', 'rear'] },
     { part: 'Trim', sides: ['front'], u: 0.5, v: 0.4, h: 0.1, art: ['plate', 'front'] },
+    { part: 'Glass', sides: ['front'], u: 0.5, v: 0.6, h: 0.5, wFit: 0.8, art: ['wiper', 2] },
   ],
 };
 
@@ -108,6 +111,9 @@ function art([kind, arg], worn) {
   } else if (kind === 'scrape') {
     scrape(g, c, worn);
     worn = false; // (already as worn as it gets)
+  } else if (kind === 'wiper') {
+    wiperDust(g, c, arg, worn);
+    worn = false;
   } else if (kind === 'plate') {
     c.width = 520;
     c.height = 112;
@@ -186,6 +192,50 @@ function scrape(g, c, rusty) {
   g.globalCompositeOperation = 'source-over';
 }
 
+// Dust and dried spray on a windscreen, thickest round the edges, with the clean arcs the
+// wipers (one or two, pivoting at the bottom) leave. Transparent where the glass is clean.
+function wiperDust(g, c, wipers, dirty) {
+  c.width = 512;
+  c.height = 256;
+  let s = dirty ? 991 : 313;
+  const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+  const w = c.width;
+  const h = c.height;
+  // An even film, heavier toward the edges and the bottom.
+  const film = g.createRadialGradient(w / 2, h * 0.45, h * 0.2, w / 2, h * 0.45, w * 0.62);
+  const a = dirty ? 0.5 : 0.3;
+  film.addColorStop(0, `rgba(150, 136, 112, ${a * 0.6})`);
+  film.addColorStop(1, `rgba(128, 114, 92, ${a * 1.2})`);
+  g.fillStyle = film;
+  g.fillRect(0, 0, w, h);
+  // Specks and splashes.
+  for (let i = 0; i < (dirty ? 900 : 500); i++) {
+    const low = rnd() ** 0.6; // (more near the bottom)
+    g.fillStyle = `rgba(${110 + rnd() * 40}, ${96 + rnd() * 30}, ${72 + rnd() * 24}, ${0.15 + rnd() * 0.35})`;
+    g.beginPath();
+    g.arc(rnd() * w, low * h, 0.6 + rnd() * 2.6, 0, Math.PI * 2);
+    g.fill();
+  }
+  // The wipers' arcs: wiped clean, with a soft rim of pushed-aside dust.
+  const pivots = wipers === 2 ? [w * 0.27, w * 0.7] : [w * 0.5];
+  const reach = wipers === 2 ? h * 0.88 : h * 0.95;
+  for (const px of pivots) {
+    g.globalCompositeOperation = 'destination-out';
+    g.fillStyle = 'rgba(0,0,0,0.92)';
+    g.beginPath();
+    g.arc(px, h + 4, reach, Math.PI * 1.08, Math.PI * 1.92);
+    g.arc(px, h + 4, h * 0.14, Math.PI * 1.92, Math.PI * 1.08, true);
+    g.closePath();
+    g.fill();
+    g.globalCompositeOperation = 'source-over';
+    g.strokeStyle = `rgba(120, 104, 80, ${dirty ? 0.45 : 0.3})`;
+    g.lineWidth = 5;
+    g.beginPath();
+    g.arc(px, h + 4, reach + 2, Math.PI * 1.08, Math.PI * 1.92);
+    g.stroke();
+  }
+}
+
 // Scratches and flaking on a worn machine's decals.
 function wear(g, w, h, kind) {
   let s = 12345 + w * 7 + h;
@@ -210,9 +260,11 @@ function decalMaterial(tex, worn, kind) {
   const key = `${tex.uuid}|${worn}`;
   if (!materials.has(key)) {
     const steel = kind === 'scrape';
+    const glass = kind === 'wiper';
     materials.set(key, new THREE.MeshStandardMaterial({
       map: tex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4,
-      roughness: steel ? (worn ? 0.8 : 0.5) : 0.6, metalness: steel ? (worn ? 0.2 : 0.65) : 0, opacity: worn && !steel ? 0.78 : 1,
+      roughness: steel ? (worn ? 0.8 : 0.5) : glass ? 0.95 : 0.6, metalness: steel ? (worn ? 0.2 : 0.65) : 0, opacity: worn && !steel && !glass ? 0.78 : 1,
+      side: glass ? THREE.DoubleSide : THREE.FrontSide, // (seen from the cab, too)
     }));
   }
   return materials.get(key);
