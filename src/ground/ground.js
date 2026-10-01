@@ -48,10 +48,64 @@ function fromBase64(str) {
   return b;
 }
 
+// A control byte describes 1..128 literal bytes or a run of 3..130 identical bytes.
+// Byte planes put matching Float32 exponents together without rounding any value.
+function packBytes(bytes) {
+  const out = [];
+  for (let i = 0; i < bytes.length;) {
+    let run = 1;
+    while (run < 130 && i + run < bytes.length && bytes[i + run] === bytes[i]) run++;
+    if (run >= 3) { out.push(128 + run - 3, bytes[i]); i += run; }
+    else {
+      const start = i++;
+      while (i - start < 128 && i < bytes.length) {
+        if (i + 2 < bytes.length && bytes[i] === bytes[i + 1] && bytes[i] === bytes[i + 2]) break;
+        i++;
+      }
+      out.push(i - start - 1);
+      for (let n = start; n < i; n++) out.push(bytes[n]);
+    }
+  }
+  return toBase64(Uint8Array.from(out));
+}
+function unpackBytes(text, length) {
+  const bytes = fromBase64(text), out = new Uint8Array(length);
+  let n = 0;
+  for (let i = 0; i < bytes.length; i++) {
+    const control = bytes[i], count = control < 128 ? control + 1 : control - 128 + 3;
+    if (n + count > length) throw new Error('Invalid saved terrain data');
+    if (control < 128) {
+      if (i + count >= bytes.length) throw new Error('Invalid saved terrain data');
+      out.set(bytes.subarray(i + 1, i + 1 + count), n); i += count;
+    } else {
+      if (++i >= bytes.length) throw new Error('Invalid saved terrain data');
+      out.fill(bytes[i], n, n + count);
+    }
+    n += count;
+  }
+  if (n !== length) throw new Error('Invalid saved terrain data');
+  return out;
+}
+function packFloats(values, fields) {
+  const bytes = new Uint8Array(values.buffer), planes = new Uint8Array(bytes.length), count = values.length / fields;
+  for (let f = 0; f < fields; f++) for (let b = 0; b < 4; b++) for (let n = 0; n < count; n++) {
+    planes[(f * 4 + b) * count + n] = bytes[(n * fields + f) * 4 + b];
+  }
+  return packBytes(planes);
+}
+function unpackFloats(text, count, fields) {
+  const planes = unpackBytes(text, count * fields * 4), bytes = new Uint8Array(planes.length);
+  for (let f = 0; f < fields; f++) for (let b = 0; b < 4; b++) for (let n = 0; n < count; n++) {
+    bytes[(n * fields + f) * 4 + b] = planes[(f * 4 + b) * count + n];
+  }
+  return new Float32Array(bytes.buffer);
+}
+
 // ---------------------------------------------------------------- the ground
 
 export function createGround(groundData, plotId, opts = {}) {
   const plot = groundData.plots[plotId];
+  const physics = groundData.physics ?? {};
   const { x0 = plot.origin?.[0] ?? 0, z0 = plot.origin?.[1] ?? 0, seed = 1 } = opts;
   const cell = groundData.cellSize;
   const area = cell * cell;
@@ -78,6 +132,9 @@ export function createGround(groundData, plotId, opts = {}) {
   const bed = new Float32Array(N); // top of the bedrock
   const nat = layers.map(() => new Float32Array(N)); // natural layer thicknesses
   const loose = new Float32Array(N); // loose material thickness
+  const compaction = new Float32Array(N); // firmness, not a change of density or mass
+  const fill = new Float32Array(N); // compacted earthworks fill, in bank volume
+  const fillMix = new Float32Array(N * M); // retain actual fill composition, including rock
   const mix = new Float32Array(N * M); // loose material: volume share of each material
   const disturbed = new Uint8Array(N); // bit 1: dug, dumped on or scraped (no more grass); bit 2: built on (graded and firm)
   // The outermost ring of cells never changes: the plot's edge meets the countryside around it
@@ -92,29 +149,38 @@ export function createGround(groundData, plotId, opts = {}) {
   const touched = new Set(); // chunks that differ from the untouched field (for saves)
 
   // ---- generate the untouched field
-  function generate() {
+  const initialBaseline = { version: 1, seed, x0, z0, surfaceRoll: plot.surfaceRoll,
+    strata: plot.strata.map(s => ({ material: s.material, thickness: [...s.thickness] })) };
+  let baseline = initialBaseline;
+  function generate(targetBed, targetNat, spec) {
     for (let j = 0; j < nz; j++) {
       for (let i = 0; i < nx; i++) {
         const k = j * nx + i;
-        const x = x0 + (i + 0.5) * cell;
-        const z = z0 + (j + 0.5) * cell;
-        const top = (fbm(x / 55, z / 55, seed) - 0.5) * 2 * plot.surfaceRoll;
+        const x = spec.x0 + (i + 0.5) * cell;
+        const z = spec.z0 + (j + 0.5) * cell;
+        const top = (fbm(x / 55, z / 55, spec.seed) - 0.5) * 2 * spec.surfaceRoll;
         let sum = 0;
-        plot.strata.forEach((s, l) => {
-          const t = s.thickness[0] + (s.thickness[1] - s.thickness[0]) * fbm(x / 38 + l * 17.1, z / 38 - l * 9.3, seed + 10 + l * 3);
-          nat[l][k] = t;
+        spec.strata.forEach((s, l) => {
+          const t = s.thickness[0] + (s.thickness[1] - s.thickness[0]) * fbm(x / 38 + l * 17.1, z / 38 - l * 9.3, spec.seed + 10 + l * 3);
+          targetNat[l][k] = t;
           sum += t;
         });
-        bed[k] = top - sum;
+        targetBed[k] = top - sum;
       }
     }
   }
-  generate();
+  generate(bed, nat, baseline);
+  const bedBase = bed.slice();
+  const geology = nat.map(layer => layer.slice()); // original contacts for exposed cut faces
+  const bedBaseBits = new Uint32Array(bedBase.buffer);
+  const geologyBits = geology.map(layer => new Uint32Array(layer.buffer));
+  const rockDepth = plot.rockDepth ?? 0;
+  let groundMoisture = 0;
 
   // ---- helpers
   const idx = (i, j) => j * nx + i;
   const height = (k) => {
-    let h = bed[k] + loose[k];
+    let h = bed[k] + loose[k] + fill[k];
     for (let l = 0; l < K; l++) h += nat[l][k];
     return h;
   };
@@ -169,6 +235,11 @@ export function createGround(groundData, plotId, opts = {}) {
       for (let m = 1; m < M; m++) if (mix[k * M + m] > mix[k * M + best]) best = m;
       return best;
     }
+    if (fill[k] > 1e-4) {
+      let best = 0;
+      for (let m = 1; m < M; m++) if (fillMix[k * M + m] > fillMix[k * M + best]) best = m;
+      return best;
+    }
     const l = topNatural(k);
     return l >= 0 ? layers[l] : bedMat;
   }
@@ -181,6 +252,7 @@ export function createGround(groundData, plotId, opts = {}) {
     const thick = add / area;
     const old = loose[k];
     const nu = old + thick;
+    compaction[k] *= old / nu; // fresh spoil loosens a compacted surface
     for (let m = 0; m < M; m++) mix[k * M + m] = (mix[k * M + m] * old + (vols[m] / area)) / nu;
     loose[k] = nu;
   }
@@ -197,6 +269,13 @@ export function createGround(groundData, plotId, opts = {}) {
         loose[k] = 0;
         mix.fill(0, k * M, k * M + M);
       }
+      rem -= take;
+    }
+    if (fill[k] > 0 && rem > 0) {
+      const take = Math.min(fill[k], rem);
+      for (let m = 0; m < M; m++) out[m] += take * area * fillMix[k * M + m] * bankDensity[m];
+      fill[k] -= take;
+      if (fill[k] < 1e-6) { fill[k] = 0; fillMix.fill(0, k * M, k * M + M); }
       rem -= take;
     }
     for (let l = K - 1; l >= 0 && rem > 0; l--) {
@@ -217,6 +296,11 @@ export function createGround(groundData, plotId, opts = {}) {
     const lt = Math.min(loose[k], top - y);
     if (lt > 0) t += lt * area * looseDensityOf(k);
     top -= loose[k];
+    if (fill[k] > 0 && top > y) {
+      const take = Math.min(fill[k], top - y);
+      for (let m = 0; m < M; m++) t += take * area * fillMix[k * M + m] * bankDensity[m];
+    }
+    top -= fill[k];
     for (let l = K - 1; l >= 0 && top > y; l--) {
       const take = Math.min(nat[l][k], top - y);
       t += take * area * bankDensity[layers[l]];
@@ -233,6 +317,11 @@ export function createGround(groundData, plotId, opts = {}) {
     const lt = Math.min(loose[k], top - y);
     if (lt > 0) v += lt * area;
     top -= loose[k];
+    if (fill[k] > 0 && top > y) {
+      const take = Math.min(fill[k], top - y);
+      for (let m = 0; m < M; m++) v += take * area * fillMix[k * M + m] * swell[m];
+    }
+    top -= fill[k];
     for (let l = K - 1; l >= 0 && top > y; l--) {
       const take = Math.min(nat[l][k], top - y);
       v += take * area * swell[layers[l]];
@@ -255,6 +344,25 @@ export function createGround(groundData, plotId, opts = {}) {
       }
     }
   }
+
+  function response(k, moisture = groundMoisture) {
+    const m = topMaterial(k);
+    const p = P[m];
+    const isLoose = loose[k] > 0.002;
+    const wet = Math.max(0, Math.min(1, moisture));
+    const firmness = compaction[k];
+    const resistance = (p.resistance ?? 30) * (isLoose ? physics.looseResistanceFactor ?? 0.28 : 1)
+      * (mats[m] === 'clay' ? 1 - wet * (1 - (physics.wetClayResistanceFactor ?? 0.72)) : 1)
+      * (1 + firmness * 0.45);
+    return {
+      material: mats[m], resistance, loose: isLoose, compaction: firmness,
+      cohesion: (p.cohesion ?? 0) * (1 - wet * (physics.wetCohesionFactor ?? 0.5)),
+      flow: p.flow ?? 0.6,
+      traction: (p.traction ?? 0.7) * (1 - wet * (mats[m] === 'clay' ? 0.5 : 0.22)) + firmness * 0.08,
+      rollingResistance: (p.rollingResistance ?? 0.04) * (1 + wet * 1.5) * (1 - firmness * 0.45),
+    };
+  }
+  const cellAt = (x, z) => idx(Math.min(nx - 1, Math.max(0, Math.floor((x - x0) / cell))), Math.min(nz - 1, Math.max(0, Math.floor((z - z0) / cell))));
 
   const toRecord = (arr) => {
     const out = {};
@@ -280,6 +388,11 @@ export function createGround(groundData, plotId, opts = {}) {
       for (let m = 0; m < M; m++) out[m] += dh * area * mix[k * M + m] * looseDensity[m];
     }
     top -= loose[k];
+    if (fill[k] > 0 && top > y) {
+      const dh = Math.min(fill[k], top - y);
+      for (let m = 0; m < M; m++) out[m] += dh * area * fillMix[k * M + m] * bankDensity[m];
+    }
+    top -= fill[k];
     for (let l = K - 1; l >= 0 && top > y; l--) {
       const take = Math.min(nat[l][k], top - y);
       if (take > 0) out[layers[l]] += take * area * bankDensity[layers[l]];
@@ -474,13 +587,13 @@ export function createGround(groundData, plotId, opts = {}) {
     for (const job of jobs) {
       const k = job.k;
       if (job.fill > 0) {
+        const old = fill[k];
+        const nu = old + job.fill;
         for (let m = 0; m < M; m++) {
-          const l = layers.indexOf(m);
-          if (share[m] > 0 && l >= 0) nat[l][k] += job.fill * share[m];
+          fillMix[k * M + m] = (fillMix[k * M + m] * old + job.fill * share[m]) / nu;
         }
-        // (material that isn't a natural layer, like rock, can't be compacted: it goes to the top layer)
-        const stray = share.reduce((a, v, m) => a + (layers.indexOf(m) < 0 ? v : 0), 0);
-        if (stray > 0) nat[K - 1][k] += job.fill * stray;
+        fill[k] = nu;
+        compaction[k] = 1;
       }
       if (job.isCore && sm >= 0) {
         const vols = new Float64Array(M);
@@ -630,6 +743,127 @@ export function createGround(groundData, plotId, opts = {}) {
     // A cell that has been built on (a graded road, ramp or level area).
     cellBuilt: (i, j) => (disturbed[idx(i, j)] & 2) === 2,
     cellLoose: (i, j) => loose[idx(i, j)],
+    setMoisture(value) { groundMoisture = Math.max(0, Math.min(1, Number(value) || 0)); },
+    cellCompaction: (i, j) => compaction[idx(i, j)],
+    // Undisturbed geological contacts, bottom to top, for shading exposed pit walls.
+    cellGeology(i, j) {
+      const k = idx(i, j);
+      let y = bedBase[k];
+      return { bed: y, layers: geology.map((layer, l) => ({ material: mats[layers[l]], top: y += layer[k] })) };
+    },
+    materialResponseAt: (x, z, opts = {}) => response(cellAt(x, z), opts.moisture),
+    digResistanceAt: (x, z, opts = {}) => response(cellAt(x, z), opts.moisture).resistance,
+
+    // A cutting edge sweeps a strip, rather than drilling a circular bowl at every sample.
+    // Force is kN; scarce breakout force takes a smaller bite. Only a breaker cuts intact rock.
+    cutSweep({ from, to, width = cell, maxVolume = Infinity, maxTonnes = Infinity, force = Infinity, attack = 1, moisture = groundMoisture, tool = 'bucket' }) {
+      const empty = (blocked = null, resistance = 0) => ({ tonnes: {}, total: 0, volume: 0, resistance, blocked });
+      if (!from || !to || ![from.x, from.y, from.z, to.x, to.y, to.z, width].every(Number.isFinite) || width <= 0) return empty('invalid');
+      const dx = to.x - from.x, dz = to.z - from.z;
+      const horizontal = Math.hypot(dx, dz);
+      const stroke = Math.hypot(horizontal, to.y - from.y);
+      if (stroke < (physics.minimumStroke ?? 0.001) || attack <= 0 || force <= 0 || maxVolume <= 0 || maxTonnes <= 0) return empty();
+      if (stroke > (physics.maxSweepLength ?? 1.5) * 4) return empty('movement'); // repositioning is not a digging stroke
+      const candidates = [];
+      const half = width / 2;
+      let peak = 0, hitRock = false;
+      cellsInRadius((from.x + to.x) / 2, (from.z + to.z) / 2, horizontal / 2 + half + cell * 0.72, k => {
+        if (fixed[k]) return;
+        const x = x0 + (k % nx + 0.5) * cell;
+        const z = z0 + (Math.floor(k / nx) + 0.5) * cell;
+        const t = horizontal > 1e-6 ? Math.max(0, Math.min(1, ((x - from.x) * dx + (z - from.z) * dz) / (horizontal * horizontal))) : 1;
+        const edgeDistance = Math.hypot(x - from.x - dx * t, z - from.z - dz * t);
+        if (edgeDistance > half + cell * 0.5) return;
+        const h = height(k);
+        const edgeY = from.y + (to.y - from.y) * t;
+        if (edgeY >= h) return;
+        const r = response(k, moisture);
+        let resistance = r.resistance;
+        // Crossing into a tougher lower stratum must require its force, too.
+        let y = h - loose[k];
+        if (fill[k] > 0 && y > edgeY) for (let m = 0; m < M; m++) if (fillMix[k * M + m] > 0.01) resistance = Math.max(resistance, P[m].resistance ?? 30);
+        y -= fill[k];
+        for (let l = K - 1; l >= 0; l--) {
+          if (nat[l][k] > 0 && y > edgeY) resistance = Math.max(resistance, P[layers[l]].resistance ?? 30);
+          y -= nat[l][k];
+        }
+        if (edgeY < bed[k]) {
+          hitRock = true;
+          if (tool === 'breaker') resistance = Math.max(resistance, P[bedMat].resistance ?? 450);
+        }
+        peak = Math.max(peak, resistance);
+        const efficiency = Math.min(1, force / Math.max(1, resistance)) * Math.min(1, attack);
+        const bite = (physics.maxBiteDepth ?? 0.35) * Math.min(1, stroke / cell) * efficiency * (1 - r.cohesion * 0.3);
+        const coverage = Math.max(0, Math.min(1, (half + cell * 0.5 - edgeDistance) / cell));
+        const floor = tool === 'breaker' ? bedBase[k] - rockDepth : bed[k];
+        const target = Math.max(floor, h - Math.min(h - edgeY, bite) * coverage);
+        if (target < h - 1e-6) candidates.push({ k, h, target });
+      });
+      if (!candidates.length) return empty(hitRock ? 'rock' : null, peak);
+      const measure = (scale, volume) => candidates.reduce((sum, c) => {
+        const y = c.h - (c.h - c.target) * scale;
+        const rock = Math.max(0, bed[c.k] - y) * area;
+        return sum + (volume ? looseAbove(c.k, Math.max(y, bed[c.k])) + rock * swell[bedMat]
+          : tonnesAbove(c.k, Math.max(y, bed[c.k])) + rock * bankDensity[bedMat]);
+      }, 0);
+      let scale = 1;
+      if (measure(1, true) > maxVolume || measure(1, false) > maxTonnes) {
+        let lo = 0, hi = 1;
+        for (let i = 0; i < 28; i++) {
+          const mid = (lo + hi) / 2;
+          if (measure(mid, true) > maxVolume || measure(mid, false) > maxTonnes) hi = mid; else lo = mid;
+        }
+        scale = lo;
+      }
+      const out = new Float64Array(M);
+      for (const c of candidates) {
+        const y = c.h - (c.h - c.target) * scale;
+        removeTop(c.k, Math.max(0, c.h - Math.max(y, bed[c.k])), out);
+        if (y < bed[c.k] && tool === 'breaker') {
+          out[bedMat] += (bed[c.k] - y) * area * bankDensity[bedMat];
+          bed[c.k] = y;
+        }
+        compaction[c.k] = 0;
+        disturbed[c.k] = 1;
+        changed(c.k);
+        activateAround(c.k);
+      }
+      return { tonnes: toRecord(out), total: out.reduce((a, b) => a + b, 0), volume: out.reduce((a, t, m) => a + t / looseDensity[m], 0), resistance: peak, blocked: null };
+    },
+
+    // Wheel/track passes firm the surface and push shallow rut spoil into the shoulders.
+    // Firmness changes handling; it never silently changes the density of carried tonnes.
+    applyTraffic({ x, z, heading = 0, width = 1.8, weight = 5, distance = 0.5, slip = 0, moisture = groundMoisture }) {
+      if (![x, z, heading, width, weight, distance].every(Number.isFinite) || distance <= 0 || width <= 0) return { moved: 0, compaction: 0 };
+      const out = new Float64Array(M);
+      const ux = Math.cos(heading), uz = Math.sin(heading);
+      const shoulder = width / 2 + cell;
+      const left = cellAt(x - uz * shoulder, z + ux * shoulder);
+      const right = cellAt(x + uz * shoulder, z - ux * shoulder);
+      const destinations = [...new Set([left, right])].filter(k => !fixed[k] && !(disturbed[k] & 2));
+      let firm = 0;
+      cellsInRadius(x, z, width / 2, k => {
+        if (fixed[k] || (disturbed[k] & 2) || destinations.includes(k)) return;
+        const r = response(k, moisture);
+        const pressure = Math.min(2, Math.max(0, weight) / Math.max(1, width * width));
+        compaction[k] = Math.min(1, compaction[k] + distance * pressure * (physics.trafficCompactionRate ?? 0.12));
+        firm = Math.max(firm, compaction[k]);
+        if (destinations.length) {
+          const softness = r.loose ? 1 : Math.min(0.8, moisture * 30 / Math.max(1, r.resistance));
+          const depth = Math.min(physics.maximumRutDepth ?? 0.025, distance * pressure * (physics.rutDepthPerMetre ?? 0.012) * softness * (1 + Math.min(1, slip)) * (1 - compaction[k] * 0.8));
+          if (depth > 1e-5) removeTop(k, depth, out);
+        }
+        disturbed[k] = 1;
+        changed(k);
+        activateAround(k);
+      });
+      const moved = out.reduce((a, b) => a + b, 0);
+      for (const k of destinations) {
+        addLoose(k, Array.from(out, (t, m) => t / looseDensity[m] / destinations.length));
+        if (moved > 0) { disturbed[k] = 1; changed(k); activateAround(k); }
+      }
+      return { moved, compaction: firm };
+    },
 
     // Carve a bowl (radius r, lowest point `bottomY`) out of the ground. If it would take more
     // than `maxTonnes` (or more than `maxVolume` m³ once loose), the bowl is made shallower
@@ -659,6 +893,7 @@ export function createGround(groundData, plotId, opts = {}) {
         const dh = height(k) - cut;
         if (dh > 1e-5) {
           removeTop(k, dh, out);
+          compaction[k] = 0;
           disturbed[k] = 1;
           changed(k);
           activateAround(k);
@@ -736,9 +971,11 @@ export function createGround(groundData, plotId, opts = {}) {
             const dh = h - height(o);
             if (dh <= 0) continue;
             if (loose[k] > 1e-5 && !(disturbed[k] & 2)) { // (a built surface doesn't slump)
-              const excess = dh - reposeOf(k) * dist;
+              const r = response(k);
+              const excess = dh - reposeOf(k) * dist - r.cohesion * cell * 0.08;
               if (excess > 1e-3) {
-                const move = Math.min(loose[k], excess * 0.3);
+                const flow = (0.08 + r.flow * 0.28) * (1 - compaction[k] * (physics.firmSlumpReduction ?? 0.75));
+                const move = Math.min(loose[k], excess * flow);
                 const vols = new Float64Array(M);
                 for (let m = 0; m < M; m++) vols[m] = move * area * mix[k * M + m];
                 loose[k] -= move;
@@ -756,11 +993,15 @@ export function createGround(groundData, plotId, opts = {}) {
             } else {
               // A natural wall steeper than the material can stand: the lip breaks away.
               const l = topNatural(k);
-              if (l < 0) continue;
-              const excess = dh - tanStanding[layers[l]] * dist;
+              if (disturbed[k] & 2) continue; // engineered compacted core stays firm
+              if (l < 0 && fill[k] < 1e-5) continue;
+              const mat = fill[k] > 1e-5 ? topMaterial(k) : layers[l];
+              const cohesion = P[mat].cohesion ?? 0;
+              const excess = dh - tanStanding[mat] * (1 - groundMoisture * cohesion * 0.12) * dist;
               if (excess > 1e-3) {
                 const out = new Float64Array(M);
-                removeTop(k, Math.min(excess * 0.5, nat[l][k] + 1e-3), out);
+                const release = fill[k] > 1e-5 ? fill[k] : nat[l][k] + 1e-3;
+                removeTop(k, Math.min(excess * (0.5 - cohesion * 0.25), release), out);
                 const vols = Array.from(out, (t, m) => t / looseDensity[m]);
                 addLoose(k, vols);
                 disturbed[k] = 1;
@@ -794,53 +1035,143 @@ export function createGround(groundData, plotId, opts = {}) {
     totals() {
       const out = new Float64Array(M);
       for (let k = 0; k < N; k++) {
+        if (rockDepth > 0) out[bedMat] += Math.max(0, bed[k] - bedBase[k] + rockDepth) * area * bankDensity[bedMat];
         for (let m = 0; m < M; m++) out[m] += loose[k] * area * mix[k * M + m] * looseDensity[m];
+        for (let m = 0; m < M; m++) out[m] += fill[k] * area * fillMix[k * M + m] * bankDensity[m];
         for (let l = 0; l < K; l++) out[layers[l]] += nat[l][k] * area * bankDensity[layers[l]];
       }
       return toRecord(out);
     },
 
-    // ---- saves: only the chunks that changed, packed small (mm and 1/255 steps)
+    // Format 4 XORs natural/bedrock Float32 bits against the saved seeded baseline.
+    // Unchanged strata become zero runs; formats 1..3 remain readable.
     serialize() {
       const chunks = {};
-      for (const c of touched) {
+      const saveChunks = new Set(touched);
+      for (const k of queue) saveChunks.add(chunkOf(k % nx, Math.floor(k / nx)));
+      for (const c of saveChunks) {
         const { i0, j0, i1, j1 } = this.chunkRange(c);
-        const cells = (i1 - i0) * (j1 - j0);
-        const u16 = new Uint16Array(cells * (K + 1));
-        const u8 = new Uint8Array(cells * (M + 1));
-        let n = 0;
-        for (let j = j0; j < j1; j++) {
-          for (let i = i0; i < i1; i++, n++) {
-            const k = idx(i, j);
-            for (let l = 0; l < K; l++) u16[n * (K + 1) + l] = Math.min(65535, Math.round(nat[l][k] * 1000));
-            u16[n * (K + 1) + K] = Math.min(65535, Math.round(loose[k] * 1000));
-            for (let m = 0; m < M; m++) u8[n * (M + 1) + m] = Math.round(mix[k * M + m] * 255);
-            u8[n * (M + 1) + M] = disturbed[k];
-          }
+        const cells = [];
+        let local = 0;
+        for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++, local++) {
+          const k = idx(i, j);
+          if (disturbed[k] || active[k] || loose[k] || compaction[k] || fill[k] || bed[k] !== bedBase[k]
+            || nat.some((layer, l) => layer[k] !== geology[l][k])) cells.push(local);
         }
-        chunks[c] = toBase64(new Uint8Array(u16.buffer)) + '|' + toBase64(u8);
+        const count = cells.length;
+        if (!count) continue;
+        const heights = new Float32Array(count * (K + 4));
+        const heightBits = new Uint32Array(heights.buffer);
+        const mixes = new Float32Array(count * M * 2);
+        const flags = new Uint8Array(count);
+        for (let n = 0; n < count; n++) {
+          const i = i0 + cells[n] % (i1 - i0), j = j0 + Math.floor(cells[n] / (i1 - i0));
+          const k = idx(i, j);
+          for (let l = 0; l < K; l++) heights[n * (K + 4) + l] = nat[l][k];
+          heights[n * (K + 4) + K] = loose[k];
+          heights[n * (K + 4) + K + 1] = bed[k];
+          heights[n * (K + 4) + K + 2] = compaction[k];
+          heights[n * (K + 4) + K + 3] = fill[k];
+          for (let l = 0; l < K; l++) heightBits[n * (K + 4) + l] ^= geologyBits[l][k];
+          heightBits[n * (K + 4) + K + 1] ^= bedBaseBits[k];
+          for (let m = 0; m < M; m++) {
+            mixes[n * M * 2 + m] = mix[k * M + m];
+            mixes[n * M * 2 + M + m] = fillMix[k * M + m];
+          }
+          flags[n] = disturbed[k] | (active[k] ? 128 : 0);
+        }
+        chunks[c] = {
+          count, cells: packFloats(Uint32Array.from(cells), 1),
+          heights: packFloats(heights, K + 4), mix: packFloats(mixes, M * 2), flags: packBytes(flags),
+        };
       }
-      return { plotId, seed, x0, z0, chunks };
+      return { format: 4, plotId, seed, x0, z0, cellSize: cell, chunkCells: CC, nx, nz, materialIds: mats, layerIds: layers.map(m => mats[m]), baseline: structuredClone(baseline), moisture: groundMoisture, chunks };
     },
     load(saved) {
       if (!saved?.chunks) return;
+      const xorBaseline = saved.format === 4;
+      const sparse = saved.format === 3 || xorBaseline;
+      const modern = saved.format === 2 || sparse;
+      if (saved.format != null && saved.format !== 1 && !modern) throw new Error('Unsupported saved terrain format');
+      if (modern && (saved.cellSize !== cell || saved.chunkCells !== CC || saved.nx !== nx || saved.nz !== nz)) throw new Error('Ground grid changed; this save needs a terrain migration');
+      const oldMats = modern ? saved.materialIds : ['topsoil', 'clay', 'sand', 'gravel', 'rock'];
+      const oldLayers = modern ? saved.layerIds : ['gravel', 'sand', 'clay', 'topsoil'];
+      const oldM = oldMats.length, oldK = oldLayers.length;
+      if (oldK !== K || oldMats.some(m => !(m in mi)) || oldLayers.some(m => !layers.includes(mi[m]))) throw new Error('Ground materials changed; this save needs a terrain migration');
+      const layerMap = layers.map(m => oldLayers.indexOf(mats[m]));
+      if (xorBaseline) {
+        const spec = saved.baseline;
+        if (spec?.version !== 1 || ![spec.seed, spec.x0, spec.z0, spec.surfaceRoll].every(Number.isFinite)
+          || spec.strata?.length !== K || spec.strata.some(s => !oldLayers.includes(s.material)
+            || s.thickness?.length !== 2 || !s.thickness.every(Number.isFinite))) throw new Error('Invalid saved terrain baseline');
+        const baseLayers = spec.strata.map(() => new Float32Array(N));
+        generate(bedBase, baseLayers, spec);
+        for (let l = 0; l < K; l++) {
+          const source = spec.strata.findIndex(s => s.material === mats[layers[l]]);
+          if (source < 0) throw new Error('Invalid saved terrain baseline');
+          geology[l].set(baseLayers[source]);
+        }
+        baseline = structuredClone(spec);
+      } else {
+        generate(bedBase, geology, initialBaseline);
+        baseline = initialBaseline;
+      }
+      groundMoisture = saved.moisture ?? 0;
+      queue = [];
+      active.fill(0);
+      for (const c of touched) dirty.add(c);
+      touched.clear();
+      bed.set(bedBase);
+      nat.forEach((layer, l) => layer.set(geology[l]));
+      loose.fill(0); compaction.fill(0); fill.fill(0); mix.fill(0); fillMix.fill(0); disturbed.fill(0);
       for (const [cs, packed] of Object.entries(saved.chunks)) {
         const c = Number(cs);
-        const [a, b] = packed.split('|');
-        const u16 = new Uint16Array(fromBase64(a).buffer);
-        const u8 = fromBase64(b);
+        if (!Number.isInteger(c) || c < 0 || c >= cnx * cnz) throw new Error('Invalid saved terrain chunk');
         const { i0, j0, i1, j1 } = this.chunkRange(c);
-        let n = 0;
-        for (let j = j0; j < j1; j++) {
-          for (let i = i0; i < i1; i++, n++) {
-            const k = idx(i, j);
-            for (let l = 0; l < K; l++) nat[l][k] = u16[n * (K + 1) + l] / 1000;
-            loose[k] = u16[n * (K + 1) + K] / 1000;
-            let s = 0;
-            for (let m = 0; m < M; m++) s += (mix[k * M + m] = u8[n * (M + 1) + m] / 255);
-            if (s > 0) for (let m = 0; m < M; m++) mix[k * M + m] /= s;
-            disturbed[k] = u8[n * (M + 1) + M];
+        const fullCount = (i1 - i0) * (j1 - j0), count = sparse ? packed.count : fullCount;
+        if (!Number.isInteger(count) || count < 0 || count > fullCount) throw new Error('Invalid saved terrain data');
+        let heights, mixes, flags, cells;
+        if (sparse) {
+          cells = new Uint32Array((xorBaseline ? unpackFloats(packed.cells, count, 1) : unpackBytes(packed.cells, count * 4)).buffer);
+          heights = unpackFloats(packed.heights, count, oldK + 4);
+          mixes = unpackFloats(packed.mix, count, oldM * 2);
+          flags = unpackBytes(packed.flags, count);
+          for (let n = 0; n < count; n++) if (cells[n] >= fullCount || (n && cells[n] <= cells[n - 1])) throw new Error('Invalid saved terrain cell');
+        } else if (modern) {
+          heights = new Float32Array(fromBase64(packed.heights).buffer);
+          mixes = new Float32Array(fromBase64(packed.mix).buffer);
+          flags = fromBase64(packed.flags);
+        } else {
+          const [a, b] = packed.split('|');
+          heights = new Uint16Array(fromBase64(a).buffer);
+          mixes = fromBase64(b);
+        }
+        if (heights.length !== count * (oldK + (modern ? 4 : 1)) || mixes.length !== count * (modern ? oldM * 2 : oldM + 1) || (modern && flags.length !== count)) throw new Error('Invalid saved terrain data');
+        const heightBits = xorBaseline ? new Uint32Array(heights.buffer) : null;
+        for (let n = 0; n < count; n++) {
+          const local = sparse ? cells[n] : n;
+          const i = i0 + local % (i1 - i0), j = j0 + Math.floor(local / (i1 - i0));
+          const k = idx(i, j);
+          if (xorBaseline) {
+            for (let l = 0; l < K; l++) heightBits[n * (oldK + 4) + layerMap[l]] ^= geologyBits[l][k];
+            heightBits[n * (oldK + 4) + oldK + 1] ^= bedBaseBits[k];
           }
+          for (let l = 0; l < K; l++) if (layerMap[l] >= 0) nat[l][k] = heights[n * (oldK + (modern ? 4 : 1)) + layerMap[l]] / (modern ? 1 : 1000);
+          loose[k] = heights[n * (oldK + (modern ? 4 : 1)) + oldK] / (modern ? 1 : 1000);
+          if (modern) {
+            bed[k] = heights[n * (oldK + 4) + oldK + 1];
+            compaction[k] = heights[n * (oldK + 4) + oldK + 2];
+            fill[k] = heights[n * (oldK + 4) + oldK + 3];
+          }
+          let sum = 0;
+          mix.fill(0, k * M, k * M + M);
+          for (let m = 0; m < oldM; m++) sum += (mix[k * M + mi[oldMats[m]]] = mixes[n * (modern ? oldM * 2 : oldM + 1) + m] / (modern ? 1 : 255));
+          if (modern) for (let m = 0; m < oldM; m++) fillMix[k * M + mi[oldMats[m]]] = mixes[n * oldM * 2 + oldM + m];
+          if (!modern && sum > 0) for (let m = 0; m < M; m++) mix[k * M + m] /= sum;
+          const flag = modern ? flags[n] : mixes[n * (oldM + 1) + oldM];
+          disturbed[k] = flag & 127;
+          if (modern && (flag & 128)) activate(k);
+          else if (!modern && disturbed[k]) activateAround(k);
         }
         touched.add(c);
         dirty.add(c);

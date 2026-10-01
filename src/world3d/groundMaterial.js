@@ -68,9 +68,10 @@ export async function preloadGround(renderer) {
 
 // `fields`: farmland beyond the map (the far strips and hills): a patchwork of fields in
 // different crops with dark hedge lines between them, the way English hills look from afar.
-export function createGroundMaterial({ fields = false } = {}) {
+export function createGroundMaterial({ fields = false, strata = false } = {}) {
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.94, metalness: 0, envMapIntensity: 0.7 });
   if (fields) mat.defines = { ...mat.defines, FIELDS: '' };
+  if (strata) mat.defines = { ...mat.defines, STRATA: '' };
   const uniforms = {};
   for (const name of LAYERS) {
     uniforms[`t_${name}A`] = { value: textures[`${name}A`] ?? placeholder([140, 128, 110, 255]) };
@@ -92,12 +93,29 @@ export function createGroundMaterial({ fields = false } = {}) {
         vSplat = splat;
         vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
         vWNormal = normalize(mat3(modelMatrix) * objectNormal);`);
+    if (strata) shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>
+        attribute vec4 strataHeights;
+        attribute float strataBed;
+        attribute float naturalFace;
+        varying vec4 vStrataHeights;
+        varying float vStrataBed;
+        varying float vNaturalFace;`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        vStrataHeights = strataHeights;
+        vStrataBed = strataBed;
+        vNaturalFace = naturalFace;`);
 
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
         varying vec4 vSplat;
         varying vec3 vWPos;
         varying vec3 vWNormal;
+        #ifdef STRATA
+        varying vec4 vStrataHeights;
+        varying float vStrataBed;
+        varying float vNaturalFace;
+        #endif
         ${LAYERS.map((n) => `uniform sampler2D t_${n}A; uniform sampler2D t_${n}N;`).join('\n')}
         uniform sampler2D t_macro;
 
@@ -120,6 +138,27 @@ export function createGroundMaterial({ fields = false } = {}) {
         vec4 gA = vec4(0.0), dA = vec4(0.0), vA = vec4(0.0), rA = vec4(0.0);
         vec3 gN = vec3(0.0, 0.0, 0.5), dN = gN, vN = gN, rN = gN;
         vec4 w = vSplat;
+        vec3 faceTint = vec3(1.0);
+        float faceAmount = 0.0;
+        #ifdef STRATA
+        {
+          faceAmount = smoothstep(0.14, 0.45, 1.0 - abs(wn.y)) * vNaturalFace;
+          vec4 faceW;
+          // Original material contacts are interpolated across the triangle; the
+          // fragment's world height picks the exposed stratum within the pit face.
+          if (vWPos.y < vStrataBed + 0.01) { faceW = vec4(0.0, 0.0, 0.1, 0.9); faceTint = vec3(0.92, 0.9, 0.86); }
+          else if (vWPos.y < vStrataHeights.x) { faceW = vec4(0.0, 0.1, 0.9, 0.0); faceTint = vec3(1.0, 0.98, 0.94); }
+          else if (vWPos.y < vStrataHeights.y) { faceW = vec4(0.0, 0.92, 0.08, 0.0); faceTint = vec3(1.42, 1.25, 0.92); }
+          else if (vWPos.y < vStrataHeights.z) { faceW = vec4(0.0, 1.0, 0.0, 0.0); faceTint = vec3(1.08, 0.8, 0.6); }
+          else { faceW = vec4(0.0, 1.0, 0.0, 0.0); faceTint = vec3(0.8, 0.72, 0.62); }
+          w = mix(w, faceW, faceAmount);
+        }
+        #endif
+        // Side projection also applies to soil/gravel: steep cuts retain readable
+        // texture grain instead of stretching a top-down texture vertically.
+        vec2 sideX = vec2(vWPos.z, vWPos.y), sideZ = vec2(vWPos.x, vWPos.y);
+        float sideBlend = pow(abs(wn.x), 4.0) / max(pow(abs(wn.x), 4.0) + pow(abs(wn.z), 4.0), 0.0001);
+        float wall = smoothstep(0.14, 0.55, 1.0 - abs(wn.y));
 
         if (w.x > 0.01) {
           gA = tileless(t_grassA, top / ${TILE.grass.toFixed(1)}, mac2.r);
@@ -128,10 +167,14 @@ export function createGroundMaterial({ fields = false } = {}) {
         }
         if (w.y > 0.01) {
           dA = tileless(t_dirtA, top / ${TILE.dirt.toFixed(1)}, mac2.g);
+          vec4 dSide = mix(tileless(t_dirtA, sideZ / ${TILE.dirt.toFixed(1)}, mac2.g), tileless(t_dirtA, sideX / ${TILE.dirt.toFixed(1)}, mac2.g), sideBlend);
+          dA = mix(dA, dSide, wall);
           dN = decodeN(tileless(t_dirtN, top / ${TILE.dirt.toFixed(1)}, mac2.g));
         }
         if (w.z > 0.01) {
           vA = tileless(t_gravelA, top / ${TILE.gravel.toFixed(1)}, mac2.b);
+          vec4 vSide = mix(tileless(t_gravelA, sideZ / ${TILE.gravel.toFixed(1)}, mac2.b), tileless(t_gravelA, sideX / ${TILE.gravel.toFixed(1)}, mac2.b), sideBlend);
+          vA = mix(vA, vSide, wall);
           vA.rgb *= vec3(0.84, 0.82, 0.78);
           vN = decodeN(tileless(t_gravelN, top / ${TILE.gravel.toFixed(1)}, mac2.b));
         }
@@ -139,18 +182,20 @@ export function createGroundMaterial({ fields = false } = {}) {
         vec3 rockWN = wn;
         if (w.w > 0.01) {
           vec2 bw = pow(abs(wn.xz), vec2(4.0));
-          bw /= max(bw.x + bw.y, 1e-4);
+          bw = bw.x + bw.y < 1e-4 ? vec2(0.5) : bw / (bw.x + bw.y);
+          float rockTop = pow(abs(wn.y), 4.0);
           vec2 uvX = vec2(vWPos.z, vWPos.y) / ${TILE.rock.toFixed(1)};
           vec2 uvZ = vec2(vWPos.x, vWPos.y) / ${TILE.rock.toFixed(1)};
           vec4 aX = texture2D(t_rockA, uvX);
           vec4 aZ = texture2D(t_rockA, uvZ);
           vec3 nX = decodeN(texture2D(t_rockN, uvX));
           vec3 nZ = decodeN(texture2D(t_rockN, uvZ));
-          rA = aX * bw.x + aZ * bw.y;
-          rN = vec3(0.0, 0.0, nX.z * bw.x + nZ.z * bw.y);
+          vec3 nTop = decodeN(tileless(t_rockN, top / ${TILE.rock.toFixed(1)}, mac2.r));
+          rA = mix(aX * bw.x + aZ * bw.y, tileless(t_rockA, top / ${TILE.rock.toFixed(1)}, mac2.r), rockTop);
+          rN = vec3(0.0, 0.0, mix(nX.z * bw.x + nZ.z * bw.y, nTop.z, rockTop));
           vec3 wX = vec3(wn.x, wn.y + nX.y, wn.z + nX.x);
           vec3 wZ = vec3(wn.x + nZ.x, wn.y + nZ.y, wn.z);
-          rockWN = normalize(wX * bw.x + wZ * bw.y);
+          rockWN = normalize(mix(wX * bw.x + wZ * bw.y, vec3(wn.x + nTop.x, wn.y, wn.z + nTop.y), rockTop));
         }
 
         // Height blend: whichever surface sticks up more wins at the boundary.
@@ -160,6 +205,9 @@ export function createGroundMaterial({ fields = false } = {}) {
         b /= max(b.x + b.y + b.z + b.w, 1e-4);
 
         vec4 albedo = gA * b.x + dA * b.y + vA * b.z + rA * b.w;
+        #if defined(STRATA) && defined(USE_COLOR)
+        albedo.rgb *= mix(vec3(1.0), faceTint / max(vColor.rgb, vec3(0.1)), faceAmount);
+        #endif
         // Large-scale colour and brightness variation.
         albedo.rgb *= mix(0.86, 1.1, mac.r) * mix(vec3(1.0), vec3(1.04, 1.0, 0.94), mac.g);
         #ifdef FIELDS
@@ -191,7 +239,7 @@ export function createGroundMaterial({ fields = false } = {}) {
         normal = normalize((viewMatrix * vec4(groundWN, 0.0)).xyz);
       `);
   };
-  mat.customProgramCacheKey = () => `quarry-ground-v3${fields ? '-fields' : ''}`;
+  mat.customProgramCacheKey = () => `quarry-ground-v4${fields ? '-fields' : ''}${strata ? '-strata' : ''}`;
   return mat;
 }
 

@@ -23,5 +23,10 @@
     "name": "Mixed fill",
     "basePrice": 8,
     "color": "#7a6a58"
+  },
+  "rock": {
+    "name": "Broken rock",
+    "basePrice": 22,
+    "color": "#7d776d"
   }
 }

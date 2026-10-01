@@ -8,7 +8,12 @@
       "density": 1.35,
       "swell": 1.3,
       "repose": 38,
-      "standing": 55
+      "standing": 55,
+      "resistance": 18,
+      "cohesion": 0.18,
+      "flow": 0.62,
+      "traction": 0.68,
+      "rollingResistance": 0.055
     },
     "clay": {
       "name": "Clay",
@@ -16,7 +21,12 @@
       "density": 1.85,
       "swell": 1.3,
       "repose": 40,
-      "standing": 70
+      "standing": 70,
+      "resistance": 65,
+      "cohesion": 0.8,
+      "flow": 0.18,
+      "traction": 0.7,
+      "rollingResistance": 0.085
     },
     "sand": {
       "name": "Sand",
@@ -24,7 +34,12 @@
       "density": 1.6,
       "swell": 1.15,
       "repose": 33,
-      "standing": 50
+      "standing": 50,
+      "resistance": 24,
+      "cohesion": 0.03,
+      "flow": 0.98,
+      "traction": 0.58,
+      "rollingResistance": 0.075
     },
     "gravel": {
       "name": "Gravel",
@@ -32,7 +47,12 @@
       "density": 1.75,
       "swell": 1.2,
       "repose": 35,
-      "standing": 55
+      "standing": 55,
+      "resistance": 45,
+      "cohesion": 0.08,
+      "flow": 0.82,
+      "traction": 0.76,
+      "rollingResistance": 0.045
     },
     "rock": {
       "name": "Rock",
@@ -40,7 +60,12 @@
       "density": 2.6,
       "swell": 1.5,
       "repose": 40,
-      "standing": 88
+      "standing": 88,
+      "resistance": 450,
+      "cohesion": 0.12,
+      "flow": 0.48,
+      "traction": 0.9,
+      "rollingResistance": 0.025
     }
   },
   "plots": {
@@ -83,7 +108,20 @@
             0.4
           ]
         }
-      ]
+      ],
+      "rockDepth": 4
     }
+  },
+  "physics": {
+    "maxSweepLength": 1.5,
+    "maxBiteDepth": 0.35,
+    "minimumStroke": 0.001,
+    "looseResistanceFactor": 0.28,
+    "wetClayResistanceFactor": 0.72,
+    "wetCohesionFactor": 0.5,
+    "rutDepthPerMetre": 0.012,
+    "maximumRutDepth": 0.025,
+    "trafficCompactionRate": 0.12,
+    "firmSlumpReduction": 0.75
   }
 }

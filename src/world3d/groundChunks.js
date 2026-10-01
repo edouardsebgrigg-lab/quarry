@@ -52,7 +52,7 @@ export function createGroundView({ scene, physics, ground }) {
   const nx = ground.nx;
   const nz = ground.nz;
   const matIds = ground.materials;
-  const material = createGroundMaterial();
+  const material = createGroundMaterial({ strata: true });
   const chunks = new Map(); // chunk index -> { mesh, collider }
   const pending = new Set();
   for (let c = 0; c < ground.chunksX * ground.chunksZ; c++) pending.add(c);
@@ -74,6 +74,9 @@ export function createGroundView({ scene, physics, ground }) {
     const nor = new Float32Array(n * 3);
     const col = new Float32Array(n * 3);
     const spl = new Float32Array(n * 4);
+    const geology = new Float32Array(n * 4);
+    const bedHeights = new Float32Array(n);
+    const naturalFaces = new Float32Array(n);
     const hf = new Float32Array(n); // collider heights, column-major
     const h = (i, j) => ground.cellHeight(i, j);
     let v = 0;
@@ -90,11 +93,17 @@ export function createGroundView({ scene, physics, ground }) {
         const mat = matIds[ground.cellSurface(i, j)];
         const grass = mat === 'topsoil' && !ground.cellDisturbed(i, j);
         const look = grass ? grassLook(vx(i), vz(j)) : LOOK[mat];
-        // Steep cut faces show the layered pit-face texture, tinted by the material.
-        const face = Math.min(1, Math.max(0, (slope - 0.75) / 0.6)) * (grass ? 0.3 : 1);
-        spl.set([look.splat[0] * (1 - face), look.splat[1] * (1 - face), look.splat[2] * (1 - face), look.splat[3] * (1 - face) + face], v * 4);
+        // The shader samples the original contacts at the fragment's height, so a
+        // sandy/clayey wall exposes real bands instead of turning every slope into rock.
+        spl.set(look.splat, v * 4);
+        const contacts = ground.cellGeology(i, j);
+        const tops = Object.fromEntries(contacts.layers.map(l => [l.material, l.top]));
+        geology.set(['gravel', 'sand', 'clay', 'topsoil'].map(id => tops[id] ?? contacts.bed), v * 4);
+        bedHeights[v] = contacts.bed;
+        naturalFaces[v] = !grass && !ground.cellBuilt(i, j) && ground.cellLoose(i, j) < 0.03 ? 1 : 0;
         const loose = ground.cellLoose(i, j) > 0.03 ? 1.06 : 1; // freshly dumped heaps look a touch lighter
-        col.set(look.tint.map((t) => t * loose), v * 3);
+        const firm = 1 - (ground.cellCompaction(i, j) ?? 0) * 0.08;
+        col.set(look.tint.map((t) => t * loose * firm), v * 3);
         hf[(i - i0) * rows + (j - j0)] = y;
       }
     }
@@ -123,6 +132,9 @@ export function createGroundView({ scene, physics, ground }) {
     g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     g.setAttribute('splat', new THREE.BufferAttribute(spl, 4));
+    g.setAttribute('strataHeights', new THREE.BufferAttribute(geology, 4));
+    g.setAttribute('strataBed', new THREE.BufferAttribute(bedHeights, 1));
+    g.setAttribute('naturalFace', new THREE.BufferAttribute(naturalFaces, 1));
     g.setIndex(index);
     g.computeBoundingSphere();
 
