@@ -1038,3 +1038,20 @@ body:has(.overlay-pause) :is(.hud, .hud3d, .mentor, .toasts, .log) { visibility:
 .ps-goal b { font-size: 0.95rem; }
 /* (any open overlay: notifications move down to the bottom right, clear of its header) */
 body:has(.overlay) .toasts { top: auto; bottom: 5.5rem; right: 3rem; }
+
+/* Fleet: insurance cover */
+.lt-cover { margin-top: 0.4rem; }
+.lt-cover-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 0.6rem; }
+.lt-cover-note { font-size: 0.76rem; color: var(--muted); }
+.lt-cover-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+.lt-cover-opt { display: flex; flex-direction: column; gap: 0.25rem; text-align: left; font: inherit; color: inherit; cursor: pointer; padding: 0.75rem 0.85rem;
+  border-radius: 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); }
+.lt-cover-opt:hover { border-color: rgba(255, 255, 255, 0.2); }
+.lt-cover-opt.active { border-color: var(--accent); background: rgba(245, 184, 46, 0.07); }
+.lt-cover-opt.next { border-style: dashed; border-color: rgba(245, 184, 46, 0.6); }
+.lt-cover-opt b { display: flex; align-items: center; gap: 0.4rem; font-size: 0.92rem; }
+.lt-cover-tag { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.08rem 0.35rem; border-radius: 3px;
+  background: var(--accent); color: var(--accent-ink); }
+.lt-cover-tag.next { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+.lt-cover-price { font-family: var(--display); font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.lt-cover-text { font-size: 0.76rem; color: var(--muted); line-height: 1.35; }

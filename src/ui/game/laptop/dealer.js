@@ -2,7 +2,7 @@
 // you already own), fit upgrades, commission yard buildings, and sell machines on.
 import { el, clear } from '../../dom.js';
 import { money, statValue } from '../../format.js';
-import { canAfford } from '../../../economy/index.js';
+import { canAfford, insuranceCover } from '../../../economy/index.js';
 import { ownsBuilding } from '../../../buildings/index.js';
 import {
   describeStats, getStats, tierName, machinesAt, machineName, isTierUnlocked, modsFor, resaleValue, machinePrice,
@@ -121,7 +121,7 @@ export function dealerApp({ game, feedback, photos, setHead }) {
       td.enginePower ? ['Engine', `${Math.round(td.enginePower)} kW`] : null,
       td.mass ? ['Operating weight', `${(td.mass / 1000).toFixed(1)} t`] : null,
       ['On the road', t.roadLegal ? 'Road legal' : 'Site only (stays on your land)'],
-      ['Insurance', `${money(td.price * data.economy.insurance.weeklyRate)} a week`],
+      ['Insurance', `${money(td.price * insuranceCover(ctx).weeklyRate)} a week`],
     ].filter(Boolean);
     body.append(el('div', { class: 'lt-detail' },
       el('button', { class: 'lt-back', onClick: () => { detail = null; render(); } }, lineIcon('back'), 'All machines'),

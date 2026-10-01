@@ -4,7 +4,7 @@
 // has a bucket, a carrier has a bed), not by their exact type.
 import { buildingMultiplier } from '../buildings/index.js';
 import { pileTotal } from '../quarry/index.js';
-import { chargeFuel, spendMoney, hasTicket, sellLoad } from '../economy/index.js';
+import { chargeFuel, spendMoney, hasTicket, sellLoad, repairShare } from '../economy/index.js';
 import { getStats, typeName, isDigger, isRoadLegal, unloadSeconds } from './stats.js';
 import { applyWear, serviceCost } from './wear.js';
 import { getMachine, machineName } from './fleet.js';
@@ -106,7 +106,8 @@ export const JOBS = {
       return null;
     },
     begin(ctx, m, stats, job) {
-      job.cost = stats.repairCost * buildingMultiplier(ctx, 'workshop', 'maintenanceCostMultiplier', m.siteId);
+      // (the insurance pays its share of the bill)
+      job.cost = stats.repairCost * buildingMultiplier(ctx, 'workshop', 'maintenanceCostMultiplier', m.siteId) * repairShare(ctx);
       spendMoney(ctx, job.cost, 'repair');
       return stats.repairTime * buildingMultiplier(ctx, 'workshop', 'maintenanceTimeMultiplier', m.siteId);
     },

@@ -5,6 +5,7 @@ import { chargeFuel, fuelPrice } from '../economy/index.js';
 import { ownsBuilding } from './index.js';
 const setup = () => {
   const game = createGame({ seed: 3 }); game.state.money = 10000;
+  game.state.insurance = { cover: 'none', next: null }; // (no insurer paying part of a repair: the workshop alone)
   const m = game.state.machines[0]; m.condition = 40;
   return { game, ctx: game.ctx, m };
 };

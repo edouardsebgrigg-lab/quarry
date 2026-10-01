@@ -263,7 +263,8 @@ export function logbookOnEvent(ctx, type, e) {
         case 'overheadsCharged': {
       const lb = logbook(ctx);
       const { day, hour, minute } = getDate(ctx.state, ctx.data);
-      lb.messages.push({ day, hour, minute, from: 'Office', kind: 'tip', text: `This week's machine insurance: $${e.amount.toFixed(2)} for ${e.machines} machine${e.machines === 1 ? '' : 's'}. It's taken each week; selling machines you don't use brings it down.` });
+      const cover = ctx.data.economy.insurance.covers?.[ctx.state.insurance?.cover]?.name ?? 'Basic';
+      lb.messages.push({ day, hour, minute, from: 'Office', kind: 'tip', text: `This week's machine insurance (${cover.toLowerCase()} cover): $${e.amount.toFixed(2)} for ${e.machines} machine${e.machines === 1 ? '' : 's'}. Change the cover in Fleet; selling machines you don't use brings it down.` });
       trim(lb);
       break;
     }

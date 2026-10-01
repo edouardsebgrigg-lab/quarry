@@ -1,6 +1,6 @@
 // A mobile mechanic: service or repair a machine where it stands, booked from the laptop, for a
 // call-out fee on top of the normal price. (Walking up to it and pressing R has no fee.)
-import { canAfford, spendMoney } from '../economy/index.js';
+import { canAfford, spendMoney, repairShare } from '../economy/index.js';
 import { buildingMultiplier } from '../buildings/index.js';
 import { getMachine } from './fleet.js';
 import { getStats } from './stats.js';
@@ -18,7 +18,7 @@ export function mechanicQuote(ctx, machineId) {
   const k = buildingMultiplier(ctx, 'workshop', 'maintenanceCostMultiplier', m.siteId);
   const fee = ctx.data.economy.mechanicCallOut;
   if (m.broken) {
-    const cost = stats.repairCost * k;
+    const cost = stats.repairCost * k * repairShare(ctx); // (less the insurer's share)
     return { kind: 'repair', cost, fee, total: cost + fee };
   }
   if (m.condition >= 99.9) return { reason: 'Already in top condition' };

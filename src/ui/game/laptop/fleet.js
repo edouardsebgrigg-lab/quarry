@@ -3,7 +3,7 @@ import { el, setText } from '../../dom.js';
 import { money } from '../../format.js';
 import { machinesAt, machineName, resaleValue } from '../../../machinery/index.js';
 import { machineLog } from '../../../game/logbook.js';
-import { weeklyInsurance } from '../../../economy/index.js';
+import { weeklyInsurance, insuranceState, insuranceCover, nextRenewal } from '../../../economy/index.js';
 import { hireState, hireCandidates, machinesOnHire } from '../../../hire/index.js';
 
 export function fleetApp({ game, feedback, photos, openApp, setHead }) {
@@ -82,6 +82,30 @@ export function fleetApp({ game, feedback, photos, openApp, setHead }) {
     }
   }
 
+  // Insurance: the cover in force, and a change waiting for the renewal.
+  const coverBox = el('div', { class: 'lt-card lt-cover' });
+  function renderCover() {
+    const s = insuranceState(ctx);
+    const covers = data.economy.insurance.covers;
+    coverBox.replaceChildren(
+      el('div', { class: 'lt-cover-head' }, el('div', { class: 'lt-card-label' }, 'Insurance cover'),
+        el('span', { class: 'lt-cover-note' }, s.next ? `${covers[s.next].name} from day ${nextRenewal(ctx)} (when the policy renews)` : `Renews day ${nextRenewal(ctx)}`)),
+      el('div', { class: 'lt-cover-opts' }, Object.keys(covers).map((id) => {
+        const c = insuranceCover(ctx, id);
+        const on = s.cover === id;
+        return el('button', { class: `lt-cover-opt${on ? ' active' : ''}${s.next === id ? ' next' : ''}`, onClick: () => {
+          const r = game.actions.setInsuranceCover(id);
+          if (r.ok && r.from) feedback.message(`${c.name} cover from day ${r.from}, when the policy renews`, 'good');
+          renderCover();
+          refresh();
+        } },
+        el('b', {}, c.name, on ? el('span', { class: 'lt-cover-tag' }, 'Now') : s.next === id ? el('span', { class: 'lt-cover-tag next' }, 'Next') : null),
+        el('span', { class: 'lt-cover-price' }, `${money(weeklyInsurance(ctx, id))} a week`),
+        el('span', { class: 'lt-cover-text' }, c.text));
+      })));
+  }
+  renderCover();
+
   function refresh() {
     renderHire();
     let total = 0;
@@ -118,6 +142,7 @@ export function fleetApp({ game, feedback, photos, openApp, setHead }) {
       el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Need attention'), attnV, attnN)),
     hireBox,
     el('div', { class: 'lt-rows' }, rows),
+    coverBox,
     el('button', { class: 'lt-link', onClick: () => openApp('dealer') }, 'Buy, upgrade or sell machines at the plant dealer →'));
 
   return {

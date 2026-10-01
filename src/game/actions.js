@@ -1,6 +1,6 @@
 // Player actions. Buttons, hotkeys and 3D driving/digging all call these.
 // Every action returns { ok, reason? }.
-import { weighIn as depotWeighIn, takeLoan as bankTakeLoan, repayLoan as bankRepayLoan, loanOffers as bankLoanOffers, creditLimit as bankCreditLimit } from '../economy/index.js';
+import { weighIn as depotWeighIn, takeLoan as bankTakeLoan, repayLoan as bankRepayLoan, loanOffers as bankLoanOffers, creditLimit as bankCreditLimit, setInsuranceCover } from '../economy/index.js';
 import {
   getMachine, machinesAt, startJob, buyMachine as fleetBuyMachine,
   sellMachine as fleetSellMachine, resaleValue, mechanicQuote, callMechanic, buyMod as fleetBuyMod, dumpBucket as fleetDumpBucket, bucketCut as fleetBucketCut,
@@ -103,6 +103,7 @@ export function createActions(ctx) {
     acceptStandingOrder: () => acceptStandingOrder(ctx),
     declineStandingOrder: () => declineStandingOrder(ctx),
     acceptHire: (machineId) => acceptHire(ctx, machineId),
+    setInsuranceCover: (id) => setInsuranceCover(ctx, id),
     declineHire: () => declineHire(ctx),
     inspectListing: (id) => inspectListing(ctx, id),
     buyListing: (id) => buyListing(ctx, id),

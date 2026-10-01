@@ -40,6 +40,12 @@
   "mechanicCallOut": 35,
   "insurance": {
     "weeklyRate": 0.03,
-    "everyDays": 7
+    "everyDays": 7,
+    "default": "basic",
+    "covers": {
+      "none": { "name": "No cover", "weeklyRate": 0, "repairShare": 1, "text": "Nothing to pay each week, and you pay every repair in full." },
+      "basic": { "name": "Basic", "weeklyRate": 0.03, "repairShare": 0.5, "text": "The insurer pays half of every repair bill." },
+      "full": { "name": "Full", "weeklyRate": 0.05, "repairShare": 0.15, "text": "The insurer pays 85% of every repair bill." }
+    }
   }
 }

@@ -73,7 +73,11 @@ hiring out (`src/hire/`: a machine on hire has `onHire` set and `siteId` 'hire',
 `machinesAt(ctx, siteId)` leaves it out; it can't be sold, serviced or given jobs until it's
 back. Anything new that walks `state.machines` directly should skip `m.onHire`), and second-hand
 adverts (`src/classifieds/`: `buyListing` creates a machine with the advert's real condition and
-emits `machineBought` with `secondHand: true`, so anything listening for purchases already works). For T6 (stockpiles): a load tipped into a bay is not a sale, so it shouldn't
+emits `machineBought` with `secondHand: true`, so anything listening for purchases already works), and insurance
+cover (`insuranceCover`/`repairShare` in `src/economy/overheads.js`: repairs, at the workshop or by
+call-out, now cost `repairCost x workshop x repairShare`; basic cover, the default, pays half. A
+test that checks an exact repair price should set `state.insurance = { cover: 'none', next: null }`,
+as `buildings.test.js` now does). For T6 (stockpiles): a load tipped into a bay is not a sale, so it shouldn't
 emit `productSold` (contracts count sales).
 
 ## State of the game (Claude's review, 30 September 2026)

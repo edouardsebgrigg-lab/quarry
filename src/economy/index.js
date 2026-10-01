@@ -8,5 +8,7 @@ export { weighIn, hasTicket, quoteDelivery, sellLoad } from './depot.js';
 export {
   bankState, recordMoney, dailyPayment, owed, creditLimit, loanOffers, takeLoan, repayLoan, bankDaily, creditRating,
 } from './bank.js';
-export { weeklyInsurance, overheadsDaily } from './overheads.js';
+export {
+  weeklyInsurance, overheadsDaily, insuranceState, insuranceCover, repairShare, setInsuranceCover, nextRenewal,
+} from './overheads.js';
 export { newsState, newsMultiplier, activeNews, newsDaily } from './news.js';
