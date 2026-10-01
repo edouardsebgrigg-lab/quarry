@@ -1,0 +1,90 @@
+{
+  "samples": [
+    {
+      "frame": 0,
+      "feet": [
+        186,
+        0.02000007629394529,
+        8
+      ],
+      "money": 200,
+      "tick": 350,
+      "locked": true,
+      "prompt": null
+    },
+    {
+      "frame": 20,
+      "feet": [
+        184.99169921875,
+        0.020000016689300515,
+        9.209949493408203
+      ],
+      "money": 200,
+      "tick": 354,
+      "locked": true,
+      "prompt": null
+    },
+    {
+      "frame": 40,
+      "feet": [
+        184.12582397460938,
+        0.020000016689300515,
+        10.248915672302246
+      ],
+      "money": 200,
+      "tick": 357,
+      "locked": true,
+      "prompt": null
+    },
+    {
+      "frame": 60,
+      "feet": [
+        183.2135009765625,
+        0.020012414455413796,
+        11.343708992004395
+      ],
+      "money": 200,
+      "tick": 360,
+      "locked": true,
+      "prompt": null
+    },
+    {
+      "frame": 80,
+      "feet": [
+        182.3488006591797,
+        0.020099973678588845,
+        12.381383895874023
+      ],
+      "money": 200,
+      "tick": 364,
+      "locked": true,
+      "prompt": null
+    },
+    {
+      "frame": 100,
+      "feet": [
+        181.388427734375,
+        0.019739603996276833,
+        13.533735275268555
+      ],
+      "money": 200,
+      "tick": 367,
+      "locked": true,
+      "prompt": null
+    },
+    {
+      "frame": 120,
+      "feet": [
+        180.4280548095703,
+        0.019813156127929665,
+        14.686063766479492
+      ],
+      "money": 200,
+      "tick": 370,
+      "locked": true,
+      "prompt": null
+    }
+  ],
+  "controls": "pointer lock stubbed; aim and held keys set by code; normal fresh-save money",
+  "errors": []
+}

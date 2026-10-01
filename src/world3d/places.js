@@ -138,8 +138,8 @@ export function buildPlaces({ scene, physics, plan, heightAt, materials, bayName
   place('fueltank', off.x + 8, off.z + 0.5, Math.PI / 2, 1);
   collider(0.8, 1.0, 1.7, off.x + 8, y0 + 1.0, off.z + 0.5);
   // Behind the office: the old container and the junk that collects round it.
-  const cx = off.x - 12;
-  const cz = off.z - 2;
+  const cx = home.workshop.x;
+  const cz = home.workshop.z;
   if (place('container', cx, cz, Math.PI, 1)) collider(3.03, 1.3, 1.22, cx, y0 + 1.3, cz);
   place('drum', cx + 4.2, cz + 2.2, 0.4);
   place('drumrust', cx + 4.9, cz + 2.6, 1.3);

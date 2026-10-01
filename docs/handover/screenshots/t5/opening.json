@@ -1,0 +1,56 @@
+{
+  "stages": [
+    {
+      "name": "start",
+      "gameSec": 0,
+      "realMin": 0.1,
+      "goal": "firstShovel",
+      "money": 200,
+      "guide": "Your field"
+    },
+    {
+      "name": "pickup on the field",
+      "gameSec": 12,
+      "realMin": 0.3,
+      "goal": "firstShovel",
+      "money": 200,
+      "guide": null
+    },
+    {
+      "name": "barrow full",
+      "gameSec": 22,
+      "realMin": 0.4,
+      "goal": "loadPickup",
+      "money": 200,
+      "guide": "The wheelbarrow",
+      "shovelfuls": 8
+    }
+  ],
+  "shortcuts": [
+    "pointer lock stubbed; held keys and aim are supplied by code"
+  ],
+  "notes": [
+    "barrow 1: pickup now 0.114 t"
+  ],
+  "pickupTail": [
+    151.95652658290027,
+    14.339108929107592
+  ],
+  "barrowStart": {
+    "x": 145.5,
+    "z": 14,
+    "yaw": -1.5707963267948966
+  },
+  "shovelfulsPerBarrow": 8,
+  "tookBarrow": true,
+  "blocker": "barrow waypoint 155.95652658290027,17.5 not reached after 900 frames; barrow=154.47029587984494,19.881472304651258",
+  "lastState": {
+    "feet": [
+      154.26425170898438,
+      0.062102651596069314,
+      17.996570587158203
+    ],
+    "tick": 821,
+    "money": 200
+  }
+}

@@ -36,6 +36,7 @@ export const MAP = {
     boundary: { x0: -2, x1: 206, z0: -16, z1: 154 },
     driveway: { x0: 176, x1: 184 }, // from the yard's north edge out to Mill Lane
     fieldGap: { z0: 8, z1: 20 }, // opening in the hedge between the yard and the field
+    workshop: { x: 166, z: 27 }, // clear of the driveway and machine delivery slots
     office: { x: 193, z: -6, yaw: 0 }, // door faces south
     pickup: { x: 171, z: 24, yaw: Math.PI },
     // Where bought machines are delivered.

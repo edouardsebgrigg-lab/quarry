@@ -713,7 +713,8 @@ export function createHandTools({
         const empty = pileTotal(barrowLoad(ctx)) < 1e-6;
         const bed = empty ? null : bedAtTailgate();
         if (b.tipT >= 0) prompts.push({ key: null, text: 'Tipping…' });
-        else if (bed) prompts.push({ key: key('tip'), text: `Tip it into the ${bedName(bed)}` });
+        else if (bed && !empty) prompts.push({ key: key('tip'), text: `Tip it into the ${bedName(bed)}` });
+        else if (bed && empty) prompts.push({ key: key('back'), text: 'Back away from the tailgate before turning' });
         else if (!empty && ground?.workable(p.x, p.z)) prompts.push({ key: key('tip'), text: 'Tip it here' });
         else if (!empty) prompts.push({ key: null, text: 'Push it up to the pickup\'s tailgate to load it' });
         prompts.push({ key: key('interact'), text: 'Let go' });

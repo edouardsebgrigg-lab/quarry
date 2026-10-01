@@ -92,3 +92,6 @@ duplicate and unaffordable purchases. `buildingBought` refreshes the shop and th
 The workshop modifies service/repair quotes when jobs begin. Bulk fuel modifies fuel charges
 for timed jobs and Direct bucket cuts; other sites retain their original prices. Neither feature
 places a new footprint, creates free material or changes existing collision shapes.
+
+The home workshop container is positioned explicitly by `MAP.home.workshop`, clear of the
+driveway. An empty barrow at the pickup tailgate prompts backing away before turning.

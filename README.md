@@ -202,3 +202,5 @@ Site machines (mini digger, excavator, dumper) can't leave your land; the pickup
 
 Earthworks preview: the amber ring marks where spare spoil will be heaped. Move machines
 and the wheelbarrow clear; occupied heap cells cannot supply works material.
+
+After tipping a barrow into the pickup, hold S to back away from the tailgate before turning.

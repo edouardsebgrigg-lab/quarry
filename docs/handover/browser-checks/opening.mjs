@@ -5,16 +5,25 @@
 // the shovel and barrow timers, the vehicle physics, the weighbridge dwell); the only shortcuts
 // are marked. Times are game seconds (the game clock; day = 120 s) at 1x speed.
 import { start } from './common.mjs';
-const { browser, page, errors, q, frames, shot, newGame } = await start({ width: 480, height: 270 });
+import { writeFileSync } from 'node:fs';
+const { browser, page, errors, q, frames, shot, newGame } = await start({ width: 320, height: 180 });
 const R = { stages: [], shortcuts: [], notes: [] };
 const t0real = Date.now();
+await page.addInitScript(() => {
+  window.__lockEl = null;
+  Object.defineProperty(document, 'pointerLockElement', { configurable: true, get: () => window.__lockEl });
+  Element.prototype.requestPointerLock = () => Promise.resolve();
+});
+R.shortcuts.push('pointer lock stubbed; clock forced at 1x; held keys and aim supplied by code; vehicle entry and barrow grab/tip through debug control hooks');
 await newGame();
+await q(() => { window.__lockEl = document.querySelector('.world-canvas'); document.dispatchEvent(new Event('pointerlockchange')); });
 const gameSecs = () => q(() => window.__quarry.game.state.time.tick / window.__quarry.game.data.game.ticksPerSecond);
 const S0 = await gameSecs();
 const stage = async (name, extra = {}) => {
   const g = (await gameSecs()) - S0;
   const st = await q(() => { const gm = window.__quarry.game; return { goal: gm.data.objectives.steps[gm.state.objectives.index]?.id, money: Math.round(gm.state.money * 100) / 100, guide: window.__quarry.world.hudInfo().guide?.label ?? null }; });
   R.stages.push({ name, gameSec: Math.round(g), realMin: +((Date.now() - t0real) / 60000).toFixed(1), ...st, ...extra });
+  writeFileSync(`${process.env.OUT}/opening.json`, JSON.stringify(R, null, 2));
   console.log('stage', JSON.stringify(R.stages.at(-1)));
 };
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
@@ -30,6 +39,8 @@ async function walkTo(x, z, { r = 1.0, max = 900 } = {}) {
     await frames(1);
   }
   await setKeys([]);
+  const end = await feet();
+  if (Math.hypot(end[0] - x, end[2] - z) >= r) throw new Error(`walk waypoint ${x},${z} not reached after ${max} frames; feet=${JSON.stringify(end)}`);
 }
 // Aim the crosshair at a world point.
 const aim = (x, y, z) => q(([x, y, z]) => { const d = window.__quarry.world.debug; const e = d.eye(); const dx = x - e[0]; const dz = z - e[2]; d.setFootYaw(Math.atan2(-dx, -dz)); d.setFootPitch(Math.atan2(y - e[1], Math.hypot(dx, dz))); }, [x, y, z]);
@@ -38,23 +49,31 @@ const busy = () => q(() => window.__quarry.world.debug.hands.busy());
 const waitIdle = async (max = 200) => { for (let i = 0; i < max && (await busy()); i++) await frames(1); };
 const H = (x, z) => q(([x, z]) => window.__quarry.game.ctx.ground.heightAt(x, z), [x, z]);
 
+try {
 await stage('start');
 const ids = await q(() => ({ pickup: window.__quarry.game.state.machines.find((m) => m.type === 'pickup').id }));
 
 // ---- 1. Drive the pickup from the yard onto the field, next to the barrow (real driving)
 async function driveThrough(id, points, { speedMax = 9, r = 3, max = 1500, stopAtEnd = true } = {}) {
   for (const [x, z] of points) {
+    let reached = false;
     for (let i = 0; i < max; i++) {
       const s = await q(([id, x, z]) => { const v = window.__quarry.world.debug.vehicle(id); const p = v.position(); return { x: p.x, z: p.z, yaw: v.yaw(), speed: v.speed() }; }, [id, x, z]);
-      if (Math.hypot(s.x - x, s.z - z) < r) break;
-      const want = Math.atan2(-(z - s.z), x - s.x);
+      if (Math.hypot(s.x - x, s.z - z) < r) { reached = true; break; }
+      if (i % 100 === 0) console.log("drive", JSON.stringify({ waypoint: [x, z], frame: i, ...s }));
+      let want = Math.atan2(-(z - s.z), x - s.x);
+      const direction = Math.abs(wrap(want - s.yaw)) > Math.PI / 2 ? -1 : 1;
+      if (direction < 0) want = wrap(want + Math.PI);
       const err = wrap(want - s.yaw);
       const keys = [];
-      if (s.speed < speedMax) keys.push('forward');
-      if (err > 0.08) keys.push('left'); else if (err < -0.08) keys.push('right');
-      if (Math.abs(err) > 1.2 && s.speed > 3) keys.splice(keys.indexOf('forward'), keys.includes('forward') ? 1 : 0);
+      if (direction * s.speed < speedMax) keys.push(direction > 0 ? 'forward' : 'back');
+      if (direction * err > 0.08) keys.push('left'); else if (direction * err < -0.08) keys.push('right');
       await setKeys(keys);
       await frames(1);
+    }
+    if (!reached) {
+      const s = await q(id => window.__quarry.world.debug.vehicle(id).position().toArray(), id);
+      throw new Error(`drive waypoint ${x},${z} not reached after ${max} frames; position=${JSON.stringify(s)}`);
     }
   }
   if (stopAtEnd) {
@@ -63,10 +82,10 @@ async function driveThrough(id, points, { speedMax = 9, r = 3, max = 1500, stopA
     await setKeys([]);
   }
 }
-await walkTo(171, 26, { r: 2.2 });
+await walkTo(175, 26, { r: 0.8 });
 await q((id) => { window.__quarry.world.debug.enterVehicle(id); window.__quarry.world.debug.setCamMode('chase'); }, ids.pickup);
 await frames(30); // the engine starts
-await driveThrough(ids.pickup, [[162, 15], [150, 14], [136, 14]], { speedMax: 5, r: 2.5 });
+await driveThrough(ids.pickup, [[162, 15], [150, 14]], { speedMax: 5, r: 2.5 });
 await stage('pickup on the field');
 await q(() => window.__quarry.world.debug.exitVehicle());
 const pk = await q((id) => { const v = window.__quarry.world.debug.vehicle(id); const t = v.tailgateWorld(); return { tail: [t.x, t.z], pos: v.position().toArray() }; }, ids.pickup);
@@ -96,6 +115,7 @@ for (let n = 0; n < 40; n++) {
 }
 R.shovelfulsPerBarrow = shovelfuls;
 await stage('barrow full', { shovelfuls });
+if (!(await q(() => Object.values(window.__quarry.game.state.tools.barrow.load).reduce((a,b)=>a+b,0) > 0.09))) throw new Error('Shovel loop did not fill the barrow');
 
 // ---- 3. Take the barrow, push it to the pickup's tailgate, tip it; repeat until enough is on board
 async function takeBarrow() {
@@ -110,6 +130,7 @@ async function takeBarrow() {
   return false;
 }
 R.tookBarrow = await takeBarrow();
+if (!R.tookBarrow) throw new Error('Could not grab the barrow');
 const pushTo = async (x, z, { r = 1.3, max = 900 } = {}) => {
   for (let i = 0; i < max; i++) {
     const b = await q(() => window.__quarry.world.debug.hands.state);
@@ -119,25 +140,37 @@ const pushTo = async (x, z, { r = 1.3, max = 900 } = {}) => {
     await frames(1);
   }
   await setKeys([]);
+  const b = await q(() => window.__quarry.world.debug.hands.state);
+  if (Math.hypot(b.x-x,b.z-z) >= r) throw new Error(`barrow waypoint ${x},${z} not reached after ${max} frames; barrow=${b.x},${b.z}`);
 };
 const pickupLoad = () => q((id) => Object.values(window.__quarry.game.state.machines.find((m) => m.id === id).load).reduce((a, b) => a + b, 0), ids.pickup);
 let loads = 0;
 for (let n = 0; n < 6 && (await pickupLoad()) < 0.32; n++) {
   // to the tailgate
-  const promptOk = async () => JSON.stringify(await q(() => window.__quarry.world.hudInfo().prompt)).includes('pickup');
-  await pushTo(pk.tail[0] + 1.0, pk.tail[1], { r: 0.9 });
+  const promptOk = async () => JSON.stringify(await q(() => window.__quarry.world.hudInfo().prompt)).toLowerCase().includes('tip it into');
+  await pushTo(145, 17.5, { r: 0.8 });
+  await pushTo(pk.tail[0] + 4, 17.5, { r: 0.8 });
+  await pushTo(pk.tail[0] + 3, pk.tail[1], { r: 0.7 });
+  await pushTo(pk.tail[0] + 1.0, pk.tail[1], { r: 1.0 });
   for (let i = 0; i < 30 && !(await promptOk()); i++) { await setKeys(['forward']); await frames(1); }
   await setKeys([]);
+  if (!(await promptOk())) throw new Error('Barrow did not offer a tip into the pickup');
   await q(() => window.__quarry.world.debug.tipBarrow());
   await frames(3); await waitIdle(120);
   for (let i = 0; i < 60 && (await busy()); i++) await frames(1);
   loads += 1;
   R.notes.push(`barrow ${loads}: pickup now ${(await pickupLoad()).toFixed(3)} t`);
+  writeFileSync(`${process.env.OUT}/opening.json`, JSON.stringify(R, null, 2));
+  console.log(R.notes.at(-1));
   if ((await pickupLoad()) >= 0.32) break;
-  // back to the dig spot with the empty barrow and refill
+  // Back away before turning: swinging a barrow into the pickup is blocked.
+  await setKeys(['back']); await frames(90); await setKeys([]);
+  // Go around the pickup to the dig spot; its collision box is solid.
+  await pushTo(pk.tail[0] + 4, 17.5, { r: 0.8 });
+  await pushTo(145, 17.5, { r: 0.8 });
   await pushTo(B.x, B.z + 1.5, { r: 1.5 });
   await q(() => window.__quarry.world.debug.letGoBarrow());
-  const f0 = await feet();
+  const Bcurrent = await q(() => window.__quarry.world.debug.hands.state);
   await walkTo(B.x + 0.5, B.z + 2.6, { r: 0.9 });
   for (let k = 0; k < 30; k++) {
     const full = await q(() => Object.values(window.__quarry.game.state.tools.barrow.load).reduce((a, b2) => a + b2, 0) > 0.09);
@@ -148,14 +181,15 @@ for (let n = 0; n < 6 && (await pickupLoad()) < 0.32; n++) {
     for (let tries = 0; tries < 6 && !ok; tries++) { await aim(gx + (tries % 3) * 0.2, await H(gx, gz), gz + Math.floor(tries / 3) * 0.2); await frames(2); ok = (await target()) === 'dig'; }
     if (!ok) break;
     await q(() => window.__quarry.world.debug.useShovel()); await waitIdle();
-    await aim(B.x, 0.55, B.z); await frames(2);
-    for (let tries = 0; tries < 6 && (await target()) !== 'barrow'; tries++) { await aim(B.x + (tries % 3) * 0.15 - 0.15, 0.5, B.z + (tries % 2) * 0.2); await frames(2); }
+    await aim(Bcurrent.x, (await H(Bcurrent.x, Bcurrent.z)) + 0.55, Bcurrent.z); await frames(2);
+    for (let tries = 0; tries < 6 && (await target()) !== 'barrow'; tries++) { await aim(Bcurrent.x + (tries % 3) * 0.15 - 0.15, (await H(Bcurrent.x, Bcurrent.z)) + 0.5, Bcurrent.z + (tries % 2) * 0.2); await frames(2); }
     await q(() => window.__quarry.world.debug.useShovel()); await waitIdle();
   }
   await takeBarrow();
 }
 await q(() => window.__quarry.world.debug.letGoBarrow());
 await stage('pickup loaded', { tonnes: +(await pickupLoad()).toFixed(3), barrowLoads: loads });
+if ((await pickupLoad()) < 0.32) throw new Error('Barrow loop did not load the pickup');
 R.mentorAfterLoad = await q(() => document.querySelector('.mentor-card .mentor-text')?.textContent ?? null);
 
 // ---- 4. Drive to the depot along the real road: yard driveway, Mill Lane, Quarry Road, the depot gate
@@ -219,9 +253,19 @@ const after = await q(() => window.__quarry.game.state.money);
 R.sale = { before, after, gained: +(after - before).toFixed(2), log: await q(() => [...document.querySelectorAll('.log-line')].map((e) => e.textContent).slice(-2)) };
 await stage('first sale done');
 R.mentorAfterSale = await q(() => document.querySelector('.mentor-card .mentor-text')?.textContent ?? null);
+if (!(after > before) || !(await q(() => window.__quarry.game.state.stats.tonnesSold > 0))) throw new Error('Tip did not produce a sale');
 R.timeToFirstSale = R.stages.at(-1).gameSec;
 R.machinePrice = await q(() => window.__quarry.game.data.machines.types.miniDigger.tiers.rusty.price);
 R.affordableNow = after >= R.machinePrice;
+if (R.affordableNow) {
+  R.shortcuts.push('First-machine purchase through game.actions.buyMachine (normal money, laptop UI bypassed)');
+  R.purchase = await q(() => window.__quarry.game.actions.buyMachine('miniDigger', 'rusty'));
+  if (!R.purchase.ok) throw new Error(R.purchase.reason);
+  await stage('first machine bought');
+  R.timeToFirstMachine = R.stages.at(-1).gameSec;
+} else {
+  R.notes.push('First machine not yet affordable: repeat trips needed; time to first machine not verified');
+}
 
 // ---- 7. Save, reload, continue
 const snap = () => q(() => {
@@ -243,4 +287,13 @@ await shot('100-opening-reloaded');
 R.totalRealMinutes = +((Date.now() - t0real) / 60000).toFixed(1);
 console.log(JSON.stringify(R, null, 1));
 console.log('errors', errors.slice(0, 10).join('\n'));
-await browser.close();
+} catch (error) {
+  R.blocker = error.message;
+  await shot('opening-blocker').catch(() => {});
+  R.lastState = await q(() => ({ feet: window.__quarry.world.debug.feet(), tick: window.__quarry.game.state.time.tick, money: window.__quarry.game.state.money })).catch(() => null);
+  console.log('blocker', JSON.stringify(R));
+  throw error;
+} finally {
+  writeFileSync(`${process.env.OUT}/opening.json`, JSON.stringify(R, null, 2));
+  await browser.close();
+}
