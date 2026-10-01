@@ -14,6 +14,36 @@ const LOOK = {
   rock: { splat: [0, 0, 0.1, 0.9], tint: [0.92, 0.9, 0.86] },
 };
 const GRASS = { splat: [0.85, 0.15, 0, 0], tint: [0.97, 0.96, 0.88] };
+
+// Untouched grass isn't one even lawn: lusher, darker patches, drier yellow ones, and thin spots
+// where the soil shows. Smooth value noise on the world position (the same on every load).
+const hash = (x, z) => {
+  const h = Math.sin(x * 127.1 + z * 311.7) * 43758.5453;
+  return h - Math.floor(h);
+};
+function vnoise(x, z) {
+  const xi = Math.floor(x);
+  const zi = Math.floor(z);
+  const fx = x - xi;
+  const fz = z - zi;
+  const u = fx * fx * (3 - 2 * fx);
+  const w = fz * fz * (3 - 2 * fz);
+  const a = hash(xi, zi);
+  const b = hash(xi + 1, zi);
+  const c = hash(xi, zi + 1);
+  const d = hash(xi + 1, zi + 1);
+  return a + (b - a) * u + (c - a) * w + (a - b - c + d) * u * w;
+}
+function grassLook(x, z) {
+  const big = vnoise(x / 23, z / 23) * 0.65 + vnoise(x / 9 + 7.3, z / 9 - 2.1) * 0.35;
+  const dry = Math.min(1, Math.max(0, (vnoise(x / 17 - 4.4, z / 17 + 9.1) - 0.58) / 0.22));
+  // (thin spots only in the dry patches, faint: bald ovals everywhere read as a pattern)
+  const thin = Math.min(1, Math.max(0, (vnoise(x / 6.5 + 13, z / 6.5 - 5) - 0.74) / 0.3)) * dry;
+  const k = 0.84 + 0.26 * big; // (darker, lusher where low)
+  const tint = [GRASS.tint[0] * k * (1 + 0.18 * dry), GRASS.tint[1] * k * (1 + 0.06 * dry), GRASS.tint[2] * k * (1 - 0.12 * dry)];
+  const dirt = Math.min(0.4, GRASS.splat[1] + 0.2 * thin);
+  return { splat: [1 - dirt, dirt, 0, 0], tint };
+}
 const REBUILDS_PER_FRAME = 6;
 
 export function createGroundView({ scene, physics, ground }) {
@@ -58,9 +88,10 @@ export function createGroundView({ scene, physics, ground }) {
         nor.set([-dx / len, 1 / len, -dz / len], v * 3);
         const slope = Math.hypot(dx, dz);
         const mat = matIds[ground.cellSurface(i, j)];
-        const look = mat === 'topsoil' && !ground.cellDisturbed(i, j) ? GRASS : LOOK[mat];
+        const grass = mat === 'topsoil' && !ground.cellDisturbed(i, j);
+        const look = grass ? grassLook(vx(i), vz(j)) : LOOK[mat];
         // Steep cut faces show the layered pit-face texture, tinted by the material.
-        const face = Math.min(1, Math.max(0, (slope - 0.75) / 0.6)) * (look === GRASS ? 0.3 : 1);
+        const face = Math.min(1, Math.max(0, (slope - 0.75) / 0.6)) * (grass ? 0.3 : 1);
         spl.set([look.splat[0] * (1 - face), look.splat[1] * (1 - face), look.splat[2] * (1 - face), look.splat[3] * (1 - face) + face], v * 4);
         const loose = ground.cellLoose(i, j) > 0.03 ? 1.06 : 1; // freshly dumped heaps look a touch lighter
         col.set(look.tint.map((t) => t * loose), v * 3);
