@@ -326,10 +326,10 @@ still holds.
 Edouard authorised the full brainstorm, with less emphasis on jobs, and parallel agents.
 
 - G1 material/ground physics, finite broken rock, strata faces and exact compatible compressed saves — DONE `d9ea29a`; verification in checkpoint.
-- P1 20-minute business day with old-save date preservation — integrated, awaiting final checks/commit.
-- P2 easier first apprentice and immediate applicants — integrated, awaiting final checks/commit.
+- P1 20-minute business day with old-save date preservation — DONE `868c88f`.
+- P2 easier first apprentice and immediate applicants — DONE `868c88f`.
 - F1 8 diggers, 5 tractors, 5 independent trailers, 4 mobility vehicles, towing limits, visual profiles, dealer categories and legacy migration — DONE `1d151f9`; verification in checkpoint.
 - D15 swept real digging, independent controls, free look, precision, attachments, guided Assisted strokes, depth/reach feedback, remembered dump and pose saves — DONE `91aa2f6`; verification in checkpoint.
-- Q1 short incoming rentals, repeat shovel, loaded barrow recovery, fleet waypoints and clean-sales alternatives to job goals — integrated, awaiting final checks/commit.
+- Q1 short incoming rentals, repeat shovel, loaded barrow recovery, fleet waypoints and clean-sales alternatives to job goals — DONE `868c88f`; all verification in checkpoint.
 
 No new jobs system is planned in this batch. Existing contracts remain optional ways to earn bonuses.
