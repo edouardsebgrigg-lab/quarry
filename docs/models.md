@@ -164,3 +164,18 @@ Machines are exported with clean, readable base paint (faded on Rusty models, fr
 
 ## Tiers
 Each machine has a model per tier (`rusty`, `used`, and later `standard`, `heavy`, `mega`). Only the materials differ at the moment. The scripts pick paint by tier in `lib.standard_materials()`.
+
+## Used truck / excavator recess pass (M2)
+
+`review_models.py` adds restrained transparent grime along truck door/handle and bed-floor
+recesses, plus a gasketed excavator access panel, screws and vent-edge grime for the Used
+tier. Export into a scratch directory first:
+
+```sh
+blender -b --python blender/review_models.py -- --out /absolute/scratch --tier used truck excavator
+python3 blender/compress_textures.py /absolute/scratch/truck_used/truck_used.glb /absolute/scratch/excavator_used/excavator_used.glb
+```
+
+Install those two compressed GLBs in `assets/models/`, then run the fleet rig and asset
+budget tests plus the full test/build suite. Compare `modelshots.mjs` studio close/back
+views before committing; panel additions must retain pivots and readable decals.

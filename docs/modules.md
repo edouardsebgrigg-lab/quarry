@@ -133,3 +133,8 @@ and `pto`. World truck/trailer bed velocity gates ram gain (lowering is quieter/
 tractor PTO is gated to a raising tip job and engine envelope. Voices stop when machinery
 is removed/destroyed. Gearbox audio is unchanged. Unit checks cover finite/non-clipping
 seamless buffers plus raising/lowering/idle/removal behavior; the browser API check is muted.
+
+M2 model production: `blender/review_models.py` now includes Used-only access joints,
+fasteners and soft transparent recess grime for truck/excavator. New details follow the
+existing Cab/House/Bed parents. Only those two compressed production GLBs changed;
+protected rig transforms are guarded by the builder and fleet asset tests.

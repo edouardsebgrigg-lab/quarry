@@ -247,8 +247,55 @@ def rust_decal(name,points,parent,strength=.75):
     return lib.mesh_object(name,bm,mat,parent)
 
 
+def recess_grime(name, points, parent, strength=.35):
+    """Soft transparent dirt at a seam: retains paint and avoids broad rectangular stains."""
+    noise=textures.fractal_noise(N,2.2,193)
+    u=np.linspace(0,1,N)[None,:];v=np.linspace(0,1,N)[:,None]
+    fade=np.sin(np.pi*u)**.8 * np.exp(-((v-(.30+.10*noise))/.24)**2) * np.sin(np.pi*v)
+    rgba=np.ones((N,N,4));rgba[...,:3]=textures.lerp([.045,.038,.028],[.13,.11,.08],noise)
+    rgba[...,3]=(.35+.65*noise)*fade*strength
+    key=f'Review_RecessGrime_{strength:.2f}'
+    mat=bpy.data.materials.get(key)
+    if mat is None:
+        mat=bpy.data.materials.new(key);mat.use_nodes=True
+        mat.surface_render_method='DITHERED';mat.use_backface_culling=False
+        nt=mat.node_tree;p=nt.nodes.get('Principled BSDF');p.inputs['Roughness'].default_value=.96
+        t=nt.nodes.new('ShaderNodeTexImage');t.image=image(key,rgba)
+        nt.links.new(t.outputs['Color'],p.inputs['Base Color']);nt.links.new(t.outputs['Alpha'],p.inputs['Alpha'])
+    bm=bmesh.new();f=bm.faces.new([bm.verts.new(p) for p in points]);layer=bm.loops.layers.uv.new()
+    for loop,uv in zip(f.loops,[(0,0),(1,0),(1,1),(0,1)]):loop[layer].uv=uv
+    return lib.mesh_object(name,bm,mat,parent)
+
+
+def used_panel_details(objects, kind):
+    if CURRENT_TIER != 'used': return
+    if kind == 'truck':
+        for side in [-1,1]:
+            y=side*1.153
+            for x in [1.74,2.95]:
+                recess_grime('Used cab shut-line dirt',[(x-.035,y,-.07),(x+.035,y,-.07),(x+.035,y,.60),(x-.035,y,.60)],objects['Cab'])
+            recess_grime('Used handle recess',[(1.86,y,.43),(2.14,y,.43),(2.14,y,.59),(1.86,y,.59)],objects['Cab'])
+            # Dirt rests at the floor/wall join, following the bed wall's slight slope.
+            def at(px,z): return (px,side*(1.12+(z+.04)*.08/1.06+.003),z)
+            recess_grime('Used bed lower recess', [at(.15,.075),at(4.12,.075),at(4.12,.17),at(.15,.17)],objects['Bed'],.22)
+    if kind == 'excavator':
+        # The clear side of the engine cover has a gasketed access panel and screw heads.
+        pts=[(-1.6,1.253,.27),(-.55,1.253,.27),(-.55,1.253,.84),(-1.6,1.253,.84),(-1.6,1.253,.27)]
+        joint=curve('Used engine access joint',pts,objects['House'],.004)
+        for p in joint.data.splines[0].bezier_points: p.handle_left_type=p.handle_right_type='VECTOR'
+        steel=review_material('AccessFasteners',(.12,.13,.13),roughness=.65,metallic=.6,vertex_color=False)
+        screws=[lib.bm_cylinder(.012,.008,'Y',8,(x,1.256,z)) for x in [-1.55,-.60] for z in [.32,.79]]
+        lib.mesh_object('Used access screws',lib.merge(*screws),steel,objects['House'])
+        for x in [-1.6,-.55]:
+            recess_grime('Used panel gasket dirt',[(x-.04,1.254,.27),(x+.04,1.254,.27),(x+.04,1.254,.84),(x-.04,1.254,.84)],objects['House'])
+        for k in range(7):
+            z=.35+k*.08
+            recess_grime('Used vent edge dirt',[(-1.60,-1.253,z-.04),(-.60,-1.253,z-.04),(-.60,-1.253,z+.04),(-1.60,-1.253,z+.04)],objects['House'])
+
+
 def details(root, kind):
     objects = {o.name:o for o in subtree(root)}
+    used_panel_details(objects, kind)
     steel = review_material('WornSteel', (.18,.19,.2), vertex_color=False)
     if kind == 'pickup':
         objects['BedFloor'].data.materials.clear(); objects['BedFloor'].data.materials.append(review_material('BedSteel', (.2,.2,.18)))
