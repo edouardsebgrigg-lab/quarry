@@ -33,5 +33,10 @@
         "capacity": 25
       }
     ]
+  },
+  "weighbridge": {
+    "name": "Home weighbridge",
+    "price": 400,
+    "description": "Weigh loaded road vehicles at your gate and see the current depot quote. The ticket lets you drive straight to the depot bays; changing or tipping the load clears it."
   }
 }

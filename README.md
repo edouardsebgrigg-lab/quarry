@@ -211,3 +211,9 @@ Each bay holds 25 t. With a digger bucket over a bay, hold LMB in Assisted mode
 (or cut into the heap in Direct mode) to reload stored material. Dump the bucket into
 a carrier as usual. Mixing stays mixed, and storing earns no sale income. Tab shows each
 bay’s contents and grade; inventory survives saving and loading.
+
+Commission the **Home weighbridge** in Yard buildings to weigh at your driveway. Stop
+a loaded road vehicle on the steel deck: its load, purity and current best depot quote
+appear with the ticket. You can then drive straight to the depot bays. The quote can
+change on the journey. Adding/removing material invalidates the ticket; field or
+stockpile tipping clears it. The depot bridge still weighs loads normally.

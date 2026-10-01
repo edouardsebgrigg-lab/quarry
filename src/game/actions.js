@@ -1,12 +1,12 @@
 // Player actions. Buttons, hotkeys and 3D driving/digging all call these.
 // Every action returns { ok, reason? }.
-import { weighIn as depotWeighIn, takeLoan as bankTakeLoan, repayLoan as bankRepayLoan, loanOffers as bankLoanOffers, creditLimit as bankCreditLimit, setInsuranceCover } from '../economy/index.js';
+import { weighIn as depotWeighIn, bestDeliveryQuote, takeLoan as bankTakeLoan, repayLoan as bankRepayLoan, loanOffers as bankLoanOffers, creditLimit as bankCreditLimit, setInsuranceCover } from '../economy/index.js';
 import {
-  getMachine, machinesAt, startJob, buyMachine as fleetBuyMachine,
+  getMachine, machinesAt, startJob, isRoadLegal, buyMachine as fleetBuyMachine,
   sellMachine as fleetSellMachine, resaleValue, mechanicQuote, callMechanic, buyMod as fleetBuyMod, dumpBucket as fleetDumpBucket, bucketCut as fleetBucketCut,
 } from '../machinery/index.js';
 import { shovelDig, shovelDump, tipBarrow } from '../handtools/index.js';
-import { buyBuilding } from '../buildings/index.js';
+import { buyBuilding, ownsBuilding } from '../buildings/index.js';
 import { planEarthworks, buildEarthworks } from '../earthworks/index.js';
 import { acceptContract, acceptStandingOrder, declineStandingOrder } from '../contracts/index.js';
 import { acceptHire, declineHire } from '../hire/index.js';
@@ -47,11 +47,14 @@ export function createActions(ctx) {
     dumpBucket: (diggerId, target, share = 1) => fleetDumpBucket(ctx, diggerId, target, share),
     // Empty a carrier: { bay } at the depot (sells it) or { x, z } onto your ground.
     tip: (machineId, where) => startJob(ctx, machineId, 'tip', { params: { ...where } }),
-    // Stop on the depot's weighbridge.
-    weighIn(machineId) {
+    // World verifies physical placement; home tickets use the same load identity as depot tickets.
+    weighIn(machineId, { home = false } = {}) {
       const m = getMachine(ctx, machineId);
       if (!m) return { ok: false, reason: 'No such machine' };
-      return depotWeighIn(ctx, m);
+      if (!isRoadLegal(ctx.data, m.type)) return { ok: false, reason: 'Only road vehicles can weigh in' };
+      if (home && (m.siteId !== site() || !ownsBuilding(ctx, 'weighbridge', m.siteId))) return { ok: false, reason: 'Commission the home weighbridge first' };
+      const r = depotWeighIn(ctx, m);
+      return r.ok && home ? { ...r, quote: bestDeliveryQuote(ctx, m.load) } : r;
     },
 
     // Real ground: carve a bowl (returns { tonnes: { material: t }, total }) or drop material.

@@ -35,6 +35,7 @@ export const MAP = {
     stockpiles: [{ id: 'west', x0: 166, x1: 175, z0: 42, z1: 52 }, { id: 'middle', x0: 178, x1: 187, z0: 42, z1: 52 }, { id: 'east', x0: 190, x1: 199, z0: 42, z1: 52 }],
     // Your property: site machines (not road-legal) can't go outside it.
     boundary: { x0: -2, x1: 206, z0: -16, z1: 154 },
+    weighbridge: { x0: 178.3, x1: 181.7, z0: -12, z1: 4 },
     driveway: { x0: 176, x1: 184 }, // from the yard's north edge out to Mill Lane
     fieldGap: { z0: 8, z1: 20 }, // opening in the hedge between the yard and the field
     workshop: { x: 166, z: 27 }, // clear of the driveway and machine delivery slots

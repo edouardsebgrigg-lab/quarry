@@ -127,6 +127,14 @@ export function buildPlaces({ scene, physics, plan, heightAt, materials, bayName
 
   // ================================================================ your yard
   const home = map.home;
+  const hwb = home.weighbridge;
+  const hbx = (hwb.x0 + hwb.x1) / 2, hbz = (hwb.z0 + hwb.z1) / 2;
+  const hby = heightAt(hbx, hbz);
+  const homeBridge = place('weighbridge', hbx, hbz, 0, 1, hby + 0.01) ??
+    standIn(hwb.x1-hwb.x0, 0.05, hwb.z1-hwb.z0, hbx, hbz, 0, 0x7a7c7e);
+  homeBridge.visible = false;
+  const homePole = collider(0.16, 1.4, 0.14, hwb.x1 + 0.7, hby + 1.4, hwb.z1 + 0.4);
+  homePole.setEnabled(false);
   const y0 = heightAt(home.office.x, home.office.z);
   const off = home.office;
   if (!place('office', off.x, off.z, off.yaw, 1, y0)) {
@@ -369,7 +377,10 @@ export function buildPlaces({ scene, physics, plan, heightAt, materials, bayName
   }
 
   return {
-    setBuilding(id, owned) { if (facilitySigns[id]) facilitySigns[id].visible = owned; },
+    setBuilding(id, owned) {
+      if (facilitySigns[id]) facilitySigns[id].visible = owned;
+      if (id === 'weighbridge') { homeBridge.visible = owned; homePole.setEnabled(owned); }
+    },
     officeDoor: { x: off.x + 0.5, z: off.z + 2.6 },
     dealerDoor: dl.door,
     weighbridge: wb,

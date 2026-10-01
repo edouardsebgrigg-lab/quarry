@@ -43,7 +43,6 @@ import { hasTicket, quoteDelivery } from '../economy/index.js';
 const MOUSE_SCALE = 0.0022;
 const ENTER_DISTANCE = 2.8;
 const BARROW_GRAB = 1.5; // how close to the wheelbarrow's handles you must be to take it
-const WEIGH_TIME = 1.2; // seconds a loaded vehicle must stand on the weighbridge
 
 // What each plot material counts as, for grip and plants.
 const PLOT_SURFACE = {
@@ -544,13 +543,15 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   // ---- the weighbridge: a loaded road vehicle standing on it is weighed in
   const weigh = new Map(); // machineId -> seconds on the bridge
+  const onHomeBridge = (x,z) => ownsBuilding(game.ctx, 'weighbridge', siteId) && inRect(MAP.home.weighbridge,x,z,0.3);
   function updateWeighbridge(dt) {
     let busy = false;
     for (const v of vehicles.values()) {
       if (!v.road) continue;
       const m = getMachine(game.ctx, v.machineId);
       const p = v.position();
-      const on = places.onWeighbridge(p.x, p.z);
+      const homeBridge = onHomeBridge(p.x, p.z);
+      const on = homeBridge || places.onWeighbridge(p.x, p.z);
       if (!on || !m || pileTotal(m.load) < data.depot.minLoad || hasTicket(game.ctx, m.id) || Math.abs(v.speed()) > 0.4) {
         weigh.delete(v.machineId);
         continue;
@@ -558,13 +559,14 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       busy = true;
       const t = (weigh.get(v.machineId) ?? 0) + dt;
       weigh.set(v.machineId, t);
-      if (t >= WEIGH_TIME) {
+      if (t >= data.depot.weighSeconds) {
         weigh.delete(v.machineId);
-        const r = game.actions.weighIn(m.id);
+        const r = game.actions.weighIn(m.id, { home: homeBridge });
         if (r.ok) {
           const mix = Object.entries(m.load).sort((a, b) => b[1] - a[1])
             .map(([id, tt]) => `${data.materials[id]?.name.toLowerCase() ?? id} ${Math.round((tt / r.tonnes) * 100)}%`).join(', ');
-          notify(`Weighed in: ${r.tonnes.toFixed(2)} t (${mix}). Unload in the right bay (T).`, 'good');
+          const quote = r.quote ? ` ${data.depot.bays[r.quote.bay].name}: ${r.quote.grade}, current quote $${r.quote.gross.toFixed(2)}. Drive straight to the depot bays (T).` : ' Unload in the right bay (T).';
+          notify(`Weighed in: ${r.tonnes.toFixed(2)} t (${mix}).${quote}`, 'good');
           sounds?.play('chime', { gain: 0.4 });
         }
       }
@@ -1003,8 +1005,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
             const qd = quoteDelivery(game.ctx, spot.bay, m.load);
             prompt = { key: key('tip'), text: `Unload in the ${spot.name} bay: ${qd.grade}, $${qd.perTonne.toFixed(2)}/t` };
           }
-        } else if (places.onWeighbridge(p.x, p.z)) {
-          prompt = { key: null, text: hasTicket(game.ctx, m.id) ? 'Weighed in: drive on to the bays' : 'Stop here to weigh in…' };
+        } else if (onHomeBridge(p.x, p.z) || places.onWeighbridge(p.x, p.z)) {
+          prompt = { key: null, text: hasTicket(game.ctx, m.id) ? 'Weighed in: drive on to the depot bays' : 'Stop here to weigh in…' };
         } else if (spot.x !== undefined) {
           prompt = { key: key('tip'), text: v.type === 'pickup' ? 'Shovel it off here' : 'Tip here' };
         } else if (inRect(MAP.depot.yard, p.x, p.z, 10)) {

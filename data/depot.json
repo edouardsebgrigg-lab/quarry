@@ -1,16 +1,35 @@
 {
   "name": "Ashby Aggregates",
   "bays": {
-    "topsoil": { "name": "Topsoil" },
-    "clay": { "name": "Clay" },
-    "sand": { "name": "Sand" },
-    "gravel": { "name": "Gravel" },
-    "mixed": { "name": "Mixed fill" }
+    "topsoil": {
+      "name": "Topsoil"
+    },
+    "clay": {
+      "name": "Clay"
+    },
+    "sand": {
+      "name": "Sand"
+    },
+    "gravel": {
+      "name": "Gravel"
+    },
+    "mixed": {
+      "name": "Mixed fill"
+    }
   },
   "mixedProduct": "mixed",
   "grades": [
-    { "minPurity": 0.95, "name": "Clean", "factor": 1.0 },
-    { "minPurity": 0.8, "name": "Slightly mixed", "factor": 0.75 }
+    {
+      "minPurity": 0.95,
+      "name": "Clean",
+      "factor": 1.0
+    },
+    {
+      "minPurity": 0.8,
+      "name": "Slightly mixed",
+      "factor": 0.75
+    }
   ],
-  "minLoad": 0.02
+  "minLoad": 0.02,
+  "weighSeconds": 1.2
 }

@@ -75,6 +75,10 @@ export const JOBS = {
     finish(ctx, m, stats, job) {
       const load = m.load;
       const tonnes = pileTotal(load);
+      if (job.params.bay && !hasTicket(ctx, m.id)) {
+        ctx.events.emit('jobFailed', { machineId: m.id, reason: 'Load changed: weigh in again before selling' });
+        return;
+      }
       if (job.params.stockpileBay) {
         const stored = storeStockpile(ctx, job.params.stockpileBay, load, m.siteId, m.id);
         if (!stored.ok) { ctx.events.emit('jobFailed', { machineId: m.id, reason: stored.reason }); return; }

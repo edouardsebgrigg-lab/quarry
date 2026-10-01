@@ -106,3 +106,11 @@ three fixed bays, saved-inventory heaps and matching cone colliders/surface heig
 wall and heap collisions are enabled only when commissioned. Assisted/Direct digger
 controls and carrier T dispatch detect the same mapped bay rectangles. The map panel
 reports each bay’s material mix and normal depot purity grade.
+
+Home weighbridge: `buildings.weighbridge` commissions the fixed `MAP.home.weighbridge`
+deck. World dwell calls `actions.weighIn(id, { home: true })`, which checks commissioning
+and road legality and returns `bestDeliveryQuote`. Both bridges share `state.depot.tickets`;
+`hasTicket` validates total and every material against the current vehicle load, discards
+stale tickets, and depot tip completion checks again before transferring inventory.
+Repeated weighing of an unchanged load emits no duplicate receipt. Timing is in
+`data/depot.json` (`weighSeconds`); home price is in `data/buildings.json`.

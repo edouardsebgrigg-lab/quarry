@@ -10,19 +10,35 @@ import { staffSaleBonus } from '../staff/perks.js';
 
 function tickets(ctx) {
   ctx.state.depot ??= { tickets: {} };
-  return ctx.state.depot.tickets;
+  return ctx.state.depot.tickets ??= {};
 }
 
 // Record a vehicle's load on the weighbridge. Returns { ok, tonnes }.
 export function weighIn(ctx, machine) {
   const tonnes = pileTotal(machine.load);
   if (tonnes < ctx.data.depot.minLoad) return { ok: false, reason: 'Nothing on board to sell' };
+  if (hasTicket(ctx, machine.id)) return { ok: true, tonnes, existing: true };
   tickets(ctx)[machine.id] = { tonnes, materials: { ...machine.load } };
   ctx.events.emit('weighedIn', { machineId: machine.id, tonnes, materials: { ...machine.load } });
   return { ok: true, tonnes };
 }
 
-export const hasTicket = (ctx, machineId) => !!tickets(ctx)[machineId];
+export function hasTicket(ctx, machineId) {
+  const ticket = tickets(ctx)[machineId];
+  if (!ticket) return false;
+  const load = ctx.state.machines.find(m => m.id === machineId)?.load;
+  const ids = new Set([...Object.keys(load ?? {}), ...Object.keys(ticket.materials ?? {})]);
+  const valid = load && ticket.materials && pileTotal(load) >= ctx.data.depot.minLoad &&
+    Math.abs(pileTotal(load) - ticket.tonnes) < 1e-8 &&
+    [...ids].every(id => Math.abs((load[id] ?? 0) - (ticket.materials[id] ?? 0)) < 1e-8);
+  if (!valid) delete tickets(ctx)[machineId];
+  return !!valid;
+}
+
+export function bestDeliveryQuote(ctx, load) {
+  return Object.keys(ctx.data.depot.bays).map(bay => ({ bay, ...quoteDelivery(ctx, bay, load) }))
+    .sort((a,b) => b.gross - a.gross)[0];
+}
 
 // How a load would be paid in a bay: { product, grade, factor, purity, gross, perTonne }.
 export function quoteDelivery(ctx, bayId, load, tonnes = pileTotal(load)) {
