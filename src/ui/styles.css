@@ -996,3 +996,9 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .pc-tip.on { display: flex; }
 .pc-tip div { display: flex; justify-content: space-between; gap: 1rem; color: var(--muted); }
 .pc-tip div b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* Bank: the credit rating */
+.lt-credit-bar { height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.1); overflow: hidden; margin: 0.35rem 0 0.2rem; }
+.lt-credit-bar i { display: block; height: 100%; background: var(--accent); transition: width 0.4s; }
+.lt-stat-value[data-band="excellent"], .lt-stat-value[data-band="good"] { color: var(--good); }
+.lt-stat-value[data-band="poor"], .lt-stat-value[data-band="bad"] { color: var(--bad); }

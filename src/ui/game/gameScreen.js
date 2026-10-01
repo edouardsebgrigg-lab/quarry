@@ -154,6 +154,11 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
       else feedback.message(e.good ? 'Inspection passed: everything in good order (reputation up)' : 'Inspection passed', 'good');
     }),
     game.events.on('rushOrder', (e) => feedback.message(`Rush job from ${e.client}: $${e.bonus} bonus, today only (laptop: Jobs board)`, 'good')),
+    game.events.on('creditRatingChanged', (e) => {
+      const order = game.data.economy.bank.credit.bands.map(([, name]) => name);
+      const up = order.indexOf(e.to) < order.indexOf(e.from); // (bands run best first)
+      feedback.message(`Credit rating ${up ? 'up' : 'down'}: ${e.to} (laptop: Bank)`, up ? 'good' : 'warn');
+    }),
     game.events.on('standingOffer', (e) => feedback.message(`${e.client} wants a regular supply of ${game.data.materials[e.material]?.name.toLowerCase() ?? e.material} (laptop: Jobs board)`, 'good')),
     game.events.on('standingWeekDone', (e) => feedback.message(`${e.client}: this week's order is in, +$${e.bonus}`, 'good')),
     game.events.on('standingWeekMissed', (e) => feedback.message(`${e.client}: this week's order fell short; reputation down`, 'warn')),

@@ -28,6 +28,13 @@
     "creditPerEarned": 0.5,
     "creditPerFleetValue": 0.5,
     "maxLoans": 3,
+    "credit": {
+      "start": 50,
+      "perCleanDay": 0.5,
+      "perOverdrawnDay": -4,
+      "perLoanRepaid": 8,
+      "bands": [[80, "Excellent"], [60, "Good"], [40, "Fair"], [20, "Poor"], [0, "Bad"]]
+    },
     "statementLength": 250
   },
   "mechanicCallOut": 35,

@@ -92,3 +92,36 @@ describe('loans', () => {
     expect(bankState(g2.ctx).loans[0].daysLeft).toBe(13);
   });
 });
+
+describe('the credit rating', () => {
+  it('starts fair, with the usual limit and rate', async () => {
+    const { creditRating } = await import('./bank.js');
+    const game = createGame({ seed: 4, data: noMilestones() });
+    expect(creditRating(game.ctx)).toMatchObject({ score: 50, name: 'Fair', limitFactor: 1, rateFactor: 1 });
+    expect(game.actions.loanOffers()[0].rate).toBe(game.data.economy.bank.dailyRate);
+  });
+
+  it('falls for each morning you start overdrawn, and borrowing shrinks and costs more', async () => {
+    const { creditRating } = await import('./bank.js');
+    const game = createGame({ seed: 4, data: noMilestones() });
+    const limit = game.actions.creditLimit();
+    game.state.money = -200;
+    game.dev.skipDays(5);
+    expect(creditRating(game.ctx).score).toBeLessThan(35);
+    expect(creditRating(game.ctx).name).toBe('Poor');
+    expect(game.actions.creditLimit()).toBeLessThan(limit);
+    expect(game.actions.loanOffers()[0].rate).toBeGreaterThan(game.data.economy.bank.dailyRate);
+  });
+
+  it('rises when a loan is paid off, so the next one is cheaper', async () => {
+    const { creditRating } = await import('./bank.js');
+    const game = createGame({ seed: 4, data: noMilestones() });
+    game.state.money = 5000;
+    const r = game.actions.takeLoan(250, 7);
+    expect(r.ok).toBe(true);
+    const before = creditRating(game.ctx).score;
+    expect(game.actions.repayLoan(r.loan.id).ok).toBe(true);
+    expect(creditRating(game.ctx).score).toBe(before + game.data.economy.bank.credit.perLoanRepaid);
+    expect(game.actions.loanOffers()[0].rate).toBeLessThan(r.loan.rate);
+  });
+});

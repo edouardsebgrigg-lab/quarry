@@ -1,7 +1,7 @@
 // The bank: your balance, what you can borrow, your loans, and a statement of everything in and out.
 import { el, clear, setText } from '../../dom.js';
 import { money, signedMoney } from '../../format.js';
-import { bankState, owed } from '../../../economy/index.js';
+import { bankState, owed, creditRating } from '../../../economy/index.js';
 import { profitChart } from './profitChart.js';
 
 const REASONS = {
@@ -42,6 +42,9 @@ export function bankApp({ game, feedback, setHead }) {
   const owedV = el('div', { class: 'lt-stat-value' });
   const owedN = el('div', { class: 'lt-stat-note' });
   const limitV = el('div', { class: 'lt-stat-value' });
+  const ratingV = el('div', { class: 'lt-stat-value' });
+  const ratingN = el('div', { class: 'lt-stat-note' });
+  const ratingBar = el('div', { class: 'lt-credit-bar' }, el('i'));
   const loansBox = el('div', { class: 'lt-rows' });
   const amountSeg = el('div', { class: 'lt-chips' });
   const termSeg = el('div', { class: 'lt-chips' });
@@ -73,6 +76,12 @@ export function bankApp({ game, feedback, setHead }) {
     setText(owedV, money(owed(game.ctx)));
     setText(owedN, b.loans.length ? `${b.loans.length} loan${b.loans.length > 1 ? 's' : ''}` : 'No loans');
     setText(limitV, money(game.actions.creditLimit()));
+    const cr = creditRating(game.ctx);
+    setText(ratingV, cr.name);
+    ratingV.dataset.band = cr.name.toLowerCase();
+    ratingBar.firstChild.style.width = `${cr.score}%`;
+    const rateNote = Math.abs(cr.rateFactor - 1) < 0.01 ? 'loans at the usual rate' : `loans at ${cr.rateFactor < 1 ? '' : '+'}${Math.round((cr.rateFactor - 1) * 100)}% interest`;
+    setText(ratingN, `${Math.round(cr.score)}/100 · ${rateNote}`);
 
     const offers = game.actions.loanOffers();
     const offer = offers.find((o) => o.amount === amount && o.days === days);
@@ -121,11 +130,13 @@ export function bankApp({ game, feedback, setHead }) {
   refresh(true);
 
   const node = el('div', { class: 'lt-bank' },
-    el('div', { class: 'lt-stats' },
+    el('div', { class: 'lt-stats four' },
       el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Balance'), balanceV, balanceN),
       el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Owed on loans'), owedV, owedN),
       el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'You can borrow'), limitV,
-        el('div', { class: 'lt-stat-note' }, 'Grows with what you earn and what your machines are worth'))),
+        el('div', { class: 'lt-stat-note' }, 'Grows with what you earn, your machines and your rating')),
+      el('div', { class: 'lt-stat', title: 'Rises a little each morning you’re in credit and with every loan paid off; falls each morning you start overdrawn' },
+        el('div', { class: 'lt-stat-label' }, 'Credit rating'), ratingV, ratingBar, ratingN)),
     el('div', { class: 'lt-card' }, chart.node),
     el('div', { class: 'lt-bank-cols' },
       el('div', { class: 'lt-card' }, el('div', { class: 'lt-card-label' }, 'Borrow'),

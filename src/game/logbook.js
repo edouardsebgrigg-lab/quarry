@@ -182,6 +182,18 @@ export function logbookOnEvent(ctx, type, e) {
       trim(lb);
       break;
     }
+    case 'creditRatingChanged': {
+      const lb = logbook(ctx);
+      const { day, hour, minute } = getDate(ctx.state, ctx.data);
+      const order = ctx.data.economy.bank.credit.bands.map(([, name]) => name); // (best first)
+      const up = order.indexOf(e.to) < order.indexOf(e.from);
+      const text = up
+        ? `Your credit rating is now ${e.to}. You can borrow more, and new loans come cheaper.`
+        : `Your credit rating has fallen to ${e.to}. Starting the day overdrawn costs you: you can borrow less, and new loans cost more.`;
+      lb.messages.push({ day, hour, minute, from: ctx.data.economy.bank.name, text, kind: up ? 'good' : 'bad' });
+      trim(lb);
+      break;
+    }
     case 'standingOffer':
     case 'standingWeekDone':
     case 'standingWeekMissed':
