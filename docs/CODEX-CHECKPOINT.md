@@ -415,3 +415,18 @@ all four diagnostic contact sheets and full-size changed views; final letters, p
 warning sticker are readable. Images in `docs/handover/screenshots/m1/`. Product studio
 uses game models/weathering; no manual vehicle movement, Direct motion or cab-camera
 decal check performed. Publication remains blocked by GitHub write access.
+
+### S2 — implemented locally; listening not verified
+
+Implementation commit: `699f1dd`. Replaced the generic road-tipper ram whine/oil layer
+with valve flow and seal friction; raising/lowering gains and rates differ. Added a
+mechanical 540 rpm tractor PTO loop while a tip job raises the bed, with engine/cab
+envelopes, valve-start clunk and pooled voice cleanup. No gearbox whine added.
+Actually ran: `npm test` (271 passing in 41 files), `npm run build` (passed),
+`git diff --check`, muted `tipper-sound.mjs` on native Metal: Web Audio bank created both
+loops, accepted set/stop, no browser errors. Synthesis tests check finite samples, peaks
+and seam joins; world test covers raise/lower/idle/removal. Initial PTO pulse had a large
+loop seam jump; made its envelope smooth and repeated the full checks successfully.
+Subjective listening, in-cab loudness and a real tipping session with audible output
+are **not verified**. README controls unchanged; module guide updated. Push blocked by
+repository account access.

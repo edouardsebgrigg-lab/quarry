@@ -18,7 +18,7 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       scale with wear, rubber stays dark, trailer hitched properly in product photos, decals
       (model lettering, hazard chevrons, warning stickers, number plates). Next: check the
       decals on every machine and fix placement
-- [ ] S2 Sound: listen-free checks only so far. Done: turbo whistle (used excavator, truck),
+- [x] S2 PTO/tipper sound (`699f1dd`): listen-free checks only so far. Done: turbo whistle (used excavator, truck),
       load layers in the engine note, gravel crunch under tracks, relief-valve squeal and engine
       bog when a digger's lever is held at the end of its stroke (with a clunk as it bottoms out),
       stronger wind and no birdsong in rain. Next: the tractor's PTO and a proper tipper-ram sound. Edouard rejected gearbox whine; do not add it
