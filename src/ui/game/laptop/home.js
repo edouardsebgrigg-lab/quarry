@@ -60,7 +60,7 @@ export function homeApp({ game, openApp, setHead }) {
     } else if (st.active && !st.active.paidThisWeek) {
       const a = st.active;
       const left = a.weekEnd - getDate(game.state, data).day;
-      rows.push({ kind: left <= 1 ? 'warn' : '', title: `${a.client}'s weekly order: ${a.delivered} of ${a.tonnesPerWeek} t`, sub: `Clean ${mat(a.material)}, week ${a.week} of ${a.weeks}, ${left <= 0 ? 'ends today' : `ends day ${a.weekEnd}`}`, app: 'jobs' });
+      rows.push({ kind: left <= 1 ? 'warn' : '', title: `Weekly order for ${a.client}: ${a.delivered} of ${a.tonnesPerWeek} t`, sub: `Clean ${mat(a.material)}, week ${a.week} of ${a.weeks}, ${left <= 0 ? 'ends today' : `ends day ${a.weekEnd}`}`, app: 'jobs' });
     }
     const rush = contractsState(ctx).offers.find((o) => o.rush);
     if (rush) rows.push({ kind: 'good', title: `Rush job for ${rush.client}: +${money(rush.bonus)}`, sub: `${rush.tonnes} t of clean ${(data.materials[rush.material]?.name ?? rush.material).toLowerCase()}, take it today`, app: 'jobs' });

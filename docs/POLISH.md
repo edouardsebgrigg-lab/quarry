@@ -32,7 +32,11 @@ dealer, the bank, the depot's prices, your fleet, your messages).
 - [ ] M2 Blender: the biggest remaining model issues from the studio shots (the used truck and
       excavator look too clean and toy-like up close: panel gaps, grime in recesses)
 - [ ] V1 Countryside: hedges, field patchwork and four farmsteads done. Next: farm animals or
-      machinery in the fields, and a track surface that matches the ground shader
+      machinery in the fields, a track surface that matches the ground shader, and some variety
+      in the big home field (it reads as one flat, even lawn in the in-world shots)
+- [ ] D7 Time of day: the sun never moves. The clock runs a whole day in two minutes, so a
+      moving sun would sweep the sky every minute; needs a decision on day length (and night)
+      before the light can follow the clock
 
 ## Done
 
@@ -74,6 +78,11 @@ dealer, the bank, the depot's prices, your fleet, your messages).
 - [x] W1 Weather checked in the game: grey overcast (a dome in the fog's colour, tone-mapped
       like the rest), hills melting into the mist, wet dark grass without the frosty sky
       reflections, rain streaks; weather.mjs jumps straight to the rain
+- [x] D8 Regular customers: standing orders from reputation 4 (weekly quota, paid each week
+      it's met, reputation lost for a short week), on the Jobs board and the home Coming up
+      card; tested; checked in regular.mjs shots
+- [x] Market news follows the forecast (no wet-week story in a heatwave); tested
+- [x] Laptop notifications: three at most, newest by the taskbar; checked in milestones.mjs
 - [x] U9 Prices app with news, laptop home ticker, weekly report: checked in laptop3.mjs shots
 - [x] Product photos pose the diggers (boom up, rams lined up) instead of the straight-out
       export pose with rams pointing the wrong way
