@@ -10,6 +10,7 @@ vi.mock('./models.js', () => {
   const model = () => {
     const root = new THREE.Group(), house = new THREE.Group(); house.position.y=1.05; root.add(house);
     const boomPivot=new THREE.Group(),stickPivot=new THREE.Group(),bucketPivot=new THREE.Group();
+    boomPivot.position.set(.9,1.1,.35);stickPivot.position.x=3.6;bucketPivot.position.x=2.6;
     house.add(boomPivot); boomPivot.add(stickPivot); stickPivot.add(bucketPivot);
     return { root,house,boomPivot,stickPivot,bucketPivot,rams:[],cabSeat:new THREE.Vector3(),setBucketLoad:vi.fn() };
   };
@@ -70,7 +71,7 @@ describe('physical excavator cycles',()=>{
     const {v}=setup();
     v.state.pitch=.2;v.state.roll=-.15;
     v.update(0,{bucketFull:false,occupied:true});
-    const physical=v.directState().teeth,visible=v.teethWorld();
+    const physical=v.directState().teeth,visible=v.model.bucketPivot.localToWorld(new THREE.Vector3(.92,.22,0));
     expect(visible.distanceTo(new THREE.Vector3(physical.x,physical.y,physical.z))).toBeLessThan(1e-8);
     v.setDirect(true);v.directInput({boom:-1,stick:1});
     v.update(0,{bucketFull:false,occupied:true});

@@ -1,0 +1,254 @@
+[
+  {
+    "model": "dumper_rusty",
+    "vertices": 15056,
+    "maxNormalLengthError": 2.097535022527186e-05,
+    "positionsExactToStaging": true
+  },
+  {
+    "model": "dumper_used",
+    "vertices": 15056,
+    "maxNormalLengthError": 2.097535022527186e-05,
+    "positionsExactToStaging": true
+  },
+  {
+    "model": "excavator_rusty",
+    "vertices": 55037,
+    "maxNormalLengthError": 2.2463726866206457e-05,
+    "positionsExactToStaging": true
+  },
+  {
+    "model": "excavator_used",
+    "vertices": 55310,
+    "maxNormalLengthError": 2.2986708295702485e-05,
+    "positionsExactToStaging": true
+  },
+  {
+    "model": "minidigger_rusty",
+    "vertices": 25112,
+    "maxNormalLengthError": 2.1674831086504476e-05,
+    "positionsExactToStaging": true
+  },
+  {
+    "model": "minidigger_used",
+    "vertices": 25112,
+    "maxNormalLengthError": 2.1674831086504476e-05,
+    "positionsExactToStaging": true
+  },
+  {
+    "model": "mobility_buggy",
+    "vertices": 24188,
+    "maxNormalLengthError": 2.1093637899705087e-05,
+    "positionsExactToStaging": true
+  },
+  {
+    "model": "mobility_fourByFour",
+    "vertices": 42637,
+    "maxNormalLengthError": 2.1663188591425353e-05,
+    "positionsExactToStaging": true
+  },
+  {
+    "model": "mobility_quad",
+    "vertices": 24609,
+    "maxNormalLengthError": 2.1093637899705087e-05,
+    "positionsExactToStaging": true
+  },
+  {
+    "model": "mobility_serviceVan",
+    "vertices": 28046,
+    "maxNormalLengthError": 2.4311161153645067e-05,
+    "positionsExactToStaging": true
+  },
+  {
+    "model": "prop_block",
+    "vertices": 723,
+    "maxNormalLengthError": 2.0268007866031112e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_boulder1",
+    "vertices": 2969,
+    "maxNormalLengthError": 2.309288799595688e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_boulder2",
+    "vertices": 2484,
+    "maxNormalLengthError": 2.187461632241483e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_boulder3",
+    "vertices": 2901,
+    "maxNormalLengthError": 2.197148190585807e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_cone",
+    "vertices": 385,
+    "maxNormalLengthError": 1.8814153000423772e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_container",
+    "vertices": 11588,
+    "maxNormalLengthError": 1.7089734959840897e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_drum",
+    "vertices": 1558,
+    "maxNormalLengthError": 1.839131460945609e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_drumrust",
+    "vertices": 1558,
+    "maxNormalLengthError": 1.839131460945609e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_fence",
+    "vertices": 774,
+    "maxNormalLengthError": 1.1666856254866076e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_fueltank",
+    "vertices": 3883,
+    "maxNormalLengthError": 1.989259952361877e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_gate",
+    "vertices": 602,
+    "maxNormalLengthError": 1.752498874130204e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_house_bungalow",
+    "vertices": 8021,
+    "maxNormalLengthError": 1.9242113700856933e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_house_cottage",
+    "vertices": 10396,
+    "maxNormalLengthError": 1.718985653131888e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_house_pub",
+    "vertices": 15276,
+    "maxNormalLengthError": 1.8183951446815172e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_house_semi",
+    "vertices": 10889,
+    "maxNormalLengthError": 1.720568970919878e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_office",
+    "vertices": 7023,
+    "maxNormalLengthError": 1.939113152960026e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_pallets",
+    "vertices": 8046,
+    "maxNormalLengthError": 2.0635429533122362e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_pickup",
+    "vertices": 60318,
+    "maxNormalLengthError": 2.1663188591425353e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_pole",
+    "vertices": 464,
+    "maxNormalLengthError": 1.6567980072990096e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_portaloo",
+    "vertices": 3512,
+    "maxNormalLengthError": 2.059254532704724e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_shed",
+    "vertices": 2739,
+    "maxNormalLengthError": 1.8885867864026906e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_shovel",
+    "vertices": 1452,
+    "maxNormalLengthError": 2.1164441987853166e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_tyres",
+    "vertices": 7152,
+    "maxNormalLengthError": 2.2213180205121752e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_weighbridge",
+    "vertices": 3024,
+    "maxNormalLengthError": 1.733172414331019e-05,
+    "positionsExactToStaging": false
+  },
+  {
+    "model": "prop_wheelbarrow",
+    "vertices": 4680,
+    "maxNormalLengthError": 2.185131953713615e-05,
+    "positionsExactToStaging": true
+  },
+  {
+    "model": "tractor_rusty",
+    "vertices": 23006,
+    "maxNormalLengthError": 2.348873346935676e-05,
+    "positionsExactToStaging": true
+  },
+  {
+    "model": "tractor_used",
+    "vertices": 23006,
+    "maxNormalLengthError": 2.348873346935676e-05,
+    "positionsExactToStaging": true
+  },
+  {
+    "model": "trailer_rusty",
+    "vertices": 14592,
+    "maxNormalLengthError": 2.1663188591425353e-05,
+    "positionsExactToStaging": true
+  },
+  {
+    "model": "trailer_used",
+    "vertices": 14592,
+    "maxNormalLengthError": 2.1663188591425353e-05,
+    "positionsExactToStaging": true
+  },
+  {
+    "model": "truck_rusty",
+    "vertices": 44937,
+    "maxNormalLengthError": 2.1551420645971042e-05,
+    "positionsExactToStaging": true
+  },
+  {
+    "model": "truck_used",
+    "vertices": 44970,
+    "maxNormalLengthError": 2.1551420645971042e-05,
+    "positionsExactToStaging": true
+  },
+  {
+    "model": "vehicle_pickup",
+    "vertices": 40780,
+    "maxNormalLengthError": 2.1663188591425353e-05,
+    "positionsExactToStaging": true
+  }
+]

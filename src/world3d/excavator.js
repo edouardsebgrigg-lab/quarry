@@ -122,22 +122,23 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
   // ---- Direct control: target angles the joints follow, fed by the player's controls
   const direct = { on: false, target: [...CARRY], axis: [0, 0, 0], delta: [0, 0, 0], stuck: false, cutting: false, pouring: 0 };
 
-  const forward = (yaw) => new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
   const houseWorldYaw = () => s.yaw + s.houseYaw;
   const reach = () => live?.()?.operator && s.operatorReach != null ? s.operatorReach : s.aimReach;
 
-  // Bucket teeth in world space for joint angles (ignoring the machine's tilt).
+  // The authored boom sits to the right of the cab. Carry that offset through the
+  // kinematics as well as the visible rig, including model scale and ground tilt.
   function teethAtAngles(angles) {
     const t = armPoints(angles).teeth;
     model.root.updateMatrixWorld(true);
-    const p = model.house.localToWorld(new THREE.Vector3(t.x / size, t.y / size, 0));
+    const p = model.house.localToWorld(new THREE.Vector3(t.x / size, t.y / size, model.boomPivot.position.z));
     return { x: p.x, y: p.y, z: p.z };
   }
 
   // Where the bucket digs or dumps in Assisted mode: on the ground in front of the house.
   function bucketTarget() {
-    const f = forward(houseWorldYaw());
-    return new THREE.Vector3(s.x + f.x * reach(), 0, s.z + f.z * reach());
+    const yaw = houseWorldYaw(), lateral = model.boomPivot.position.z * size;
+    return new THREE.Vector3(s.x + Math.cos(yaw) * reach() + Math.sin(yaw) * lateral, 0,
+      s.z - Math.sin(yaw) * reach() + Math.cos(yaw) * lateral);
   }
 
   // Height (in house coordinates) of the ground at the bucket target.
@@ -331,9 +332,10 @@ export function createExcavator({ physics, scene, terrain, machine, spawn, stats
     aimDump(x,z) {
       const distance = Math.hypot(x-s.x,z-s.z);
       if (distance > stats().reach+.3 || distance < stats().reach*.35) return false;
-      const angle = Math.atan2(-(z-s.z),x-s.x)-s.yaw;
+      const lateral = model.boomPivot.position.z * size;
+      const angle = Math.atan2(-(z-s.z),x-s.x) + Math.asin(clamp(lateral / distance,-1,1)) - s.yaw;
       s.targetHouseYaw = s.houseYaw + Math.atan2(Math.sin(angle-s.houseYaw),Math.cos(angle-s.houseYaw));
-      s.aimReach = clamp(distance,stats().reach*.4,stats().reach);
+      s.aimReach = clamp(Math.sqrt(Math.max(0,distance*distance-lateral*lateral)),stats().reach*.4,stats().reach);
       return true;
     },
     takeDumpTarget() {

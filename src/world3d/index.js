@@ -841,6 +841,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const tmpQ = new THREE.Quaternion();
   const lookQ = new THREE.Quaternion();
   const lookE = new THREE.Euler();
+  const chaseBounds = new THREE.Box3();
+  const chaseSphere = new THREE.Sphere();
   const head = createHeadSway();
 
   function placeCamera(dt) {
@@ -865,14 +867,19 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     head.reset();
     // Chase camera behind the machine, orbiting with the mouse.
     const yaw = baseYaw + look.yaw;
-    const p = v.position();
-    // Far enough to see the whole machine (and the tractor's trailer), close enough to read it.
-    const dist = v.type === 'tractor' ? 10 : THREE.MathUtils.clamp(v.radius * 3.1, 5, 12);
+    // Fit the actual rig, including the attached trailer and current arm or tipped bed.
+    // The quad can stay close; a large trailer or an extended boom gets enough room.
+    chaseBounds.setFromObject(v.model.root);
+    if (v.trailer) chaseBounds.union(new THREE.Box3().setFromObject(v.trailer.model.root));
+    chaseBounds.getBoundingSphere(chaseSphere);
+    const p = chaseSphere.center;
+    const halfFov = Math.min(THREE.MathUtils.degToRad(camera.fov / 2), Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect));
+    const dist = Math.max(2.8, chaseSphere.radius / Math.sin(halfFov) * 1.08);
     const desired = new THREE.Vector3(p.x - Math.cos(yaw) * dist, p.y + dist * 0.45 - look.pitch * 6, p.z + Math.sin(yaw) * dist);
     desired.y = Math.max(desired.y, heightAt(desired.x, desired.z) + 1.2);
     chasePos = chasePos ? chasePos.lerp(desired, Math.min(1, dt * 5)) : desired;
     camera.position.copy(chasePos);
-    camera.lookAt(p.x, p.y + Math.min(1.8, v.radius * 0.6), p.z);
+    camera.lookAt(p);
   }
 
   const resizeObserver = new ResizeObserver(() => {

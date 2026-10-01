@@ -85,14 +85,15 @@ export function createDumper({ physics, scene, terrain, machine, spawn, stats, l
     quaternion: () => quat.copy(model.root.quaternion).clone(),
     speed: () => (s.vL + s.vR) / 2,
     isOverBed(point, margin = 0.5) {
-      const local = model.root.worldToLocal(point.clone());
+      const local = (model.bedFrame ?? model.root).worldToLocal(point.clone());
       return Math.abs(local.x - model.bedCenter.x) <= model.bedHalf.x + margin
         && Math.abs(local.z - model.bedCenter.z) <= model.bedHalf.z + margin;
     },
-    bedWorld: () => model.root.localToWorld(model.bedCenter.clone()),
+    bedWorld: () => (model.bedFrame ?? model.root).localToWorld(model.bedCenter.clone()),
+    bedFloorWorldY: () => (model.bedFrame ?? model.root).localToWorld(new THREE.Vector3(model.bedCenter.x, model.bedFloorY ?? .62, 0)).y,
     // A load leaves over the skip's front lip and falls ahead of the machine.
     unload() {
-      return { point: model.root.localToWorld(model.lipLocal.clone()), out: { x: Math.cos(s.yaw), z: -Math.sin(s.yaw) } };
+      return { point: (model.bedFrame ?? model.root).localToWorld(model.lipLocal.clone()), out: { x: Math.cos(s.yaw), z: -Math.sin(s.yaw) } };
     },
     seatWorld() {
       model.root.updateMatrixWorld(true);

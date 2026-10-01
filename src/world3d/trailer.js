@@ -31,12 +31,14 @@ export function createTrailer({ physics, scene, terrain, tier, stats = {}, yaw =
   const body = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased());
   const bounds = model.colliderHalf ?? { x: 2, y: .42, z: .98 };
   const scale = stats.modelScale ?? 1;
-  world.createCollider(RAPIER.ColliderDesc.cuboid(bounds.x, bounds.y, bounds.z).setTranslation(0.2 * scale, 1.25 * scale, 0)
+  const centre = model.colliderCenter ?? { x: .2 * scale, y: 1.25 * scale, z: 0 };
+  world.createCollider(RAPIER.ColliderDesc.cuboid(bounds.x, bounds.y, bounds.z).setTranslation(centre.x, centre.y, centre.z)
     .setCollisionGroups(0x0002fffb), body);
 
   const s = { yaw, x: 0, z: 0, y: null, pitch: 0, roll: 0, prev: null, bed: 0, bedSpeed: 0, gate: 0, spin: 0, axle: null };
   const f = new THREE.Vector3();
   const q = new THREE.Quaternion();
+  const eyeOffset = new THREE.Vector3();
 
   // Put the trailer straight behind a hitch at (x, z) heading `heading`.
   function reset(hx, hz, heading) {
@@ -67,11 +69,16 @@ export function createTrailer({ physics, scene, terrain, tier, stats = {}, yaw =
     s.y = s.y === null ? ground : s.y + (ground - s.y) * k;
     s.roll += (Math.atan2(right - left, 1.6 * scale) - s.roll) * k;
     // The drawbar eye is at the hitch's height: the trailer tilts about its axle to reach it.
-    const pitch = THREE.MathUtils.clamp((hitch.y - ground - (model.hitchHeight ?? model.eyeLocal.y)) / L, -0.5, 0.5);
+    const eyeHeight = (model.hitchHeight ?? model.eyeLocal.y) * Math.cos(s.roll);
+    const pitch = THREE.MathUtils.clamp(Math.asin(THREE.MathUtils.clamp((hitch.y - s.y) / Math.hypot(L, eyeHeight), -1, 1)) - Math.atan2(eyeHeight, L), -0.5, 0.5);
     s.pitch += (pitch - s.pitch) * k;
 
-    model.root.position.set(s.x, s.y, s.z);
     model.root.rotation.set(s.roll, s.yaw, s.pitch, 'YZX');
+    // Account for pitch/roll shortening the horizontal drawbar projection. Its authored
+    // towing eye stays pinned to the tractor rather than hovering several centimetres away.
+    eyeOffset.copy(model.eyeLocal).multiplyScalar(scale).applyQuaternion(model.root.quaternion);
+    s.x = hitch.x - eyeOffset.x; s.z = hitch.z - eyeOffset.z; s.y = hitch.y - eyeOffset.y;
+    model.root.position.set(s.x, s.y, s.z);
     model.root.updateMatrixWorld(true);
     q.copy(model.root.quaternion);
     body.setNextKinematicTranslation({ x: s.x, y: s.y, z: s.z });
@@ -103,13 +110,13 @@ export function createTrailer({ physics, scene, terrain, tier, stats = {}, yaw =
     reset,
     axleLength: L,
     isOverBed(point, margin = 0.6) {
-      const local = model.root.worldToLocal(point.clone());
+      const local = (model.bedFrame ?? model.root).worldToLocal(point.clone());
       return Math.abs(local.x - model.bedCenter.x) <= model.bedHalf.x + margin
         && Math.abs(local.z - model.bedCenter.z) <= model.bedHalf.z + margin;
     },
-    bedWorld: () => model.root.localToWorld(model.bedCenter.clone()),
-    bedFloorWorldY: () => model.root.localToWorld(new THREE.Vector3(0, model.bedFloorY, 0)).y,
-    tailgateWorld: () => model.root.localToWorld(model.tailgateLocal.clone()),
+    bedWorld: () => (model.bedFrame ?? model.root).localToWorld(model.bedCenter.clone()),
+    bedFloorWorldY: () => (model.bedFrame ?? model.root).localToWorld(new THREE.Vector3(model.bedCenter.x, model.bedFloorY, 0)).y,
+    tailgateWorld: () => (model.bedFrame ?? model.root).localToWorld(model.tailgateLocal.clone()),
     position: () => new THREE.Vector3(s.x, s.y, s.z),
     destroy() {
       scene.remove(model.root);
