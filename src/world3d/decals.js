@@ -228,11 +228,14 @@ function wiperDust(g, c, wipers, dirty) {
     g.closePath();
     g.fill();
     g.globalCompositeOperation = 'source-over';
-    g.strokeStyle = `rgba(120, 104, 80, ${dirty ? 0.45 : 0.3})`;
-    g.lineWidth = 5;
-    g.beginPath();
-    g.arc(px, h + 4, reach + 2, Math.PI * 1.08, Math.PI * 1.92);
-    g.stroke();
+    // (a faint, uneven rim: a few thin strokes, not one bright line)
+    for (let k = 0; k < 3; k++) {
+      g.strokeStyle = `rgba(118, 102, 78, ${(dirty ? 0.12 : 0.08) + rnd() * 0.05})`;
+      g.lineWidth = 1.5 + rnd() * 2;
+      g.beginPath();
+      g.arc(px, h + 4, reach + 1 + k * 2.5 + rnd() * 2, Math.PI * (1.08 + rnd() * 0.04), Math.PI * (1.92 - rnd() * 0.04));
+      g.stroke();
+    }
   }
 }
 
