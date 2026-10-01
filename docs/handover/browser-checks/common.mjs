@@ -4,7 +4,7 @@ export async function start({ width = 320, height = 180 } = {}) {
   // CHROMIUM_ARGS adds flags, e.g. '["--in-process-gpu"]' where SwiftShader's GPU process stalls
   // (frames stop arriving after a teleport while the CPU sits idle).
   const extra = process.env.CHROMIUM_ARGS ? JSON.parse(process.env.CHROMIUM_ARGS) : [];
-  const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', ...extra] });
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_EXECUTABLE || undefined, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', ...extra] });
   const page = await browser.newPage({ viewport: { width, height } });
   page.setDefaultTimeout(300000);
   await page.addInitScript(() => { if (!localStorage.getItem('quarry.settings')) localStorage.setItem('quarry.settings', JSON.stringify({ graphics: 'low', fullscreen: false, volume: 0 })); });

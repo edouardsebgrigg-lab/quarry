@@ -199,3 +199,6 @@ Site machines (mini digger, excavator, dumper) can't leave your land; the pickup
 - `docs/CODEX-CHECKPOINT.md`: Codex's progress reports, with what was actually run
 - `docs/HANDOVER.md`: the Step 7 handover and its verification record
 - `docs/handover/browser-checks/`: bounded headless-browser checks (software rendering is slow; see `docs/TASKS.md` for how to run them)
+
+Earthworks preview: the amber ring marks where spare spoil will be heaped. Move machines
+and the wheelbarrow clear; occupied heap cells cannot supply works material.

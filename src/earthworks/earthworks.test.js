@@ -117,7 +117,7 @@ describe('earthworks: what it costs and what it needs', () => {
     expect(JSON.stringify(game.snapshot())).toBe(before);
   });
 
-  it('protects changed batter cells outside the road edge and emits the built footprint', () => {
+  it('protects changed batter cells outside the road edge and emits plain data', () => {
     const { game, g, a } = setup(1000, true);
     // A raised start makes the road's side fill reach beyond its nominal width.
     heap(g, 40, 60, 20);
@@ -130,8 +130,8 @@ describe('earthworks: what it costs and what it needs', () => {
     const events = [];
     game.events.on('worksBuilt', e => events.push(e));
     expect(a.buildWorks(spec).ok).toBe(true);
-    expect(events[0].touchesChangedCell({ x: 40, z: 60 })).toBe(true);
-    expect(events[0].touchesChangedCell({ x: 70, z: 70 })).toBe(false);
+    expect(events[0].touchesChangedCell).toBeUndefined();
+    expect(JSON.parse(JSON.stringify(events[0]))).toEqual(events[0]);
   });
 
   it('rejects nonfinite widths without mutation', () => {
@@ -179,5 +179,63 @@ describe('earthworks: what it costs and what it needs', () => {
     expect(q.ok, q.reason).toBe(true);
     expect(a.buildWorks(pad).ok).toBe(true);
     expect(game.state.money).toBe(spent - q.cost);
+  });
+});
+
+
+describe('T9: safe heap sourcing and spare spoil', () => {
+  const cutPlan = a => {
+    const spec = { mode: 'level', ax: 40, az: 60, bx: 60, bz: 60, width: 8 };
+    return { spec, p: a.planWorks(spec) };
+  };
+  it('previews and builds the same alternative spoil spot when the first is occupied', () => {
+    const { a, g } = setup(1000, true);
+    heap(g, 50, 60, 30);
+    const { spec, p } = cutPlan(a);
+    expect(p.ok, p.reason).toBe(true);
+    expect(p.spoilTonnes).toBeGreaterThan(0);
+    const obstacles = [{ ...p.spoilAt, r: 1.5, label: 'the pickup' }];
+    const alt = a.planWorks({ ...spec, obstacles });
+    expect(alt.ok, alt.reason).toBe(true);
+    expect(alt.spoilAt).not.toEqual(p.spoilAt);
+    const before = total(g);
+    const done = a.buildWorks({ ...spec, obstacles });
+    expect(done.ok, done.reason).toBe(true);
+    expect(done.spoilAt).toEqual(alt.spoilAt);
+    expect(total(g)).toBeCloseTo(before, 4);
+  });
+  it('refuses all blocked spoil spots without changing any saved state', () => {
+    const { game, a, g } = setup(1000, true);
+    heap(g, 50, 60, 30);
+    const { spec, p } = cutPlan(a);
+    const off = 4 + 6 + p.spoilRadius;
+    const obstacles = [[50, 60 + off], [50, 60 - off], [40 - off, 60], [60 + off, 60]]
+      .map(([x, z]) => ({ x, z, r: 1, label: 'the pickup' }));
+    const before = JSON.stringify(game.snapshot());
+    const done = a.buildWorks({ ...spec, obstacles });
+    expect(done.ok).toBe(false);
+    expect(done.reason).toMatch(/No room for the spare spoil: move the pickup/);
+    expect(JSON.stringify(game.snapshot())).toBe(before);
+  });
+  it('leaves occupied heap cells at their original height while sourcing elsewhere', () => {
+    const { a, g } = setup(1000, true);
+    heap(g, 50, 80, 80);
+    heap(g, 55, 82, 40);
+    const obstacles = [{ x: 50, z: 80, r: 1, label: 'the pickup' }];
+    const before = g.heightAt(50, 80);
+    const tonnes = total(g);
+    const done = a.buildWorks(road({ obstacles }));
+    expect(done.ok, done.reason).toBe(true);
+    expect(g.heightAt(50, 80)).toBe(before);
+    expect(total(g)).toBeCloseTo(tonnes, 4);
+  });
+  it('refuses without mutation when the only source heap is wholly occupied', () => {
+    const { game, a, g } = setup(1000, true);
+    heap(g, 50, 80, 80);
+    const before = JSON.stringify(game.snapshot());
+    const done = a.buildWorks(road({ obstacles: [{ x: 50, z: 80, r: 5 }] }));
+    expect(done.ok).toBe(false);
+    expect(done.reason).toMatch(/Not enough gravel/);
+    expect(JSON.stringify(game.snapshot())).toBe(before);
   });
 });

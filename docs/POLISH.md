@@ -1,15 +1,9 @@
-# Polish backlog (Claude's loop)
+# Polish backlog (Codex takeover)
 
-Claude works this list on `claude/coordination`, one item per iteration, alongside Codex's
-gameplay queue in `docs/TASKS.md`. Each iteration: take the first unchecked item, build it,
-verify it (`npm test`, `npm run build`, and for anything visual a bounded in-game screenshot
-that Claude looks at and judges), commit, push, tick it here with the commit, and add anything
-new that was noticed. Keep the game logic separate from the UI and 3D, balance numbers in
-`data/*.json`, and tests next to new rules.
-
-Claude owns these areas while the loop runs (Codex leaves them alone): the laptop and its apps
-(`src/ui/game/laptop/`, the old `shop.js` and `market.js`), the HUD, settings and menus, sound
-(`src/audio/`), models (`blender/`, `assets/models/`) and the renderer and weathering.
+Codex continues this backlog after T9, T5, T6, T7 and D14, on `codex/continue`.
+Verify tests and build before every push; inspect a bounded screenshot for visual changes.
+Record commits and actual verification in `docs/CODEX-CHECKPOINT.md`. All areas below
+are now Codex’s responsibility. Ask Edouard before starting D7.
 
 Design direction: clean and quiet, like the in-vehicle and menu UI of Euro Truck Simulator 2,
 Farming Simulator 25's shop and Forza Horizon's menus. Big clear numbers, few colours, one
@@ -27,8 +21,7 @@ dealer, the bank, the depot's prices, your fleet, your messages).
 - [ ] S2 Sound: listen-free checks only so far. Done: turbo whistle (used excavator, truck),
       load layers in the engine note, gravel crunch under tracks, relief-valve squeal and engine
       bog when a digger's lever is held at the end of its stroke (with a clunk as it bottoms out),
-      stronger wind and no birdsong in rain. Next: gear whine in the truck, the tractor's PTO
-      and a proper tipper-ram sound
+      stronger wind and no birdsong in rain. Next: the tractor's PTO and a proper tipper-ram sound. Edouard rejected gearbox whine; do not add it
 - [ ] M2 Blender: the biggest remaining model issues from the studio shots (the used truck and
       excavator look too clean and toy-like up close: panel gaps, grime in recesses)
 - [ ] V1 Countryside: hedges, field patchwork, farmsteads (with gravel-rutted tracks) and a

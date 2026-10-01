@@ -66,6 +66,10 @@ export function createPlanner({ scene, camera, game, heightAt, notify, obstacles
   cursor.rotation.x = -Math.PI / 2;
   cursor.renderOrder = 10;
   root.add(cursor);
+  const spoilMarker = new THREE.Mesh(new THREE.RingGeometry(0.9, 1, 32), cursor.material.clone());
+  spoilMarker.rotation.x = -Math.PI / 2;
+  spoilMarker.renderOrder = 10;
+  root.add(spoilMarker);
 
   const eye = new THREE.Vector3();
   const dir = new THREE.Vector3();
@@ -128,6 +132,13 @@ export function createPlanner({ scene, camera, game, heightAt, notify, obstacles
   }
 
   function redraw() {
+    const spoil = st.plan?.spoilAt;
+    spoilMarker.visible = !!spoil;
+    if (spoil) {
+      spoilMarker.position.set(spoil.x, heightAt(spoil.x, spoil.z) + 0.08, spoil.z);
+      spoilMarker.scale.setScalar(st.plan.spoilRadius);
+      spoilMarker.material.color.setHex(COLORS.poor);
+    }
     const inp = input();
     const e = end();
     postA.visible = !!st.a;
@@ -309,7 +320,7 @@ export function createPlanner({ scene, camera, game, heightAt, notify, obstacles
           lines.push(['Dig out', t1(p.cutTonnes)]);
           if (p.surfaceTonnes > 0) lines.push(['Gravel surface', t1(p.surfaceTonnes)]);
           if (p.heapTonnes > 0.01) lines.push(['From your heaps', t1(p.heapTonnes)]);
-          if (p.spoilTonnes > 0.05) lines.push(['Spare spoil', `${t1(p.spoilTonnes)}, heaped beside it`]);
+          if (p.spoilTonnes > 0.05) lines.push(['Spare spoil', `${t1(p.spoilTonnes)}, at the amber ring`]);
         }
         level = p.ok ? 'good' : 'bad';
         lines.push([null, p.ok ? (stage === 'confirm' ? 'Ready. Click to build' : 'Click to set the end here') : p.reason]);
@@ -321,6 +332,8 @@ export function createPlanner({ scene, camera, game, heightAt, notify, obstacles
 
     destroy() {
       scene.remove(root);
+      spoilMarker.geometry.dispose();
+      spoilMarker.material.dispose();
       for (const g of [strip.geometry, edges.geometry, postGeo, postTop, cursor.geometry]) g.dispose();
       for (const m of [fillMat, seeThroughMat, edgeMat, postMat, cursor.material]) m.dispose();
     },

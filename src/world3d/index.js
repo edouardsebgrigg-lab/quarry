@@ -566,9 +566,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   // ---- game events -> effects ----
   const offs = [
-    game.events.on('worksBuilt', e => {
+    game.events.on('worksBuilt', () => {
       const feet = player.feet();
-      if (mode.kind === 'foot' && e.touchesChangedCell(feet)) {
+      // Grading, heap sourcing and spare spoil can all change the ground underfoot.
+      if (mode.kind === 'foot') {
         player.teleport(feet.x, heightAt(feet.x, feet.z) + 0.1, feet.z);
       }
     }),

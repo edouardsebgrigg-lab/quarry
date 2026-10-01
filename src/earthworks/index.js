@@ -32,6 +32,7 @@ export function worksSpec(data, input) {
     surfaceThickness: cfg.surfaceThickness,
     maxGrade: cfg.maxGrade,
     sourceRadius: data.works.sourceRadius,
+    obstacles: (input.obstacles ?? []).map(o => ({ ...o, r: (o.r ?? 0) + data.works.clearance })),
   };
 }
 
@@ -88,6 +89,8 @@ function worksReason(p, cfg, data) {
     }
     case 'fill':
       return `Not enough loose material to fill it: tip more spoil within ${data.works.sourceRadius} m of it`;
+    case 'spoil':
+      return `No room for the spare spoil: ${p.blocker ? `move ${p.blocker}` : 'choose a spot further inside your land'}`;
     default:
       return p.reason ?? 'It can\'t be built there';
   }
@@ -104,7 +107,7 @@ export function buildEarthworks(ctx, input) {
   stats[input.mode] = (stats[input.mode] ?? 0) + 1;
   ctx.events.emit('worksBuilt', {
     mode: input.mode, length: done.length, width: done.width, cost: plan.cost, spoilTonnes: done.spoilTonnes ?? 0,
-    touchesChangedCell: done.touchesChangedCell,
+    spoilAt: done.spoilAt ?? null, spoilRadius: done.spoilRadius ?? 0,
     at: { x: (input.ax + input.bx) / 2, z: (input.az + input.bz) / 2 },
   });
   return { ...plan, ...done, ok: true, cost: plan.cost };

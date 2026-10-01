@@ -288,7 +288,15 @@ export function createGround(groundData, plotId, opts = {}) {
   }
 
   function works(spec, commit) {
-    const { ax, az, bx, bz, width, mode, sourceRadius = 30, surface = null, surfaceThickness = 0.12, maxGrade = 0.1 } = spec;
+    const { ax, az, bx, bz, width, mode, sourceRadius = 30, surface = null, surfaceThickness = 0.12, maxGrade = 0.1, obstacles = [] } = spec;
+    // A cell is occupied even when just its corner lies under the obstacle circle.
+    const occupied = (k) => obstacles.some(o => {
+      const cx = x0 + (k % nx) * cell;
+      const cz = z0 + Math.floor(k / nx) * cell;
+      const dx = Math.max(cx - o.x, 0, o.x - cx - cell);
+      const dz = Math.max(cz - o.z, 0, o.z - cz - cell);
+      return dx * dx + dz * dz <= o.r * o.r;
+    });
     const fail = (reason) => ({ ok: false, reason });
     const L = Math.hypot(bx - ax, bz - az);
     if (L < 0.5) return fail('Too short');
@@ -380,6 +388,7 @@ export function createGround(groundData, plotId, opts = {}) {
     // (heaps inside the works are already part of the cut, so they can't be used twice)
     const inWorks = new Set(cells.map((c) => c.k));
     const src = gatherLoose(centre, radius, { gravel: sm >= 0 ? { m: sm, vol: gravelFromHeaps } : null, bank: fillFromHeaps, exclude: inWorks, eligible(k) {
+      if (occupied(k)) return false;
       const x = x0 + (k % nx + 0.5) * cell;
       const z = z0 + (Math.floor(k / nx) + 0.5) * cell;
       const along = Math.max(0, Math.min(L, (x - ax) * ux + (z - az) * uz));
@@ -422,6 +431,27 @@ export function createGround(groundData, plotId, opts = {}) {
     };
     if (src.gravelFound < gravelFromHeaps - 1e-6) return { ...plan, ok: false, reason: 'gravel' };
     if (src.bankFound < fillFromHeaps - 1e-6) return { ...plan, ok: false, reason: 'fill' };
+    // Choose once during planning, before any mutation. Preview and build use the same
+    // ordered candidates and the whole deposit footprint must fit on the land.
+    if (plan.spoilTonnes > 1e-6) {
+      plan.spoilRadius = 1.5 + 0.1 * Math.sqrt(plan.spoilTonnes);
+      const off = half + reach + plan.spoilRadius;
+      const spots = [
+        { x: centre.x - uz * off, z: centre.z + ux * off },
+        { x: centre.x + uz * off, z: centre.z - ux * off },
+        { x: ax - ux * off, z: az - uz * off },
+        { x: bx + ux * off, z: bz + uz * off },
+      ];
+      let blocker;
+      plan.spoilAt = spots.find(p => {
+        const r = plan.spoilRadius + cell;
+        if (p.x - r <= x0 || p.x + r >= x0 + nx * cell || p.z - r <= z0 || p.z + r >= z0 + nz * cell) return false;
+        const o = obstacles.find(o => Math.hypot(o.x - p.x, o.z - p.z) <= o.r + r);
+        if (o) { blocker ??= o.label ?? 'the obstacle'; return false; }
+        return !touchesChangedCell({ ...p, r });
+      });
+      if (!plan.spoilAt) return { ...plan, ok: false, reason: 'spoil', blocker };
+    }
     if (!commit) return plan;
 
     // ---- do it
@@ -469,20 +499,8 @@ export function createGround(groundData, plotId, opts = {}) {
       spoilTotal += spoil[m];
     }
     if (spoilTotal > 1e-6) {
-      // Beside the strip, just clear of its cut and fill (so it never blocks the road or its
-      // sides): on whichever side has room inside your land, else beyond either end.
-      const off = half + reach + 1.5;
-      const room = (p) => p.x - x0 > 5 && x0 + nx * cell - p.x > 5 && p.z - z0 > 5 && z0 + nz * cell - p.z > 5;
-      const spots = [
-        { x: centre.x - uz * off, z: centre.z + ux * off },
-        { x: centre.x + uz * off, z: centre.z - ux * off },
-        { x: ax - ux * off, z: az - uz * off },
-        { x: bx + ux * off, z: bz + uz * off },
-      ];
-      const spot = spots.find(room) ?? spots[0];
-      plan.spoilAt = spot;
       plan.spoilTonnes = spoilTotal;
-      api.deposit({ x: spot.x, z: spot.z, tonnes: toRecord(spoil), radius: 1.5 + 0.1 * Math.sqrt(spoilTotal) });
+      api.deposit({ ...plan.spoilAt, tonnes: toRecord(spoil), radius: plan.spoilRadius });
     }
     return plan;
   }

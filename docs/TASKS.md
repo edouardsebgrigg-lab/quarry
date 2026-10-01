@@ -1,12 +1,12 @@
 # Quarry task queue
 
-Claude plans and reviews; Codex implements. **Claude is the only one who edits this file**, on
-the branch `claude/coordination`. Codex reports progress in `docs/CODEX-CHECKPOINT.md` on its own
-branch.
+Codex owns development and these planning files following Claude’s handoff. Work on
+`codex/continue`, based on the newest `origin/claude/coordination`, and record completed tasks
+in `docs/CODEX-CHECKPOINT.md`. The current handoff and Edouard’s instructions supersede historical review notes below.
 
 - **Queue updated:** 1 October 2026 (overnight pass)
 - **Last Codex commit reviewed:** `7ddb43d` (T11) on `codex/step-7-safety-and-yard-buildings`
-- **Codex works on:** `codex/step-7-safety-and-yard-buildings`. After T11 that one branch holds everything; keep using it
+- **Codex works on:** `codex/continue`
 - **`main`:** still the initial commit on GitHub (the planned fast-forward was blocked and Edouard deferred it). `claude/coordination` is the newest branch and holds everything; only Edouard merges into `main`
 - **Handoff:** Claude has handed development to Codex; start with `docs/HANDOFF-TO-CODEX.md`
 
@@ -27,8 +27,8 @@ branch.
 6. After each task, update `docs/CODEX-CHECKPOINT.md`: a "Ready for review" list naming each task
    ID, its commit SHA, what changed, what was **actually run** (tests, build, browser) and what
    was not verified. Honest "not verified" beats a vague "passed".
-7. Stop when the queue is done, or after three tasks (a sync task like T1 doesn't count),
-   whichever comes first, and leave the branch pushed and the checkpoint current so Claude can review.
+7. Continue through T9, T5, T6, T7, then D14 and the polish backlog as Edouard requested.
+   Ask Edouard before starting D7. Leave each completed task committed and checkpointed.
 
 Project rules that still hold (see `README.md`, `docs/modules.md`, `docs/implementation-plan.md`):
 game logic stays separate from the 3D and UI code (logic emits events; the UI and world react);
@@ -47,14 +47,13 @@ Scripts are in `docs/handover/browser-checks/` (`common.mjs` has the shared setu
 command line that contains the pattern kills your own shell. Say in reports that the pointer
 lock is stubbed and aim is set by code.
 
-## Areas Claude is working on (don't edit these)
+## Systems inherited from Claude
 
-Claude is running a polish loop (`docs/POLISH.md`) and owns, until it says otherwise: the laptop
+Codex now owns the polish loop (`docs/POLISH.md`) and these areas: the laptop
 and its apps (`src/ui/game/shop.js`, `market.js` and the new `src/ui/game/laptop/`), the HUD,
 settings and menus, `src/audio/`, `blender/`, `assets/models/`, and the renderer and weathering
-files. For your tasks: add buildings through `data/buildings.json` and `src/buildings/` (the
-laptop lists them from the data), keep new UI you need in a new file, and say in your checkpoint
-what Claude should wire into the laptop.
+files. For yard tasks: add buildings through `data/buildings.json` and `src/buildings/` (the
+laptop lists them from the data), wire new facilities into the laptop and world, and report the changes in the checkpoint.
 
 New game systems Claude added in the loop (they arrive with your next merge; build on them,
 don't duplicate them): the laptop (B and M now open its dealer and prices apps; the old
