@@ -41,6 +41,17 @@
       "weight": 1
     }
   },
+  "standing": {
+    "fromReputation": 4,
+    "chancePerDay": 0.3,
+    "offerDays": 2,
+    "weeks": [3, 5],
+    "weekDays": 7,
+    "tonnesPerWeek": [3, 7],
+    "bonusRate": 0.22,
+    "reputationPerWeek": 0.3,
+    "reputationPerMiss": 1
+  },
   "tonnesPerEarned": 0.004,
   "maxTonnes": 60,
   "days": [

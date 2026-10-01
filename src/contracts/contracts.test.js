@@ -82,3 +82,80 @@ describe('reputation', () => {
     expect(reputation(game.ctx).level).toBe(2);
   });
 });
+
+describe('regular customers (standing orders)', () => {
+  const quiet = async () => {
+    const { loadData } = await import('../core/data.js');
+    const data = loadData();
+    data.milestones.list = []; // (no milestone rewards landing mid-test)
+    return data;
+  };
+  const waitForOffer = (game) => {
+    const s = contractsState(game.ctx).standing;
+    for (let i = 0; i < 40 && !s.offer; i++) game.dev.skipDays(1);
+    return s.offer;
+  };
+
+  it('only come once you have a name', async () => {
+    const game = createGame({ seed: 12, data: await quiet() });
+    game.dev.skipDays(25);
+    expect(contractsState(game.ctx).standing.offer).toBe(null);
+  });
+
+  it('pay each week the quota is met, once, and count loads toward it', async () => {
+    const game = createGame({ seed: 12, data: await quiet() });
+    const c = contractsState(game.ctx);
+    c.reputation = 5;
+    const offer = waitForOffer(game);
+    expect(offer).toMatchObject({ client: expect.any(String), weeks: expect.any(Number) });
+    expect(offer.tonnesPerWeek).toBeGreaterThan(0);
+    c.active = []; // (no board jobs competing for the loads)
+    expect(game.actions.acceptStandingOrder().ok).toBe(true);
+    const a = c.standing.active;
+    const money = game.state.money;
+    sale(game, a.material, a.tonnesPerWeek / 2);
+    expect(a.paidThisWeek).toBe(false);
+    sale(game, a.material, a.tonnesPerWeek / 2 + 0.05);
+    expect(a.paidThisWeek).toBe(true);
+    expect(a.weeksDone).toBe(1);
+    expect(game.state.money).toBeCloseTo(money + a.weeklyBonus, 2);
+    sale(game, a.material, a.tonnesPerWeek); // (more this week doesn't pay twice)
+    expect(game.state.money).toBeCloseTo(money + a.weeklyBonus, 2);
+  });
+
+  it('cost reputation for a week missed, and end after their weeks', async () => {
+    const game = createGame({ seed: 12, data: await quiet() });
+    const c = contractsState(game.ctx);
+    c.reputation = 5;
+    waitForOffer(game);
+    game.actions.acceptStandingOrder();
+    const weeks = c.standing.active.weeks;
+    const missed = [];
+    const ended = [];
+    game.events.on('standingWeekMissed', (e) => missed.push(e));
+    game.events.on('standingEnded', (e) => ended.push(e));
+    const rep = c.reputation;
+    game.dev.skipDays(game.data.contracts.standing.weekDays);
+    expect(missed).toHaveLength(1);
+    expect(c.reputation).toBeLessThan(rep);
+    game.dev.skipDays(game.data.contracts.standing.weekDays * (weeks - 1));
+    expect(ended).toHaveLength(1);
+    expect(c.standing.active).toBe(null);
+  });
+
+  it('share loads with board jobs: whichever is due first gets the load', async () => {
+    const game = createGame({ seed: 12, data: await quiet() });
+    const c = contractsState(game.ctx);
+    c.reputation = 5;
+    waitForOffer(game);
+    game.actions.acceptStandingOrder();
+    const a = c.standing.active;
+    c.active = [{ id: 999, client: 'Test', material: a.material, tonnes: 50, days: 1, bonus: 1, delivered: 0, deadline: a.weekEnd - 1 }];
+    sale(game, a.material, 1);
+    expect(c.active[0].delivered).toBe(1);
+    expect(a.delivered).toBe(0);
+    c.active[0].deadline = a.weekEnd + 3;
+    sale(game, a.material, 1);
+    expect(a.delivered).toBe(1);
+  });
+});

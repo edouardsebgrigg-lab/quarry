@@ -966,3 +966,10 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .lt-row.lt-up.good { border-left-color: var(--accent); }
 .lt-row.lt-up.ok { border-left-color: var(--good); }
 .lt-up-go { transform: rotate(180deg); color: var(--muted); }
+
+/* Jobs board: the regular customer */
+.lt-regular .lt-job { margin-top: 0.6rem; max-width: 34rem; }
+.lt-job.regular { border-color: rgba(127, 198, 255, 0.35); background: rgba(127, 198, 255, 0.05); }
+.lt-job.regular .lt-job-bar i { background: #7fc6ff; }
+.lt-regular-actions { display: flex; gap: 0.6rem; }
+.lt-regular-actions .lt-buy { flex: 1; }

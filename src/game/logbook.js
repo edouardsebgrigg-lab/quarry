@@ -182,6 +182,27 @@ export function logbookOnEvent(ctx, type, e) {
       trim(lb);
       break;
     }
+    case 'standingOffer':
+    case 'standingWeekDone':
+    case 'standingWeekMissed':
+    case 'standingEnded': {
+      const lb = logbook(ctx);
+      const { day, hour, minute } = getDate(ctx.state, ctx.data);
+      const what = ctx.data.materials[e.material]?.name.toLowerCase() ?? e.material;
+      const text = {
+        standingOffer: () => `We'd like a regular supply: ${e.tonnesPerWeek} t of clean ${what} every week for ${e.weeks} weeks, with $${e.weeklyBonus} on top each week you deliver. Interested? (laptop: Jobs board)`,
+        standingWeekDone: () => `This week's ${what} is all in, thanks. $${e.bonus} on its way (week ${e.week} of ${e.weeks}).`,
+        standingWeekMissed: () => `We were short of ${what} this week (${e.delivered} of ${e.tonnes} t). Please don't let it happen again.`,
+        standingEnded: () => `That's the end of our order: ${e.weeksDone} of ${e.weeks} weeks delivered in full. Thanks for the business.`,
+      }[type]();
+      lb.messages.push({ day, hour, minute, from: e.client, text, kind: type === 'standingWeekMissed' ? 'bad' : type === 'standingOffer' ? 'tip' : 'good' });
+      trim(lb);
+      if (type === 'standingWeekDone') {
+        const d = today(ctx);
+        d.jobsDone = (d.jobsDone ?? 0) + 1;
+      }
+      break;
+    }
     case 'contractCompleted':
     case 'contractFailed': {
       const lb = logbook(ctx);
