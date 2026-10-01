@@ -490,10 +490,20 @@ night phase; no page errors. Inspected six 960×540 screenshots in
 Four unit tests cover separate timing, unchanged economic calendar, save/legacy defaults,
 invalid/paused durations and smooth/wrapped solar boundaries. Initial test expectations
 were corrected for midnight wrapping and a smooth near-horizon difference. Browser
-fixture initially treated the void shovel control as a result, then aimed out of reach;
-corrected the aim and let the animation finish. A synthetic mouse click was intercepted
+fixture initially treated the void shovel control as a result; adjusted the aim into
+tool reach and let the animation finish. A synthetic mouse click was intercepted
 by the small-viewport HUD; the final shovel check invokes the existing debug control.
 Code teleports/aims, phase/weather fixtures, held keys, pointer-lock stub and forced time
 gate are used; P still pauses. Full natural 20-minute cycle, native focus/pointer capture,
 manual night driving/cab digging, subjective audio and high/ultra graphics not verified.
 Publication remains blocked by repository account write access.
+
+### Final publication attempt — 1 October 2026
+
+Attempted `git push -u origin codex/continue` at checkpoint commit `476b785`, after fresh
+`npm test` (275 passing in 42 files) and `npm run build` (passed). GitHub rejected it with
+HTTP 403: permission denied to CLI account `edouardgrigg-sketch` for
+`edouardsebgrigg-lab/quarry`. No force push, main/Claude write or pull request. All takeover
+commits remain local. Authenticate Git with a repository writer before retrying, and run
+both required checks again before that push. An incremental Git bundle of this branch and
+a copy of this checkpoint are saved as task outputs for recovery/review.
