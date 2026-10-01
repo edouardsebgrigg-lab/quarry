@@ -6,6 +6,10 @@ import { createHeap } from './piles.js';
 import { weatherModel } from './weathering.js';
 import { addDecals } from './decals.js';
 
+// (a build for hosts that won't serve .glb files sets VITE_MODEL_EXT=gltf.json and ships each
+// model as the same glTF in JSON form, its data embedded)
+const MODEL_EXT = import.meta.env?.VITE_MODEL_EXT || 'glb';
+
 const OPEN_SURFACE = /(^|_)Rims$/; // materials on open (one-sided) surfaces
 
 // The sheds' wall cladding is painted steel, but is exported 40% metallic and so mirrors the
@@ -69,7 +73,7 @@ export async function preloadModels({ onProgress } = {}) {
   const report = () => onProgress?.([...part.values()].reduce((a, b) => a + b, 0) / Math.max(1, todo.length));
   await Promise.all(todo.map(async (name) => {
     try {
-      const gltf = await loader.loadAsync(`models/${name}.glb`, (e) => {
+      const gltf = await loader.loadAsync(`models/${name}.${MODEL_EXT}`, (e) => {
         if (e.total > 0) {
           part.set(name, Math.min(0.99, e.loaded / e.total));
           report();
