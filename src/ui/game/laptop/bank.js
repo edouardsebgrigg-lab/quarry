@@ -2,6 +2,7 @@
 import { el, clear, setText } from '../../dom.js';
 import { money, signedMoney } from '../../format.js';
 import { bankState, owed } from '../../../economy/index.js';
+import { profitChart } from './profitChart.js';
 
 const REASONS = {
   sale: 'Load sold at the depot',
@@ -48,6 +49,7 @@ export function bankApp({ game, feedback, setHead }) {
   const takeBtn = el('button', { class: 'btn btn-primary lt-buy', onClick: take }, 'Take loan');
   const statement = el('tbody');
   let statementKey = '';
+  const chart = profitChart(game);
 
   function take() {
     const r = game.actions.takeLoan(amount, days);
@@ -64,6 +66,7 @@ export function bankApp({ game, feedback, setHead }) {
 
   function refresh(force = false) {
     const b = bankState(game.ctx);
+    chart.refresh();
     setText(balanceV, money(game.state.money));
     setText(balanceN, game.state.money < 0 ? `Overdrawn: ${pctDay(data.economy.debtInterestPerDay)} interest` : 'Available now');
     balanceV.classList.toggle('neg', game.state.money < 0);
@@ -123,6 +126,7 @@ export function bankApp({ game, feedback, setHead }) {
       el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Owed on loans'), owedV, owedN),
       el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'You can borrow'), limitV,
         el('div', { class: 'lt-stat-note' }, 'Grows with what you earn and what your machines are worth'))),
+    el('div', { class: 'lt-card' }, chart.node),
     el('div', { class: 'lt-bank-cols' },
       el('div', { class: 'lt-card' }, el('div', { class: 'lt-card-label' }, 'Borrow'),
         el('div', { class: 'lt-field' }, el('span', {}, 'Amount'), amountSeg),

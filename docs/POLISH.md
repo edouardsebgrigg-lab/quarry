@@ -86,6 +86,8 @@ dealer, the bank, the depot's prices, your fleet, your messages).
       (painted steel now), bales were flat yellow (straw texture; black-wrapped silage at some
       farms); farms.mjs check
 - [x] Cab views (cabs.mjs): windscreen dust with wiper arcs, black plastic darkened to charcoal
+- [x] U11 Bank: the last fortnight's profit as a chart (bars up for profit, down for loss,
+      today paler, the fortnight's total, a hover card per day); bankchart.mjs check
 - [x] D8 Regular customers: standing orders from reputation 4 (weekly quota, paid each week
       it's met, reputation lost for a short week), on the Jobs board and the home Coming up
       card; tested; checked in regular.mjs shots

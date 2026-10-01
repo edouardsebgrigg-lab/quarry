@@ -6,6 +6,8 @@ const TAG = process.env.TAG ?? 'laptop';
 const { browser, page, errors, q, frames, newGame } = await start({ width: 1280, height: 800 });
 const shot = async (name) => { await frames(3); await page.screenshot({ path: `${process.env.OUT}/${TAG}-${name}.png`, timeout: 300000 }); console.log('shot', name); };
 await newGame();
+// (the blur behind the laptop is very slow in software rendering, and isn't what's checked here)
+await page.addStyleTag({ content: '.overlay:has(.overlay-laptop) { backdrop-filter: none !important; }' });
 await q(() => { const g = window.__quarry.game; g.state.money = 2600; g.actions.buyMachine('miniDigger', 'rusty'); });
 await frames(4);
 await page.keyboard.press('KeyB');

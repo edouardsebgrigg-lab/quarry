@@ -973,3 +973,26 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .lt-job.regular .lt-job-bar i { background: #7fc6ff; }
 .lt-regular-actions { display: flex; gap: 0.6rem; }
 .lt-regular-actions .lt-buy { flex: 1; }
+
+/* Bank: the last fortnight's profit */
+.pc { position: relative; }
+.pc-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.4rem; }
+.pc-head span { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.pc-head b { font-family: var(--display); font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.pc-head b.pos, .pc-tip b.pos { color: var(--good); }
+.pc-head b.neg, .pc-tip b.neg { color: var(--bad); }
+.pc-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.pc-zero { stroke: rgba(255, 255, 255, 0.18); stroke-width: 1; }
+.pc-bar.pos { fill: var(--good); }
+.pc-bar.neg { fill: var(--bad); }
+.pc-day.today .pc-bar { opacity: 0.45; }
+.pc-day.hover .pc-bar { filter: brightness(1.2); }
+.pc-val { fill: var(--text); font-size: 12px; font-weight: 700; text-anchor: middle; font-variant-numeric: tabular-nums; }
+.pc-day-label { fill: var(--muted); font-size: 11px; text-anchor: middle; }
+.pc-hit { fill: transparent; cursor: default; }
+.pc-tip { position: absolute; top: 1.6rem; transform: translateX(-50%); min-width: 10rem; padding: 0.55rem 0.75rem; border-radius: 8px; pointer-events: none;
+  background: rgba(24, 27, 32, 0.97); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  font-size: 0.78rem; display: none; flex-direction: column; gap: 0.15rem; z-index: 2; }
+.pc-tip.on { display: flex; }
+.pc-tip div { display: flex; justify-content: space-between; gap: 1rem; color: var(--muted); }
+.pc-tip div b { color: var(--text); font-variant-numeric: tabular-nums; }
