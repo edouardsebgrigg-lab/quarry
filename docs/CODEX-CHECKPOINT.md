@@ -331,3 +331,11 @@ production build passed.
   are **not verified**. No balance changes based on incomplete timing.
 - Queue acceptance uses T5’s bounded-check fallback; a real-mouse timing session remains
   an explicitly documented follow-up. Publication still blocked by GitHub account access.
+
+### T5 prompt correction
+
+Correction commit: `116c347`.
+The empty-barrow hint was unreachable because the tailgate query was skipped for an
+empty load. Querying it for both empty and loaded barrows makes the backing hint visible.
+This correction was included in the T6 full test run (257 passing) and successful build;
+a new manual barrow-control check was not run.
