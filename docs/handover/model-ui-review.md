@@ -1,0 +1,30 @@
+# Independent model and UI review — 2 October 2026
+
+No remaining blocker was found in the changed model/runtime code or the final UI evidence. This review covered the working-tree source changes, the GLB optimizer and runtime integration, fleet camera/working-part screenshots, responsive shop and staff layouts, and a fresh entry/rental browser run. The implementation authors supplied the complete fleet and broad UI audits; their reports and final images were inspected independently.
+
+## Findings resolved
+
+- **Narrow dealer purchase flow:** at 390×650, the initial detail page put the facts before the model name and purchase controls. The title began at 603.6 px and the purchase panel at 738 px, beyond the content area's 605.6 px bottom. The final layout presents title, model and purchase first. An independent native capture confirmed the revised order, and the final targeted audit checked and purchased at 390×650 and 640×480.
+- **Enlarged text on short screens:** at 960×540 with 130% UI scale, the first responsive revision left the Buy button's bottom 21 px beneath the content boundary. Reduced category, detail and purchase spacing resolved this. The final price panel ends at 418.08 px inside a 418.83 px content boundary; Buy ends at 396.13 px. The complete price and button are visible in the final image, and the real purchase passes.
+- **Map feedback overlap:** pending delivery notices previously covered places and machine controls after closing the laptop. The Map now hides world notifications while open and restores them on close. The final native check covers both states and real machine selection at narrow sizes.
+- **Rental browser check:** the redesigned dealer moved the duration and deposit text into rental rows, leaving each button labelled “Hire.” The entry/rental check now scopes its selectors to the one-day and three-day rows. It uses a 960×540 viewport for commerce instead of shrinking the laptop to the artificial 320×180 rendering viewport, where its footer obscured the applicant control.
+- **Fleet cutting alignment:** the complete native fleet audit found six excavator variants whose computed teeth omitted the authored boom's lateral offset. The runtime correction includes that offset in cutting and aiming. The final combined fleet report passes all 35 models, and the independently executed operation tests pass.
+
+## Asset and runtime verification
+
+An independent decoder examined all 42 GLBs: buffer/view/accessor bounds and alignment, finite attribute values, consistent vertex counts, valid triangle indices, and required quantization declarations passed. Signed-short normal length error is at most 0.00002432. All 25 prop exports retain the original expanded triangle positions exactly. Twenty-four retain their raw position and index streams; the wheelbarrow export splits 15 seam vertices without changing triangle positions or counts. The manifest contains exactly 42 unique names and matches every exported file. The GLBs total 34,627,076 bytes, below the existing 40 MB asset budget.
+
+The reviewed runtime uses the authored bed hinges for cargo, floor and unload positions; scaled trailer collision bounds and the rotated towing eye agree with the model transforms. Mobility wheel offsets match the physics interface. Variant recolouring preserves surface texture detail and material shader callbacks. Moving feedback nodes into the laptop retains the existing event references, and reverse restoration plus disposal introduces no additional listener registration.
+
+Final fleet contact sheets were inspected for cab visibility, working-part placement and complete camera framing. The new quad, buggy, van and 4×4 have clear operator views; the protected excavator cab bars remain visible as authored. Final evidence is the [combined fleet report](screenshots/fleet-fit-final/fleet-fit-all.json) and its [mobility](screenshots/fleet-fit-final/mobility-contact.png), [mini digger](screenshots/fleet-fit-final/miniDigger-contact.png), [excavator](screenshots/fleet-fit-final/excavator-contact.png), [tractor](screenshots/fleet-fit-final/tractor-contact.png), [trailer](screenshots/fleet-fit-final/trailer-contact.png), [dumper](screenshots/fleet-fit-final/dumper-contact.png) and [truck](screenshots/fleet-fit-final/truck-contact.png) contact sheets. Superseded individual captures are not final evidence.
+
+## Checks and evidence
+
+- Independently executed: **25 targeted tests passed** across fleet rig contracts, asset budget, fleet profiles, excavator operation and trailer pursuit.
+- Refreshed [entry/rental native report](screenshots/entry-rentals/entry-rentals.json): **20/20 checks passed; no browser errors**. Normal $200 buys the $180 Micro 08; two genuine 0.1 t topsoil sales open the $18 apprentice, hired through Staff. Rental-only fixture cash is recorded separately. Actual rental buttons, loaded-return refusal, unloading, refund, and saved/restored rental, cargo, employee, cash and calendar state pass. Saved and restored time is tick 4269, 12,000 ticks per business day, and 361.25 independent visual seconds.
+- [Complete UI evidence](screenshots/ui-layout-complete/layout.json): **74 broad screens, 12 real UI actions, and 17 final targeted checks passed; no browser errors**. Final dealer and Map images were inspected independently, including 390 and 640 px widths and 130% UI scale.
+- `git diff --check` passed during this review. The parent integration pass owns the final complete test suite and production build.
+
+## Limits
+
+Visual review covers the recorded native Chromium/Metal poses and viewport sizes. It does not establish performance on other GPUs, every possible camera or extreme slope/jackknife pose, or a published hosted build. The complete 35-model runtime audit was performed by the fleet author and independently reviewed here; this reviewer did not repeat every drive. The packed Blender catalogue's reopen/render verification is recorded separately in [Blender verification](screenshots/fleet-fit-final/blender-verification.json). No publication or checkpoint changes were made by this reviewer.

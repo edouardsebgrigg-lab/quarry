@@ -1,0 +1,202 @@
+{
+  "url": "http://127.0.0.1:5175",
+  "checks": [
+    {
+      "label": "dealer-detail-390: bounds and overflow",
+      "passed": true
+    },
+    {
+      "label": "390: name and Buy visible without scrolling",
+      "passed": true
+    },
+    {
+      "label": "390: actual Buy works",
+      "passed": true
+    },
+    {
+      "label": "dealer-detail-640: bounds and overflow",
+      "passed": true
+    },
+    {
+      "label": "640: name and Buy visible without scrolling",
+      "passed": true
+    },
+    {
+      "label": "640: actual Buy works",
+      "passed": true
+    },
+    {
+      "label": "dealer-detail-960: bounds and overflow",
+      "passed": true
+    },
+    {
+      "label": "960: name and Buy visible without scrolling",
+      "passed": true
+    },
+    {
+      "label": "960: actual Buy works",
+      "passed": true
+    },
+    {
+      "label": "Closing laptop restores feedback nodes",
+      "passed": true
+    },
+    {
+      "label": "map-640: bounds and overflow",
+      "passed": true
+    },
+    {
+      "label": "Map keeps pending delivery notifications out of its controls",
+      "passed": true
+    },
+    {
+      "label": "map-390: bounds and overflow",
+      "passed": true
+    },
+    {
+      "label": "Map keeps pending delivery notifications out of its controls",
+      "passed": true
+    },
+    {
+      "label": "Small map machine selection works",
+      "passed": true
+    },
+    {
+      "label": "World feedback resumes after map closes",
+      "passed": true
+    },
+    {
+      "label": "No browser errors",
+      "passed": true
+    }
+  ],
+  "screens": [
+    {
+      "name": "prominence-390",
+      "sample": {
+        "price": [
+          424.578125,
+          507.59375
+        ],
+        "buy": [
+          445.1875,
+          486.96875
+        ],
+        "title": [
+          205.171875,
+          243.171875
+        ],
+        "body": [
+          94.4375,
+          577.328125
+        ],
+        "enabled": true
+      }
+    },
+    {
+      "name": "dealer-detail-390",
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 650,
+      "viewport": [
+        390,
+        650
+      ],
+      "overflow": []
+    },
+    {
+      "name": "prominence-640",
+      "sample": {
+        "price": [
+          252.109375,
+          323.9375
+        ],
+        "buy": [
+          268.71875,
+          307.3125
+        ],
+        "title": [
+          203.71875,
+          241.71875
+        ],
+        "body": [
+          104.171875,
+          363.03125
+        ],
+        "enabled": true
+      }
+    },
+    {
+      "name": "dealer-detail-640",
+      "x": 12.796875,
+      "y": 14.40625,
+      "width": 614.390625,
+      "height": 451.1875,
+      "viewport": [
+        640,
+        480
+      ],
+      "overflow": []
+    },
+    {
+      "name": "prominence-960",
+      "sample": {
+        "price": [
+          325.3125,
+          418.078125
+        ],
+        "buy": [
+          347.25,
+          396.125
+        ],
+        "title": [
+          261.796875,
+          311.796875
+        ],
+        "body": [
+          132.59375,
+          418.828125
+        ],
+        "enabled": true
+      }
+    },
+    {
+      "name": "dealer-detail-960",
+      "x": 19.203125,
+      "y": 16.203125,
+      "width": 921.59375,
+      "height": 507.59375,
+      "viewport": [
+        960,
+        540
+      ],
+      "overflow": []
+    },
+    {
+      "name": "map-640",
+      "x": 16,
+      "y": 14.40625,
+      "width": 608,
+      "height": 451.1875,
+      "viewport": [
+        640,
+        480
+      ],
+      "overflow": []
+    },
+    {
+      "name": "map-390",
+      "x": 8,
+      "y": 19.5,
+      "width": 374,
+      "height": 611,
+      "viewport": [
+        390,
+        650
+      ],
+      "overflow": []
+    }
+  ],
+  "errors": []
+}

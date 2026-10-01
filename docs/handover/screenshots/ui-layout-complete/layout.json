@@ -1,0 +1,1166 @@
+{
+  "result": "passed",
+  "scope": "Responsive office, shops, menus and settings layout; actual interaction checks.",
+  "broadAudit": {
+    "source": "../ui-layout-final-r2/layout.json",
+    "screens": 74,
+    "actions": 12,
+    "errors": [],
+    "viewportCoverage": [
+      "1280x720",
+      "960x540",
+      "640x480",
+      "390x650",
+      "960x540 at 130% UI text"
+    ],
+    "screensSampled": [
+      {
+        "name": "main-menu-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 960,
+          "height": 540
+        },
+        "overflow": []
+      },
+      {
+        "name": "main-menu-1280",
+        "width": 1280,
+        "height": 720,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 1280,
+          "height": 720
+        },
+        "overflow": []
+      },
+      {
+        "name": "main-menu-390",
+        "width": 390,
+        "height": 650,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 650
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-controls-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 32,
+          "y": 21.59375,
+          "width": 896,
+          "height": 496.796875
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-display-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 32,
+          "y": 21.59375,
+          "width": 896,
+          "height": 496.796875
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-scale130-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 28.796875,
+          "y": 21.59375,
+          "width": 902.390625,
+          "height": 496.796875
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-controls-1280",
+        "width": 1280,
+        "height": 720,
+        "rect": {
+          "x": 192,
+          "y": 28.796875,
+          "width": 896,
+          "height": 662.390625
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-display-1280",
+        "width": 1280,
+        "height": 720,
+        "rect": {
+          "x": 192,
+          "y": 28.796875,
+          "width": 896,
+          "height": 662.390625
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-sound-1280",
+        "width": 1280,
+        "height": 720,
+        "rect": {
+          "x": 192,
+          "y": 28.796875,
+          "width": 896,
+          "height": 662.390625
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-game-1280",
+        "width": 1280,
+        "height": 720,
+        "rect": {
+          "x": 192,
+          "y": 28.796875,
+          "width": 896,
+          "height": 662.390625
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-key-bindings-1280",
+        "width": 1280,
+        "height": 720,
+        "rect": {
+          "x": 192,
+          "y": 28.796875,
+          "width": 896,
+          "height": 662.390625
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-controls-640",
+        "width": 640,
+        "height": 480,
+        "rect": {
+          "x": 19.203125,
+          "y": 19.203125,
+          "width": 601.59375,
+          "height": 441.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-display-640",
+        "width": 640,
+        "height": 480,
+        "rect": {
+          "x": 19.203125,
+          "y": 19.203125,
+          "width": 601.59375,
+          "height": 441.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-sound-640",
+        "width": 640,
+        "height": 480,
+        "rect": {
+          "x": 19.203125,
+          "y": 19.203125,
+          "width": 601.59375,
+          "height": 441.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-game-640",
+        "width": 640,
+        "height": 480,
+        "rect": {
+          "x": 19.203125,
+          "y": 19.203125,
+          "width": 601.59375,
+          "height": 441.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-key-bindings-640",
+        "width": 640,
+        "height": 480,
+        "rect": {
+          "x": 19.203125,
+          "y": 19.203125,
+          "width": 601.59375,
+          "height": 441.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-controls-390",
+        "width": 390,
+        "height": 650,
+        "rect": {
+          "x": 8,
+          "y": 13,
+          "width": 374,
+          "height": 624
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-display-390",
+        "width": 390,
+        "height": 650,
+        "rect": {
+          "x": 8,
+          "y": 13,
+          "width": 374,
+          "height": 624
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-sound-390",
+        "width": 390,
+        "height": 650,
+        "rect": {
+          "x": 8,
+          "y": 13,
+          "width": 374,
+          "height": 624
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-game-390",
+        "width": 390,
+        "height": 650,
+        "rect": {
+          "x": 8,
+          "y": 13,
+          "width": 374,
+          "height": 624
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-key-bindings-390",
+        "width": 390,
+        "height": 650,
+        "rect": {
+          "x": 8,
+          "y": 13,
+          "width": 374,
+          "height": 624
+        },
+        "overflow": []
+      },
+      {
+        "name": "settings-keys-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 32,
+          "y": 21.59375,
+          "width": 896,
+          "height": 496.796875
+        },
+        "overflow": []
+      },
+      {
+        "name": "intro-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 192,
+          "y": 32.40625,
+          "width": 576,
+          "height": 475.1875
+        },
+        "overflow": []
+      },
+      {
+        "name": "dealer-diggers-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "dealer-detail-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "fleet-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "staff-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "home-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "wolds-trader-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "jobs-board-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "milestones-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "depot-prices-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "bank-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "messages-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "dealer-tractors-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "dealer-trailers-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "dealer-haulage-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "dealer-getting-around-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "dealer-upgrades-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "dealer-yard-buildings-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "dealer-sell-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "trader-inspected-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "workshop-fitted-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "dealer-rented-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "staff-employed-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "staff-assigned-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "dealer-1280",
+        "width": 1280,
+        "height": 720,
+        "rect": {
+          "x": 25.59375,
+          "y": 21.59375,
+          "width": 1228.796875,
+          "height": 676.796875
+        },
+        "overflow": []
+      },
+      {
+        "name": "plant-dealer-1280",
+        "width": 1280,
+        "height": 720,
+        "rect": {
+          "x": 25.59375,
+          "y": 21.59375,
+          "width": 1228.796875,
+          "height": 676.796875
+        },
+        "overflow": []
+      },
+      {
+        "name": "fleet-1280",
+        "width": 1280,
+        "height": 720,
+        "rect": {
+          "x": 25.59375,
+          "y": 21.59375,
+          "width": 1228.796875,
+          "height": 676.796875
+        },
+        "overflow": []
+      },
+      {
+        "name": "staff-1280",
+        "width": 1280,
+        "height": 720,
+        "rect": {
+          "x": 25.59375,
+          "y": 21.59375,
+          "width": 1228.796875,
+          "height": 676.796875
+        },
+        "overflow": []
+      },
+      {
+        "name": "bank-1280",
+        "width": 1280,
+        "height": 720,
+        "rect": {
+          "x": 25.59375,
+          "y": 21.59375,
+          "width": 1228.796875,
+          "height": 676.796875
+        },
+        "overflow": []
+      },
+      {
+        "name": "depot-prices-1280",
+        "width": 1280,
+        "height": 720,
+        "rect": {
+          "x": 25.59375,
+          "y": 21.59375,
+          "width": 1228.796875,
+          "height": 676.796875
+        },
+        "overflow": []
+      },
+      {
+        "name": "dealer-640",
+        "width": 640,
+        "height": 480,
+        "rect": {
+          "x": 12.796875,
+          "y": 14.40625,
+          "width": 614.390625,
+          "height": 451.1875
+        },
+        "overflow": []
+      },
+      {
+        "name": "plant-dealer-640",
+        "width": 640,
+        "height": 480,
+        "rect": {
+          "x": 12.796875,
+          "y": 14.40625,
+          "width": 614.390625,
+          "height": 451.1875
+        },
+        "overflow": []
+      },
+      {
+        "name": "fleet-640",
+        "width": 640,
+        "height": 480,
+        "rect": {
+          "x": 12.796875,
+          "y": 14.40625,
+          "width": 614.390625,
+          "height": 451.1875
+        },
+        "overflow": []
+      },
+      {
+        "name": "staff-640",
+        "width": 640,
+        "height": 480,
+        "rect": {
+          "x": 12.796875,
+          "y": 14.40625,
+          "width": 614.390625,
+          "height": 451.1875
+        },
+        "overflow": []
+      },
+      {
+        "name": "bank-640",
+        "width": 640,
+        "height": 480,
+        "rect": {
+          "x": 12.796875,
+          "y": 14.40625,
+          "width": 614.390625,
+          "height": 451.1875
+        },
+        "overflow": []
+      },
+      {
+        "name": "depot-prices-640",
+        "width": 640,
+        "height": 480,
+        "rect": {
+          "x": 12.796875,
+          "y": 14.40625,
+          "width": 614.390625,
+          "height": 451.1875
+        },
+        "overflow": []
+      },
+      {
+        "name": "dealer-390",
+        "width": 390,
+        "height": 650,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 650
+        },
+        "overflow": []
+      },
+      {
+        "name": "plant-dealer-390",
+        "width": 390,
+        "height": 650,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 650
+        },
+        "overflow": []
+      },
+      {
+        "name": "fleet-390",
+        "width": 390,
+        "height": 650,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 650
+        },
+        "overflow": []
+      },
+      {
+        "name": "staff-390",
+        "width": 390,
+        "height": 650,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 650
+        },
+        "overflow": []
+      },
+      {
+        "name": "bank-390",
+        "width": 390,
+        "height": 650,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 650
+        },
+        "overflow": []
+      },
+      {
+        "name": "depot-prices-390",
+        "width": 390,
+        "height": 650,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 650
+        },
+        "overflow": []
+      },
+      {
+        "name": "plant-dealer-scale130-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "fleet-scale130-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "staff-scale130-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "bank-scale130-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "depot-prices-scale130-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "map-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 19.203125,
+          "y": 16.203125,
+          "width": 921.59375,
+          "height": 507.59375
+        },
+        "overflow": []
+      },
+      {
+        "name": "map-390",
+        "width": 390,
+        "height": 650,
+        "rect": {
+          "x": 8,
+          "y": 19.5,
+          "width": 374,
+          "height": 611
+        },
+        "overflow": []
+      },
+      {
+        "name": "pause-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 76.796875,
+          "y": 133.6875,
+          "width": 649.59375,
+          "height": 272.609375
+        },
+        "overflow": []
+      },
+      {
+        "name": "pause-390",
+        "width": 390,
+        "height": 650,
+        "rect": {
+          "x": 16,
+          "y": 53.75,
+          "width": 358,
+          "height": 542.484375
+        },
+        "overflow": []
+      },
+      {
+        "name": "save-slots-960",
+        "width": 960,
+        "height": 540,
+        "rect": {
+          "x": 224,
+          "y": 129.453125,
+          "width": 512,
+          "height": 281.078125
+        },
+        "overflow": []
+      }
+    ],
+    "actionsVerified": [
+      "Settings repeat shovel toggle",
+      "Dealer purchase",
+      "Trader inspection",
+      "Workshop upgrade fitting",
+      "Dealer rental",
+      "Fleet rental return",
+      "Fleet hitch",
+      "Fleet unhitch",
+      "Fleet insurance",
+      "Staff hire",
+      "Staff digger assignment",
+      "Map machine and goal selection"
+    ]
+  },
+  "finalFocusedAudit": {
+    "source": "../ui-layout-final-r4/layout.json",
+    "url": "http://127.0.0.1:5175",
+    "checks": [
+      {
+        "label": "dealer-detail-390: bounds and overflow",
+        "passed": true
+      },
+      {
+        "label": "390: name and Buy visible without scrolling",
+        "passed": true
+      },
+      {
+        "label": "390: actual Buy works",
+        "passed": true
+      },
+      {
+        "label": "dealer-detail-640: bounds and overflow",
+        "passed": true
+      },
+      {
+        "label": "640: name and Buy visible without scrolling",
+        "passed": true
+      },
+      {
+        "label": "640: actual Buy works",
+        "passed": true
+      },
+      {
+        "label": "dealer-detail-960: bounds and overflow",
+        "passed": true
+      },
+      {
+        "label": "960: name and Buy visible without scrolling",
+        "passed": true
+      },
+      {
+        "label": "960: actual Buy works",
+        "passed": true
+      },
+      {
+        "label": "Closing laptop restores feedback nodes",
+        "passed": true
+      },
+      {
+        "label": "map-640: bounds and overflow",
+        "passed": true
+      },
+      {
+        "label": "Map keeps pending delivery notifications out of its controls",
+        "passed": true
+      },
+      {
+        "label": "map-390: bounds and overflow",
+        "passed": true
+      },
+      {
+        "label": "Map keeps pending delivery notifications out of its controls",
+        "passed": true
+      },
+      {
+        "label": "Small map machine selection works",
+        "passed": true
+      },
+      {
+        "label": "World feedback resumes after map closes",
+        "passed": true
+      },
+      {
+        "label": "No browser errors",
+        "passed": true
+      }
+    ],
+    "samples": [
+      {
+        "name": "prominence-390",
+        "sample": {
+          "price": [
+            424.578125,
+            507.59375
+          ],
+          "buy": [
+            445.1875,
+            486.96875
+          ],
+          "title": [
+            205.171875,
+            243.171875
+          ],
+          "body": [
+            94.4375,
+            577.328125
+          ],
+          "enabled": true
+        }
+      },
+      {
+        "name": "dealer-detail-390",
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 650,
+        "viewport": [
+          390,
+          650
+        ],
+        "overflow": []
+      },
+      {
+        "name": "prominence-640",
+        "sample": {
+          "price": [
+            252.109375,
+            323.9375
+          ],
+          "buy": [
+            268.71875,
+            307.3125
+          ],
+          "title": [
+            203.71875,
+            241.71875
+          ],
+          "body": [
+            104.171875,
+            363.03125
+          ],
+          "enabled": true
+        }
+      },
+      {
+        "name": "dealer-detail-640",
+        "x": 12.796875,
+        "y": 14.40625,
+        "width": 614.390625,
+        "height": 451.1875,
+        "viewport": [
+          640,
+          480
+        ],
+        "overflow": []
+      },
+      {
+        "name": "prominence-960",
+        "sample": {
+          "price": [
+            325.3125,
+            418.078125
+          ],
+          "buy": [
+            347.25,
+            396.125
+          ],
+          "title": [
+            261.796875,
+            311.796875
+          ],
+          "body": [
+            132.59375,
+            418.828125
+          ],
+          "enabled": true
+        }
+      },
+      {
+        "name": "dealer-detail-960",
+        "x": 19.203125,
+        "y": 16.203125,
+        "width": 921.59375,
+        "height": 507.59375,
+        "viewport": [
+          960,
+          540
+        ],
+        "overflow": []
+      },
+      {
+        "name": "map-640",
+        "x": 16,
+        "y": 14.40625,
+        "width": 608,
+        "height": 451.1875,
+        "viewport": [
+          640,
+          480
+        ],
+        "overflow": []
+      },
+      {
+        "name": "map-390",
+        "x": 8,
+        "y": 19.5,
+        "width": 374,
+        "height": 611,
+        "viewport": [
+          390,
+          650
+        ],
+        "overflow": []
+      }
+    ],
+    "errors": [],
+    "purpose": "Verify final detail ordering and compact spacing at 390/640/130% text, actual Buy at each width, and clean Map controls with pending notifications, machine selection and restored world feedback."
+  },
+  "supersededEvidence": "The broad audit remains authoritative for unchanged desktop, settings, Fleet, Staff, Trader and workshop layouts. Dealer detail at narrow widths and 130% text plus Map screenshots from ui-layout-final-r2/r3 are superseded by finalFocusedAudit. Earlier failed reports and screenshots are intermediate evidence and are not final acceptance results.",
+  "selectedScreens": [
+    {
+      "file": "dealer-desktop-1280.png",
+      "source": "ui-layout-final-r2/dealer-1280.png"
+    },
+    {
+      "file": "fleet-desktop-960.png",
+      "source": "ui-layout-final-r2/fleet-960.png"
+    },
+    {
+      "file": "staff-phone-390.png",
+      "source": "ui-layout-final-r2/staff-390.png"
+    },
+    {
+      "file": "settings-960.png",
+      "source": "ui-layout-final-r2/settings-controls-960.png"
+    },
+    {
+      "file": "dealer-phone-390.png",
+      "source": "ui-layout-final-r4/dealer-detail-390.png"
+    },
+    {
+      "file": "dealer-compact-640.png",
+      "source": "ui-layout-final-r4/dealer-detail-640.png"
+    },
+    {
+      "file": "dealer-large-text-960.png",
+      "source": "ui-layout-final-r4/dealer-detail-960.png"
+    },
+    {
+      "file": "map-phone-390.png",
+      "source": "ui-layout-final-r4/map-390.png"
+    },
+    {
+      "file": "map-compact-640.png",
+      "source": "ui-layout-final-r4/map-640.png"
+    }
+  ],
+  "visualReview": "Final 390 and 640 layouts fit without horizontal overflow. Dealer name, photo and complete price/Buy panel are visible on entry. At 960x540 and 130% text the full price panel ends at 418.08px within the scroller ending at 418.83px; Buy ends at 396.13px. Map notices no longer cover map controls. All final five focused screenshots manually inspected.",
+  "errors": []
+}
