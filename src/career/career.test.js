@@ -167,3 +167,18 @@ describe('milestone data', () => {
     for (const id of Object.keys(perks)) expect(list.filter((m) => m.perk === id)).toHaveLength(1);
   });
 });
+
+describe('milestones for hire, regular customers and credit', () => {
+  it('count machines back from hire, regular weeks delivered and the credit rating', () => {
+    const game = createGame({ seed: 3 });
+    const got = [];
+    game.events.on('milestoneReached', (e) => got.push(e.id));
+    game.events.emit('machineReturned', { machineId: 'm1', name: 'x', client: 'y', total: 50, wear: 6 });
+    expect(got).toContain('hire1');
+    for (let i = 0; i < 4; i++) game.events.emit('standingWeekDone', { client: 'c', material: 'sand', bonus: 40, week: i + 1, weeks: 4 });
+    expect(got).toContain('regular4');
+    game.state.bank.credit = 81;
+    game.events.emit('loanTaken', { loanId: 1, amount: 250, days: 7, payment: 40 });
+    expect(got).toContain('credit80');
+  });
+});

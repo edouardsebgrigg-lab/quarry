@@ -6,10 +6,11 @@ import { addMoney } from '../economy/index.js';
 import { getDate } from '../core/index.js';
 import { contractsState, reputation } from '../contracts/index.js';
 import { currentWeather } from '../weather/index.js';
+import { creditRating } from '../economy/index.js';
 
 const COUNTERS = {
   cleanStreak: 0, bestCleanStreak: 0, cleanLoads: 0, cleanTonnes: 0, gravelDug: 0, roadMetres: 0,
-  rainLoads: 0, loansCleared: 0, day: null, dayEarnings: 0, bestDay: 0,
+  rainLoads: 0, loansCleared: 0, day: null, dayEarnings: 0, bestDay: 0, hiresDone: 0, regularWeeks: 0,
 };
 
 export function careerState(ctx) {
@@ -58,6 +59,9 @@ const METRICS = {
   fleetSize: (ctx) => ctx.state.machines.length,
   usedMachines: (ctx) => ctx.state.machines.filter((m) => m.tier === 'used').length,
   jobsDone: (ctx) => contractsState(ctx).done ?? 0,
+  hiresDone: (ctx, c) => c.hiresDone,
+  regularWeeks: (ctx, c) => c.regularWeeks,
+  creditScore: (ctx) => creditRating(ctx).score,
   reputation: (ctx) => reputation(ctx).level,
   loansCleared: (ctx, c) => c.loansCleared,
 };
@@ -145,6 +149,13 @@ export function careerOnEvent(ctx, type, e) {
       break;
     case 'loanRepaid':
       c.loansCleared += 1;
+      break;
+    case 'machineReturned':
+      c.hiresDone += 1;
+      break;
+    case 'standingWeekDone':
+      c.regularWeeks += 1;
+      addEarnings(ctx, c, e.bonus ?? 0);
       break;
     default:
   }
