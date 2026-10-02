@@ -1,6 +1,6 @@
 // The in-game screen: 3D world, HUD, and the real-time loop that drives the game clock.
 import { el } from '../dom.js';
-import { getDate } from '../../core/index.js';
+import { getDate, withArticle } from '../../core/index.js';
 import { createHud } from './hud.js';
 import { createHud3d } from './hud3d.js';
 import { createFeedback } from './feedback.js';
@@ -167,7 +167,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     game.events.on('staffTookJob', (e) => feedback.message(`The office took a job for ${e.client}: +$${e.bonus} bonus (laptop: Jobs board)`, 'good')),
     game.events.on('staffTripBack', (e) => feedback.message(`${e.name} is back from the depot`, 'good')),
     game.events.on('listingNotAsDescribed', (e) => feedback.message(`It’s not as described: ${e.actual}%, not the ${e.claimed}% ${e.seller} claimed`, 'warn')),
-    game.events.on('hireEnquiry', (e) => feedback.message(`${e.client} wants to hire a ${e.typeName.toLowerCase()}: $${e.total} for ${e.days} days (laptop: Fleet)`, 'good')),
+    game.events.on('hireEnquiry', (e) => feedback.message(`${e.client} wants to hire ${withArticle(e.typeName.toLowerCase())}: $${e.total} for ${e.days} days (laptop: Fleet)`, 'good')),
     game.events.on('machineHiredOut', (e) => feedback.message(`${e.name} is off on hire to ${e.client} until day ${e.until}`, 'good')),
     game.events.on('machineReturned', (e) => feedback.message(`${e.name} is back from hire: +$${e.total}`, 'good')),
     game.events.on('creditRatingChanged', (e) => {

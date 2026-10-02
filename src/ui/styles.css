@@ -397,6 +397,10 @@ h3 {
 .mentor-from { font-weight: 700; }
 .mentor-when { margin-left: auto; color: rgba(236, 238, 241, 0.5); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.55rem; font-weight: 700; }
 .mentor-text { font-size: 0.72rem; line-height: 1.42; color: rgba(236, 238, 241, 0.92); }
+/* Only the newest text reads in full; an older one shrinks to its first line, so the right-hand
+   column stays clear for the money and the machine dash. */
+.mentor-card + .mentor-card:not(.mentor-out) { opacity: 0.72; }
+.mentor-card + .mentor-card .mentor-text { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* Control hints: bottom left, fade away */
 .controls-help { position: absolute; left: 1rem; bottom: 1rem; display: flex; flex-direction: column; gap: 0.22rem;
@@ -669,7 +673,7 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .lt-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
 .lt-stat { text-align: left; font: inherit; color: inherit; background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 12px; padding: 1rem 1.2rem 1.1rem; }
-.lt-stat.link { cursor: pointer; }
+.lt-stat.link { cursor: pointer; display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; }
 .lt-stat.link:hover { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.12); }
 .lt-stat-value { font-family: var(--display); font-size: 2.3rem; font-weight: 700; line-height: 1.1; margin-top: 0.35rem; font-variant-numeric: tabular-nums; }
 .lt-stat-note { color: var(--muted); font-size: 0.8rem; margin-top: 0.2rem; }
@@ -763,7 +767,8 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .lt-chip { font: inherit; font-size: 0.82rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--muted); cursor: pointer;
   padding: 0.35rem 0.7rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.02); }
 .lt-chip:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.18); }
-.lt-chip.active { color: var(--text); border-color: var(--accent); background: rgba(245, 184, 46, 0.12); }
+.lt-chip.active { color: var(--accent-ink); border-color: var(--accent); background: var(--accent); }
+.lt-chip.active:hover { color: var(--accent-ink); }
 .lt-quote { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin: 1.1rem 0; padding: 0.8rem 0.9rem; border-radius: 10px; background: rgba(0, 0, 0, 0.2); }
 .lt-quote div { display: flex; flex-direction: column; gap: 0.15rem; }
 .lt-quote span { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
@@ -911,7 +916,7 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .lt-news-src { font-size: 0.64rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .lt-news-text { font-size: 0.86rem; line-height: 1.4; color: #dfe3e8; }
 .lt-news-foot { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; font-size: 0.74rem; color: var(--muted); }
-.lt-chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.15rem 0.5rem; border-radius: 999px; background: rgba(255, 255, 255, 0.06); color: var(--text); }
+.lt-news-item .lt-chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.15rem 0.5rem; border-radius: 999px; border: 0; background: rgba(255, 255, 255, 0.06); color: var(--text); cursor: default; }
 .lt-chip .dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; }
 .lt-news-item.up .lt-chip b { color: var(--good); }
 .lt-news-item.down .lt-chip b { color: #ff9a8a; }
@@ -989,6 +994,8 @@ body:has(.hud3d.planning) .log { bottom: 18.5rem; }
 .pc-zero { stroke: rgba(255, 255, 255, 0.18); stroke-width: 1; }
 .pc-bar.pos { fill: var(--good); }
 .pc-bar.neg { fill: var(--bad); }
+.pc-stub { fill: rgba(255, 255, 255, 0.14); }
+.pc-stub.future { fill: rgba(255, 255, 255, 0.05); }
 .pc-day.today .pc-bar { opacity: 0.45; }
 .pc-day.hover .pc-bar { filter: brightness(1.2); }
 .pc-val { fill: var(--text); font-size: 12px; font-weight: 700; text-anchor: middle; font-variant-numeric: tabular-nums; }
@@ -1126,6 +1133,7 @@ body:has(.overlay) .toasts { top: auto; bottom: 5.5rem; right: 3rem; }
 .lt-brand b { max-width: 100%; }
 .lt-dock { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 .lt-dock-app { flex: none; gap: .6rem; padding: .65rem .65rem; }
+.lt-dock-app > span:not(.lt-icon) { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; }
 .lt-main, .lt-app-body, .lt-app-head > div { min-width: 0; }
 .lt-app-head { flex: none; align-items: center; padding: 1.2rem 1.5rem 1rem; border-bottom: 1px solid var(--line); }
 .lt-head-actions:empty { display: none; }
@@ -1195,8 +1203,11 @@ body:has(.overlay) .toasts { top: auto; bottom: 5.5rem; right: 3rem; }
 .lt-call { min-width: 0; white-space: normal; }
 .lt-select { min-width: 0; width: 100%; padding: .55rem .65rem; }
 .lt-cover-head { flex-wrap: wrap; }
-.lt-job-head, .lt-ms-head { flex-wrap: wrap; }
-.lt-job-head > b { min-width: 0; }
+.lt-ms-head { flex-wrap: wrap; }
+.lt-job-head { flex-wrap: nowrap; }
+.lt-job-head > b { min-width: 0; flex: 1; line-height: 1.3; }
+.lt-job-bonus { flex: none; }
+.lt-job .lt-buy { margin-top: auto; }
 .lt-job-foot { white-space: normal; line-height: 1.45; flex-wrap: wrap; }
 .lt-jobs, .lt-ms-grid, .lt-news { grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: 1rem; }
 .lt-ad-actions { margin-top: auto; padding-top: .5rem; }
@@ -1342,7 +1353,8 @@ body:has(.overlay-laptop) .lt-notices > :is(.toasts, .log) { position: static; d
 .map-layout { flex: 1; min-height: 0; min-width: 0; height: auto; }
 .map-layout .sidebar { width: min(19rem, 40%); flex: none; min-height: 0; }
 .map-layout .panel { flex: none; }
-.fleet-name { min-width: 0; white-space: normal; text-align: left; }
+.fleet-name { min-width: 0; white-space: normal; text-align: left; padding: 0; min-height: 0; background: none; }
+.map-layout .map-focus:focus { outline: none; }
 @media (max-width: 600px) {
   .map-layout { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(10rem, 1fr) minmax(0, 1fr); }
   .map-layout .sidebar { width: 100%; min-width: 0; }
@@ -1492,3 +1504,8 @@ body:has(.overlay-map) .feedback > :is(.toasts, .log, .mentor) { visibility: hid
 .works-card { background: rgba(13,16,18,.93); border: 1px solid rgba(255,255,255,.2); box-shadow: 0 5px 20px rgba(0,0,0,.25); }
 body:has(.hud3d.planning) .feedback > :is(.mentor,.log,.toasts),
 body:has(.overlay-digger-tools) .feedback > :is(.mentor,.log,.toasts) { visibility: hidden; }
+
+/* Sell list: every sell button the same width, so the condition bars line up. */
+.lt-row > .btn.lt-sell { min-width: 11.5rem; justify-content: center; }
+/* Inside the laptop, a notice doesn't need to say "(laptop: Fleet)". */
+.lt-notices .log-where { display: none; }

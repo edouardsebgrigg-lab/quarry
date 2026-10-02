@@ -49,8 +49,15 @@ export function createFeedback({ game, getMoneyNode }) {
     setTimeout(() => f.remove(), 1600);
   }
 
+  // A message can end with where to look, e.g. "(laptop: Fleet)": it's set apart so the laptop
+  // can hide it while you're already there.
+  const withWhere = (text) => {
+    const m = /^(.*?)\s*(\(laptop: [^)]+\))$/.exec(text);
+    return m ? [m[1], el('span', { class: 'log-where' }, ` ${m[2]}`)] : [text];
+  };
+
   function toast(text, level = 'info') {
-    const t = el('div', { class: `toast toast-${level}` }, text);
+    const t = el('div', { class: `toast toast-${level}` }, ...withWhere(text));
     toasts.append(t);
     later(3200, () => t.classList.add('toast-out'));
     later(3700, () => t.remove());
@@ -61,7 +68,7 @@ export function createFeedback({ game, getMoneyNode }) {
   function message(text, level = 'info') {
     if (last && last.text === text && last.level === level && !last.line.classList.contains('log-old') && last.line.isConnected) {
       last.count += 1;
-      last.line.textContent = `${text}  ×${last.count}`;
+      last.line.replaceChildren(...withWhere(text), `  ×${last.count}`);
       last.line.classList.remove('log-bump');
       void last.line.offsetWidth;
       last.line.classList.add('log-bump');
@@ -70,7 +77,7 @@ export function createFeedback({ game, getMoneyNode }) {
       mine.expect = mine.count;
       return;
     }
-    const line = el('div', { class: `log-line log-${level}` }, text);
+    const line = el('div', { class: `log-line log-${level}` }, ...withWhere(text));
     log.append(line);
     while (log.children.length > LOG_MAX) log.firstChild.remove();
     last = { text, level, line, count: 1, expect: 1 };

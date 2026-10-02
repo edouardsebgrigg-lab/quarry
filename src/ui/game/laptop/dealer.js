@@ -219,7 +219,7 @@ export function dealerApp({ game, feedback, photos, setHead }) {
       const value = resaleValue(ctx, m);
       let armed = false;
       const b = el('button', {
-        class: 'btn',
+        class: 'btn lt-sell',
         disabled: !!m.job,
         onClick: () => {
           if (!armed) {

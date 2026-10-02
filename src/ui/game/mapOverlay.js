@@ -66,6 +66,10 @@ export function toggleMap(overlays, { game, world }) {
             cap ? el('div', { class: 'small muted' }, load > 0.01 ? `${load.toFixed(2)} of ${cap} t on board` : 'Empty') : null));
         }
       };
+      // (the map takes the focus when it opens, not the first button beside it)
+      view.node.classList.add('map-focus');
+      view.node.tabIndex = -1;
+      view.node.setAttribute('autofocus', '');
       return el('div', { class: 'map-layout' }, view.node,
         el('div', { class: 'sidebar' },
           el('section', { class: 'panel' }, el('h3', {}, 'Places'), places),

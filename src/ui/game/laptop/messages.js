@@ -51,7 +51,7 @@ export function messagesApp({ game, setHead }) {
           el('div', { class: 'lt-avatar' }, (m.from ?? '?')[0]),
           el('div', { class: 'lt-bubble' },
             el('div', { class: 'lt-msg-head' }, el('b', {}, m.from), el('span', {}, when(m))),
-            el('div', { class: 'lt-msg-text' }, m.text))));
+            el('div', { class: 'lt-msg-text' }, m.text.replace(/\s*\(laptop: [^)]+\)$/, '')))));
       }
     }
   }

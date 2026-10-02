@@ -2,7 +2,7 @@
 // Ray has sent. Built from game events; saved with the game (state.logbook). The laptop's fleet
 // and messages apps read it. At the start of each day it sends a `dailyReport` event with the
 // day before, and every seven days a `weeklyReport` with the week's totals.
-import { getDate } from '../core/index.js';
+import { getDate, withArticle } from '../core/index.js';
 
 const MAX_MESSAGES = 80;
 const MAX_DAYS = 30;
@@ -213,7 +213,7 @@ export function logbookOnEvent(ctx, type, e) {
       const lb = logbook(ctx);
       const { day, hour, minute } = getDate(ctx.state, ctx.data);
       const text = type === 'hireEnquiry'
-        ? `Have you a ${e.typeName.toLowerCase()} we could hire? ${e.days} days at $${e.rate} a day ($${e.total}), paid when it comes back. (laptop: Fleet)`
+        ? `Have you ${withArticle(e.typeName.toLowerCase())} we could hire? ${e.days} days at $${e.rate} a day ($${e.total}), paid when it comes back. (laptop: Fleet)`
         : `Your ${e.name} is back with you. Thanks: $${e.total} for the hire. It's done some work, so it'll want a look over.`;
       lb.messages.push({ day, hour, minute, from: e.client, text, kind: type === 'hireEnquiry' ? 'tip' : 'good' });
       trim(lb);

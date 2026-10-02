@@ -6,3 +6,4 @@ export {
 } from './clock.js';
 export { createSaveSystem, createMemoryStorage, SLOT_IDS } from './save.js';
 export { migrations } from './migrations.js';
+export { withArticle } from './text.js';

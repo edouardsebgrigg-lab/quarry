@@ -78,7 +78,7 @@ export function milestonesApp({ game, feedback, setHead }) {
     ] : [
       el('div', { class: 'lt-card-label' }, 'Your direction'),
       el('b', {}, 'Choose a milestone to follow'),
-      el('p', { class: 'lt-note' }, 'Dig deeper, improve the yard or build your fleet. Make any unfinished milestone below your personal target; change it whenever you like. Every achievement still pays its reward when reached.'),
+      el('p', { class: 'lt-note' }, 'Pick any unfinished milestone below to follow it on your screen. Change it whenever you like: every milestone still pays its reward when you reach it.'),
     ]));
 
     perksBox.replaceChildren(...Object.entries(cfg.perks).map(([id, p]) => {

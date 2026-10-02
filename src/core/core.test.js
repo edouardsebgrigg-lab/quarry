@@ -88,3 +88,12 @@ describe('save system', () => {
     expect(() => createSaveSystem({ storage, version: 1 }).load('slot1')).toThrow();
   });
 });
+
+describe('wording', () => {
+  it('picks a or an', async () => {
+    const { withArticle } = await import('./text.js');
+    expect(withArticle('excavator')).toBe('an excavator');
+    expect(withArticle('truck')).toBe('a truck');
+    expect(withArticle('Utility 80')).toBe('a Utility 80');
+  });
+});

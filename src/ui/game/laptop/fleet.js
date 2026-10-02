@@ -6,6 +6,7 @@ import { machineLog } from '../../../game/logbook.js';
 import { weeklyInsurance, insuranceState, insuranceCover, nextRenewal } from '../../../economy/index.js';
 import { hireState, hireCandidates, machinesOnHire } from '../../../hire/index.js';
 import { workerFor } from '../../../staff/index.js';
+import { withArticle } from '../../../core/index.js';
 
 export function fleetApp({ game, feedback, photos, openApp, setHead }) {
   const { data } = game;
@@ -96,7 +97,7 @@ export function fleetApp({ game, feedback, photos, openApp, setHead }) {
       } }, `Send ${machineName(data, m)}`));
       const no = el('button', { class: 'btn lt-buy', onClick: () => { game.actions.declineHire(); refresh(); } }, 'Turn it down');
       hireBox.append(el('div', { class: 'lt-job regular lt-hire-ask' },
-        el('div', { class: 'lt-job-head' }, el('b', {}, `${e.client} wants to hire a ${typeName}`), el('span', { class: 'lt-job-bonus' }, `+${money(e.total)}`)),
+        el('div', { class: 'lt-job-head' }, el('b', {}, `${e.client} wants to hire ${withArticle(typeName)}`), el('span', { class: 'lt-job-bonus' }, `+${money(e.total)}`)),
         el('div', { class: 'lt-job-foot' }, el('span', {}, `${e.days} days at ${money(e.rate)} a day, paid when it comes back · about ${data.hire.wearPerDay * e.days}% wear`),
           el('span', {}, `Answer by day ${e.expires}`)),
         el('div', { class: 'lt-regular-actions' }, send.length ? send : el('span', { class: 'lt-muted-row' }, `No ${typeName} free to send (busy, broken, loaded, or your last road vehicle)`), no)));
@@ -165,7 +166,7 @@ export function fleetApp({ game, feedback, photos, openApp, setHead }) {
   const node = el('div', { class: 'lt-home' },
     el('div', { class: 'lt-stats' },
       el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Machines'), el('div', { class: 'lt-stat-value' }, String(ms.filter(m=>!m.rental).length)),
-        el('div', { class: 'lt-stat-note' }, `${ms.filter(m=>m.rental).length} hired · ${Object.keys(data.machines.types).filter((k) => ms.some((m) => !m.rental && m.type === k)).length} owned kinds`)),
+        el('div', { class: 'lt-stat-note' }, ms.some((m) => m.rental) ? `Plus ${ms.filter((m) => m.rental).length} on rental` : 'All your own')),
       el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Fleet value'), totalV, el('div', { class: 'lt-stat-note' }, `Insurance ${money(weeklyInsurance(ctx))} a week`)),
       el('div', { class: 'lt-stat' }, el('div', { class: 'lt-stat-label' }, 'Need attention'), attnV, attnN)),
     el('div', { class: 'lt-rows' }, rows),

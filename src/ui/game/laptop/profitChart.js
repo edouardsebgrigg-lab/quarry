@@ -45,6 +45,8 @@ export function profitChart(game) {
       const d = byDay.get(day);
       return { day, today: day === today, income: d?.income ?? 0, spending: d?.spending ?? 0, loads: d?.loads ?? 0, profit: d ? d.income - d.spending : 0, any: !!d };
     }).filter((d) => d.day >= 1);
+    // (in the first fortnight the chart still spans 14 days: the days to come are marked, empty)
+    while (days.length < DAYS) days.push({ day: days.length + 1, future: true, income: 0, spending: 0, loads: 0, profit: 0 });
     const k = JSON.stringify(days.map((d) => [d.day, Math.round(d.profit)]));
     if (k === key) return;
     key = k;
@@ -69,13 +71,15 @@ export function profitChart(game) {
       const x = i * SLOT + (SLOT - BAR) / 2;
       const g = svgEl('g', { class: `pc-day${d.today ? ' today' : ''}` });
       if (Math.abs(d.profit) >= 0.5) g.append(svgEl('path', { d: barPath(x, y0, y(d.profit), BAR), class: `pc-bar ${d.profit >= 0 ? 'pos' : 'neg'}` }));
+      else g.append(svgEl('rect', { x, y: y0 - 1.5, width: BAR, height: 3, rx: 1.5, class: `pc-stub${d.future ? ' future' : ''}` }));
       if (d === best && !d.today) g.append(svgEl('text', { x: x + BAR / 2, y: y(d.profit) - 6, class: 'pc-val' }, money(Math.round(d.profit))));
-      if (i === 0 || i === Math.floor(days.length / 2) || d.today) {
+      if (i === 0 || i === days.length - 1 || d.today) {
         g.append(svgEl('text', { x: x + BAR / 2, y: H - 6, class: 'pc-day-label' }, d.today ? 'Today' : `Day ${d.day}`));
       }
       // (the hover target is the whole column, bigger than the bar)
       const hit = svgEl('rect', { x: i * SLOT, y: 0, width: SLOT, height: H, class: 'pc-hit' });
       hit.addEventListener('mouseenter', () => {
+        if (d.future) return;
         tip.replaceChildren(el('b', {}, d.today ? `Today (day ${d.day}), so far` : `Day ${d.day}`),
           el('div', {}, el('span', {}, 'Profit'), el('b', { class: d.profit >= 0 ? 'pos' : 'neg' }, signedMoney(Math.round(d.profit)))),
           el('div', {}, el('span', {}, 'Takings'), el('b', {}, money(d.income))),

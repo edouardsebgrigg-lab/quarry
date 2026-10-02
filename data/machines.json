@@ -319,7 +319,7 @@
           "stabilityMass": 3500
         }
       },
-      "blurb": "A 1.5 tonne mini excavator on rubber tracks. Small bucket, tight turns, and cheap to run: the first machine most yards buy."
+      "blurb": "A compact excavator on rubber tracks. Tight turns, light on the ground and cheap to run: the first machine most yards buy."
     },
     "dumper": {
       "name": "Site Dumper",
@@ -364,7 +364,7 @@
           "repairTo": 75
         }
       },
-      "blurb": "A tracked site dumper with a forward-tipping skip. Carries about a tonne around your land; not allowed on the road."
+      "blurb": "A tracked site dumper with a forward-tipping skip. It ferries material around your land; not allowed on the road."
     },
     "tractor": {
       "name": "Tractor",
@@ -558,7 +558,7 @@
           "trailerBraking": true
         }
       },
-      "blurb": "A towing vehicle. Buy a separate compatible trailer and hitch it in the yard. Gross tow weight includes the empty trailer and everything aboard."
+      "blurb": "A tractor to pull a tipping trailer (sold separately; hitch it in the yard). Its towing limit covers the trailer and everything in it."
     },
     "excavator": {
       "name": "Excavator",
@@ -758,7 +758,7 @@
           "stabilityMass": 32000
         }
       },
-      "blurb": "A 7 to 8 tonne tracked excavator. A proper bucket, long reach and a full swing: digs several times faster than the mini digger."
+      "blurb": "A full-size tracked excavator. A proper bucket, long reach and a full swing: it digs several times faster than a compact machine."
     },
     "truck": {
       "name": "Tipper Truck",
@@ -810,7 +810,7 @@
       "kind": "trailer",
       "roadLegal": true,
       "unload": "tip",
-      "blurb": "An independently owned tipping trailer. Hitch to a suitable tractor; payload and towing weight are separate limits.",
+      "blurb": "A tipping trailer for a tractor. Its payload and the tractor's towing limit both apply: the lower one wins.",
       "tiers": {
         "yardTipper": {
           "price": 75,

@@ -2,7 +2,7 @@
 // and how the fleet is doing, with shortcuts into the apps.
 import { el, setText } from '../../dom.js';
 import { money, price, tonnes } from '../../format.js';
-import { getDate } from '../../../core/index.js';
+import { getDate, withArticle } from '../../../core/index.js';
 import { currentPrice, activeNews } from '../../../economy/index.js';
 import { machinesAt, machinePrice } from '../../../machinery/index.js';
 import { lineIcon } from './icons.js';
@@ -78,7 +78,7 @@ export function homeApp({ game, openApp, setHead }) {
     const posts = openSlots(ctx) - staffState(ctx).workers.length;
     if (posts > 0) rows.push({ kind: 'good', title: posts > 1 ? `${posts} posts open: take someone on` : 'A post is open: take someone on', sub: 'Operators, drivers, an office hand or a fitter: see who’s applying', app: 'staff' });
     const ask = hireState(ctx).enquiry;
-    if (ask) rows.push({ kind: 'good', title: `${ask.client} wants to hire a ${(data.machines.types[ask.type]?.name ?? ask.type).toLowerCase()}: +${money(ask.total)}`, sub: `${ask.days} days at ${money(ask.rate)} a day; answer by day ${ask.expires}`, app: 'fleet' });
+    if (ask) rows.push({ kind: 'good', title: `${ask.client} wants to hire ${withArticle((data.machines.types[ask.type]?.name ?? ask.type).toLowerCase())}: +${money(ask.total)}`, sub: `${ask.days} days at ${money(ask.rate)} a day; answer by day ${ask.expires}`, app: 'fleet' });
     const rush = contractsState(ctx).offers.find((o) => o.rush);
     if (rush) rows.push({ kind: 'good', title: `Rush job for ${rush.client}: +${money(rush.bonus)}`, sub: `${rush.tonnes} t of clean ${(data.materials[rush.material]?.name ?? rush.material).toLowerCase()}, take it today`, app: 'jobs' });
     const next = milestones(ctx).filter((m) => !m.reached).sort((a, b) => b.progress - a.progress)[0];
