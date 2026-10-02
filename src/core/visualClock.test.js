@@ -40,8 +40,10 @@ describe('independent visual day', () => {
   it('crosses both horizons smoothly and keeps a finite unitable solar direction', () => {
     expect(solarState(12).daylight).toBe(1);
     expect(solarState(0).night).toBe(1);
-    expect(solarState(6).direction.x).toBe(-1);
-    expect(solarState(18).direction.x).toBe(1);
+    // x is east and z south: sunrise in the east, noon in the south, sunset in the west
+    expect(solarState(6).direction.x).toBe(1);
+    expect(solarState(18).direction.x).toBe(-1);
+    expect(solarState(12).direction.z).toBeGreaterThan(0);
     for (const h of [6, 18, 0, 24]) {
       const a = solarState(h-.001), b = solarState(h+.001);
       expect(Math.abs(a.daylight - b.daylight)).toBeLessThan(.003);

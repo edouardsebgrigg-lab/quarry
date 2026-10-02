@@ -124,7 +124,7 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
   // Broad cool moonlight keeps paths, machines and cut edges readable without flattening
   // the night into daylight. No second shadow map or per-frame environment-map rebuild.
   const moon = new THREE.DirectionalLight(0x9bb5ed, 0);
-  const moonDir = new THREE.Vector3(.45, .75, -.48).normalize();
+  const moonDir = new THREE.Vector3(-.25, .75, .55).normalize(); // (high in the south, as a midnight moon stands)
   scene.add(moon, moon.target);
 
   // Grass beyond the map: four strips around it.

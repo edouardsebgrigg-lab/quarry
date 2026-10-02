@@ -1,7 +1,7 @@
 // Renders the main-menu backdrop (assets/ui/menu.jpg) with the game itself, so it always shows the
-// current models and lighting: just after sunset, a dug trench in the foreground leading to the
+// current models and lighting: just before sunrise, a dug trench in the foreground leading to the
 // excavator and tipper on the right (the menu darkens the left of the picture), the yard beyond.
-//   OUT=<dir> [W=1920 H=1080 QUALITY=high HOUR=17.85] timeout 1500 node docs/handover/browser-checks/menu-backdrop.mjs
+//   OUT=<dir> [W=1920 H=1080 QUALITY=high HOUR=6.15] timeout 1500 node docs/handover/browser-checks/menu-backdrop.mjs
 //   python3 docs/handover/grade-backdrop.py <dir>/menu-backdrop.png assets/ui/menu.jpg
 // (the grade: a gentle contrast curve, warm highlights and cool shadows, a soft vignette)
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
@@ -30,7 +30,7 @@ await page.getByText("Let's get to work").click();
 await q(() => window.__quarry.gate.force(true));
 
 // The scene: a pit dug into the field, a spoil heap, the excavator at the pit's edge and the
-// tipper alongside, just after sunset, looking towards the glow.
+// tipper alongside, at first light, looking east towards the glow.
 const ids = await q(([hour, tiers]) => {
   const { game, world } = window.__quarry;
   const d = world.debug;
@@ -44,7 +44,7 @@ const ids = await q(([hour, tiers]) => {
   d.settleWeather();
   game.state.time.visualSeconds = (hour / 24) * (game.data.game.visualDayLengthSeconds ?? 1200);
   return { ex: ex.id, tr: tr.id };
-}, [Number(process.env.HOUR ?? 17.85), [process.env.EX_TIER ?? 'used', process.env.TR_TIER ?? 'used']]);
+}, [Number(process.env.HOUR ?? 6.15), [process.env.EX_TIER ?? 'used', process.env.TR_TIER ?? 'used']]);
 await frames(4);
 await q(({ ids, layout }) => {
   const d = window.__quarry.world.debug;

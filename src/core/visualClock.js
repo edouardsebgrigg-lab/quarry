@@ -21,7 +21,9 @@ export function solarState(hour) {
   const t = Math.max(0, Math.min(1, (elevation + .12) / .30));
   const daylight = t * t * (3 - 2 * t);
   return {
-    direction: { x: -Math.cos(angle), y: .72 * elevation, z: .55 * elevation },
+    // (the world's x is east and z south: the sun rises in the east, stands in the south at noon
+    // and sets in the west)
+    direction: { x: Math.cos(angle), y: .72 * elevation, z: .55 * elevation },
     daylight,
     warmth: daylight * Math.max(0, 1 - Math.max(0, elevation) / .5),
     night: 1 - daylight,
