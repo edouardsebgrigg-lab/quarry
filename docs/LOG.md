@@ -4,6 +4,26 @@ One short entry per task, newest at the top: the task, the agent and branch, the
 `main`, what changed, what was actually run, and what wasn't verified. Older, longer reports
 are in `docs/archive/CODEX-CHECKPOINT.md`.
 
+## 2 October 2026 · UI polish pass (Claude, `claude/cleanup`)
+
+- New `ui-gallery.mjs`: every menu, settings tab, laptop app, dealer category, the map and the
+  pause screens at 1280×720 in about a minute (screens over the world are taken with the 3D
+  hidden). Used it to review all 28 screens, fix, and re-shoot.
+- Fixed: Home stat cards out of line (button cards centred their content); selected chips
+  looked weaker than unselected ones (now accent-filled); jobs-board bonus wrapping under long
+  customer names and buttons out of line; "Wolds Trader" wrapping beside its badge; sell-list
+  condition bars out of line; map machine names indented and a stray focus ring on its first
+  button; two long messages from Ray filling the right of the HUD (the older one now shrinks to
+  one line); the profit chart squeezing a few days to the left (now always a fortnight).
+- Wording: "hire an excavator" (`withArticle`, tested), clearer Milestones and Fleet notes,
+  machine descriptions no longer state one size for every model, "(laptop: …)" pointers hidden
+  while you're in the laptop.
+- Main menu backdrop replaced with a render made by the game (`menu-backdrop.mjs` +
+  `grade-backdrop.py`): dusk over a dug trench, the excavator and tipper on the right.
+- Checked: tests (387), lint, build, `smoke.mjs` pass; every screen re-shot and looked at.
+  Not checked: real-GPU rendering of the new backdrop scene (rendered with SwiftShader on High),
+  the HUD at night or in rain, sound.
+
 ## 2 October 2026 · Clean-up after the merge into main (Claude, `claude/cleanup`)
 
 - Removed unused imports, variables and constants across the code (no behaviour change), added
