@@ -44,3 +44,9 @@ about playing it properly and fixing what gets in the way.
       the feature still needs checking, otherwise delete it. `smoke.mjs` must always pass.
 - [ ] **H-3 Republish the playable web copy** (a Claude session; see `AGENTS.md`) whenever
       Edouard wants the claude.ai link brought up to date.
+- [ ] **H-4 Frame cost.** In the same software-rendered test, a frame on the field went from
+      1.9 s before the 2 October merge to 2.5 s after (visible meshes 971 → 1,218, about 1.3 M
+      triangles on Low). A real GPU is far faster, but draw calls cost CPU time on every machine:
+      look for static scenery that can be merged or instanced, and check Low really is light.
+- [ ] **H-5 Small windows.** At 640×360 the key-hints panel runs into the goal card. Fine from
+      960×540 up; give the hints a max height (or hide them) when the window is short.

@@ -19,6 +19,15 @@ A short tour of the code. The logic modules never touch the screen. Each module 
 | `happenings.json` | Things that happen: the site inspector (how often, the fine per unfit machine, the reputation for a clean bill), rush orders (chance, days, bonus and size) and the dealer's offers (chance, discount, days) |
 | `milestones.json` | Company milestones (what each measures, its target and reward, its group) and the perks some of them switch on (depot account, fuel card, trade account) |
 | `tools.json` | Hand tools: how much a shovelful and a wheelbarrow hold (loose m³), reach, dig and tip times, pushing speeds |
+| `contracts.json` | The jobs board: how often offers come, their tonnages, bonuses and deadlines, rush orders and regular customers |
+| `staff.json` | Staff: when each post opens, applicants, wages and fees, the roles and their skills, and how each role works (dig swing time, trip times, the fitter's threshold, the sales bonus) |
+| `buildings.json` | Yard facilities: prices and what each changes, stockpile bay capacity |
+| `hire.json` | Hiring out: how often contractors ask, day rates, hire lengths and wear |
+| `rental.json` | Renting in: fees, deposits, rental lengths and overdue charges |
+| `classifieds.json` | The Wolds Trader: how many adverts, discounts, and how often a seller exaggerates |
+| `weather.json` | Weather kinds, how likely each day follows the last, and their effect on grip |
+| `handling.json` | How walking, jumping, vehicles changing direction, cab springs and cruise control feel |
+| `presentation.json` | Camera motion, the ground survey and on-screen feedback tuning |
 
 You can change any of these and reload the game. No code changes are needed.
 
@@ -26,7 +35,7 @@ You can change any of these and reload the game. No code changes are needed.
 | Module | Job |
 |---|---|
 | `src/core` | Game clock (ticks, days, hours), event bus, seeded random numbers, save slots with version upgrades |
-| `src/economy` | Money and debt, market prices, fuel, and the depot: weighbridge tickets, grading a load by purity, paying for it |
+| `src/economy` | Money and debt, market prices and news, fuel, the depot (weighbridge tickets, grading a load by purity, paying for it), the bank (loans, statement, credit rating: `bank.js`) and overheads (insurance cover: `overheads.js`) |
 | `src/quarry` | Which sites you own, and helpers for loads (a load is `{ material: tonnes }`) |
 | `src/ground` | The real, diggable ground: a grid of soil columns with layers; digging carves bowls and returns tonnes by material, dumped material piles up and slumps to its natural slope, undercut walls cave in; `planWorks` / `buildWorks` grade a strip (road, ramp, level) with side batters, conserving every tonne: cut first, then fill, then a gravel surface, then loose heaps within reach for what's missing, and the rest heaped beside; plans expose `touchesChangedCell({x,z,r})` over the actual grading jobs (including batters), skip occupied source cells and choose a clear spare-spoil footprint before mutation; built cells are firm (no slumping) until dug; saves only the chunks that changed |
 | `src/earthworks` | Building with material: what a road, ramp or level area may be (slope, length, width, price by area from `data/works.json`), the plan (what it costs and needs, changing nothing) and the build (checks machine/barrow circles against grading cells with the configured margin, charges the labour and asks the ground to do it); `worksBuilt` carries plain spoil-position data; the world re-seats the player on the new surface after grading, sourcing or spoil deposition |
@@ -35,6 +44,13 @@ You can change any of these and reload the game. No code changes are needed.
 | `src/progression` | The step-by-step goals for a new game (which one is current, checking them against game events, paying rewards), the mentor's texts and tips (`mentor.js`), and a pacing check of the machine ladder and of groundworks prices against a trailer load (`pacing.test.js`) |
 | `src/happenings` | Things that happen, each a small decision. The council's site inspector is announced the day before and at the hour of the visit fines every machine that is broken or under 40%, or lifts your reputation if they're all above 70%. A rush order goes on the jobs board (via `postRushOrder` in `src/contracts`): smaller, due sooner, double bonus, open today only. The dealer's offer takes 15% off one machine you don't own for three days (`offerPrice`; `machinePrice` in `src/machinery` combines it with the trade account). Its own random numbers, so it changes no other luck |
 | `src/career` | Milestones and perks. `career.js` keeps the counters milestones need that nothing else keeps (clean loads in a row, gravel dug, metres of road, loads sold in the rain, the best day's takings, loans paid off) from game events, pays each milestone once and sends `milestoneReached`; `perks.js` answers price questions (`dealerPrice`, `fuelPerkMultiplier`, `cleanSaleBonus`) and imports nothing, so the economy, the dealer and the buildings can ask it. Tests that check exact money should turn milestones off (`data.milestones.list = []`), or a reward can land mid-test |
+| `src/contracts` | The jobs board (customers want a tonnage of one clean material by a deadline, for a bonus), rush orders and regular customers' weekly standing orders |
+| `src/staff` | Employees: posts that open with progress, applicants, wages, and the four roles (digger operator, haulage driver, sales, fitter) worked each tick by `staffTick`; `perks.js` answers the sales bonus and the fitter's discount and imports nothing |
+| `src/buildings` | Yard facilities you commission (workshop, bulk fuel, home weighbridge) and their benefits; `stockpiles.js` holds the stockpile bays' contents |
+| `src/hire` | Hiring your machines out to contractors for a day rate (the machine leaves the yard while it's away) |
+| `src/rental` | Renting machines in from the dealer for a day or three, with a deposit |
+| `src/classifieds` | The Wolds Trader: private sellers' second-hand machines, some of them less good than the advert says |
+| `src/weather` | Each day's weather and tomorrow's forecast; rain makes the ground slippery |
 | `src/game` | Wires everything together: `createGame()` builds a game, `game.tick()` advances time, `game.actions.*` are the player's actions |
 
 **Player actions** (`src/game/actions.js`) are the single way to make things happen. They're used by buttons and hotkeys now, and later by operators and 3D driving.
@@ -93,7 +109,12 @@ close. Settings keep their tabs and action bar outside the scroll region.
 ## Tests
 Unit tests sit next to the code (`*.test.js`). Run them with `npm test`.
 
-## Yard facilities (Step 8, first batch)
+## Notes by system
+
+Details that matter when you change one of these systems. Each says where the state lives,
+what it emits and what older saves get.
+
+### Yard facilities, stockpile bays and the home weighbridge
 
 `src/buildings/index.js` owns commissioning and per-site benefits; `data/buildings.json` owns
 prices and multipliers. `state.buildings[siteId][buildingId]` stores ownership. Missing state
@@ -106,7 +127,6 @@ places a new footprint, creates free material or changes existing collision shap
 The home workshop container is positioned explicitly by `MAP.home.workshop`, clear of the
 driveway. An empty barrow at the pickup tailgate prompts backing away before turning.
 
-
 `src/buildings/stockpiles.js` owns per-site, per-bay inventory (`state.stockpiles`),
 capacity reservations for pending carrier tips, and proportional bucket extraction by
 loose volume. Old saves default to empty inventory. Store transfers consume their supplied
@@ -117,7 +137,7 @@ wall and heap collisions are enabled only when commissioned. Assisted/Direct dig
 controls and carrier T dispatch detect the same mapped bay rectangles. The map panel
 reports each bay’s material mix and normal depot purity grade.
 
-Home weighbridge: `buildings.weighbridge` commissions the fixed `MAP.home.weighbridge`
+The home weighbridge: `buildings.weighbridge` commissions the fixed `MAP.home.weighbridge`
 deck. World dwell calls `actions.weighIn(id, { home: true })`, which checks commissioning
 and road legality and returns `bestDeliveryQuote`. Both bridges share `state.depot.tickets`;
 `hasTicket` validates total and every material against the current vehicle load, discards
@@ -125,7 +145,9 @@ stale tickets, and depot tip completion checks again before transferring invento
 Repeated weighing of an unchanged load emits no duplicate receipt. Timing is in
 `data/depot.json` (`weighSeconds`); home price is in `data/buildings.json`.
 
-D14 staff additions: workers default `experience`, `delivery` and `partnerId` for legacy
+### Staff
+
+Workers default `experience`, `delivery` and `partnerId` for legacy
 saves. `configureHaul` validates active customer/pair choices and locks changes during
 trips. Driver `spot.bed` is a plain world-supplied loading position; pairing only transfers
 within configured reach to a waiting, available same-site carrier. Customer loads choose
@@ -137,25 +159,33 @@ before another cut. `staffOnEvent` earns dig/sell/fix experience from completed 
 round-trip return earns drive experience. Thresholds in `data/staff.json` multiply by the
 current star, cap at five, and never change the agreed wage.
 
-S2 tipping audio: `synth.tipperRam` builds filtered valve flow and cylinder/seal friction;
+### Tipping and PTO sounds
+
+`synth.tipperRam` builds filtered valve flow and cylinder/seal friction;
 `ptoDrive` builds a 540 rpm mechanical pulse loop. Web Audio banks these as `tipperRam`
 and `pto`. World truck/trailer bed velocity gates ram gain (lowering is quieter/slower);
 tractor PTO is gated to a raising tip job and engine envelope. Voices stop when machinery
 is removed/destroyed. Gearbox audio is unchanged. Unit checks cover finite/non-clipping
 seamless buffers plus raising/lowering/idle/removal behavior; the browser API check is muted.
 
-M2 model production: `blender/review_models.py` now includes Used-only access joints,
+### Model detail
+
+`blender/review_models.py` now includes Used-only access joints,
 fasteners and soft transparent recess grime for truck/excavator. New details follow the
 existing Cab/House/Bed parents. Only those two compressed production GLBs changed;
 protected rig transforms are guarded by the builder and fleet asset tests.
 
-V1 field scenery: `map.js` farm `fieldWork` entries place static tractors and empty hitched
+### Farm field scenery
+
+`map.js` farm `fieldWork` entries place static tractors and empty hitched
 trailers in Mill/Westfield fields. `farms.js` reuses the game GLBs, adds solid colliders,
 merges scattered bales with farm batches and supplies `farmWorkRect` to keep tall tufts
 out of the machinery. No fleet entries, saved RNG draws or economic work are created.
 `farm-fields.mjs` checks scenery presence, unchanged fleet and two field screenshots.
 
-D7 daylight: `data/game.json.visualDayLengthSeconds` is 1200 while economic
+### Day, night and the two clocks
+
+`data/game.json.visualDayLengthSeconds` is 1200 while economic
 `dayLengthSeconds` is now also 1200 (P1), with the visual clock independent of speed. `core/visualClock.js` defaults old saves' optional
 `state.time.visualSeconds`, wraps active elapsed time and computes smooth solar phases.
 `game.advanceVisualTime(dt)` is called once per active real frame by `gameScreen.js`
@@ -168,20 +198,29 @@ The HUD marks the visual period and explains the business clock in its date tool
 `visualClock.test.js` covers separate timing, cyclic boundaries and save/legacy behaviour;
 `daylight.mjs` checks real pause/resume, lighting views, a night walk/dig and UI Continue.
 
+Business pacing: `time.ticksPerDay` stores the calendar rate. Save v6 records v5's 1200-tick legacy rate; `restoreClock` rebases ticks to the current 12000-tick day once, retaining day/hour/deadlines. New states store the current rate. Speed controls affect economic ticks; daylight remains real-time.
 
-P1 business pacing: `time.ticksPerDay` stores the calendar rate. Save v6 records v5's 1200-tick legacy rate; `restoreClock` rebases ticks to the current 12000-tick day once, retaining day/hour/deadlines. New states store the current rate. Speed controls affect economic ticks; daylight remains real-time.
+### The machine catalogue and trailers
 
-F1 catalogue: model tier IDs remain under machine families, preserving the `buyMachine(type,tier)` boundary. `machinery/catalogue.js` supplies descriptors and idempotent `migrateFleet`: old tractor bundles become a tractor plus attached trailer, preserving loads, mods, original total value/insurance and saved positions. `trailers.js` resolves `loadCarrier`, `combinationStats`, `cargoRoom`, hitching and gross/volume limits. Tickets remain under the driven tractor ID and record carrier ID. Hand tools, jobs, buckets, staff and stockpiles resolve the actual cargo owner. Bare tractors, passenger quads and detached trailers do not satisfy the last-delivery-vehicle safeguard. `world3d/fleetProfiles.js` provides drive/shape profiles and `fleetVariants.js` adds distinct bodywork to shared rigs plus mobility models; existing asset downloads remain unchanged. Trailer articulation uses a kinematic follower, with combination mass, grade/traction and trailer braking in the tractor physics.
+Model tier IDs remain under machine families, preserving the `buyMachine(type,tier)` boundary. `machinery/catalogue.js` supplies descriptors and idempotent `migrateFleet`: old tractor bundles become a tractor plus attached trailer, preserving loads, mods, original total value/insurance and saved positions. `trailers.js` resolves `loadCarrier`, `combinationStats`, `cargoRoom`, hitching and gross/volume limits. Tickets remain under the driven tractor ID and record carrier ID. Hand tools, jobs, buckets, staff and stockpiles resolve the actual cargo owner. Bare tractors, passenger quads and detached trailers do not satisfy the last-delivery-vehicle safeguard. `world3d/fleetProfiles.js` provides drive/shape profiles and `fleetVariants.js` adds distinct bodywork to shared rigs plus mobility models; existing asset downloads remain unchanged. Trailer articulation uses a kinematic follower, with combination mass, grade/traction and trailer braking in the tractor physics.
 
-G1 materials: ground `materialResponseAt` exposes resistance, cohesion, flow, wet grip and rolling resistance. `cutSweep` removes material along a finite moving cutting edge, with force/attack/width/capacity limits; a breaker can extract a finite rock reserve. `applyTraffic` tracks firmness and moves rut material into neighbouring shoulders without changing density or total tonnes. Compacted earthworks fill retains its real material mixture. The chunk mesh passes original geological contacts to the terrain shader, which uses soil/gravel textures on exposed faces. Ground persistence records material/layer IDs and lossless floats; loading reactivates unfinished settling and supports older packed saves.
+### Ground materials
 
-D15 operation: `machinery/digging.js` centralises true loose-volume bucket fill and directional attack. Assisted jobs marked `physical` receive material incrementally from world tooth sweeps and never mint a fallback bucket on completion. Dumps retain cargo until the real joint pose opens. Direct mouse and independent joint/slew keys use material resistance feedback, free look and precision. Digger placement saves optional arm/house/reach/depth/last-dump state. Attachments alter cut geometry and available tools through the action boundary.
+Ground `materialResponseAt` exposes resistance, cohesion, flow, wet grip and rolling resistance. `cutSweep` removes material along a finite moving cutting edge, with force/attack/width/capacity limits; a breaker can extract a finite rock reserve. `applyTraffic` tracks firmness and moves rut material into neighbouring shoulders without changing density or total tonnes. Compacted earthworks fill retains its real material mixture. The chunk mesh passes original geological contacts to the terrain shader, which uses soil/gravel textures on exposed faces. Ground persistence records material/layer IDs and lossless floats; loading reactivates unfinished settling and supports older packed saves.
 
-P2 entry hire: first-slot sale/earned/digger requirements and guaranteed apprenticeship wage/fee live in `data/staff.json`. Valid depot sales increment saved deliveries; older totals are restored from machine logbooks. Applicants appear when a post opens, without waiting for dawn. Staff hauling reserves the trailer as well as the tractor and respects both tonnes and bed volume.
+### Digging operation
 
-Q1 rentals and convenience: `data/rental.json` and `src/rental/` implement incoming short hire independently of contractor hire-out. Calendar-day deadlines, deposits, wear and overdue charges are saved on the machine; loaded/occupied/busy rentals cannot be removed. Rentals are excluded from owned-machine progression, resale collateral and insurance. `fleetNavigation.js` adds explicit map waypoints through actions. World hand tools implement repeat swings and cargo-preserving local recovery. Jobs-board progression has clean-tonnage alternatives.
+`machinery/digging.js` centralises true loose-volume bucket fill and directional attack. Assisted jobs marked `physical` receive material incrementally from world tooth sweeps and never mint a fallback bucket on completion. Dumps retain cargo until the real joint pose opens. Direct mouse and independent joint/slew keys use material resistance feedback, free look and precision. Digger placement saves optional arm/house/reach/depth/last-dump state. Attachments alter cut geometry and available tools through the action boundary.
 
-## F3 / P3 / D16 / H1 game feel
+### First hire
+
+First-slot sale/earned/digger requirements and guaranteed apprenticeship wage/fee live in `data/staff.json`. Valid depot sales increment saved deliveries; older totals are restored from machine logbooks. Applicants appear when a post opens, without waiting for dawn. Staff hauling reserves the trailer as well as the tractor and respects both tonnes and bed volume.
+
+### Rentals and conveniences
+
+`data/rental.json` and `src/rental/` implement incoming short hire independently of contractor hire-out. Calendar-day deadlines, deposits, wear and overdue charges are saved on the machine; loaded/occupied/busy rentals cannot be removed. Rentals are excluded from owned-machine progression, resale collateral and insurance. `fleetNavigation.js` adds explicit map waypoints through actions. World hand tools implement repeat swings and cargo-preserving local recovery. Jobs-board progression has clean-tonnage alternatives.
+
+### Game feel, ground survey and personal targets
 
 `data/handling.json` holds walking acceleration, jump grace, vehicle direction-change and cab spring tuning. `playerMovement.js` is pure movement/jump state; `player.motion()` reports collision-resolved travel. `cameraFeel.js` uses that travel for optional bob, one-shot landing and sprint FOV. `headSway.js` uses a bounded analytic damped spring and resets on seat changes/teleports. `data/presentation.json` holds camera, survey and feedback tuning. Settings persist `cameraMotion` and `fieldOfView` with safe legacy defaults.
 
@@ -189,7 +228,7 @@ Ground `inspectAt(x,z)` reads the actual top-to-bottom loose, compacted and natu
 
 Career `pinnedMilestone`, `pinMilestone` and `unpinMilestone` expose an optional saved focus through `game.actions`. Unknown legacy IDs clear safely; selection does not emit gameplay events or change automatic milestone payouts. HUD/Home reuse their existing goal surface and Milestones exposes choose/switch/clear. Narrow HUDs suppress mentor cards while a goal is visible; those messages remain in Messages.
 
-## F4 / Q2 / E1 hauling, tools and planning
+### Cruise control, the tool picker and earthworks quotes
 
 `cruiseControl.js` is a runtime-only speed controller using JSON tuning in `handling.vehicle.cruise`. `truckPhysics` sends contact/grip/slip, shift and manual-pedal state; the helper requests ordinary throttle/brake forces without setting velocity. Active speed targets can only decrease with physical limits and clear on pedal intent, engine stop or recovery. World key actions also cancel immediately so brief taps work between physics frames; exit/unoccupied/job/broken boundaries clear assistance. HUD telemetry stays read-only.
 

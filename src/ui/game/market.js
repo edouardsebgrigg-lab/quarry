@@ -65,8 +65,9 @@ export function priceBoard(game) {
       const trendKey = `${dir}|${newsText}`;
       if (cells.trend.dataset.key !== trendKey) {
         cells.trend.dataset.key = trendKey;
-        cells.trend.replaceChildren(dir > 0 ? '▲ Rising' : dir < 0 ? '▼ Falling' : '— Steady',
-          newsText ? el('span', { class: `trend-news ${news > 0 ? 'up' : 'down'}` }, newsText) : null);
+        // (replaceChildren would print a null as the word "null")
+        cells.trend.replaceChildren(...[dir > 0 ? '▲ Rising' : dir < 0 ? '▼ Falling' : '— Steady',
+          newsText ? el('span', { class: `trend-news ${news > 0 ? 'up' : 'down'}` }, newsText) : null].filter(Boolean));
       }
       cells.trend.className = `trend trend-${dir > 0 ? 'up' : dir < 0 ? 'down' : 'flat'}`;
       drawSparkline(cells.spark, game.state.market.products[id].history, dir > 0 ? '#6bd98a' : dir < 0 ? '#ff6b6b' : '#98a0ab');

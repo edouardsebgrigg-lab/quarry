@@ -1,6 +1,7 @@
 // Quick health check of the whole game in a real browser (a few minutes with software rendering):
-// the menu loads, a new game starts, a shovelful comes out of the field, every laptop app opens,
-// the map and pause menu open, and a save comes back with the same money, day and shovel load.
+// a new game starts, a shovelful comes out of the field, every laptop app opens without printing
+// "null", "undefined" or "NaN", the map opens, and a save comes back with the same money, clock
+// and shovel load.
 // Fails on any console error. Keep it passing; it's the first check to run after a change.
 //   OUT=<dir> timeout 600 node docs/handover/browser-checks/smoke.mjs   (test server on 5174)
 import assert from 'node:assert/strict';
@@ -29,18 +30,21 @@ await frames(3);
 const apps = await q(() => [...document.querySelectorAll('.lt-dock-app')].map((b) => b.getAttribute('aria-label')));
 assert.ok(apps.length >= 8, `only ${apps.length} laptop apps`);
 for (const label of apps) {
-  const shown = await q((label) => {
+  const { shown, junk } = await q((label) => {
     document.querySelector(`.lt-dock-app[aria-label="${label}"]`).click();
-    return document.querySelector('.lt-app-body')?.childElementCount ?? 0;
+    const body = document.querySelector('.lt-app-body');
+    // A missing value printed as text ("null", "undefined", "NaN") is always a bug.
+    return { shown: body?.childElementCount ?? 0, junk: (body?.innerText ?? '').match(/(null|undefined|NaN)(?![a-z])/)?.[0] ?? null };
   }, label);
   assert.ok(shown > 0, `${label} shows nothing`);
+  assert.equal(junk, null, `${label} shows "${junk}"`);
   await frames(1);
 }
 await page.keyboard.press('Escape');
 await frames(3);
 step(`laptop apps (${apps.join(', ')})`);
 
-// Map and pause menu.
+// The map.
 await page.keyboard.press('Tab');
 await frames(3);
 assert.ok(await q(() => !!document.querySelector('.overlay-map, .map-overlay, .overlay.map')), 'map did not open');
