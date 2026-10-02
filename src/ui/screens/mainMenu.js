@@ -2,7 +2,7 @@ import { el, kbd } from '../dom.js';
 
 function background() {
   const bg = el('div', { class: 'main-menu-bg' });
-  bg.style.backgroundImage = "url('ui/menu.jpg')"; // assets/ui/menu.jpg, rendered in Blender
+  bg.style.backgroundImage = "url('ui/menu.jpg')"; // assets/ui/menu.jpg, rendered by the game (docs/handover/browser-checks/menu-backdrop.mjs)
   return [bg, el('div', { class: 'main-menu-shade' })];
 }
 
