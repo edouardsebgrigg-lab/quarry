@@ -17,7 +17,7 @@ import { createExcavator, POUR_ANGLE } from './excavator.js';
 import { createDumper } from './dumper.js';
 import { createMouse } from './mouse.js';
 import { preloadModels } from './glbModels.js';
-import { preloadGround } from './groundMaterial.js';
+import { preloadGround, groundWeather } from './groundMaterial.js';
 import { preloadVegetation, createVegetation, createTrees } from './vegetation.js';
 import { createWorldSounds } from './sounds.js';
 import { createGroundView } from './groundChunks.js';
@@ -26,7 +26,6 @@ import { createPlanner } from './planner.js';
 import { createThumbnails } from './thumbnails.js';
 import { createWorkLight } from './workLight.js';
 import { createRain } from './rain.js';
-import { groundWeather } from './groundMaterial.js';
 import { workerFor } from '../staff/index.js';
 import { visualHour } from '../core/visualClock.js';
 import { currentWeather } from '../weather/index.js';
@@ -45,7 +44,7 @@ import { pileTotal } from '../quarry/index.js';
 import { bucketFill, cuttingAttack } from '../machinery/digging.js';
 import { loadCarrier, combinationStats, attachedTrailer, cargoVolume } from '../machinery/trailers.js';
 import {
-  getStats, machinesAt, machineName, getMachine, JOBS, jobProgress, isDigger, bucketRadius, typeName, machinePrice,
+  getStats, machinesAt, machineName, getMachine, JOBS, jobProgress, isDigger, typeName, machinePrice,
 } from '../machinery/index.js';
 import { hasTicket, quoteDelivery } from '../economy/index.js';
 

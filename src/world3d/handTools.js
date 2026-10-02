@@ -17,7 +17,7 @@ import { pileTotal } from '../quarry/index.js';
 import {
   shovelLoad, barrowLoad, barrowFill, looseVolume, whyCannotDig,
 } from '../handtools/index.js';
-import { getMachine, getStats, machineName } from '../machinery/index.js';
+import { getMachine, machineName } from '../machinery/index.js';
 
 // Wheelbarrow geometry in model space (X forward, Y up), as built by blender/handtools.py.
 const AXLE = new THREE.Vector3(0.56, 0.19, 0);
@@ -29,7 +29,6 @@ const HOLD = 0.42; // grips this far in front of your feet
 const RIM_Y = 0.64;
 const TRAY = { x0: -0.36, x1: 0.62, hw: 0.34, floor: 0.35 };
 const TIP_PITCH = -1.05; // nose down while tipping (radians)
-const GRAB_DIST = 1.5;
 
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const clamp = THREE.MathUtils.clamp;

@@ -178,7 +178,7 @@ export function buildMobilityModel(type, rideHeight, shape) {
   const lamp = new THREE.MeshStandardMaterial({color:0xf1e8cf,emissive:0x8b8366,emissiveIntensity:.15,roughness:.25});
   const red = new THREE.MeshStandardMaterial({color:0x872a21,emissive:0x5f160f,emissiveIntensity:.15,roughness:.3});
   const y=value=>value-rideHeight;
-  const quad=type==='quad',buggy=type==='buggy',van=type==='serviceVan';
+  const quad=type==='quad',buggy=type==='buggy';
   const L=shape.halfLength,W=shape.halfWidth;
   function cylinder(parent,radius,length,position,mat,axis='z',segments=24) {
     const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,length,segments),mat);

@@ -10,7 +10,6 @@ const KINDS = [
   { name: 'thistle', cell: 3, size: [0.9, 1.3], sway: 0.4 },
 ];
 const CELLS = 4;
-const COUNT = { low: 6000, medium: 14000, high: 24000, ultra: 36000 };
 
 let atlas = null;
 let treeAtlas = null;

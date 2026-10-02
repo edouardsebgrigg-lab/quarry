@@ -4,7 +4,7 @@ import { el, setText } from '../../dom.js';
 import { money, price, tonnes } from '../../format.js';
 import { getDate } from '../../../core/index.js';
 import { currentPrice, activeNews } from '../../../economy/index.js';
-import { machinesAt } from '../../../machinery/index.js';
+import { machinesAt, machinePrice } from '../../../machinery/index.js';
 import { lineIcon } from './icons.js';
 import { forecast } from '../../../weather/index.js';
 import { nextInspection, inspectionReport, dealerOffer } from '../../../happenings/index.js';
@@ -12,7 +12,6 @@ import { contractsState } from '../../../contracts/index.js';
 import { hireState } from '../../../hire/index.js';
 import { staffState, openSlots } from '../../../staff/index.js';
 import { milestones, pinnedMilestone } from '../../../career/index.js';
-import { machinePrice } from '../../../machinery/index.js';
 
 const targetAmount = (metric, value) => ['tonnesSold', 'tonnesDug', 'cleanTonnes', 'gravelDug'].includes(metric) ? tonnes(value)
   : ['bestDay', 'totalEarned'].includes(metric) ? money(value) : metric === 'roadMetres' ? `${Math.round(value)} m` : String(Math.floor(value));

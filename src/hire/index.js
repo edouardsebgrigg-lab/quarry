@@ -16,7 +16,6 @@ export function hireState(ctx) {
 }
 
 const today = (ctx) => getDate(ctx.state, ctx.data).day;
-const roadLegal = (ctx, m) => !!ctx.data.machines.types[m.type]?.roadLegal;
 const loaded = (m) => Object.values(m.load ?? {}).some((t) => t > 0.01);
 
 // What a kind of machine hires for a day (from the average of its prices).

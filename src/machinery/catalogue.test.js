@@ -3,7 +3,7 @@ import { loadData } from '../core/data.js';
 import { createTestGame } from '../game/testing.js';
 import { createMachine, getStats, describeStats } from './index.js';
 import { catalogueModels, migrateFleet } from './catalogue.js';
-import { attachedTrailer, loadCarrier, combinationStats, attachTrailer, detachTrailer, canDeliver, cargoRoom, cargoVolume } from './trailers.js';
+import { loadCarrier, combinationStats, attachTrailer, detachTrailer, canDeliver, cargoRoom, cargoVolume } from './trailers.js';
 import { serviceSupport } from './serviceSupport.js';
 
 const data = loadData();

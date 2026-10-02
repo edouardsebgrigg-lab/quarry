@@ -2,11 +2,10 @@
 // paying a cash reward and some switching on a perk. The counters the milestones need that the
 // rest of the game doesn't keep (clean-load streaks, gravel dug, road built, the best day...)
 // are kept here, from game events. Sends `milestoneReached` ({ id, title, reward, perk, perkName }).
-import { addMoney } from '../economy/index.js';
+import { addMoney, creditRating } from '../economy/index.js';
 import { getDate } from '../core/index.js';
 import { contractsState, reputation } from '../contracts/index.js';
 import { currentWeather } from '../weather/index.js';
-import { creditRating } from '../economy/index.js';
 
 const COUNTERS = {
   cleanStreak: 0, bestCleanStreak: 0, cleanLoads: 0, cleanTonnes: 0, gravelDug: 0, roadMetres: 0,

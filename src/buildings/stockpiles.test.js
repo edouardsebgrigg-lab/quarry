@@ -66,7 +66,7 @@ describe('T6 stockpile bays',()=>{
     delete saved.stockpiles; const old=createGame({state:saved}); expect(old.state.stockpiles).toEqual({});
   });
   it('rejects unowned, unknown and contradictory destinations',()=>{
-    const {game,ctx,truck,a,digger}=setup(); truck.load={topsoil:0.5};
+    const {game,truck,a,digger}=setup(); truck.load={topsoil:0.5};
     expect(a.tip(truck.id,{stockpileBay:'west',bay:'topsoil'}).ok).toBe(false);
     expect(a.tip(truck.id,{stockpileBay:'wrong'}).ok).toBe(false);
     delete game.state.buildings.home.stockpiles;

@@ -89,7 +89,6 @@ export function createGroundView({ scene, physics, ground }) {
         const dz = (h(i, j + 1) - h(i, j - 1)) / (2 * cell);
         const len = Math.hypot(dx, 1, dz);
         nor.set([-dx / len, 1 / len, -dz / len], v * 3);
-        const slope = Math.hypot(dx, dz);
         const mat = matIds[ground.cellSurface(i, j)];
         const grass = mat === 'topsoil' && !ground.cellDisturbed(i, j);
         const look = grass ? grassLook(vx(i), vz(j)) : LOOK[mat];

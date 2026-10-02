@@ -14,7 +14,7 @@
 // what staff do counts for contracts, milestones and the logbook like your own work.
 import { getDate, createRng } from '../core/index.js';
 import { spendMoney, chargeFuel, weighIn, quoteDelivery, sellLoad } from '../economy/index.js';
-import { getMachine, getStats, machineName, startJob, dumpBucket, isDigger, isRoadLegal } from '../machinery/index.js';
+import { getMachine, getStats, machineName, startJob, dumpBucket, isDigger } from '../machinery/index.js';
 import { applyWear } from '../machinery/wear.js';
 import { contractsState, reputation, acceptContract } from '../contracts/index.js';
 import { pileTotal } from '../quarry/index.js';

@@ -7,7 +7,7 @@ import { pileTotal } from '../quarry/index.js';
 // Plays the machine loop like a sensible player (without the driving): dig buckets into the
 // truck until it's full, weigh in at the depot and tip in the gravel bay; service worn machines.
 function playMachines(game, loads) {
-  const { ctx, actions } = game;
+  const { actions } = game;
   const ex = game.state.machines.find((m) => m.type === 'excavator');
   const truck = game.state.machines.find((m) => m.type === 'truck');
   const finish = (m) => { for (let i = 0; i < 10000 && m.job; i++) game.tick(); };

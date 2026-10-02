@@ -4,13 +4,6 @@ A first-person quarry mining game for PC. Start with a shovel, a wheelbarrow and
 
 Built with plain JavaScript, [Three.js](https://threejs.org) (3D) and [Rapier](https://rapier.rs) (physics). The game logic is separate from the 3D, so balancing and rules live in `data/` and `src/` modules that know nothing about graphics.
 
-The fleet includes refined Blender models with transparent cab glazing, worn paint
-and distinct rubber/steel materials. The complete Blender library now includes authored
-quad, buggy, 4×4 and service van models. Cab/chase fit, articulated cargo floors and
-trailer hitches are checked across the full fleet. Shops and laptop apps have responsive
-layouts, with purchase details and notifications given their own space.
-See [model rebuilding and rig contracts](docs/models.md).
-
 ## Run it
 
 You need [Node.js](https://nodejs.org) (version 20 or newer).
@@ -36,6 +29,7 @@ Use Chrome or Edge for the best experience (full screen and mouse capture work b
 | R | Service / repair the nearest machine |
 | F | Plan a haul road, ramp or level area on your land (see below) |
 | L | Toggle ground survey: aim at your field to see the remaining material layers and bedrock depth |
+| V | Recover a stuck wheelbarrow onto a clear, level patch nearby (its load stays in it) |
 
 | Planning works (F, on foot) | |
 |---|---|
@@ -51,12 +45,15 @@ Use Chrome or Edge for the best experience (full screen and mouse capture work b
 | T | Tip it: pushed up to the pickup's tailgate it goes into the bed, anywhere else on your field it makes a pile |
 | E | Let go |
 
+After tipping a barrow into the pickup, hold **S** to back away from the tailgate before turning.
+
 | Pickup, tractor and tipper truck | |
 |---|---|
 | W / S | Accelerate / brake. Stopped, hold S to reverse |
 | A / D | Steer |
 | Space | Handbrake |
 | T | Unload: in a depot bay (after weighing in) you get paid; on your field it makes a heap. The truck tips its bed, the tractor tips its trailer, you shovel the pickup off by hand |
+| Z | Cruise control: holds your current speed (above 8 km/h); Z again, W, S or Space cancels |
 | C | Cab / outside camera |
 | V | Recover (if it's stuck or on its side; puts the trailer straight behind the tractor) |
 | E | Get out |
@@ -68,6 +65,7 @@ Use Chrome or Edge for the best experience (full screen and mouse capture work b
 | Left Mouse | Dump the bucket into a truck, trailer or the pickup (ring turns blue) or on the ground |
 | W A S D | Drive on tracks (not road-legal: they stay on your land) |
 | G | Switch to Direct controls |
+| Q | Choose an attachment (bucket, trench, grading, breaker) |
 | C | Cab / outside camera |
 | E | Get out |
 
@@ -96,8 +94,8 @@ In Direct mode the tooth edge sweeps a strip through the ground. Bucket width, a
 
 | Anywhere | |
 |---|---|
-| B | Shop (machines and upgrades) |
-| M | Depot prices |
+| B | Office laptop: plant dealer (machines, upgrades, yard buildings) |
+| M | Office laptop: depot prices |
 | Tab | Map |
 | J | Goal details |
 | H | Show / hide the key hints |
@@ -107,17 +105,11 @@ In Direct mode the tooth edge sweeps a strip through the ground. Bucket width, a
 
 All keys can be changed in Settings. **Settings → Display** also controls field of view (50–95°) and camera motion; set motion to zero for a steady view. Walking eases into movement and stops, jumps support a small input buffer, and reversing a road vehicle brakes before changing direction.
 
-## Machines and sound
+**Q in a digger** opens compatible attachments with their purpose and actual width/capacity or breaking force. Pick a tool directly; the panel returns to the same cab. Stop travelling/slewing, finish the stroke and empty the bucket first. Rental tools stay unchanged. T still cycles empty attachments or recalls the last Assisted dump target.
 
-The machines behave like the real thing:
-- **Pickup:** an old petrol six with a 4-speed automatic. It carries 0.8 t in the bed; you load it by barrow, shovel or excavator and shovel it off by hand at the other end.
-- **Tipper truck:** a diesel engine with a torque curve and a 4-speed automatic gearbox, engine braking, air brakes and grip that depends on the ground (tarmac, gravel, dirt, grass). A loaded truck is heavier at the back, slower to pull away, slower up hills and longer to stop. Worn trucks misfire.
-- **Tractor and trailer:** an old diesel with a low-revving torque curve and big driven rear wheels, pulling a tipping trailer. The trailer follows like a real one: it cuts the corner inside the tractor's path, and it jackknifes if you reverse carelessly (the back goes the opposite way to the wheel). Loaded, it's slow to get going and slow to stop.
-- **Mini digger and site dumper:** small rubber-tracked site machines. The mini digger is Assisted or Direct like the excavator, just smaller and much cheaper; the dumper carries a tonne or so round your field and tips its skip forward.
-- **Excavator:** the arm is solved so the bucket really reaches the ground or the truck bed: it reaches out, bites, drags back along the ground and curls. Every joint moves like a hydraulic ram, the rams slide in and out, the house swings with inertia, and the tracks roll round their sprockets. The machine tilts with the ground and rocks as the bucket bites.
-- Engines start when you get in (starter motor, a puff of black smoke) and stop a few seconds after you leave. From the cab you feel acceleration, braking, bumps and engine vibration.
+**Z in a road vehicle** captures your current forward speed once above 8 km/h. Release the accelerator to let cruise hold it; Z again, a new W/S press, or Space cancels. Engine off, recovery, leaving the cab or sustained loss of wheel contact also cancels it. Loads, grades, grip, available engine power and towing speed limits still matter. The dash shows the selected speed and any grip/terrain limitation; cruise is cleared when loading a save.
 
-All sound is generated in code (no recordings): engines by rpm and load, gear changes, tyres on gravel or tarmac, air brakes, the reverse alarm, hydraulics, clanking tracks, digging, rock pouring into the steel bed, footsteps, wind, birds and the odd car on the road outside. Volume is in Settings.
+**Settings → Controls → Hold to repeat shovel** avoids repeated clicks. **V on foot** recovers a stuck wheelbarrow onto a nearby clear, level patch while retaining its cargo; V in a road vehicle recovers that vehicle. **Tab → machine name** selects a machine and marks the route to it; select *Follow the current goal* to clear the waypoint. Existing saves retain their business date, loads, staff and trailer combinations.
 
 ## Getting started
 
@@ -139,6 +131,123 @@ You've bought a field off Mill Lane, outside the village of Ashby, with $200, a 
 The Micro 08 is affordable from your starting cash. The pacing tests estimate the first tractor/trailer pair within 40 minutes of pickup hauling, then check that larger buckets and beds make subsequent upgrades practical. These estimates assume continuous work and are not a timed playthrough.
 
 Each goal pays a small bonus. Entry equipment is small and slow; upgrades improve bucket capacity, reach, hydraulic force, speed or towing capacity.
+
+## Selling at the depot
+
+1. Drive onto the weighbridge at the gate and stop. After a moment the light turns green and you get a ticket for the load.
+2. Back up to the bay for your material (TOPSOIL, CLAY, SAND, GRAVEL or MIXED FILL; the prompt tells you when you're in one and what you'll get) and unload (**T**).
+3. You're paid per tonne. A **clean** load (95% or more of that material) gets the full price, a **slightly mixed** one (80–95%) gets 75%, and anything more mixed is paid as mixed fill. Tipping in the mixed fill bay always pays the fill price.
+
+Prices drift up and down, and flooding the market with one material lowers its price for a while. **M** shows the depot's price board.
+
+## Digging and the ground
+
+The field is real ground you can dig anywhere: topsoil on top, then clay, sand and gravel, with rock at the bottom. Each shovelful comes out of the ground where you aim, so holes get deeper and walls that are too steep cave in. Whatever you tip on the ground (off the shovel, out of the barrow or off a truck) makes a real heap that slumps to its natural slope; you can walk on it and shovel it back up. A barrow holds about 0.11 m³: around 115 kg of topsoil, more of heavier gravel. Topsoil sells best; clay is worth little. Keep the layers apart if you want clean loads.
+
+Topsoil crumbles easily, clay resists and holds steep faces, sand spreads readily and gravel settles as loose aggregate. Weather and compaction affect grip and resistance. A compatible breaker extracts finite bedrock into saleable broken rock; ordinary buckets cannot cut intact rock. Traffic compacts the surface and displaces shallow rut spoil without destroying tonnes. Exposed slopes show the underlying strata.
+
+The machine dash shows the attachment, material under the teeth, cutting resistance, hydraulic effort and actual bucket volume. Advice explains a full bucket, a hard bite, the wrong tool for rock or loose rubble, low grip and excessive towing load. The ground survey reads the current excavated column, including deposited spoil and compacted fill; it changes no material or money. Thin deposits show their cover and the working material below.
+
+## Machines
+
+The dealer separates **Diggers**, **Tractors**, **Trailers**, **Haulage** and **Getting around**. Condition is saved on each owned machine separately from its model and upgrades.
+
+| Digger | Operating mass | Bucket | Reach |
+|---|---:|---:|---:|
+| Micro 08 | 0.8 t | 0.03 m³ | 2.4 m |
+| Mini 16 | 1.6 t | 0.08 m³ | 3.3 m |
+| Compact 25 | 2.5 t | 0.12 m³ | 4.0 m |
+| Compact 35 | 3.5 t | 0.20 m³ | 4.6 m |
+| Utility 80 | 8 t | 0.40 m³ | 6.8 m |
+| Production 130 | 13 t | 0.70 m³ | 8.0 m |
+| Quarry 210 | 21 t | 1.10 m³ | 9.2 m |
+| Heavy 320 | 32 t | 1.60 m³ | 10.5 m |
+
+Five tractors run from Yard 35 (25 km/h, 3 t gross tow limit) to Haul 210 (50 km/h, 24 t gross). Five tipping trailers have 1.5, 3, 6, 10 and 16 t nominal payloads; usable payload also depends on the tractor's tow limit and the bed's volume. Single, tandem and triaxle bodies have different braking and tipping behaviour. Stop within 10 m and use **Fleet → Hitch**; **Unhitch** parks the same loaded trailer. Load and weighbridge tickets follow the trailer, and changing the combination invalidates its ticket.
+
+A quad, utility buggy, purchasable 4×4 and service van provide other ways to get around. The service van provides nearby mechanical support. Incoming one- or three-day rentals in the dealer let you try diggers or vehicles before buying. The fee and refundable deposit are shown before renting; return through Fleet after unloading and releasing staff. Keeping equipment past its due time incurs another day rate, and damage is settled from the deposit. A rental cannot be sold or hired out.
+
+The machines behave like the real thing:
+- **Pickup:** an old petrol six with a 4-speed automatic. It carries 0.8 t in the bed; you load it by barrow, shovel or excavator and shovel it off by hand at the other end.
+- **Tipper truck:** a diesel engine with a torque curve and a 4-speed automatic gearbox, engine braking, air brakes and grip that depends on the ground (tarmac, gravel, dirt, grass). A loaded truck is heavier at the back, slower to pull away, slower up hills and longer to stop. Worn trucks misfire.
+- **Tractor and trailer:** an old diesel with a low-revving torque curve and big driven rear wheels, pulling a tipping trailer. The trailer follows like a real one: it cuts the corner inside the tractor's path, and it jackknifes if you reverse carelessly (the back goes the opposite way to the wheel). Loaded, it's slow to get going and slow to stop.
+- **Mini digger and site dumper:** small rubber-tracked site machines. The mini digger is Assisted or Direct like the excavator, just smaller and much cheaper; the dumper carries a tonne or so round your field and tips its skip forward.
+- **Excavator:** the arm is solved so the bucket really reaches the ground or the truck bed: it reaches out, bites, drags back along the ground and curls. Every joint moves like a hydraulic ram, the rams slide in and out, the house swings with inertia, and the tracks roll round their sprockets. The machine tilts with the ground and rocks as the bucket bites.
+- Engines start when you get in (starter motor, a puff of black smoke) and stop a few seconds after you leave. From the cab you feel acceleration, braking, bumps and engine vibration.
+
+All sound is generated in code (no recordings): engines by rpm and load, gear changes, tyres on gravel or tarmac, air brakes, the reverse alarm, hydraulics, clanking tracks, digging, rock pouring into the steel bed, footsteps, wind, birds and the odd car on the road outside. Volume is in Settings.
+
+## Building with material
+
+Press **F** on foot to plan works on your field: a **haul road**, a **ramp** (steeper, for getting out of a pit) or a **level area** (flattens a patch, filling holes). Aim at the ground and click where it starts and where it ends; a coloured strip shows the finished surface (green: you can build it, amber: you can't afford it yet, red: it can't be built, with the reason on the card). The card says the slope, the price (labour, per square metre) and the material: what has to be dug out, the gravel for the surface and where it comes from.
+
+Nothing is made from nothing. The strip is cut or filled to the planned grade, gravel for the surface and any fill still needed are taken from **loose heaps within 30 m** of it (tip gravel there first: off the truck, the dumper, the barrow or a bucket), and whatever the cut left over is heaped beside the road, never lost. Roads and ramps are topped with a loose gravel surface (vehicles use the game's gravel driving behaviour: it rolls easier than dirt or grass); a built strip is firm, so it doesn't slump, but digging into it breaks it up again. Roads can be up to 10% slope, ramps 18%. Move machines and the wheelbarrow clear of the cells being graded, including the side slopes (with a 0.5 m safety margin). You can stand at the start post to build: your feet are placed on the new surface. You can't build on rock or at the edge of your land. Built ground is saved with the game.
+
+In the preview, the amber ring marks where spare spoil will be heaped. Move machines and the
+wheelbarrow clear first; heap cells with something parked on them can't supply material.
+
+Road/ramp/level previews show usable gravel from the planned cut and nearby clear heaps, exact required/available tonnes, compacted fill volumes and quantitative shortages. A steep plan gives the minimum run for the same rise. Planning controls sit inside the quote, and a successful build stays confirmed there. The preview costs nothing and creates no material; only the final click builds and charges.
+
+## Yard facilities
+
+Open the plant dealer on the laptop (**B**) and choose **Yard buildings**. The first facilities commission structures
+already in your yard: a **Container workshop** ($450) cuts service/repair prices by 25% and
+times by 30%; **Bulk fuel supply** ($300) cuts machine-job fuel charges by 15%. Benefits apply
+to machines at this site, including Direct digging. Existing maintenance jobs keep their quoted
+price and duration. Ownership is saved, and signs appear on commissioned structures. Prices
+are an initial balance pass. These are fixed upgrades; they do not place new buildings.
+
+**Stockpile bays** (also in Yard buildings) let you hold material until the price is right. Back a carrier’s tail into
+one of the three bays at the south end of the yard and press T to store its load.
+Each bay holds 25 t. With a digger bucket over a bay, hold LMB in Assisted mode
+(or cut into the heap in Direct mode) to reload stored material. Dump the bucket into
+a carrier as usual. Mixing stays mixed, and storing earns no sale income. Tab shows each
+bay’s contents and grade; inventory survives saving and loading.
+
+Commission the **Home weighbridge** in Yard buildings to weigh at your driveway. Stop
+a loaded road vehicle on the steel deck: its load, purity and current best depot quote
+appear with the ticket. You can then drive straight to the depot bays. The quote can
+change on the journey. Adding/removing material invalidates the ticket; field or
+stockpile tipping clears it. The depot bridge still weighs loads normally.
+
+## The loop with machines
+
+1. Get in the mini digger (or excavator), drive it onto your field, swing the bucket over the ground and hold the left mouse button to dig. It digs where the ring is, as deep as the bucket bites.
+2. Park the pickup, tractor or truck next to it, swing round and click to dump each bucket into the bed.
+3. Drive to the depot, weigh in, back into the right bay and press **T** to tip (with the tractor, back the trailer in: take it slowly).
+4. Buy upgrades in the plant dealer (**B**). Service your machines (**R**) before they break down.
+
+Site machines (mini digger, excavator, dumper) can't leave your land; the pickup, tractor and truck can go anywhere.
+
+## Staff
+
+Hire people in the laptop's **Staff** app and give each one a job and a machine:
+
+- **Digger operator:** digs where the digger is parked, sorts heaps by material, or loads a paired driver's truck directly.
+- **Haulage driver:** hauls heaps from the field (or buckets from a paired operator) to the depot, a jobs-board customer or your regular order.
+- **Sales and office:** gets a better price for every load and takes on work from the jobs board.
+- **Fitter:** services and repairs your machines without being asked, and cuts the cost of the work.
+
+Everyone has digging, driving, selling and fixing skills (one to five stars) and a daily wage, paid each morning. You can't drive a machine someone is working. The first staff post opens when you own a digger and make two depot sales (or earn $120). An apprentice is available immediately at **$18 per day with an $18 fee**. Later posts keep their existing growth requirements. Payroll is shown in Staff and skill grows through real work.
+
+In **Staff**, haulage drivers have Customer and Loading choices. Select an accepted
+jobs-board customer or regular order to haul its clean material on purpose. Finished
+jobs wait for a new choice; regular drivers wait once this week's quota is filled.
+Park a truck bed within the digger's reach, assign both workers, and choose that
+operator under Loading to receive buckets directly. A full bed leaves for delivery;
+leftover bucket material stays with the operator. Heaps remain available as a loading choice.
+Completed digging, round trips, sales and fitter jobs earn experience and raise the
+matching skill up to five stars. The agreed daily wage stays fixed; progress appears in Staff.
+
+## Time, day and night
+
+Daylight follows a separate **20-minute cycle** of active play, with a moving sun, dusk,
+night and dawn. The business calendar takes **20 minutes per day at 1×**: wages, prices, contracts
+and deadlines still follow the date/clock shown in the HUD. Changing economic speed
+leaves daylight at its normal pace. Both clocks stop when play pauses or loses focus.
+Night has moonlit ambient light and an automatic work light following your view; the
+weather label shows Dawn/Dusk/Night. The daylight phase is saved; older saves start it
+at morning.
 
 ## Milestones and perks
 
@@ -166,122 +275,12 @@ The numbers are in `data/happenings.json`.
 
 The map is 2 km across. Your land is the 150 m field and the yard next to it, on Mill Lane. The lane runs east and then north through **Ashby** (a village with a pub and the machine dealer, **Ashby Plant**). In the middle of the village **Quarry Road** turns off west to **Ashby Aggregates**, the depot where you sell. It's about 1.2 km from your gate by road, a couple of minutes in the pickup. Site machines (the excavator) aren't road-legal and stay on your land; the pickup and the tipper truck can go anywhere. Four farms sit back from the lanes (Mill Farm is across the lane from your gate); they're scenery for now.
 
-## Selling at the depot
+## For developers and agents
 
-1. Drive onto the weighbridge at the gate and stop. After a moment the light turns green and you get a ticket for the load.
-2. Back up to the bay for your material (TOPSOIL, CLAY, SAND, GRAVEL or MIXED FILL; the prompt tells you when you're in one and what you'll get) and unload (**T**).
-3. You're paid per tonne. A **clean** load (95% or more of that material) gets the full price, a **slightly mixed** one (80–95%) gets 75%, and anything more mixed is paid as mixed fill. Tipping in the mixed fill bay always pays the fill price.
-
-Prices drift up and down, and flooding the market with one material lowers its price for a while. **M** shows the depot's price board.
-
-## Digging by hand
-
-The field is real ground you can dig anywhere: topsoil on top, then clay, sand and gravel, with rock at the bottom. Each shovelful comes out of the ground where you aim, so holes get deeper and walls that are too steep cave in. Whatever you tip on the ground (off the shovel, out of the barrow or off a truck) makes a real heap that slumps to its natural slope; you can walk on it and shovel it back up. A barrow holds about 0.11 m³: around 115 kg of topsoil, more of heavier gravel. Topsoil sells best; clay is worth little. Keep the layers apart if you want clean loads.
-
-## Building with material
-
-Press **F** on foot to plan works on your field: a **haul road**, a **ramp** (steeper, for getting out of a pit) or a **level area** (flattens a patch, filling holes). Aim at the ground and click where it starts and where it ends; a coloured strip shows the finished surface (green: you can build it, amber: you can't afford it yet, red: it can't be built, with the reason on the card). The card says the slope, the price (labour, per square metre) and the material: what has to be dug out, the gravel for the surface and where it comes from.
-
-Nothing is made from nothing. The strip is cut or filled to the planned grade, gravel for the surface and any fill still needed are taken from **loose heaps within 30 m** of it (tip gravel there first: off the truck, the dumper, the barrow or a bucket), and whatever the cut left over is heaped beside the road, never lost. Roads and ramps are topped with a loose gravel surface (vehicles use the game's gravel driving behaviour: it rolls easier than dirt or grass); a built strip is firm, so it doesn't slump, but digging into it breaks it up again. Roads can be up to 10% slope, ramps 18%. Move machines and the wheelbarrow clear of the cells being graded, including the side slopes (with a 0.5 m safety margin). You can stand at the start post to build: your feet are placed on the new surface. You can't build on rock or at the edge of your land. Built ground is saved with the game.
-
-## Yard facilities
-
-Open the shop (**B**) and choose **Yard buildings**. The first facilities commission structures
-already in your yard: a **Container workshop** ($450) cuts service/repair prices by 25% and
-times by 30%; **Bulk fuel supply** ($300) cuts machine-job fuel charges by 15%. Benefits apply
-to machines at this site, including Direct digging. Existing maintenance jobs keep their quoted
-price and duration. Ownership is saved, and signs appear on commissioned structures. Prices
-are an initial balance pass. These are fixed upgrades; they do not place new buildings.
-
-## The loop with machines
-
-1. Get in the mini digger (or excavator), drive it onto your field, swing the bucket over the ground and hold the left mouse button to dig. It digs where the ring is, as deep as the bucket bites.
-2. Park the pickup, tractor or truck next to it, swing round and click to dump each bucket into the bed.
-3. Drive to the depot, weigh in, back into the right bay and press **T** to tip (with the tractor, back the trailer in: take it slowly).
-4. Buy upgrades in the shop (**B**). Service your machines (**R**) before they break down.
-
-Site machines (mini digger, excavator, dumper) can't leave your land; the pickup, tractor and truck can go anywhere.
-
-## Docs
-
-- `docs/design-spec.md`: the game design
-- `docs/implementation-plan.md`: milestones
+- `AGENTS.md`: how to work on this repository (branches, checks, code rules). Start here.
+- `docs/TASKS.md`: the shared task queue; `docs/LOG.md`: what each task changed and what was checked
 - `docs/modules.md`: a short guide to the code
 - `docs/models.md`: the 3D models, how to rebuild them in Blender, and how to make your own
-- `docs/TASKS.md`: the current work queue (Claude plans and reviews on `claude/coordination`; Codex implements on its own branch)
-- `docs/CODEX-CHECKPOINT.md`: Codex's progress reports, with what was actually run
-- `docs/HANDOVER.md`: the Step 7 handover and its verification record
-- `docs/handover/browser-checks/`: bounded headless-browser checks (software rendering is slow; see `docs/TASKS.md` for how to run them)
-
-Earthworks preview: the amber ring marks where spare spoil will be heaped. Move machines
-and the wheelbarrow clear; occupied heap cells cannot supply works material.
-
-After tipping a barrow into the pickup, hold S to back away from the tailgate before turning.
-
-Buy Stockpile bays in the laptop’s Yard buildings category. Back a carrier’s tail into
-one of the three bays at the south end of the yard and press T to store its load.
-Each bay holds 25 t. With a digger bucket over a bay, hold LMB in Assisted mode
-(or cut into the heap in Direct mode) to reload stored material. Dump the bucket into
-a carrier as usual. Mixing stays mixed, and storing earns no sale income. Tab shows each
-bay’s contents and grade; inventory survives saving and loading.
-
-Commission the **Home weighbridge** in Yard buildings to weigh at your driveway. Stop
-a loaded road vehicle on the steel deck: its load, purity and current best depot quote
-appear with the ticket. You can then drive straight to the depot bays. The quote can
-change on the journey. Adding/removing material invalidates the ticket; field or
-stockpile tipping clears it. The depot bridge still weighs loads normally.
-
-In **Staff**, haulage drivers have Customer and Loading choices. Select an accepted
-jobs-board customer or regular order to haul its clean material on purpose. Finished
-jobs wait for a new choice; regular drivers wait once this week's quota is filled.
-Park a truck bed within the digger's reach, assign both workers, and choose that
-operator under Loading to receive buckets directly. A full bed leaves for delivery;
-leftover bucket material stays with the operator. Heaps remain available as a loading choice.
-Completed digging, round trips, sales and fitter jobs earn experience and raise the
-matching skill up to five stars. The agreed daily wage stays fixed; progress appears in Staff.
-
-Daylight follows a separate **20-minute cycle** of active play, with a moving sun, dusk,
-night and dawn. The business calendar takes **20 minutes per day at 1×**: wages, prices, contracts
-and deadlines still follow the date/clock shown in the HUD. Changing economic speed
-leaves daylight at its normal pace. Both clocks stop when play pauses or loses focus.
-Night has moonlit ambient light and an automatic work light following your view; the
-weather label shows Dawn/Dusk/Night. The daylight phase is saved; older saves start it
-at morning.
-
-
-## Expanded fleet and easier progression
-
-The dealer separates **Diggers**, **Tractors**, **Trailers**, **Haulage** and **Getting around**. Condition is saved on each owned machine separately from its model and upgrades.
-
-| Digger | Operating mass | Bucket | Reach |
-|---|---:|---:|---:|
-| Micro 08 | 0.8 t | 0.03 m³ | 2.4 m |
-| Mini 16 | 1.6 t | 0.08 m³ | 3.3 m |
-| Compact 25 | 2.5 t | 0.12 m³ | 4.0 m |
-| Compact 35 | 3.5 t | 0.20 m³ | 4.6 m |
-| Utility 80 | 8 t | 0.40 m³ | 6.8 m |
-| Production 130 | 13 t | 0.70 m³ | 8.0 m |
-| Quarry 210 | 21 t | 1.10 m³ | 9.2 m |
-| Heavy 320 | 32 t | 1.60 m³ | 10.5 m |
-
-Five tractors run from Yard 35 (25 km/h, 3 t gross tow limit) to Haul 210 (50 km/h, 24 t gross). Five tipping trailers have 1.5, 3, 6, 10 and 16 t nominal payloads; usable payload also depends on the tractor's tow limit and the bed's volume. Single, tandem and triaxle bodies have different braking and tipping behaviour. Stop within 10 m and use **Fleet → Hitch**; **Unhitch** parks the same loaded trailer. Load and weighbridge tickets follow the trailer, and changing the combination invalidates its ticket.
-
-A quad, utility buggy, purchasable 4×4 and service van provide other ways to get around. The service van provides nearby mechanical support. Incoming one- or three-day rentals in the dealer let you try diggers or vehicles before buying. The fee and refundable deposit are shown before renting; return through Fleet after unloading and releasing staff. Keeping equipment past its due time incurs another day rate, and damage is settled from the deposit. A rental cannot be sold or hired out.
-
-The first staff post opens when you own a digger and make two depot sales (or earn $120). An apprentice is available immediately at **$18 per day with an $18 fee**. Later posts keep their existing growth requirements. Payroll is shown in Staff and skill grows through real work.
-
-Topsoil crumbles easily, clay resists and holds steep faces, sand spreads readily and gravel settles as loose aggregate. Weather and compaction affect grip and resistance. A compatible breaker extracts finite bedrock into saleable broken rock; ordinary buckets cannot cut intact rock. Traffic compacts the surface and displaces shallow rut spoil without destroying tonnes. Exposed slopes show the underlying strata.
-
-**Settings → Controls → Hold to repeat shovel** avoids repeated clicks. **V on foot** recovers a stuck wheelbarrow onto a nearby clear, level patch while retaining its cargo; V in a road vehicle recovers that vehicle. **Tab → machine name** selects a machine and marks the route to it; select *Follow the current goal* to clear the waypoint. Existing saves retain their business date, loads, staff and trailer combinations.
-
-## Reading your work
-
-The machine dash shows the attachment, material under the teeth, cutting resistance, hydraulic effort and actual bucket volume. Advice explains a full bucket, a hard bite, the wrong tool for rock or loose rubble, low grip and excessive towing load. The ground survey reads the current excavated column, including deposited spoil and compacted fill; it changes no material or money. Thin deposits show their cover and the working material below.
-
-## Quick tools and easier hauling
-
-**Q in a digger** opens compatible attachments with their purpose and actual width/capacity or breaking force. Pick a tool directly; the panel returns to the same cab. Stop travelling/slewing, finish the stroke and empty the bucket first. Rental tools stay unchanged. T still cycles empty attachments or recalls the last Assisted dump target.
-
-**Z in a road vehicle** captures your current forward speed once above 8 km/h. Release the accelerator to let cruise hold it; Z again, a new W/S press, or Space cancels. Engine off, recovery, leaving the cab or sustained loss of wheel contact also cancels it. Loads, grades, grip, available engine power and towing speed limits still matter. The dash shows the selected speed and any grip/terrain limitation; cruise is cleared when loading a save.
-
-Road/ramp/level previews show usable gravel from the planned cut and nearby clear heaps, exact required/available tonnes, compacted fill volumes and quantitative shortages. A steep plan gives the minimum run for the same rise. Planning controls sit inside the quote, and a successful build stays confirmed there. The preview costs nothing and creates no material; only the final click builds and charges.
+- `docs/design-spec.md`: the game design; `docs/implementation-plan.md`: the milestones
+- `docs/handover/browser-checks/`: headless-browser checks (`smoke.mjs` is the quick one)
+- `docs/archive/`: earlier handoffs, checkpoints and queues

@@ -7,7 +7,7 @@
 // - tipBarrow() empties the barrow onto the ground (a real pile) or into a low bed (the pickup).
 // Tonnes are always conserved: whatever doesn't fit stays where it was.
 import { pileTotal, addToPile, takeProportional } from '../quarry/index.js';
-import { getMachine, getStats } from '../machinery/index.js';
+import { getMachine } from '../machinery/index.js';
 import { loadCarrier, combinationStats, cargoRoom } from '../machinery/trailers.js';
 
 const EPS = 1e-6;

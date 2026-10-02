@@ -4,7 +4,7 @@ import { ownsBuilding, stockpileLoad } from '../../buildings/index.js';
 import { quoteDelivery } from '../../economy/index.js';
 import { el, clear, setText } from '../dom.js';
 import { createMapView } from './mapView.js';
-import { machinesAt, machineName, getStats, isDigger } from '../../machinery/index.js';
+import { machinesAt, machineName, isDigger } from '../../machinery/index.js';
 import { pileTotal } from '../../quarry/index.js';
 import { conditionColor } from '../format.js';
 import { loadCarrier, combinationStats } from '../../machinery/trailers.js';
