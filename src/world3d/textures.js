@@ -80,3 +80,44 @@ export function planks() {
     }
   });
 }
+
+// Old red-brown brickwork in stretcher bond, for garden walls: one tile is 0.9 m across (four
+// bricks) and 0.6 m up (eight courses), with lime mortar and a little soot and lichen.
+export const BRICK_TILE = { w: 0.9, h: 0.6 };
+export function brickwork() {
+  return makeTexture(256, (g, n) => {
+    const r = rand(17);
+    g.fillStyle = '#9d968a'; // mortar
+    g.fillRect(0, 0, n, n);
+    const courses = 8;
+    const per = 4;
+    const ch = n / courses;
+    const bw = n / per;
+    const joint = Math.max(2, Math.round(n / 90));
+    for (let c = 0; c < courses; c++) {
+      const shift = c % 2 ? bw / 2 : 0;
+      for (let b = -1; b < per; b++) {
+        const x = b * bw + shift;
+        const k = r();
+        const red = 118 + k * 46;
+        const tone = 0.85 + r() * 0.2;
+        g.fillStyle = `rgb(${Math.round(red * tone)},${Math.round((52 + k * 22) * tone)},${Math.round((40 + k * 14) * tone)})`;
+        g.fillRect(x + joint / 2, c * ch + joint / 2, bw - joint, ch - joint);
+        // (a few bricks fired darker, and the odd one weathered paler)
+        if (r() < 0.12) {
+          g.fillStyle = 'rgba(40,22,18,0.35)';
+          g.fillRect(x + joint / 2, c * ch + joint / 2, bw - joint, ch - joint);
+        } else if (r() < 0.08) {
+          g.fillStyle = 'rgba(200,170,140,0.25)';
+          g.fillRect(x + joint / 2, c * ch + joint / 2, bw - joint, ch - joint);
+        }
+      }
+    }
+    // Grain: small dark and light flecks over everything.
+    for (let i = 0; i < 2200; i++) {
+      const v = r() < 0.5 ? 30 : 210;
+      g.fillStyle = `rgba(${v},${v - 10},${v - 20},${0.05 + r() * 0.08})`;
+      g.fillRect(r() * n, r() * n, 1 + r() * 2, 1 + r() * 2);
+    }
+  });
+}

@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { glbProp } from './glbModels.js';
 import { createHeap, setHeap } from './piles.js';
-import { planks } from './textures.js';
+import { planks, brickwork, BRICK_TILE } from './textures.js';
 import { inRect } from './map.js';
 
 const BAY_HEAP_MAX = 170; // tonnes: the most a depot bay's heap shows (it fills the bay)
@@ -94,6 +94,42 @@ function wire(a, b, sag) {
     pts.push(p);
   }
   return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 12, 0.013, 4, false);
+}
+
+// ---------------------------------------------------------------- garden walls
+
+// A village house's front-garden wall, as straight runs [{ x0, z0, x1, z1 }]: along the front just
+// back from the verge, with a gap for the path to the door, and a return at each end back to the
+// front of the house. `size` is [length along the front, depth]; `fromRoad` how far the house's
+// middle is from the road's centre line, `roadHW` the road's half width. None if the front garden
+// is too shallow for one.
+export function gardenWall({ x, z, yaw }, [L, W], fromRoad, roadHW) {
+  const F = fromRoad - (roadHW + 1.6); // (the wall line, from the house's middle towards the road)
+  if (F < W / 2 + 1.5) return [];
+  const half = L / 2 + 1.5;
+  const gap = 0.6; // (half the path's width)
+  // House space: x along the front, z out of the front (the house faces +z at no turn).
+  const at = (u, v) => ({ x: x + Math.cos(yaw) * u + Math.sin(yaw) * v, z: z - Math.sin(yaw) * u + Math.cos(yaw) * v });
+  const run = (u0, v0, u1, v1) => {
+    const a = at(u0, v0);
+    const b = at(u1, v1);
+    return { x0: a.x, z0: a.z, x1: b.x, z1: b.z };
+  };
+  return [
+    run(-half, F, -gap, F), run(gap, F, half, F),
+    run(-half, W / 2 + 0.1, -half, F), run(half, W / 2 + 0.1, half, F),
+  ];
+}
+
+// A wall's box with its texture laid in metres on every face (BoxGeometry's faces: ±x, ±y, ±z).
+function brickBox(len, h, t) {
+  const g = new THREE.BoxGeometry(len, h, t);
+  const uv = g.attributes.uv;
+  const faces = [[t, h], [t, h], [len, t], [len, t], [len, h], [len, h]];
+  faces.forEach(([fw, fh], f) => {
+    for (let i = f * 4; i < f * 4 + 4; i++) uv.setXY(i, (uv.getX(i) * fw) / BRICK_TILE.w, (uv.getY(i) * fh) / BRICK_TILE.h);
+  });
+  return g;
 }
 
 // ---------------------------------------------------------------- the places
@@ -243,6 +279,40 @@ export function buildPlaces({ scene, physics, plan, heightAt, materials, bayName
     const y = heightAt(h.x, h.z);
     if (!place(`house_${h.style}`, h.x, h.z, h.yaw, 1, y - 0.05)) standIn(L, 5, W, h.x, h.z, h.yaw, 0xa0604a);
     collider(L / 2, 2.8, W / 2, h.x, y + 2.8, h.z, h.yaw);
+  }
+  // Low brick walls round the front gardens (the pub keeps its open front for the car park).
+  {
+    const bricks = [];
+    const coping = [];
+    const WALL_H = 0.85;
+    const SUNK = 0.3; // (into the ground, so a slope never shows a gap)
+    for (const h of plan.houses) {
+      const road = plan.byId[h.road ?? 'millLane'];
+      const near = plan.nearestOnRoad(road, h.x, h.z);
+      for (const w of gardenWall(h, HOUSE_SIZE[h.style], near.dist, road.hw)) {
+        const len = Math.hypot(w.x1 - w.x0, w.z1 - w.z0);
+        const cx = (w.x0 + w.x1) / 2;
+        const cz = (w.z0 + w.z1) / 2;
+        const yaw = -Math.atan2(w.z1 - w.z0, w.x1 - w.x0);
+        const base = Math.min(heightAt(w.x0, w.z0), heightAt(w.x1, w.z1), heightAt(cx, cz)) - SUNK;
+        const top = Math.max(heightAt(w.x0, w.z0), heightAt(w.x1, w.z1), heightAt(cx, cz)) + WALL_H;
+        const m = new THREE.Matrix4().compose(new THREE.Vector3(cx, (base + top) / 2, cz), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw), new THREE.Vector3(1, 1, 1));
+        bricks.push(brickBox(len, top - base, 0.23).applyMatrix4(m));
+        const cap = new THREE.BoxGeometry(len + 0.06, 0.07, 0.31);
+        cap.translate(0, (top - base) / 2 + 0.035, 0);
+        coping.push(cap.applyMatrix4(m));
+        collider(len / 2, 0.55, 0.15, cx, top - 0.5, cz, yaw);
+      }
+    }
+    if (bricks.length) {
+      const wall = new THREE.Mesh(mergeGeometries(bricks), new THREE.MeshStandardMaterial({ map: brickwork(), roughness: 0.93, envMapIntensity: 0.5 }));
+      const cap = new THREE.Mesh(mergeGeometries(coping), new THREE.MeshStandardMaterial({ color: 0x8c877d, roughness: 0.88, envMapIntensity: 0.5 }));
+      for (const mesh of [wall, cap]) {
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        scene.add(mesh);
+      }
+    }
   }
   // The pub's hanging sign, out by the road.
   {
