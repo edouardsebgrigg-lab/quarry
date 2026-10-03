@@ -161,6 +161,18 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
     update,
     setCargo: (t) => phys.setCargo(t + (trailer ? (stats().trailerMass ?? 0) / 1000 : 0)),
     // Everything the sound and camera react to.
+    // Where the driven wheels touch the ground (for what a spinning wheel throws up).
+    drivenContacts() {
+      const out = [];
+      const all = profile?.driveWheels === 4;
+      for (let i = all ? 0 : 2; i < 4; i++) {
+        if (phys.vehicle.wheelIsInContact(i)) {
+          const c = phys.vehicle.wheelContactPoint(i);
+          if (c) out.push(new THREE.Vector3(c.x, c.y, c.z));
+        }
+      }
+      return out;
+    },
     feel() {
       const tel = phys.telemetry();
       return {

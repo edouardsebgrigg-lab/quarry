@@ -64,6 +64,11 @@ export const TUNING = {
   massCentre: { x: 0.45, y: -0.35 }, // engine and axles: low and forward
   cargoCentre: { x: -1.0, y: 0.45 }, // where a load sits in the bed
   powerRpm: 1900, // where the engine makes its rated power
+  // The ray-cast vehicle applies a tyre's sideways force near the centre of mass, not at the
+  // ground, so a body hardly leans in a turn (and the inside wheels hardly unload). This much of
+  // the missing roll moment is put back.
+  rollTransfer: 0.55,
+  slidingGrip: 0.8, // a locked or spinning tyre's grip, as a share of its peak
 };
 
 // Your old pickup: small, light and quick, with a petrol straight-six that revs.
@@ -92,6 +97,7 @@ export const PICKUP = {
     massCentre: { x: 0.35, y: -0.2 },
     cargoCentre: { x: -1.5, y: 0.15 },
     powerRpm: 3200,
+    rollTransfer: 0.75, // (soft leaf springs: an old pickup leans into every bend)
   },
   engine: {
     idleRpm: 750,
@@ -159,6 +165,14 @@ export const TRACTOR = {
 
 // Default ground: dry tarmac.
 const DEFAULT_SURFACE = { grip: 1.0, roll: 0.012, name: 'asphalt' };
+
+// How far past its grip a wheel is being asked to go, 0..1: a tyre just over its peak still
+// grips nearly as well; asked for three and a half times what it can give, it's sliding. (A held
+// key is always a full pedal, so this decides how a slippery field feels.)
+export function overGrip(demand, available) {
+  if (!(demand > available)) return 0;
+  return Math.min(1, (demand / Math.max(available, 1e-6) - 1) / 2.5);
+}
 
 function yawQuat(yaw) {
   return { x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) };
@@ -245,7 +259,12 @@ export function createTruckPhysics({ RAPIER, world }, {
   const out = {
     braking: false, reversing: false, shifted: 0, surface: DEFAULT_SURFACE.name,
     slip: 0, bump: 0, airborne: false,
+    wheelspin: 0, // 0..1: driven wheels asked for more than the ground can take
+    locked: false, // braking harder than the ground allows: the wheels slide
   };
+  // Each wheel's sideways force last step (N), to share its grip between cornering and braking
+  // or driving (a tyre has one budget of grip: the friction circle).
+  const sideForce = [0, 0, 0, 0];
   const lastSusp = [0, 0, 0, 0];
   let suspensionPrimed = false;
   const cruise = createCruiseControl(handling.vehicle.cruise);
@@ -328,6 +347,11 @@ export function createTruckPhysics({ RAPIER, world }, {
     target = Math.min(target, E.maxRpm + 120);
     const rate = (target > eng.rpm ? 900 + throttle * 2600 : 1400) * E.revRate;
     eng.rpm += Math.sign(target - eng.rpm) * Math.min(Math.abs(target - eng.rpm), rate * dt);
+    // What you hear: spinning wheels turn faster than the ground goes by, so the revs flare
+    // (the engine's pull is worked out from the ground speed: a tyre that's already sliding
+    // gives the same push however hard the engine spins it).
+    const flare = coupled && eng.running ? Math.min(E.maxRpm + 80, eng.rpm * (1 + out.wheelspin * 1.1) + out.wheelspin * 800) : eng.rpm;
+    eng.heardRpm = (eng.heardRpm ?? eng.rpm) + (flare - (eng.heardRpm ?? eng.rpm)) * Math.min(1, dt * 6);
 
     // ---- torque at the wheels
     const power = (0.72 + 0.28 * (condition / 100)) * (eng.misfire > 0 ? 0.55 : 1);
@@ -350,32 +374,64 @@ export function createTruckPhysics({ RAPIER, world }, {
       : 0;
 
     // ---- per-wheel forces
+    // Every wheel's braking or driving force is limited by its grip: the surface's friction
+    // times the weight on that wheel, less what it's already using to corner. (Rapier only
+    // checks forward force against half its friction circle, so on its own a pickup brakes as
+    // hard on wet grass as on tarmac and never spins a wheel.) A wheel asked for more locks or
+    // spins: it slides at a little less than its peak grip and loses most of its sideways hold,
+    // so a locked front won't steer and a spinning rear steps out.
     const brakeForce = brake * T.brakeDecel * (mass + (towBraked ? cargoTonnes * 1000 * .85 : 0)); // fixed brake power: loaded trucks stop slower
     let grip = 0;
+    let spinDemand = 0, spinGrip = 0, lockedWheels = 0;
     for (let i = 0; i < 4; i++) {
       const surf = surfaceUnder(i);
       grip += surf.grip / 4;
       if (i === 0) out.surface = surf.name;
-      vehicle.setWheelFrictionSlip(i, surf.grip);
-      vehicle.setWheelSideFrictionStiffness(i, 0.6 + 0.4 * surf.grip);
       const front = i < 2;
       const load = (m * g) / 4;
       const rolling = surf.roll * load;
-      let brakeHere = rolling + (front ? T.frontBrakeShare : 1 - T.frontBrakeShare) * brakeForce / 2;
+      const contact = vehicle.wheelIsInContact(i);
+      const normal = contact ? Math.max(0, vehicle.wheelSuspensionForce(i) ?? load) : 0;
+      const budget = surf.grip * normal;
+      const forwardGrip = Math.sqrt(Math.max(0, budget * budget - sideForce[i] * sideForce[i]));
+      let brakeHere = (front ? T.frontBrakeShare : 1 - T.frontBrakeShare) * brakeForce / 2;
       if (!front && control.handbrake) brakeHere += T.brakeDecel * mass * 0.35;
       const driven = !front || profile?.driveWheels === 4;
       const drivenCount = profile?.driveWheels === 4 ? 4 : 2;
       if (driven && throttle === 0) brakeHere += engineDrag / drivenCount;
+      let sideHold = 0.6 + 0.4 * surf.grip;
+      // (only a wheel that's rolling can lock: parked, the brake just holds)
+      if (contact && Math.abs(v) > 1 && brakeHere > forwardGrip) {
+        const severity = overGrip(brakeHere, forwardGrip);
+        brakeHere = forwardGrip * (1 - (1 - T.slidingGrip) * severity);
+        sideHold *= 1 - 0.7 * severity;
+        lockedWheels += severity;
+      }
+      brakeHere += rolling;
       let engineHere = 0;
       if (driven && driveForce !== 0 && !control.handbrake) {
         // Driven wheels: net of rolling resistance (Rapier ignores the brake while driving).
-        engineHere = driveForce / drivenCount - Math.sign(v || dir) * rolling;
+        let push = driveForce / drivenCount;
+        if (contact) {
+          spinDemand += Math.abs(push);
+          spinGrip += forwardGrip;
+          if (Math.abs(push) > forwardGrip) {
+            const severity = overGrip(Math.abs(push), forwardGrip);
+            push = Math.sign(push) * forwardGrip * (1 - (1 - T.slidingGrip) * severity);
+            sideHold *= 1 - 0.55 * severity;
+          }
+        }
+        engineHere = push - Math.sign(v || dir) * rolling;
         brakeHere = 0;
       }
+      vehicle.setWheelFrictionSlip(i, surf.grip);
+      vehicle.setWheelSideFrictionStiffness(i, sideHold);
       vehicle.setWheelEngineForce(i, engineHere);
       // Rapier brakes are an impulse limit per step: force x dt.
       vehicle.setWheelBrake(i, brakeHere * dt);
     }
+    out.wheelspin = spinDemand > 0 ? Math.max(0, Math.min(1, (spinDemand - spinGrip) / (spinGrip + 1))) : 0;
+    out.locked = lockedWheels > 0.5;
 
     // ---- steering: speed-sensitive, with Ackermann (the inside wheel turns more)
     const maxSteer = T.maxSteer / (1 + Math.abs(v) * handling.vehicle.steeringSpeedSensitivity);
@@ -406,6 +462,26 @@ export function createTruckPhysics({ RAPIER, world }, {
 
     vehicle.updateVehicle(dt);
 
+    // ---- the roll moment the ray-cast vehicle leaves out: each tyre's sideways push acts at
+    // the ground, below the centre of mass, so the body leans away from the turn.
+    if (T.rollTransfer > 0) {
+      const com = body.worldCom();
+      const q = body.rotation();
+      const up = { x: 2 * (q.x * q.y - q.w * q.z), y: 1 - 2 * (q.x * q.x + q.z * q.z), z: 2 * (q.y * q.z + q.w * q.x) };
+      const fwd = { x: 1 - 2 * (q.y * q.y + q.z * q.z), y: 2 * (q.x * q.y + q.w * q.z), z: 2 * (q.x * q.z - q.w * q.y) };
+      let roll = 0;
+      for (let i = 0; i < 4; i++) {
+        if (!vehicle.wheelIsInContact(i)) continue;
+        const p = vehicle.wheelContactPoint(i);
+        if (!p) continue;
+        const h = (com.x - p.x) * up.x + (com.y - p.y) * up.y + (com.z - p.z) * up.z; // (height of the centre of mass over this contact)
+        roll += (vehicle.wheelSideImpulse(i) ?? 0) * h;
+      }
+      const k = -roll * T.rollTransfer;
+      body.applyTorqueImpulse({ x: fwd.x * k, y: fwd.y * k, z: fwd.z * k }, true);
+    }
+    for (let i = 0; i < 4; i++) sideForce[i] = Math.abs(vehicle.wheelSideImpulse(i) ?? 0) / dt;
+
     // ---- what the sound and camera need
     let contact = 0;
     let bump = 0;
@@ -420,7 +496,7 @@ export function createTruckPhysics({ RAPIER, world }, {
     out.airborne = contact === 0;
     suspensionPrimed=true;
     out.bump = bump;
-    out.slip = Math.min(1, side / (m * g * grip * dt + 1e-6) * 0.8);
+    out.slip = Math.max(Math.min(1, side / (m * g * grip * dt + 1e-6) * 0.8), out.wheelspin, out.locked ? 0.8 : 0);
     out.braking = (brake > 0.05 && Math.abs(v) > 0.3) || control.handbrake;
     out.reversing = eng.gear < 0 && throttle > 0;
   }
@@ -434,7 +510,7 @@ export function createTruckPhysics({ RAPIER, world }, {
     speed: () => vehicle.currentVehicleSpeed(),
     // Engine and chassis state, for sound, gauges and camera shake.
     telemetry: () => ({
-      rpm: eng.rpm, gear: eng.gear, shifting: eng.shiftT > 0, load: eng.load, running: eng.running,
+      rpm: eng.heardRpm ?? eng.rpm, gear: eng.gear, shifting: eng.shiftT > 0, load: eng.load, running: eng.running,
       misfire: eng.misfire > 0, ...out,
       cruiseActive: cruise.state().active, cruiseTarget: cruise.state().targetSpeed, cruiseLimited: cruise.state().limited,
     }),

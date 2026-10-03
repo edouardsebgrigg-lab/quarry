@@ -51,8 +51,47 @@
     "bumpShake": 0.003,
     "maxBumpShake": 0.012,
     "digShake": 0.004,
-    "surfaceRoughness": {"gravel": 1, "dirt": 0.8, "grass": 0.9, "rock": 1.2, "asphalt": 0.15},
+    "surfaceRoughness": {
+      "gravel": 1,
+      "dirt": 0.8,
+      "grass": 0.9,
+      "rock": 1.2,
+      "asphalt": 0.15
+    },
     "pitchLean": 0.35,
     "rollLean": 0.4
+  },
+  "surfaces": {
+    "_note": "Tyre grip (friction coefficient) and rolling resistance on each surface, dry and soaked; the ground's wetness blends between them. The field's dug materials use data/ground.json.",
+    "asphalt": {
+      "grip": 0.9,
+      "wetGrip": 0.65,
+      "roll": 0.012,
+      "wetRoll": 0.013
+    },
+    "grass": {
+      "grip": 0.6,
+      "wetGrip": 0.4,
+      "roll": 0.05,
+      "wetRoll": 0.065
+    },
+    "dirt": {
+      "grip": 0.7,
+      "wetGrip": 0.45,
+      "roll": 0.035,
+      "wetRoll": 0.06
+    },
+    "gravel": {
+      "grip": 0.68,
+      "wetGrip": 0.6,
+      "roll": 0.03,
+      "wetRoll": 0.032
+    },
+    "rock": {
+      "grip": 0.85,
+      "wetGrip": 0.68,
+      "roll": 0.02,
+      "wetRoll": 0.02
+    }
   }
 }

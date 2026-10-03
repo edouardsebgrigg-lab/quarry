@@ -221,3 +221,92 @@ describe('pickup driving', () => {
     expect(pickup.telemetry().rpm).toBeGreaterThan(2500); // it revs like a petrol engine
   });
 });
+
+// The pickup on one surface all over (grip, rolling resistance).
+function pickupOn(surface, cargo = 0) {
+  const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
+  world.timestep = 1 / 60;
+  world.createCollider(RAPIER.ColliderDesc.cuboid(1500, 1, 1500).setTranslation(0, -1, 0).setFriction(1));
+  const car = createTruckPhysics({ RAPIER, world }, {
+    x: 0, y: 0, z: 0, yaw: 0, speedStat: 13, mass: 1650, power: 55, profile: PICKUP, surfaceAt: () => surface,
+  });
+  car.setCargo(cargo);
+  const run = (seconds, each) => {
+    for (let i = 0; i < seconds * 60; i++) {
+      car.update(1 / 60);
+      world.step();
+      each?.();
+    }
+  };
+  run(1.5);
+  return { car, run };
+}
+const TARMAC = { grip: 0.9, roll: 0.012, name: 'asphalt' };
+const WET_GRASS = { grip: 0.4, roll: 0.065, name: 'grass' };
+
+// Distance to stop from 40 km/h with the brake pedal held.
+function stoppingDistance(surface) {
+  const { car, run } = pickupOn(surface);
+  car.control.throttle = 1;
+  let n = 0;
+  while (car.speed() < 40 / 3.6 && n++ < 60 * 30) run(1 / 60);
+  const x0 = car.body.translation().x;
+  let locked = false;
+  car.control.throttle = -1;
+  run(6, () => {
+    if (car.telemetry().locked) locked = true;
+    if (car.speed() < 0.3) car.control.throttle = 0;
+  });
+  return { distance: car.body.translation().x - x0, locked };
+}
+
+describe('grip', () => {
+  it('stops in roughly the distance its grip allows: much longer on wet grass, sliding', () => {
+    const dry = stoppingDistance(TARMAC);
+    const wet = stoppingDistance(WET_GRASS);
+    // (40 km/h: about 9 m on dry tarmac at 0.7 g, the brakes' limit; wet grass grips at about 0.4)
+    expect(dry.distance).toBeGreaterThan(7);
+    expect(dry.distance).toBeLessThan(12);
+    expect(wet.distance).toBeGreaterThan(dry.distance * 1.4); // (0.7 g against about 0.45 g)
+    expect(wet.locked).toBe(true);
+  });
+
+  it('spins its rear wheels pulling away on wet grass, and gets there slower than on tarmac', () => {
+    const timeTo30 = (surface, cargo = 0) => {
+      const { car, run } = pickupOn(surface, cargo);
+      car.control.throttle = 1;
+      let t = 0, spin = 0;
+      while (car.speed() < 30 / 3.6 && t < 40) {
+        run(1 / 60);
+        t += 1 / 60;
+        spin = Math.max(spin, car.telemetry().wheelspin);
+      }
+      return { t, spin };
+    };
+    const dry = timeTo30(TARMAC);
+    const wet = timeTo30(WET_GRASS);
+    expect(wet.spin).toBeGreaterThan(0.2);
+    expect(wet.t).toBeGreaterThan(dry.t * 1.8);
+    expect(wet.t).toBeLessThan(20); // (slow, but it does get going)
+    // A load in the bed sits over the driven wheels: more traction on the slippery stuff.
+    expect(timeTo30(WET_GRASS, 0.6).t).toBeLessThan(wet.t);
+  });
+
+  it('leans out of a bend, a few degrees, and stays on its wheels', () => {
+    const { car, run } = pickupOn(TARMAC);
+    car.control.throttle = 1;
+    run(3);
+    car.control.throttle = 0.35;
+    car.control.steer = 1; // left
+    let lean = 0;
+    run(3, () => {
+      // (the world's up seen from the body: tipped towards its left when the body leans right)
+      const q = car.body.rotation();
+      lean = Math.max(lean, -Math.asin(2 * (q.y * q.z - q.w * q.x)) * 57.3);
+    });
+    expect(lean).toBeGreaterThan(2);
+    expect(lean).toBeLessThan(8);
+    const r = car.body.rotation();
+    expect(1 - 2 * (r.x * r.x + r.z * r.z)).toBeGreaterThan(0.95);
+  });
+});

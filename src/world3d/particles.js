@@ -32,15 +32,20 @@ export function createParticles(scene) {
   }
   let next = 0;
 
-  function spawn(pos, { count = 10, spread = 1, up = 1, life = 2, size = 1.2, color = 0xc8b08a, opacity = 0.5 } = {}) {
+  // A puff of dust by default (it drifts up, grows and fades). `velocity` and `gravity` make it
+  // a thrown thing instead: clods and stones flung off a spinning wheel (`growth` 0 keeps them
+  // their size).
+  function spawn(pos, { count = 10, spread = 1, up = 1, life = 2, size = 1.2, color = 0xc8b08a, opacity = 0.5, velocity = null, gravity = 0, growth = 1 } = {}) {
     for (let i = 0; i < count; i++) {
       const p = pool[next];
       next = (next + 1) % MAX;
-      p.s.position.set(pos.x + (Math.random() - 0.5) * spread, pos.y + Math.random() * 0.5, pos.z + (Math.random() - 0.5) * spread);
-      p.vel.set((Math.random() - 0.5) * 1.2, up * (0.4 + Math.random()), (Math.random() - 0.5) * 1.2);
+      p.s.position.set(pos.x + (Math.random() - 0.5) * spread, pos.y + (velocity ? 0 : Math.random() * 0.5), pos.z + (Math.random() - 0.5) * spread);
+      if (velocity) p.vel.set(velocity.x * (0.6 + Math.random() * 0.6), velocity.y * (0.6 + Math.random() * 0.7), velocity.z * (0.6 + Math.random() * 0.6));
+      else p.vel.set((Math.random() - 0.5) * 1.2, up * (0.4 + Math.random()), (Math.random() - 0.5) * 1.2);
+      p.gravity = gravity;
       p.life = life * (0.7 + Math.random() * 0.6);
       p.max = p.life;
-      p.grow = size * (1.5 + Math.random());
+      p.grow = growth ? size * (1.5 + Math.random()) : size * 2 * (0.7 + Math.random() * 0.6);
       p.s.scale.setScalar(size);
       p.s.material.color.set(color);
       p.s.material.opacity = opacity;
@@ -61,8 +66,9 @@ export function createParticles(scene) {
         }
         const t = 1 - p.life / p.max;
         p.s.position.addScaledVector(p.vel, dt);
-        p.vel.multiplyScalar(1 - dt * 0.8);
-        p.s.scale.setScalar(p.grow * (0.5 + t));
+        if (p.gravity) p.vel.y -= p.gravity * dt;
+        else p.vel.multiplyScalar(1 - dt * 0.8);
+        p.s.scale.setScalar(p.gravity ? p.grow * 0.5 : p.grow * (0.5 + t));
         p.s.material.opacity = p.baseOpacity * (1 - t);
       }
     },

@@ -25,8 +25,8 @@ A short tour of the code. The logic modules never touch the screen. Each module 
 | `hire.json` | Hiring out: how often contractors ask, day rates, hire lengths and wear |
 | `rental.json` | Renting in: fees, deposits, rental lengths and overdue charges |
 | `classifieds.json` | The Wolds Trader: how many adverts, discounts, and how often a seller exaggerates |
-| `weather.json` | Weather kinds, how likely each day follows the last, and their effect on grip |
-| `handling.json` | How walking, jumping, vehicles changing direction, cab springs and cruise control feel |
+| `weather.json` | Weather kinds and how likely each day follows the last (rain soaks the ground, and wet ground has less grip: `handling.json` surfaces) |
+| `handling.json` | How walking, jumping, vehicles changing direction, cab springs and cruise control feel, and tyre grip and rolling resistance on each surface, dry and wet (`surfaces`) |
 | `presentation.json` | Camera motion, the ground survey and on-screen feedback tuning |
 
 You can change any of these and reload the game. No code changes are needed.
@@ -78,7 +78,8 @@ You can change any of these and reload the game. No code changes are needed.
 | `vegetation.js` | Grass tufts and weeds (streamed in around you), hedgerows, copses and lone trees |
 | `environment.js` | The renderer and its quality levels (low: no shadows; medium: soft shadows; high and ultra: soft shadows plus ambient occlusion, drawn through a small post-processing chain that leaves out see-through things like grass and glass), sky, sun, fog and the hills on the horizon |
 | `player.js`, `playerMovement.js`, `headSway.js`, `cameraFeel.js`, `handTools.js` | You on foot, head bob, the shovel in your hands and the wheelbarrow |
-| `truck.js`, `truckPhysics.js` | Road vehicles (the pickup, the tipper truck and the tractor): the model, bed or tailgate, and Rapier ray-cast vehicle physics with an engine, gearbox, brakes and grip by surface (the pickup and the tractor have their own shape and engine) |
+| `truck.js`, `truckPhysics.js` | Road vehicles (the pickup, the tipper truck and the tractor): the model, bed or tailgate, and Rapier ray-cast vehicle physics with an engine, gearbox and brakes. Each wheel's braking and drive is limited by its grip (surface friction × the weight on it, less what it's using to corner): past that it locks or spins and loses its sideways hold. The roll moment the ray-cast vehicle leaves out is put back, so bodies lean in bends (the pickup and the tractor have their own shape and engine) |
+| `surfaces.js` | Grip and rolling resistance under a tyre from the surface mix and the ground's wetness |
 | `trailer.js` | The tractor's tipping trailer: it hangs off the hitch and follows it with the one-axle pursuit maths (`trailerYawStep`, tested), sits on the ground, and has a kinematic collider |
 | `excavator.js`, `excavatorArm.js` | The two diggers (excavator and mini digger, from a spec each) with their arm solver and hydraulic joints; Assisted (the arm plans the dig) and Direct (boom, stick, bucket and swing on their own controls) |
 | `trackDrive.js`, `dumper.js` | The rubber or steel track undercarriage shared by the diggers and the site dumper (track speeds, rolling shoes, sitting on the ground), and the dumper with its tipping skip. Site machines can't leave your land |

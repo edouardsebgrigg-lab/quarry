@@ -8,6 +8,7 @@ import { createCountryside, planWorld, preloadCountryside } from './countryside.
 import { ownsBuilding, stockpileLoad, stockpileConfig } from '../buildings/index.js';
 import { createYardStockpiles } from './stockpiles.js';
 import { buildPlaces } from './places.js';
+import { surfaceGrip, blendedGrip } from './surfaces.js';
 import { batchStatic } from './staticBatch.js';
 import { buildFarms, farmClearRect, farmWorkRect, farmTrees, farmTrack } from './farms.js';
 import { createParticles } from './particles.js';
@@ -114,7 +115,6 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const particles = createParticles(scene);
   const rain = createRain(scene);
   const workLight = createWorkLight(scene);
-  let weatherGrip = 1; // (rain makes everything slippery)
   let rainFelt = 0;
   let weatherSettle = false;
 
@@ -166,16 +166,11 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     return { x: s.x + s.stepX * parkingUsed.spare++, z: s.z, yaw: -Math.PI / 2 };
   }
 
-  // What the ground is like under a wheel or track: grip (friction) and rolling resistance.
-  const SURFACES = {
-    grass: { grip: 0.62, roll: 0.05 },
-    dirt: { grip: 0.8, roll: 0.035 },
-    gravel: { grip: 0.72, roll: 0.03 },
-    rock: { grip: 0.9, roll: 0.02 },
-  };
-  const ASPHALT = { grip: 1.0, roll: 0.012, name: 'asphalt' };
+  // What the ground is like under a wheel or track: grip (friction) and rolling resistance,
+  // by surface and by how wet the ground is (it soaks up in the rain and dries after).
   function groundSurface(x, z) {
-    if (!onPlot(x, z) && land.onRoad(x, z)) return weatherGrip < 1 ? { ...ASPHALT, grip: ASPHALT.grip * (0.5 + 0.5 * weatherGrip) } : ASPHALT;
+    const wet = groundWeather.wet.value;
+    if (!onPlot(x, z) && land.onRoad(x, z)) return surfaceGrip('asphalt', wet);
     const s = surfaceAt(x, z);
     if (onPlot(x,z)) {
       const i = Math.floor((x-ground.x0)/ground.cellSize), j = Math.floor((z-ground.z0)/ground.cellSize);
@@ -184,20 +179,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         return { grip: r.traction, roll: r.rollingResistance, name: r.material };
       }
     }
-    let grip = 0;
-    let roll = 0;
-    let name = 'dirt';
-    let best = 0;
-    for (const k of ['grass', 'dirt', 'gravel', 'rock']) {
-      const share = s[k] ?? 0;
-      grip += SURFACES[k].grip * share;
-      roll += SURFACES[k].roll * share;
-      if (share > best) {
-        best = share;
-        name = k;
-      }
-    }
-    return { grip: (grip || 0.7) * weatherGrip, roll: roll || 0.035, name };
+    return blendedGrip(s, wet);
   }
 
   const sounds = audio ? createWorldSounds({ audio, carRoute: laneRoute(plan, heightAt), groundSurface }) : null;
@@ -1015,6 +997,24 @@ export async function createWorld3D({ container, game, settings, audio = null, n
           });
         }
       }
+      // A spinning wheel off the road throws turf, mud or stones back behind it.
+      if ((f.wheelspin ?? 0) > 0.08 && f.surface !== 'asphalt' && veh.drivenContacts) {
+        st.roost = (st.roost ?? 0) + dt * 40 * f.wheelspin;
+        const back = new THREE.Vector3(-1, 0, 0).applyQuaternion(veh.quaternion());
+        const throwSpeed = 2.5 + 5 * f.wheelspin;
+        while (st.roost > 1) {
+          st.roost -= 1;
+          for (const c of veh.drivenContacts()) {
+            const turf = f.surface === 'grass' && Math.random() < 0.6;
+            const color = f.surface === 'gravel' ? 0x8a8479 : f.surface === 'rock' ? 0x77716a
+              : turf ? (wet > 0.4 ? 0x3d4a24 : 0x56632e) : (wet > 0.4 ? 0x3b2d20 : 0x5a4632);
+            particles.spawn(c.clone().addScaledVector(back, 0.3).setY(c.y + 0.1), {
+              count: 1, spread: 0.25, life: 0.9, size: f.surface === 'gravel' ? 0.05 : 0.07, color, opacity: 0.95,
+              velocity: { x: back.x * throwSpeed, y: 1.6 + 2.2 * f.wheelspin, z: back.z * throwSpeed }, gravity: 9.8, growth: 0,
+            });
+          }
+        }
+      }
     } else {
       st.dust += dt * ((f.digging ? 9 : 0) + f.travel * 5) * (1 - 0.8 * wet);
       while (st.dust > 1) {
@@ -1130,7 +1130,6 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const settle = weatherSettle; // (debug: jump straight to the weather, for screenshots)
     weatherSettle = false;
     const felt = env.weather(paused ? 0 : settle ? 10 : dt, w, visualHour(game.state, data));
-    weatherGrip = w.grip;
     groundWeather.wet.value += ((felt.rain > 0.05 ? Math.min(1, felt.rain * 1.3) : 0) - groundWeather.wet.value) * (settle ? 1 : Math.min(1, dt * (felt.rain > 0.05 ? 0.08 : 0.02)));
     rain.update(paused ? 0 : dt, camera, felt.rain);
     rainFelt = paused ? 0 : felt.rain;

@@ -1,6 +1,7 @@
 // The weather: each day is sunny, cloudy, showery or wet, and tomorrow's is known a day ahead
 // (the forecast on the laptop). A day's weather comes on at a random hour in the morning so it
-// doesn't flip at midnight. Rain makes the ground slippery (grip) and the 3D world rainy.
+// doesn't flip at midnight. Rain soaks the ground (wet ground has less grip: data/handling.json
+// surfaces) and makes the 3D world rainy.
 // Days follow on from each other (a wet spell tends to last), from data/weather.json.
 import { createRng, getDate } from '../core/index.js';
 
