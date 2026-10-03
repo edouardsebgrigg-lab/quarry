@@ -8,6 +8,7 @@ import { createCountryside, planWorld, preloadCountryside } from './countryside.
 import { ownsBuilding, stockpileLoad, stockpileConfig } from '../buildings/index.js';
 import { createYardStockpiles } from './stockpiles.js';
 import { buildPlaces } from './places.js';
+import { batchStatic } from './staticBatch.js';
 import { buildFarms, farmClearRect, farmWorkRect, farmTrees, farmTrack } from './farms.js';
 import { createParticles } from './particles.js';
 import { createPlayer } from './player.js';
@@ -108,7 +109,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   for (const id of Object.keys(data.buildings)) places.setBuilding(id, ownsBuilding(game.ctx, id, siteId));
   yardStockpiles = createYardStockpiles({ scene, physics, game, map: MAP, siteId, heightAt: (x,z) => land.heightAt(x,z) });
   yardStockpiles.setOwned(ownsBuilding(game.ctx, 'stockpiles', siteId));
-  buildFarms({ scene, physics, plan, heightAt });
+  const farmScenery = buildFarms({ scene, physics, plan, heightAt });
+  batchStatic(scene, [...places.statics, ...farmScenery.statics]); // (hundreds of prop meshes -> a few dozen draws)
   const particles = createParticles(scene);
   const rain = createRain(scene);
   const workLight = createWorkLight(scene);
@@ -320,10 +322,12 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       v.control.steer = 0;
       v.control.handbrake = true;
     }
-    // Step out on the driver's side (left, which is -Z in the machine's frame).
+    // Step out on the driver's side: the right (+Z in the machine's frame) in a British road
+    // vehicle, the left (-Z) in the machines.
     const yaw = v.digger ? v.houseWorldYaw() : v.yaw();
     const p = v.position();
-    const out = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw)).multiplyScalar(-(v.radius * 0.7 + 1));
+    const side = v.model?.driverSide ?? -1;
+    const out = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw)).multiplyScalar(side * (v.radius * 0.7 + 1));
     const x = p.x + out.x;
     const z = p.z + out.z;
     player.teleport(x, heightAt(x, z) + 0.1, z);
@@ -1346,6 +1350,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const debug = {
     settleWeather() { weatherSettle = true; },
     hands,
+    renderer,
     places,
     land,
     teleportPlayer(x, z, yaw = player.look.yaw) {

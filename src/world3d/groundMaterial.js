@@ -37,6 +37,92 @@ export function dampSheen(material) {
   return material;
 }
 
+// Old country tarmac (the roads; `halfWidth` in metres, the uv across the road runs 0..halfWidth
+// and along it in half metres, as countryside.js lays it). One 2 m texture repeated down a lane
+// reads as a printed pattern, so on top of it:
+//  - the wheel paths, two to a lane, polished darker and smoother by tyres, wandering a little;
+//  - grit and dust between them, along the crown and at the edges, where soil creeps on;
+//  - square-cut repairs in newer, darker tarmac here and there;
+//  - a broad drift in colour so the repeat doesn't show;
+//  - in the rain it darkens and shines, and water stands in the wheel paths.
+const TARMAC_PARS = /* glsl */ `
+uniform float uWet;
+uniform float uHalfWidth;
+float tHash(vec2 p) {
+  p = fract(p * vec2(0.3183099, 0.3678794) + 0.1);
+  p *= 17.0;
+  return fract(p.x * p.y * (p.x + p.y));
+}
+float tNoise(vec2 x) {
+  vec2 i = floor(x);
+  vec2 f = fract(x);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(tHash(i), tHash(i + vec2(1.0, 0.0)), f.x), mix(tHash(i + vec2(0.0, 1.0)), tHash(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+`;
+const TARMAC_COLOR = /* glsl */ `
+#include <map_fragment>
+{
+  vec2 m = vMapUv * 2.0; // metres: across from one edge, along the road
+  float W = uHalfWidth * 2.0;
+  float laneW = W * 0.5;
+  // (the wheel paths wander across the lane over tens of metres)
+  float u = mod(m.x, laneW) + (tNoise(vec2(m.y * 0.04, floor(m.x / laneW) * 7.0)) - 0.5) * 0.35;
+  float d = min(abs(u - (laneW * 0.5 - 0.85)), abs(u - (laneW * 0.5 + 0.85)));
+  tPath = 1.0 - smoothstep(0.16, 0.48, d);
+  float edge = min(m.x, W - m.x);
+  float ragged = tNoise(m * vec2(1.7, 0.9));
+  float verge = 1.0 - smoothstep(0.05, 0.35 + 0.55 * ragged, edge);
+  float crown = (1.0 - smoothstep(0.1, 0.45, abs(m.x - laneW))) * (1.0 - tPath);
+  // Repairs: cut squares a couple of metres long, in a few of the cells along each lane.
+  vec2 cell = vec2(floor(m.x / laneW), floor(m.y / 4.5));
+  float h = tHash(cell + 11.3);
+  vec2 inCell = vec2(mod(m.x, laneW) / laneW, fract(m.y / 4.5));
+  vec2 lo = vec2(0.1 + 0.3 * tHash(cell + 3.1), 0.05 + 0.3 * tHash(cell + 5.7));
+  vec2 hi = lo + vec2(0.35 + 0.35 * tHash(cell + 8.9), 0.4 + 0.5 * tHash(cell + 1.9));
+  float patchArea = step(h, 0.07) * step(lo.x, inCell.x) * step(inCell.x, hi.x) * step(lo.y, inCell.y) * step(inCell.y, hi.y);
+  // Less speckle from the texture where it's polished or new, and a little everywhere.
+  vec3 evenTone = diffuse * textureLod(map, vMapUv, 12.0).rgb;
+  diffuseColor.rgb = mix(diffuseColor.rgb, evenTone, 0.3 + 0.35 * tPath + 0.45 * patchArea);
+  float drift = 0.9 + 0.18 * tNoise(m * 0.035) + 0.06 * tNoise(m * 0.21 + 4.0);
+  diffuseColor.rgb *= drift * mix(1.0, 0.8, tPath) * mix(1.0, 1.08, crown) * mix(1.0, 0.68, patchArea);
+  // Soil and grit at the edges.
+  vec3 soil = vec3(0.115, 0.095, 0.07);
+  diffuseColor.rgb = mix(diffuseColor.rgb, soil, verge * (0.45 + 0.4 * ragged) * (1.0 - patchArea));
+  // Water: everything darker, and standing in the wheel paths when it's really wet.
+  tPuddle = uWet * tPath * smoothstep(0.45, 0.7, tNoise(m * vec2(0.9, 0.35) + 2.0) + uWet * 0.25);
+  diffuseColor.rgb *= mix(1.0, 0.62, uWet) * mix(1.0, 0.75, tPuddle);
+  tGrit = max(crown, verge);
+}
+`;
+const TARMAC_ROUGH = /* glsl */ `
+#include <roughnessmap_fragment>
+roughnessFactor = mix(roughnessFactor, 0.74, tPath * 0.7);
+roughnessFactor = mix(roughnessFactor, 0.97, tGrit * 0.6);
+roughnessFactor = mix(roughnessFactor, 0.32, uWet * 0.85);
+roughnessFactor = mix(roughnessFactor, 0.06, tPuddle);
+`;
+const TARMAC_SHEEN = /* glsl */ `
+#include <lights_physical_fragment>
+${DAMP_SHEEN}
+material.specularColor *= 1.0 + uWet * 1.6;
+material.specularF90 = mix(material.specularF90, 0.85, max(uWet * 0.8, tPuddle));`;
+
+export function wornTarmac(material, halfWidth) {
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uWet = groundWeather.wet;
+    shader.uniforms.uHalfWidth = { value: halfWidth };
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>\n${TARMAC_PARS}`)
+      .replace('void main() {', 'void main() {\n  float tPath = 0.0, tPuddle = 0.0, tGrit = 0.0;')
+      .replace('#include <map_fragment>', TARMAC_COLOR)
+      .replace('#include <roughnessmap_fragment>', TARMAC_ROUGH)
+      .replace('#include <lights_physical_fragment>', TARMAC_SHEEN);
+  };
+  material.customProgramCacheKey = () => 'worn-tarmac';
+  return material;
+}
+
 function placeholder(color) {
   const t = new THREE.DataTexture(new Uint8Array(color), 1, 1);
   t.needsUpdate = true;

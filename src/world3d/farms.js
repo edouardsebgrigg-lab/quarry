@@ -150,13 +150,14 @@ function paintVerts(geo, fn) {
 
 export function buildFarms({ scene, physics, plan, heightAt }) {
   const farms = plan.farms ?? [];
-  if (!farms.length) return { farms: [] };
+  if (!farms.length) return { farms: [], statics: [] };
   const { RAPIER, world } = physics;
   const mats = farmMaterials();
   const collider = (hx, hy, hz, x, y, z, yaw = 0) => world.createCollider(
     RAPIER.ColliderDesc.cuboid(hx, hy, hz).setTranslation(x, y, z)
       .setRotation({ x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) }),
   );
+  const statics = []; // houses, barns and parked machines (staticBatch.js)
   const baleGeos = [];
   const baleEnds = [];
   const wrapGeos = [];
@@ -193,6 +194,7 @@ export function buildFarms({ scene, physics, plan, heightAt }) {
       house.position.set(hp.x, hy - 0.05, hp.z);
       house.rotation.y = houseYaw;
       scene.add(house);
+      statics.push(house);
     } else {
       const box = new THREE.Mesh(new THREE.BoxGeometry(8.4, 5, 6), mats.wall);
       box.position.set(hp.x, hy + 2.5, hp.z);
@@ -213,6 +215,7 @@ export function buildFarms({ scene, physics, plan, heightAt }) {
       barn.scale.setScalar(scale);
       barn.traverse((o) => { if (o.isMesh && /Cladding/.test(o.material?.name ?? '')) o.material = mats.cladding; });
       scene.add(barn);
+      statics.push(barn);
     } else {
       const box = new THREE.Mesh(new THREE.BoxGeometry(24 * scale, 7 * scale, 16 * scale), mats.barn);
       box.position.set(bp.x, by + 3.5 * scale, bp.z);
@@ -290,6 +293,7 @@ export function buildFarms({ scene, physics, plan, heightAt }) {
         group.position.set(p.x, heightAt(p.x, p.z), p.z);
         group.rotation.y = yaw;
         scene.add(group);
+        statics.push(group);
         collider(1.7, 1.3, 1, p.x, group.position.y + 1.3, p.z, yaw);
         const tp = { x: p.x - 4.62 * Math.cos(yaw), z: p.z + 4.62 * Math.sin(yaw) };
         collider(2.1, 1.2, 1.15, tp.x, group.position.y + 1.2, tp.z, yaw);
@@ -363,5 +367,5 @@ export function buildFarms({ scene, physics, plan, heightAt }) {
   add(wrapGeos, mats.wrap);
   add(siloGeos, mats.silo);
   add(roofGeos, mats.siloRoof);
-  return { farms };
+  return { farms, statics };
 }

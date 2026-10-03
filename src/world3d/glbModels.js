@@ -5,6 +5,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createHeap } from './piles.js';
 import { weatherModel } from './weathering.js';
 import { addDecals } from './decals.js';
+import { mergeDetails } from './staticBatch.js';
 import { variantStats, dressVariant } from './fleetVariants.js';
 
 // (a build for hosts that won't serve .glb files sets VITE_MODEL_EXT=gltf.json and ships each
@@ -104,6 +105,10 @@ function daylightLamp(material) {
   if (lamp.roughness !== undefined) material.roughness = lamp.roughness;
 }
 
+// The parts of a machine the game finds by name (to move, hide, light or measure them), which
+// mergeDetails leaves as they are. (staticBatch.test.js checks every name the code looks up.)
+export const NAMED_PARTS = /^(Wheel\d*|TrackWheel[LR]\d|TrackShoe|Tracks|Tailgate\w*|Bed\w*|SkipPivot|Boom|Stick|Bucket|BucketLink|House|Canopy|Blade|Exhaust|CabEye|Interior|Body|Seat|Dash|Cab|SteeringWheel|Dials|Mobility_\w+|\w*Ram|\w*Rod)$|light|beacon/i;
+
 const cache = new Map(); // "truck_used" -> THREE.Object3D (the loaded scene)
 
 // onProgress(fraction 0..1) follows the downloads, for the loading card.
@@ -145,6 +150,7 @@ export async function preloadModels({ onProgress } = {}) {
       });
       weatherModel(gltf.scene, name); // machines only: rust, chips, fade and mud by tier
       addDecals(gltf.scene, name); // lettering, hazard chevrons, warning stickers, number plates
+      if (!name.startsWith('prop_')) mergeDetails(gltf.scene, NAMED_PARTS); // (props are batched where they're placed)
       cache.set(name, gltf.scene);
     } catch (err) {
       console.warn(`Could not load model ${name}:`, err);
@@ -192,6 +198,17 @@ const node = (root, name) => {
   return n;
 };
 
+// British road vehicles are right-hand drive, but the cabs were built left-hand drive. Each cab's
+// Interior (dash, dials, wheel, seats) sits on the centreline, so mirroring it across puts the
+// wheel and the driver's seat on the right. Returns whether it did.
+function rightHandDrive(root) {
+  const interior = root.getObjectByName('Interior');
+  if (!interior) return false;
+  interior.scale.z *= -1;
+  root.updateMatrixWorld(true);
+  return true;
+}
+
 export function glbTruck(tier) {
   const root = instance(`truck_${tier}`);
   if (!root) return null;
@@ -201,6 +218,7 @@ export function glbTruck(tier) {
     return { steerGroup: w, spin: w };
   });
   const bedPivot = node(root, 'BedPivot');
+  const rhd = rightHandDrive(root);
   const heap = createHeap(21);
   heap.position.set(2.15, 0.1, 0);
   heap.visible = false;
@@ -220,7 +238,8 @@ export function glbTruck(tier) {
     bedHalf: { x: 2.2, z: 1.2 },
     bedFloorY: 0.1,
     tailgateLocal: new THREE.Vector3(-0.02, 0.1, 0),
-    cabSeat: new THREE.Vector3(2.3, 1.15, -0.5),
+    cabSeat: new THREE.Vector3(2.3, 1.15, rhd ? 0.5 : -0.5),
+    driverSide: rhd ? 1 : -1, // (+z is the right-hand side, looking forward along +x)
     // The cab shell and glass are one-sided, so from the seat you see out through them.
     setFirstPerson() {},
   };
@@ -240,6 +259,7 @@ export function glbPickup(rideHeight, filename = 'vehicle_pickup') {
     return { steerGroup: w, spin: w };
   });
   const tailgate = node(inner, 'TailgatePivot');
+  const rhd = rightHandDrive(root);
   // The body shell's flat top runs through the cab, so from the seat the floor was bare body
   // paint. Lay a dark rubber mat over it from under the seat to the dashboard.
   root.updateMatrixWorld(true);
@@ -276,7 +296,8 @@ export function glbPickup(rideHeight, filename = 'vehicle_pickup') {
     bedHalf: { x: 1.1, z: 0.8 },
     bedFloorY: floorY,
     tailgateLocal: new THREE.Vector3(-2.7, floorY, 0), // the middle of the open tailgate
-    cabSeat: new THREE.Vector3(0.18, 1.45 - rideHeight, -0.45), // driver's eyes (left-hand drive)
+    cabSeat: new THREE.Vector3(0.18, 1.45 - rideHeight, rhd ? 0.45 : -0.45), // driver's eyes
+    driverSide: rhd ? 1 : -1,
     exhaustLocal: new THREE.Vector3(-2.75, 0.3 - rideHeight, 0.35),
     setFirstPerson() {},
   };
@@ -525,10 +546,17 @@ export function glbMobility(type, rideHeight = 0) {
     w.rotation.order = 'YXZ';
     return { steerGroup: w, spin: w };
   });
+  // (the van goes on the road: right-hand drive; the buggy and quad are farm machines)
+  const rhd = type === 'serviceVan' && rightHandDrive(root);
+  const eye = anchor('CabEye');
+  let inside = false;
+  node(root, 'CabEye').traverseAncestors((a) => { if (a.name === 'Interior') inside = true; });
+  if (rhd && !inside) eye.z = -eye.z;
   return {
     root, wheels, wheelScale: 1, wheelOffsetY: rideHeight,
     tailgate: root.getObjectByName('TailgatePivot'),
-    cabSeat: anchor('CabEye'), bedCenter: bedFloor.clone().add(new THREE.Vector3(0, .1, 0)),
+    driverSide: rhd || eye.z > 0.15 ? 1 : -1,
+    cabSeat: eye, bedCenter: bedFloor.clone().add(new THREE.Vector3(0, .1, 0)),
     bedHalf: half, bedFloorY: bedFloor.y, tailgateLocal: anchor('BedRear'), exhaustLocal: anchor('Exhaust'),
     setLoad(fill, color) {
       heap.visible = type !== 'quad' && fill > .02;

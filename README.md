@@ -56,7 +56,7 @@ After tipping a barrow into the pickup, hold **S** to back away from the tailgat
 | Z | Cruise control: holds your current speed (above 8 km/h); Z again, W, S or Space cancels |
 | C | Cab / outside camera |
 | V | Recover (if it's stuck or on its side; puts the trailer straight behind the tractor) |
-| E | Get out |
+| E | Get out (on the driver's side: road vehicles are right-hand drive) |
 
 | Mini digger and excavator: Assisted (the default) | |
 |---|---|

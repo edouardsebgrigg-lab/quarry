@@ -5,6 +5,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { solarState } from '../core/visualClock.js';
 import { createGroundMaterial, paintGround } from './groundMaterial.js';
 
@@ -27,7 +28,7 @@ export function createRenderer(canvas, quality) {
   renderer.toneMappingExposure = 0.9;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = q.shadows;
-  renderer.shadowMap.type = q.softShadows ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap; // (three.js dropped PCFSoft: soft edges come from the sun's shadow radius)
   return { renderer, q };
 }
 
@@ -122,6 +123,7 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
   Object.assign(sun.shadow.camera, { left: -s, right: s, top: s, bottom: -s, near: 1, far: 400 });
   sun.shadow.bias = -0.0004;
   sun.shadow.normalBias = 0.03;
+  sun.shadow.radius = q.softShadows ? 2.2 : 1; // (blurs the stair-stepped edges of the shadow map's texels)
   scene.add(sun, sun.target);
   // Broad cool moonlight keeps paths, machines and cut edges readable without flattening
   // the night into daylight. No second shadow map or per-frame environment-map rebuild.
@@ -256,6 +258,7 @@ export function createEnvironment(scene, renderer, q, site, { outsideY = -0.3, h
 function addHills(scene, material, [near, far], baseY, keepOut) {
   const rnd = mulberry(7);
   const hills = [];
+  const quarters = [[], [], [], []]; // (merged into one mesh per quarter of the horizon: 4 draws, not 40)
   for (let i = 0; i < 40; i++) {
     const angle = (i / 40) * Math.PI * 2 + rnd() * 0.3;
     const want = near + rnd() * (far - near);
@@ -281,8 +284,12 @@ function addHills(scene, material, [near, far], baseY, keepOut) {
     const clearZ = Math.abs(sn) > 1e-3 ? (keepOut + hill.scale.z) / Math.abs(sn) : Infinity;
     const dist = Math.max(want, Math.min(clearX, clearZ));
     hill.position.set(c * dist, baseY - 2, sn * dist);
-    scene.add(hill);
+    hill.updateMatrix();
+    quarters[Math.floor(i / 10)].push(geo.applyMatrix4(hill.matrix));
     hills.push({ x: hill.position.x, z: hill.position.z, y: baseY - 2, sx: hill.scale.x, sy: hill.scale.y, sz: hill.scale.z });
+  }
+  for (const geos of quarters) {
+    scene.add(new THREE.Mesh(mergeGeometries(geos), material));
   }
   return hills;
 }

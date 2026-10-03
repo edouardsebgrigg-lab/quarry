@@ -5,7 +5,7 @@
 // for it and meets its edge.
 import * as THREE from 'three';
 import { farmRect } from './farms.js';
-import { createGroundMaterial, dampSheen } from './groundMaterial.js';
+import { createGroundMaterial, dampSheen, wornTarmac } from './groundMaterial.js';
 import { MAP, inRect } from './map.js';
 
 const ROAD_STEP = 2; // metres between road samples
@@ -488,10 +488,12 @@ export function createCountryside({ scene, physics, ground, plan, asphalt = asph
       tex.needsUpdate = true;
       tex.repeat.set(1, 1);
     }
-    const mat = dampSheen(new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshStandardMaterial({
       color: tex ? new THREE.Color(1.3, 1.18, 1.0) : 0x3b3a37, map: tex, roughness: 0.9, envMapIntensity: 0.7,
       polygonOffset: true, polygonOffsetFactor: -2 - ri, polygonOffsetUnits: -2 - ri,
-    }));
+    });
+    if (tex) wornTarmac(mat, road.hw);
+    else dampSheen(mat);
     const m = new THREE.Mesh(geo, mat);
     m.receiveShadow = true;
     scene.add(m);

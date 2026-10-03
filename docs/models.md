@@ -151,7 +151,7 @@ You can replace any model with your own. Keep the file name, keep the named part
 - Origin: the truck body centre. **The ground is 1.3 m below the origin.**
 - `Wheel0` to `Wheel3`: each wheel's origin is its axle centre (tyre radius 0.55 m). Wheel0 is front-left, 1 front-right, 2 rear-left, 3 rear-right. Front wheels sit at X = 2.1, rear at X = −2.0, Y = ±1.05, Z = −0.75.
 - `BedPivot`: an empty at the tipping hinge (X −3.1, Z 0.05) with the bed as its child. The game rotates it to tip.
-- `Interior`: the dashboard, seat, pillars and so on that you see from the driver's seat. The driver's eye is at about (2.3, 0.5, 1.15).
+- `Interior`: the dashboard, seat, pillars and so on that you see from the driver's seat. The driver's eye is at about (2.3, 0.5, 1.15). Build it left-hand drive on the centreline: the game mirrors `Interior` across to make the British right-hand-drive cab (`rightHandDrive` in `glbModels.js`; also the pickup, 4×4 and service van), and moves the eye to Y −0.5.
 - Make the cab shell and glass **one-sided with backface culling on**, so you can see out from inside.
 
 ### Excavator (`excavator_<tier>.glb`)
@@ -183,7 +183,7 @@ You can replace any model with your own. Keep the file name, keep the named part
 - `Wheel0` to `Wheel3`: each wheel's origin is its axle centre (tyre radius 0.36 m). Wheel0 is front-left, 1 front-right, 2 rear-left, 3 rear-right, at X = ±1.55, Y = ±0.76, Z = 0.36.
 - `TailgatePivot`: an empty at the tailgate hinge (X −2.665, Z 0.6) with the tailgate as its child. The game swings it open about Y when you unload.
 - The bed floor is at Z 0.85 between X −2.6 and −0.4; keep it empty (the game puts the load's heap there).
-- `Interior`: dashboard, steering wheel and seat. The driver's eye is at about (0.18, 0.45, 1.45).
+- `Interior`: dashboard, steering wheel and seat. The driver's eye is at about (0.18, 0.45, 1.45); the game mirrors `Interior` to right-hand drive (see the haul truck).
 
 ### Houses, shed, weighbridge (`prop_house_*.glb`, `prop_shed.glb`, `prop_weighbridge.glb`)
 - Origin on the ground at the centre. House and shed fronts (front door, roller doors) face −Y; the game turns each house to face its road.

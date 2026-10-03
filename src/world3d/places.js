@@ -105,6 +105,7 @@ export function buildPlaces({ scene, physics, plan, heightAt, materials, bayName
     RAPIER.ColliderDesc.cuboid(hx, hy, hz).setTranslation(x, y, z)
       .setRotation({ x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) }),
   );
+  const statics = []; // props that never move or change, drawn in batches (staticBatch.js)
   const place = (name, x, z, yaw = 0, scale = 1, y = null) => {
     const obj = glbProp(name);
     if (!obj) return null;
@@ -112,6 +113,7 @@ export function buildPlaces({ scene, physics, plan, heightAt, materials, bayName
     obj.rotation.y = yaw;
     obj.scale.setScalar(scale);
     scene.add(obj);
+    if (name !== 'weighbridge') statics.push(obj); // (the weighbridges show up and light up)
     return obj;
   };
   const standIn = (w, h, d, x, z, yaw, color) => {
@@ -381,6 +383,7 @@ export function buildPlaces({ scene, physics, plan, heightAt, materials, bayName
       if (facilitySigns[id]) facilitySigns[id].visible = owned;
       if (id === 'weighbridge') { homeBridge.visible = owned; homePole.setEnabled(owned); }
     },
+    statics,
     officeDoor: { x: off.x + 0.5, z: off.z + 2.6 },
     dealerDoor: dl.door,
     weighbridge: wb,

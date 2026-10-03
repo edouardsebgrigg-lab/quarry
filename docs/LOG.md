@@ -4,6 +4,35 @@ One short entry per task, newest at the top: the task, the agent and branch, the
 `main`, what changed, what was actually run, and what wasn't verified. Older, longer reports
 are in `docs/archive/CODEX-CHECKPOINT.md`.
 
+## 3 October 2026 · Realism and frame cost (Claude, `claude/realism`)
+
+- The sun rose in the west: the solar path was mirrored (the map's x is east), so a new game
+  faced straight into the morning sun (P-4). It now rises in the east; the moon stands in the
+  south.
+- Truer colours: Neutral tone mapping instead of ACES (yellow paint stayed yellow), grimy track
+  and bucket steel instead of icy mirrors, a dark vinyl pickup dash, a rubber floor mat over
+  the bare body shell, a thinner windscreen film.
+- British right-hand drive: the pickup, 4×4, service van and tipper cabs are mirrored so the
+  wheel and driver's seat are on the right, and you step out on that side. (The buggy, quad,
+  tractors and diggers are unchanged.)
+- Roads: worn tarmac instead of one speckled texture repeated every 2 m: darker polished wheel
+  paths, grit along the crown and soil at the edges, square-cut repairs, a broad colour drift,
+  and in the rain dark wet tarmac with water standing in the wheel paths.
+- Soft shadow edges again: three.js dropped PCFSoft (it warned and fell back to hard PCF);
+  Medium and up now blur the sun's shadow with its radius.
+- Settings → Game: switch off the guide beam or Ray's tips. Key hints fit short windows (H-5).
+- Frame cost (H-4): props that never move are drawn in batches (`staticBatch.js`): repeated
+  parts instanced, the rest merged by material, per 96 m patch so culling still works; the 40
+  horizon hills are four meshes; each machine's small fixed parts (wheel nuts, pin caps,
+  steps) merge into their parent when it loads. Measured in SwiftShader on Medium: draw calls a
+  frame at the depot 801 → 167, in the village 894 → 569, in the yard 627 → 400; triangles
+  about the same (batching across patches first raised them 20%, so batches stay in a patch).
+- Checked: tests (398), lint, build; the depot, village, farm and yard shot with and without
+  batching look the same. Still to look at in the game: the worn roads (dry and wet), the
+  right-hand-drive cabs and exit side, the machines after their parts are merged.
+  Not checked: a real GPU (all rendering here is SwiftShader), H-6 (the field on Medium+ in
+  SwiftShader), sound, driving and digging by hand.
+
 ## 2 October 2026 · UI polish pass (Claude, `claude/cleanup`)
 
 - New `ui-gallery.mjs`: every menu, settings tab, laptop app, dealer category, the map and the

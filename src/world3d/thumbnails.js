@@ -38,7 +38,7 @@ export function createThumbnails({ width = 480, height = 300 } = {}) {
     renderer.toneMappingExposure = 1.0;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.setClearColor(0x000000, 0);
     scene = new THREE.Scene();
     const pmrem = new THREE.PMREMGenerator(renderer);
