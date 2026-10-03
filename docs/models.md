@@ -105,7 +105,7 @@ These are also made in Blender, from real geometry rather than painted by hand:
 - `blender/ground.py` models patches of gravel (thousands of pebbles in sand), trodden dirt with clods, rough grass (tens of thousands of blades), a sand-and-gravel pit face (layered beds with stones stuck in them) and old tarmac. Each patch wraps at its edges and is rendered from above, which gives a seamless colour image and a normal+height image in `assets/textures/ground/`. The terrain shader (`src/world3d/groundMaterial.js`) blends them.
 - `blender/vegetation.py` models grass tufts, dry grass, ragwort and thistles and renders them from the side into `assets/textures/vegetation.png`, which the game shows on crossed cards that sway in the wind.
 
-- `blender/trees.py` grows branching oak, poplar and hawthorn trees with thousands of leaves and renders them the same way into `assets/textures/trees.png`. The game lays them out as hedgerows, copses and a row of poplars along the road.
+- `blender/trees.py` grows branching oak, poplar and hawthorn trees with thousands of leaves and renders them the same way into `assets/textures/trees.png`. The game lays them out as hedgerows, copses and a row of poplars along the road. Stray leaves far outside a crown are cleared from the atlas (`blender/despeckle.py`, which also runs on its own on a PNG), or they float like confetti on a card by the roadside.
 
 ```bash
 python blender/ground.py            # all surfaces (about 2 minutes); or e.g. `ground.py rock`

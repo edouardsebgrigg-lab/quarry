@@ -14,6 +14,7 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ground import srgb, attr_material, ico  # noqa: E402
 from vegetation import Builder, dilate, reset  # noqa: E402
+from despeckle import despeckle  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'assets', 'textures', 'trees.png')
@@ -173,7 +174,8 @@ def main():
         reset()
         size = build_tree(rng, name)
         img = bpy.data.images.load(render_cell(name, size))
-        cells.append(dilate(np.array(img.pixels[:]).reshape(CELL, CELL, 4)))
+        # (stray leaves far outside the crown float like confetti on a card by the road)
+        cells.append(dilate(despeckle(np.array(img.pixels[:]).reshape(CELL, CELL, 4), radius=CELL // 64, keep=0.2)))
     atlas = np.concatenate(cells, 1)
     img = bpy.data.images.new('trees', atlas.shape[1], atlas.shape[0], alpha=True)
     img.pixels.foreach_set(atlas.astype(np.float32).ravel())

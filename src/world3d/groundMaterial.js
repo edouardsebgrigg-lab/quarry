@@ -81,32 +81,44 @@ const TARMAC_COLOR = /* glsl */ `
   vec2 lo = vec2(0.1 + 0.3 * tHash(cell + 3.1), 0.05 + 0.3 * tHash(cell + 5.7));
   vec2 hi = lo + vec2(0.35 + 0.35 * tHash(cell + 8.9), 0.4 + 0.5 * tHash(cell + 1.9));
   float patchArea = step(h, 0.07) * step(lo.x, inCell.x) * step(inCell.x, hi.x) * step(lo.y, inCell.y) * step(inCell.y, hi.y);
-  // Less speckle from the texture where it's polished or new, and a little everywhere.
+  // (a repair's cut edge is sealed with a band of bitumen a few centimetres wide)
+  vec2 inside = min(inCell - lo, hi - inCell) * vec2(laneW, 4.5);
+  float seam = patchArea * (1.0 - smoothstep(0.03, 0.07, min(inside.x, inside.y)));
+  // Less speckle from the texture where it's polished, and a little everywhere.
   vec3 evenTone = diffuse * textureLod(map, vMapUv, 12.0).rgb;
-  diffuseColor.rgb = mix(diffuseColor.rgb, evenTone, 0.3 + 0.35 * tPath + 0.45 * patchArea);
+  diffuseColor.rgb = mix(diffuseColor.rgb, evenTone, 0.3 + 0.35 * tPath + 0.1 * patchArea);
   float drift = 0.9 + 0.18 * tNoise(m * 0.035) + 0.06 * tNoise(m * 0.21 + 4.0);
-  diffuseColor.rgb *= drift * mix(1.0, 0.8, tPath) * mix(1.0, 1.08, crown) * mix(1.0, 0.68, patchArea);
+  diffuseColor.rgb *= drift * mix(1.0, 0.8, tPath) * mix(1.0, 1.08, crown) * mix(1.0, 0.84, patchArea) * mix(1.0, 0.55, seam);
+  tGrit -= seam; // (the seam is smooth: see the roughness below)
   // Soil and grit at the edges.
   vec3 soil = vec3(0.115, 0.095, 0.07);
   diffuseColor.rgb = mix(diffuseColor.rgb, soil, verge * (0.45 + 0.4 * ragged) * (1.0 - patchArea));
   // Water: everything darker, and standing in the wheel paths when it's really wet.
-  tPuddle = uWet * tPath * smoothstep(0.45, 0.7, tNoise(m * vec2(0.9, 0.35) + 2.0) + uWet * 0.25);
-  diffuseColor.rgb *= mix(1.0, 0.62, uWet) * mix(1.0, 0.75, tPuddle);
-  tGrit = max(crown, verge);
+  tPuddle = uWet * tPath * smoothstep(0.55, 0.8, tNoise(m * vec2(0.9, 0.35) + 2.0) + uWet * 0.2);
+  diffuseColor.rgb *= mix(1.0, 0.62, uWet) * mix(1.0, 0.8, tPuddle);
+  tGrit += max(crown, verge);
 }
 `;
 const TARMAC_ROUGH = /* glsl */ `
 #include <roughnessmap_fragment>
 roughnessFactor = mix(roughnessFactor, 0.74, tPath * 0.7);
-roughnessFactor = mix(roughnessFactor, 0.97, tGrit * 0.6);
-roughnessFactor = mix(roughnessFactor, 0.32, uWet * 0.85);
-roughnessFactor = mix(roughnessFactor, 0.06, tPuddle);
+roughnessFactor = mix(roughnessFactor, 0.97, clamp(tGrit, 0.0, 1.0) * 0.6);
+roughnessFactor = mix(roughnessFactor, 0.6, clamp(-tGrit, 0.0, 1.0)); // (the sealed seam)
+roughnessFactor = mix(roughnessFactor, 0.45, uWet * 0.85);
+roughnessFactor = mix(roughnessFactor, 0.14, tPuddle);
 `;
 const TARMAC_SHEEN = /* glsl */ `
 #include <lights_physical_fragment>
 ${DAMP_SHEEN}
-material.specularColor *= 1.0 + uWet * 1.6;
-material.specularF90 = mix(material.specularF90, 0.85, max(uWet * 0.8, tPuddle));`;
+material.specularColor *= 1.0 + uWet;
+material.specularF90 = mix(material.specularF90, 0.7, max(uWet * 0.7, tPuddle));`;
+// The sky reflected in the wet road: the environment map is a clear sky, but it only rains under
+// cloud, so as the road gets wet its reflections go grey and dim.
+const TARMAC_REFLECT = /* glsl */ `
+#include <lights_fragment_maps>
+#if defined( RE_IndirectSpecular )
+radiance = mix(radiance, vec3(dot(radiance, vec3(0.3, 0.59, 0.11))) * 0.7, uWet);
+#endif`;
 
 export function wornTarmac(material, halfWidth) {
   material.onBeforeCompile = (shader) => {
@@ -117,7 +129,8 @@ export function wornTarmac(material, halfWidth) {
       .replace('void main() {', 'void main() {\n  float tPath = 0.0, tPuddle = 0.0, tGrit = 0.0;')
       .replace('#include <map_fragment>', TARMAC_COLOR)
       .replace('#include <roughnessmap_fragment>', TARMAC_ROUGH)
-      .replace('#include <lights_physical_fragment>', TARMAC_SHEEN);
+      .replace('#include <lights_physical_fragment>', TARMAC_SHEEN)
+      .replace('#include <lights_fragment_maps>', TARMAC_REFLECT);
   };
   material.customProgramCacheKey = () => 'worn-tarmac';
   return material;

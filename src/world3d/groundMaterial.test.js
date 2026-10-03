@@ -20,10 +20,11 @@ describe('worn tarmac on the roads', () => {
     expect(f).toContain('uniform float uHalfWidth;');
     expect(f).toContain('float tPath = 0.0, tPuddle = 0.0, tGrit = 0.0;');
     expect(f).toContain('tPath = 1.0 - smoothstep'); // (the wheel paths, after the texture)
-    expect(f).toContain('roughnessFactor = mix(roughnessFactor, 0.06, tPuddle);');
-    expect(f).toContain('material.specularF90 = mix(material.specularF90, 0.85');
+    expect(f).toContain('roughnessFactor = mix(roughnessFactor, 0.14, tPuddle);');
+    expect(f).toContain('material.specularF90 = mix(material.specularF90, 0.7');
+    expect(f).toContain('radiance = mix(radiance'); // (grey reflections in the rain)
     // (each include it replaces is kept, once)
-    for (const inc of ['map_fragment', 'roughnessmap_fragment', 'lights_physical_fragment']) {
+    for (const inc of ['map_fragment', 'roughnessmap_fragment', 'lights_physical_fragment', 'lights_fragment_maps']) {
       expect(f.split(`#include <${inc}>`)).toHaveLength(2);
     }
   });
