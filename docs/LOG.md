@@ -33,7 +33,10 @@ are in `docs/archive/CODEX-CHECKPOINT.md`.
   about the same (batching across patches first raised them 20%, so batches stay in a patch).
   Frame time in SwiftShader didn't change beyond its noise (it's bound by pixel work there); the
   saving is CPU time per frame on a real machine, which I couldn't measure here.
-  With eight machines in the yard the scene had 1,901 meshes before and 834 after.
+  With eight machines in the yard the scene had 1,901 meshes before and 834 after. The 2 km
+  countryside terrain was one half-million-triangle mesh drawn whole every frame; it's now 250 m
+  tiles sharing one vertex buffer (field on Low: 806k → 555k triangles, 176 → 217 draws;
+  125 m tiles saved a little more but cost 110 draws).
 - Checked: tests (398), lint, build; the depot, village, farm and yard shot with and without
   batching look the same; eight machines side by side on the old and new build look the same
   (wheel nuts, trim, lights), except that the steering wheel is now on the right. Sitting in

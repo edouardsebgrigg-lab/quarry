@@ -50,8 +50,14 @@ about playing it properly and fixing what gets in the way.
       1.9 s before the 2 October merge to 2.5 s after (visible meshes 971 → 1,218, about 1.3 M
       triangles on Low). A real GPU is far faster, but draw calls cost CPU time on every machine:
       look for static scenery that can be merged or instanced, and check Low really is light.
-- [ ] **H-5 Small windows.** At 640×360 the key-hints panel runs into the goal card. Fine from
+      Progress (Claude, `claude/realism`): static props batched (depot 801 → 167 draws), machine
+      details merged at load (eight machines: 1,901 → 834 meshes), the countryside terrain
+      drawn in 250 m tiles (field on Low 806k → 555k triangles, for 41 more draws). Left: the
+      depot's block walls (122k triangles) still draw from the yard 700 m away behind hedges;
+      a far LOD or distance cut for small batched props would save that.
+- [x] **H-5 Small windows.** At 640×360 the key-hints panel runs into the goal card. Fine from
       960×540 up; give the hints a max height (or hide them) when the window is short.
+      Done: the hints get a max height and tighten below 640 px tall (Claude, `claude/realism`).
 - [ ] **H-6 Ground shader on Medium+ (check on a real GPU).** In the headless test browser
       (SwiftShader), a game that loads with the sun in the east draws the home field not at all on
       Medium and up: the field shows the sky through it. Plain materials draw; turning the sun's
