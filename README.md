@@ -49,7 +49,8 @@ After tipping a barrow into the pickup, hold **S** to back away from the tailgat
 
 | Pickup, tractor and tipper truck | |
 |---|---|
-| W / S | Accelerate / brake. Stopped, hold S to reverse |
+| W / S | Accelerate / brake (the pedal goes down over a quarter of a second). Stopped, hold S to reverse |
+| Hold Right Shift | Light pedal: ease away on wet grass without spinning the wheels, or creep back into a bay |
 | A / D | Steer |
 | Space | Handbrake |
 | T | Unload: in a depot bay (after weighing in) you get paid; on your field it makes a heap. The truck tips its bed, the tractor tips its trailer, you shovel the pickup off by hand |

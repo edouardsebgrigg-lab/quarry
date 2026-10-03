@@ -14,6 +14,7 @@ const LOOK = {
   rock: { splat: [0, 0, 0.1, 0.9], tint: [0.92, 0.9, 0.86] },
 };
 const GRASS = { splat: [0.85, 0.15, 0, 0], tint: [0.97, 0.96, 0.88] };
+const MUD = { splat: [0.12, 0.88, 0, 0], tint: [0.62, 0.53, 0.43] };
 
 // Untouched grass isn't one even lawn: lusher, darker patches, drier yellow ones, and thin spots
 // where the soil shows. Smooth value noise on the world position (the same on every load).
@@ -102,7 +103,10 @@ export function createGroundView({ scene, physics, ground, onChange = null }) {
         nor.set([-dx / len, 1 / len, -dz / len], v * 3);
         const mat = matIds[ground.cellSurface(i, j)];
         const grass = mat === 'topsoil' && !ground.cellDisturbed(i, j);
-        const look = grass ? wornGrass(grassLook(vx(i), vz(j)), ground.cellWear?.(i, j) ?? 0) : LOOK[mat];
+        const wear = ground.cellWear?.(i, j) ?? 0;
+        // (turf torn up by tyres is churned mud with scraps of grass, not freshly dug soil)
+        const look = grass ? wornGrass(grassLook(vx(i), vz(j)), wear)
+          : mat === 'topsoil' && wear >= 0.99 && ground.cellLoose(i, j) < 0.03 ? MUD : LOOK[mat];
         // The shader samples the original contacts at the fragment's height, so a
         // sandy/clayey wall exposes real bands instead of turning every slope into rock.
         spl.set(look.splat, v * 4);
@@ -137,7 +141,12 @@ export function createGroundView({ scene, physics, ground, onChange = null }) {
       chunk = { mesh, collider: null };
       chunks.set(c, chunk);
     }
-    const g = chunk.mesh.geometry;
+    // (a fresh geometry each time, and the old one freed: swapping attributes on the same
+    // geometry left every old vertex buffer behind on the GPU)
+    const old = chunk.mesh.geometry;
+    const g = new THREE.BufferGeometry();
+    chunk.mesh.geometry = g;
+    old.dispose();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));

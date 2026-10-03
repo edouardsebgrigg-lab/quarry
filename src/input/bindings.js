@@ -74,7 +74,7 @@ export const ACTION_LABELS = {
   slewLeft: 'Digger: slew left',
   slewRight: 'Digger: slew right',
   freeLook: 'Digger: hold to look around',
-  precision: 'Digger: precision / adjust cut depth',
+  precision: 'Digger: precision / adjust cut depth; driving: light pedal',
   survey: 'Toggle material survey',
   cruise: 'Road vehicle: hold current speed / cancel cruise',
   attachments: 'Digger: choose attachment',

@@ -186,6 +186,11 @@ export function createGround(groundData, plotId, opts = {}) {
     return h;
   };
   const chunkOf = (i, j) => Math.floor(j / CC) * cnx + Math.floor(i / CC);
+  // A cell changed in a way that's saved but doesn't show (yet): no redraw.
+  function touch(k) {
+    const i = k % nx;
+    touched.add(chunkOf(i, (k - i) / nx));
+  }
   function changed(k) {
     const i = k % nx;
     const j = (k - i) / nx;
@@ -925,6 +930,8 @@ export function createGround(groundData, plotId, opts = {}) {
       const pass = (k) => {
         if (fixed[k] || (disturbed[k] & 2) || destinations.includes(k)) return;
         const r = response(k, moisture);
+        const was = { wear: wear[k], firm: compaction[k], disturbed: disturbed[k] };
+        let cut = false;
         compaction[k] = Math.min(1, compaction[k] + travel * pressure * (physics.trafficCompactionRate ?? 0.12));
         firm = Math.max(firm, compaction[k]);
         let ruts = 1;
@@ -936,10 +943,18 @@ export function createGround(groundData, plotId, opts = {}) {
         if (destinations.length && ruts > 0) {
           const softness = r.loose ? 1 : Math.min(0.8, moisture * 30 / Math.max(1, r.resistance));
           const depth = ruts * Math.min(physics.maximumRutDepth ?? 0.025, travel * pressure * (physics.rutDepthPerMetre ?? 0.012) * softness * (1 + tear) * (1 - compaction[k] * 0.8));
-          if (depth > 1e-5) removeTop(k, depth, out);
+          if (depth > 1e-5) {
+            removeTop(k, depth, out);
+            cut = true;
+          }
         }
-        changed(k);
-        activateAround(k);
+        // (redraw only when it would look different: a wheel over grass changes it a little at
+        // a time, and redrawing the ground for every pass of every tyre is a lot of work)
+        const shows = cut || disturbed[k] !== was.disturbed || Math.floor(wear[k] * 12) !== Math.floor(was.wear * 12)
+          || Math.floor(compaction[k] * 10) !== Math.floor(was.firm * 10);
+        if (shows) changed(k);
+        else touch(k);
+        if (cut || disturbed[k] !== was.disturbed) activateAround(k);
       };
       if (swept) cellsAlong(fromX, fromZ, x, z, width / 2, pass);
       else cellsInRadius(x, z, width / 2, pass);

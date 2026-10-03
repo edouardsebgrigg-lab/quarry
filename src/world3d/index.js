@@ -9,6 +9,7 @@ import { ownsBuilding, stockpileLoad, stockpileConfig } from '../buildings/index
 import { createYardStockpiles } from './stockpiles.js';
 import { buildPlaces } from './places.js';
 import { surfaceGrip, blendedGrip } from './surfaces.js';
+import { pedalStep } from './pedals.js';
 import { batchStatic } from './staticBatch.js';
 import { buildFarms, farmClearRect, farmWorkRect, farmTrees, farmTrack } from './farms.js';
 import { createParticles } from './particles.js';
@@ -474,11 +475,15 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     player.input.jump = keys('jump');
   }
 
-  function controlTruck(v, m, keys, d, sens) {
+  // Road vehicles. A key works a pedal (pedals.js): it goes down over a quarter of a second, as a
+  // foot does, rather than all at once; holding the precision key keeps the foot light, for
+  // easing away on wet grass or creeping back into a bay.
+  function controlTruck(v, m, keys, d, sens, dt) {
     look.yaw = THREE.MathUtils.clamp(look.yaw - d.x * sens, -2.3, 2.3);
     look.pitch = THREE.MathUtils.clamp(look.pitch - d.y * sens, -1.2, 0.8);
     const busy = !!m.job;
-    v.control.throttle = m.broken || busy ? 0 : (keys('forward') ? 1 : 0) - (keys('back') ? 1 : 0);
+    const want = m.broken || busy ? 0 : ((keys('forward') ? 1 : 0) - (keys('back') ? 1 : 0)) * (keys('precision') ? 0.4 : 1);
+    v.control.throttle = v.pedal = pedalStep(v.pedal ?? 0, want, dt);
     v.control.steer = (keys('left') ? 1 : 0) - (keys('right') ? 1 : 0);
     v.control.brakePressed = keys('back');
     v.control.handbrake = keys('jump') || m.broken || busy;
@@ -1085,7 +1090,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     if (!paused) ground?.setMoisture(groundWeather.wet.value);
     if (!v && hands.holding()) hands.controlHeld(paused ? 0 : dt, keys, delta, sens);
     else if (!v) controlFoot(keys, delta, sens);
-    else if (v.road) controlTruck(v, m, keys, delta, sens);
+    else if (v.road) controlTruck(v, m, keys, delta, sens, paused ? 0 : dt);
     else if (v.digger) controlExcavator(v, m, keys, delta, sens * (settings.diggerSensitivity ?? 1), clicked && !paused, paused ? 0 : dt);
     else controlDumper(v, m, keys, delta, sens, paused ? 0 : dt);
 
