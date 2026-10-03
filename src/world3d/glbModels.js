@@ -81,6 +81,17 @@ function grimySteel(material) {
   material.envMapIntensity = 0.6;
 }
 
+// The pickup's and 4×4's dashboards are exported in the body paint, so from the driver's seat
+// the whole lower view is a bright painted slab. Work-vehicle dashes are dark padded vinyl.
+function vinylDash(material) {
+  if (!/_Dash$/.test(material?.name ?? '') || material.userData.vinyl) return;
+  material.userData.vinyl = true;
+  material.color.multiplyScalar(0.18);
+  material.metalness = 0;
+  material.roughness = Math.max(material.roughness, 0.85);
+  material.envMapIntensity = 0.35;
+}
+
 const LAMPS = { Headlight: { color: 0xd8dcdf, emissive: 0.06, metalness: 0.55, roughness: 0.06 }, TailLight: { emissive: 0.18 }, Beacon: { emissive: 0.6 } };
 function daylightLamp(material) {
   const kind = /(?:^|_)(Headlight|TailLight|Beacon)$/.exec(material?.name ?? '')?.[1];
@@ -127,6 +138,7 @@ export async function preloadModels({ onProgress } = {}) {
           daylightLamp(o.material);
           blackTrim(o.material);
           grimySteel(o.material);
+          vinylDash(o.material);
           paintedCladding(o.material);
           weatheredConcrete(o.material);
         }
@@ -228,6 +240,20 @@ export function glbPickup(rideHeight, filename = 'vehicle_pickup') {
     return { steerGroup: w, spin: w };
   });
   const tailgate = node(inner, 'TailgatePivot');
+  // The body shell's flat top runs through the cab, so from the seat the floor was bare body
+  // paint. Lay a dark rubber mat over it from under the seat to the dashboard.
+  root.updateMatrixWorld(true);
+  const boxOf = (name) => (inner.getObjectByName(name) ? new THREE.Box3().setFromObject(inner.getObjectByName(name)) : null);
+  const [bodyBox, seatBox, dashBox, cabBox] = ['Body', 'Seat', 'Dash', 'Cab'].map(boxOf);
+  if (bodyBox && seatBox && dashBox && cabBox) {
+    const x0 = seatBox.min.x, x1 = dashBox.min.x + 0.05, halfZ = cabBox.max.z - 0.05;
+    const mat = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, halfZ * 2), new THREE.MeshStandardMaterial({ color: 0x1b1d1f, roughness: 0.96, metalness: 0, envMapIntensity: 0.3 }));
+    mat.rotation.x = -Math.PI / 2;
+    mat.position.set((x0 + x1) / 2, bodyBox.max.y + 0.004, (cabBox.min.z + cabBox.max.z) / 2);
+    mat.name = 'CabFloorMat';
+    mat.receiveShadow = true;
+    root.add(mat);
+  }
   const floorY = 0.86 - rideHeight;
   const heap = createHeap(23);
   heap.position.set(-1.5, floorY, 0);

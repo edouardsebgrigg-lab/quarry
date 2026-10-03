@@ -203,9 +203,9 @@ function wiperDust(g, c, wipers, dirty) {
   const h = c.height;
   // An even film, heavier toward the edges and the bottom.
   const film = g.createRadialGradient(w / 2, h * 0.45, h * 0.2, w / 2, h * 0.45, w * 0.62);
-  const a = dirty ? 0.5 : 0.3;
+  const a = dirty ? 0.34 : 0.2; // (a thin veil: seen from the cab it shouldn't read as fog)
   film.addColorStop(0, `rgba(150, 136, 112, ${a * 0.6})`);
-  film.addColorStop(1, `rgba(128, 114, 92, ${a * 1.2})`);
+  film.addColorStop(1, `rgba(128, 114, 92, ${a * 0.9})`);
   g.fillStyle = film;
   g.fillRect(0, 0, w, h);
   // Specks and splashes.
@@ -268,6 +268,7 @@ function decalMaterial(tex, worn, kind) {
       map: tex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4,
       roughness: steel ? (worn ? 0.8 : 0.5) : glass ? 0.95 : 0.6, metalness: steel ? (worn ? 0.2 : 0.65) : 0, opacity: worn && !steel && !glass ? 0.78 : 1,
       side: glass ? THREE.DoubleSide : THREE.FrontSide, // (seen from the cab, too)
+      ...(glass ? { color: 0xb8b0a4, envMapIntensity: 0.3 } : {}), // (grime on glass is lit, not glowing)
     }));
   }
   return materials.get(key);

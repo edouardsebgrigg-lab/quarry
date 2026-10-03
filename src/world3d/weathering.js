@@ -38,6 +38,7 @@ const BAKED_TIERS = {
 // Which role a material plays: "Paint.001" -> Paint; "Review_PaintDark_BoomRam.002" -> PaintDark.
 export function materialRole(name) {
   const plain = name.replace(/\.\d+/g, '');
+  if (/_Dash$/.test(plain)) return null; // (inside the cab: no sun fade or dust film)
   const baked = plain.startsWith('Review_');
   const key = baked ? plain.slice('Review_'.length).split('_')[0] : plain;
   // (hydraulic rams: painted barrels and chrome rods take dirt, not chipped paint and rust)

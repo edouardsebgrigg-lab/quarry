@@ -25,7 +25,9 @@ about playing it properly and fixing what gets in the way.
       a test for each fix.
 - [ ] **P-3 Listen and look.** Engines, hydraulics, PTO and tipper sounds with the volume up;
       night readability; camera comfort; menus at normal and larger text sizes.
-- [ ] **P-4 The start view.** A new game opens looking up into a low morning sun that whites out
+- [x] **P-4 The start view.** Fixed: the sun rose in the west, straight ahead of a new game's view
+      (the map's x is east); it now rises in the east behind you. (Claude, `claude/realism`)
+      Original note: A new game opens looking up into a low morning sun that whites out
       the top of the screen. Start the player facing the field, slightly down, and check the
       sun's glare at dawn and dusk isn't overpowering.
 
@@ -50,3 +52,12 @@ about playing it properly and fixing what gets in the way.
       look for static scenery that can be merged or instanced, and check Low really is light.
 - [ ] **H-5 Small windows.** At 640×360 the key-hints panel runs into the goal card. Fine from
       960×540 up; give the hints a max height (or hide them) when the window is short.
+- [ ] **H-6 Ground shader on Medium+ (check on a real GPU).** In the headless test browser
+      (SwiftShader), a game that loads with the sun in the east draws the home field not at all on
+      Medium and up: the field shows the sky through it. Plain materials draw; turning the sun's
+      shadows off fixes it; forcing the ground shader to recompile crashed SwiftShader's GL
+      context; there are no GL errors. The field's ground shader (30+ texture reads plus PCF
+      shadows) looks too heavy for SwiftShader to compile reliably. Confirm on a real GPU that a
+      new game's field draws on Medium/High at 07:00; if it doesn't, simplify the ground shader
+      (fewer `tileless` double samples, or a cheaper path when shadows are on). Use Low for field
+      screenshots in SwiftShader meanwhile.

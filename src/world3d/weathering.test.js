@@ -17,5 +17,7 @@ describe('which materials get weathered', () => {
     expect(materialRole('Review_Rubber_Wheel0_Tyre')).toEqual({ role: 'mud', baked: true });
     expect(materialRole('Review_WornSteel')).toEqual({ role: 'metal', baked: true });
     for (const n of ['Review_Glass', 'Review_Headlight', 'Review_Seat', 'Review seam rust', 'Review_Chrome']) expect(materialRole(n)).toBe(null);
+    // (dashboards are inside the cab: no sun fade or quarry dust)
+    for (const n of ['Review_PickupPaint_Dash', 'Review_PickupPaint_4x4_Dash']) expect(materialRole(n)).toBe(null);
   });
 });
