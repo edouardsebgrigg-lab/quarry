@@ -17,7 +17,11 @@ are in `docs/archive/CODEX-CHECKPOINT.md`.
   tractors and diggers are unchanged.)
 - Roads: worn tarmac instead of one speckled texture repeated every 2 m: darker polished wheel
   paths, grit along the crown and soil at the edges, square-cut repairs, a broad colour drift,
-  and in the rain dark wet tarmac with water standing in the wheel paths.
+  and in the rain dark wet tarmac with water standing in the wheel paths. (The first version
+  had near-black slab repairs and mirrored a blue sky in the rain: the environment map is a
+  clear sky. Repairs now keep the texture with a sealed seam, and wet reflections go grey.)
+- Trees and hedges: single leaves scattered outside each crown floated like confetti on the
+  cards by the road; `blender/despeckle.py` clears them from the atlas (1.4 → 1.0 MB).
 - Soft shadow edges again: three.js dropped PCFSoft (it warned and fell back to hard PCF);
   Medium and up now blur the sun's shadow with its radius.
 - Settings → Game: switch off the guide beam or Ray's tips. Key hints fit short windows (H-5).
