@@ -151,6 +151,44 @@ export function planWorld(map = MAP) {
 
 // ---------------------------------------------------------------- the countryside
 
+const TILE_M = 125; // metres: the side of a terrain tile
+
+// Split a grid mesh (N × N vertices, two triangles per cell as built below, each cell's first
+// index its top-left vertex) into square tiles of `cells` cells that share its vertex
+// attributes, each with bounds of its own so it can be culled.
+export function terrainTiles(geometry, N, cells) {
+  const src = geometry.index.array;
+  const lists = new Map();
+  for (let k = 0; k < src.length; k += 6) {
+    const a = src[k]; // (each quad starts at its top-left vertex)
+    const key = Math.floor((a % N) / cells) + ',' + Math.floor(Math.floor(a / N) / cells);
+    if (!lists.has(key)) lists.set(key, []);
+    const list = lists.get(key);
+    for (let j = 0; j < 6; j++) list.push(src[k + j]);
+  }
+  const pos = geometry.attributes.position;
+  const out = [];
+  for (const list of lists.values()) {
+    const g = new THREE.BufferGeometry();
+    for (const [name, attr] of Object.entries(geometry.attributes)) g.setAttribute(name, attr);
+    g.setIndex(new THREE.BufferAttribute(pos.count > 65535 ? new Uint32Array(list) : new Uint16Array(list), 1));
+    const lo = [Infinity, Infinity, Infinity];
+    const hi = [-Infinity, -Infinity, -Infinity];
+    for (const i of list) {
+      for (let d = 0; d < 3; d++) {
+        const v = pos.array[i * 3 + d];
+        if (v < lo[d]) lo[d] = v;
+        if (v > hi[d]) hi[d] = v;
+      }
+    }
+    const box = new THREE.Box3(new THREE.Vector3(...lo), new THREE.Vector3(...hi));
+    g.boundingBox = box;
+    g.boundingSphere = box.getBoundingSphere(new THREE.Sphere());
+    out.push(g);
+  }
+  return out;
+}
+
 export function createCountryside({ scene, physics, ground, plan, asphalt = asphaltTexture }) {
   const { RAPIER, world } = physics;
   const { map, roads } = plan;
@@ -421,11 +459,15 @@ export function createCountryside({ scene, physics, ground, plan, asphalt = asph
   geometry.setAttribute('splat', new THREE.BufferAttribute(splat, 4));
   geometry.setIndex(index);
   geometry.computeVertexNormals();
-  geometry.computeBoundingSphere();
   const material = createGroundMaterial();
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.receiveShadow = true;
-  scene.add(mesh);
+  // Drawn in tiles that share the one vertex buffer: the whole 2 km is half a million
+  // triangles, and as one mesh it was all drawn every frame, the half behind you too.
+  const tiles = terrainTiles(geometry, N, Math.max(1, Math.round(TILE_M / step)));
+  for (const g of tiles) {
+    const mesh = new THREE.Mesh(g, material);
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+  }
 
   // ---- physics: one heightfield over the whole map (dropping away inside the field)
   const hf = new Float32Array(N * N);
@@ -552,6 +594,7 @@ export function createCountryside({ scene, physics, ground, plan, asphalt = asph
     // A heightmap picture of the map for the map screen: returns { data, size } in 0..1 heights.
     heightGrid: () => ({ H, N, X0, step }),
     dispose() {
+      for (const g of tiles) g.dispose();
       geometry.dispose();
       material.dispose();
       for (const m of roadMeshes) {
