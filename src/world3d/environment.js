@@ -21,7 +21,9 @@ export function createRenderer(canvas, quality) {
   const q = QUALITY[quality] ?? QUALITY.high;
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q.pixelRatio));
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  // Khronos PBR Neutral keeps paint its own colour: ACES bleached plant yellow towards cream and
+  // AgX greyed everything (compared side by side in the yard).
+  renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.toneMappingExposure = 0.9;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = q.shadows;

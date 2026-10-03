@@ -70,6 +70,17 @@ function blackTrim(material) {
   material.envMapIntensity = 0.5;
 }
 
+// Tracks, undercarriages, bucket and blade steel are exported 70% metallic and light grey, so under
+// an open sky they mirror it and read icy blue-white. Working steel is dark, rough and dirty.
+function grimySteel(material) {
+  if (!/(?:^|_)(Steel|WornSteel)$/.test(material?.name ?? '') || material.userData.grimy) return;
+  material.userData.grimy = true;
+  material.color.multiplyScalar(0.6);
+  material.metalness = Math.min(material.metalness, 0.45); // (times the map's ~0.7: about 0.3)
+  material.roughness = Math.max(material.roughness, 1.4); // (times the map's ~0.58: about 0.8)
+  material.envMapIntensity = 0.6;
+}
+
 const LAMPS = { Headlight: { color: 0xd8dcdf, emissive: 0.06, metalness: 0.55, roughness: 0.06 }, TailLight: { emissive: 0.18 }, Beacon: { emissive: 0.6 } };
 function daylightLamp(material) {
   const kind = /(?:^|_)(Headlight|TailLight|Beacon)$/.exec(material?.name ?? '')?.[1];
@@ -115,6 +126,7 @@ export async function preloadModels({ onProgress } = {}) {
           if (OPEN_SURFACE.test(o.material?.name ?? '')) o.material.side = THREE.DoubleSide;
           daylightLamp(o.material);
           blackTrim(o.material);
+          grimySteel(o.material);
           paintedCladding(o.material);
           weatheredConcrete(o.material);
         }

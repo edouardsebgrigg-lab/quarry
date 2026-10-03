@@ -411,6 +411,14 @@ h3 {
 .help-row .keys { display: flex; gap: 0.15rem; min-width: 5rem; }
 .help-row .kbd, .controls-tag .kbd { height: 1.15rem; min-width: 1.2rem; font-size: 0.6rem; padding: 0 0.3rem; }
 .help-gap { height: 0.3rem; }
+/* Short windows: a tighter list that never reaches the goal card at the top left. */
+.controls-help { max-height: calc(100vh - 6.5rem); overflow: hidden; }
+@media (max-height: 640px) {
+  .controls-help { gap: 0.1rem; padding-top: 0.35rem; padding-bottom: 0.35rem; }
+  .help-row { font-size: 0.6rem; }
+  .help-row .kbd, .controls-tag .kbd { height: 1rem; font-size: 0.55rem; }
+  .help-gap { height: 0.12rem; }
+}
 .controls-tag { position: absolute; left: 1rem; bottom: 1rem; display: flex; align-items: center; gap: 0.35rem; font-size: 0.64rem;
   color: rgba(236, 238, 241, 0.55); text-shadow: var(--hud-shadow); transition: opacity 0.6s; }
 .controls-tag.hidden { opacity: 0; }
