@@ -12,6 +12,8 @@ export function defaultSettings() {
     uiScale: 1,
     fullscreen: true,
     autosave: true,
+    guideBeam: true, // the column of light where the current goal wants you
+    mentorTips: true, // Ray's short tips when something goes wrong
     mouseSensitivity: 1,
     invertY: false,
     diggerControls: 'assisted', // or 'direct': boom, stick, bucket and swing each on their own keys

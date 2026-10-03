@@ -51,7 +51,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     runtime,
     settings,
   });
-  feedback = createFeedback({ game, getMoneyNode: () => hud.moneyNode });
+  feedback = createFeedback({ game, getMoneyNode: () => hud.moneyNode, settings });
   const hud3d = createHud3d({ settings });
   const devPanel = isDev ? createDevPanel({ game, runtime, feedback }) : null;
   const viewport = el('div', { class: 'world-view' });

@@ -5,7 +5,7 @@ import { getMachine, machineName } from '../../machinery/index.js';
 
 const LOG_MAX = 6;
 
-export function createFeedback({ game, getMoneyNode }) {
+export function createFeedback({ game, getMoneyNode, settings = {} }) {
   const { data } = game;
   const fxLayer = el('div', { class: 'fx-layer' });
   const toasts = el('div', { class: 'toasts' });
@@ -29,6 +29,7 @@ export function createFeedback({ game, getMoneyNode }) {
 
   // A text from your mentor: slides in under the money, stays a while, newest on top.
   function mentorText({ from, text, kind }) {
+    if (kind === 'tip' && settings.mentorTips === false) return; // (still in Messages)
     const card = el('div', { class: `mentor-card mentor-${kind}` },
       el('div', { class: 'mentor-head' }, el('span', { class: 'mentor-avatar' }, from.slice(0, 1)),
         el('span', { class: 'mentor-from' }, from), el('span', { class: 'mentor-when' }, kind === 'tip' ? 'tip' : 'now')),

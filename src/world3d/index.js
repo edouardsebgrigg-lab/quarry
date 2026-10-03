@@ -853,7 +853,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const d = Math.hypot(g.x - eye.x, g.z - eye.z);
       guide = d > g.near ? { ...g, y: heightAt(g.x, g.z), dist: d } : null;
     } else guide = null;
-    beacon.update(dt, guide, eye);
+    beacon.update(dt, settings.guideBeam === false ? null : guide, eye); // (the arrow and map still guide)
   }
 
   // Target marker on the ground where the excavator bucket will dig/dump.

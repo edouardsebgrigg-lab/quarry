@@ -60,3 +60,15 @@ describe('camera comfort settings', () => {
     expect(loadSettings(storageFor({ bindingsVersion: BINDINGS_VERSION, bindings })).bindings.survey).toBe('KeyL');
   });
 });
+
+describe('guidance settings', () => {
+  it('shows the guide beam and Ray\'s tips by default, also for old saved settings', () => {
+    expect(defaultSettings()).toMatchObject({ guideBeam: true, mentorTips: true });
+    expect(loadSettings(storageFor({ bindingsVersion: BINDINGS_VERSION, bindings: { ...DEFAULT_BINDINGS } }))).toMatchObject({ guideBeam: true, mentorTips: true });
+  });
+  it('keeps them off once switched off', () => {
+    const storage = storageFor(null);
+    saveSettings(storage, { ...defaultSettings(), guideBeam: false, mentorTips: false });
+    expect(loadSettings(storage)).toMatchObject({ guideBeam: false, mentorTips: false });
+  });
+});

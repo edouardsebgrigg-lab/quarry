@@ -103,7 +103,7 @@ In Direct mode the tooth edge sweeps a strip through the ground. Bucket width, a
 | Esc | Menu |
 | F1 | Dev panel (in `npm run dev` only) |
 
-All keys can be changed in Settings. **Settings → Display** also controls field of view (50–95°) and camera motion; set motion to zero for a steady view. Walking eases into movement and stops, jumps support a small input buffer, and reversing a road vehicle brakes before changing direction.
+All keys can be changed in Settings. **Settings → Display** also controls field of view (50–95°) and camera motion; set motion to zero for a steady view. **Settings → Game** can switch off the guide beam (the arrow at the top and the map still show the way) and Ray's tips (they still arrive in Messages). Walking eases into movement and stops, jumps support a small input buffer, and reversing a road vehicle brakes before changing direction.
 
 **Q in a digger** opens compatible attachments with their purpose and actual width/capacity or breaking force. Pick a tool directly; the panel returns to the same cab. Stop travelling/slewing, finish the stroke and empty the bucket first. Rental tools stay unchanged. T still cycles empty attachments or recalls the last Assisted dump target.
 
