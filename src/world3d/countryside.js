@@ -151,7 +151,7 @@ export function planWorld(map = MAP) {
 
 // ---------------------------------------------------------------- the countryside
 
-const TILE_M = 125; // metres: the side of a terrain tile
+const TILE_M = 250; // metres: the side of a terrain tile (64 tiles: few draws, most culled)
 
 // Split a grid mesh (N × N vertices, two triangles per cell as built below, each cell's first
 // index its top-left vertex) into square tiles of `cells` cells that share its vertex
