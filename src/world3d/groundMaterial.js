@@ -80,15 +80,15 @@ const TARMAC_COLOR = /* glsl */ `
   vec2 inCell = vec2(mod(m.x, laneW) / laneW, fract(m.y / 4.5));
   vec2 lo = vec2(0.1 + 0.3 * tHash(cell + 3.1), 0.05 + 0.3 * tHash(cell + 5.7));
   vec2 hi = lo + vec2(0.35 + 0.35 * tHash(cell + 8.9), 0.4 + 0.5 * tHash(cell + 1.9));
-  float patchArea = step(h, 0.07) * step(lo.x, inCell.x) * step(inCell.x, hi.x) * step(lo.y, inCell.y) * step(inCell.y, hi.y);
+  float patchArea = step(h, 0.045) * step(lo.x, inCell.x) * step(inCell.x, hi.x) * step(lo.y, inCell.y) * step(inCell.y, hi.y);
   // (a repair's cut edge is sealed with a band of bitumen a few centimetres wide)
   vec2 inside = min(inCell - lo, hi - inCell) * vec2(laneW, 4.5);
-  float seam = patchArea * (1.0 - smoothstep(0.03, 0.07, min(inside.x, inside.y)));
+  float seam = patchArea * (1.0 - smoothstep(0.02, 0.05, min(inside.x, inside.y)));
   // Less speckle from the texture where it's polished, and a little everywhere.
   vec3 evenTone = diffuse * textureLod(map, vMapUv, 12.0).rgb;
   diffuseColor.rgb = mix(diffuseColor.rgb, evenTone, 0.3 + 0.35 * tPath + 0.1 * patchArea);
   float drift = 0.9 + 0.18 * tNoise(m * 0.035) + 0.06 * tNoise(m * 0.21 + 4.0);
-  diffuseColor.rgb *= drift * mix(1.0, 0.8, tPath) * mix(1.0, 1.08, crown) * mix(1.0, 0.84, patchArea) * mix(1.0, 0.55, seam);
+  diffuseColor.rgb *= drift * mix(1.0, 0.8, tPath) * mix(1.0, 1.08, crown) * mix(1.0, 0.9, patchArea) * mix(1.0, 0.75, seam);
   tGrit -= seam; // (the seam is smooth: see the roughness below)
   // Soil and grit at the edges.
   vec3 soil = vec3(0.115, 0.095, 0.07);
@@ -103,7 +103,7 @@ const TARMAC_ROUGH = /* glsl */ `
 #include <roughnessmap_fragment>
 roughnessFactor = mix(roughnessFactor, 0.74, tPath * 0.7);
 roughnessFactor = mix(roughnessFactor, 0.97, clamp(tGrit, 0.0, 1.0) * 0.6);
-roughnessFactor = mix(roughnessFactor, 0.6, clamp(-tGrit, 0.0, 1.0)); // (the sealed seam)
+roughnessFactor = mix(roughnessFactor, 0.78, clamp(-tGrit, 0.0, 1.0)); // (the sealed seam)
 roughnessFactor = mix(roughnessFactor, 0.45, uWet * 0.85);
 roughnessFactor = mix(roughnessFactor, 0.14, tPuddle);
 `;
