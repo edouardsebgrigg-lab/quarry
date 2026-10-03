@@ -29,9 +29,12 @@ are in `docs/archive/CODEX-CHECKPOINT.md`.
   about the same (batching across patches first raised them 20%, so batches stay in a patch).
   Frame time in SwiftShader didn't change beyond its noise (it's bound by pixel work there); the
   saving is CPU time per frame on a real machine, which I couldn't measure here.
+  With eight machines in the yard the scene had 1,901 meshes before and 834 after.
 - Checked: tests (398), lint, build; the depot, village, farm and yard shot with and without
-  batching look the same. Still to look at in the game: the worn roads (dry and wet), the
-  right-hand-drive cabs and exit side, the machines after their parts are merged.
+  batching look the same; eight machines side by side on the old and new build look the same
+  (wheel nuts, trim, lights), except that the steering wheel is now on the right. Sitting in
+  the pickup, tipper and van puts your eye on the right and you step out on the right; in the
+  excavator, left as before.
   Not checked: a real GPU (all rendering here is SwiftShader), H-6 (the field on Medium+ in
   SwiftShader), sound, driving and digging by hand.
 
