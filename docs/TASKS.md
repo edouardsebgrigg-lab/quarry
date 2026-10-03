@@ -31,6 +31,12 @@ about playing it properly and fixing what gets in the way.
       the top of the screen. Start the player facing the field, slightly down, and check the
       sun's glare at dawn and dusk isn't overpowering.
 
+## In progress
+
+- [ ] **G-1 Ground, grass and driving** (Claude, `claude/ground-driving`): grip-limited wheels
+      (lockups, wheelspin, body roll), dry and wet surface grip in data, turf that wears into
+      tyre tracks and mud, grass tufts on the field, a pedal ramp and light-pedal key.
+
 ## Next depth (after the play tasks)
 
 - [ ] **N-1 Propose the next small batch of depth and fun**, based on P-1 to P-3, and agree it
