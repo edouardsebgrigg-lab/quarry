@@ -27,6 +27,8 @@ are in `docs/archive/CODEX-CHECKPOINT.md`.
   steps) merge into their parent when it loads. Measured in SwiftShader on Medium: draw calls a
   frame at the depot 801 → 167, in the village 894 → 569, in the yard 627 → 400; triangles
   about the same (batching across patches first raised them 20%, so batches stay in a patch).
+  Frame time in SwiftShader didn't change beyond its noise (it's bound by pixel work there); the
+  saving is CPU time per frame on a real machine, which I couldn't measure here.
 - Checked: tests (398), lint, build; the depot, village, farm and yard shot with and without
   batching look the same. Still to look at in the game: the worn roads (dry and wet), the
   right-hand-drive cabs and exit side, the machines after their parts are merged.
