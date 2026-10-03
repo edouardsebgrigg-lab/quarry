@@ -22,6 +22,8 @@ are in `docs/archive/CODEX-CHECKPOINT.md`.
   clear sky. Repairs now keep the texture with a sealed seam, and wet reflections go grey.)
 - Trees and hedges: single leaves scattered outside each crown floated like confetti on the
   cards by the road; `blender/despeckle.py` clears them from the atlas (1.4 → 1.0 MB).
+- Ashby: low brick front-garden walls (stone coping, a gap for the path, returns to the house,
+  colliders), two meshes for the whole village; the pub keeps its open front.
 - Soft shadow edges again: three.js dropped PCFSoft (it warned and fell back to hard PCF);
   Medium and up now blur the sun's shadow with its radius.
 - Settings → Game: switch off the guide beam or Ray's tips. Key hints fit short windows (H-5).
@@ -37,11 +39,12 @@ are in `docs/archive/CODEX-CHECKPOINT.md`.
   countryside terrain was one half-million-triangle mesh drawn whole every frame; it's now 250 m
   tiles sharing one vertex buffer (field on Low: 806k → 555k triangles, 176 → 217 draws;
   125 m tiles saved a little more but cost 110 draws).
-- Checked: tests (398), lint, build; the depot, village, farm and yard shot with and without
-  batching look the same; eight machines side by side on the old and new build look the same
-  (wheel nuts, trim, lights), except that the steering wheel is now on the right. Sitting in
-  the pickup, tipper and van puts your eye on the right and you step out on the right; in the
-  excavator, left as before.
+- Checked: tests (402), lint, build, `smoke.mjs`. The depot, village, farm and yard shot with
+  and without batching look the same; eight machines side by side on the old and new build look
+  the same (wheel nuts, trim, lights) except that the steering wheel is now on the right.
+  Sitting in the pickup, tipper and van puts your eye on the right and you step out on the
+  right; in the excavator, left as before. The roads dry and in rain, the hedges, the village
+  walls and the terrain tiles (no gaps) were shot and looked at.
   Not checked: a real GPU (all rendering here is SwiftShader), H-6 (the field on Medium+ in
   SwiftShader), sound, driving and digging by hand.
 

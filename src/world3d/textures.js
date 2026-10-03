@@ -87,7 +87,7 @@ export const BRICK_TILE = { w: 0.9, h: 0.6 };
 export function brickwork() {
   return makeTexture(256, (g, n) => {
     const r = rand(17);
-    g.fillStyle = '#9d968a'; // mortar
+    g.fillStyle = '#8e887d'; // mortar
     g.fillRect(0, 0, n, n);
     const courses = 8;
     const per = 4;
@@ -99,9 +99,9 @@ export function brickwork() {
       for (let b = -1; b < per; b++) {
         const x = b * bw + shift;
         const k = r();
-        const red = 118 + k * 46;
-        const tone = 0.85 + r() * 0.2;
-        g.fillStyle = `rgb(${Math.round(red * tone)},${Math.round((52 + k * 22) * tone)},${Math.round((40 + k * 14) * tone)})`;
+        const red = 104 + k * 34;
+        const tone = 0.78 + r() * 0.22;
+        g.fillStyle = `rgb(${Math.round(red * tone)},${Math.round((56 + k * 16) * tone)},${Math.round((46 + k * 11) * tone)})`;
         g.fillRect(x + joint / 2, c * ch + joint / 2, bw - joint, ch - joint);
         // (a few bricks fired darker, and the odd one weathered paler)
         if (r() < 0.12) {
