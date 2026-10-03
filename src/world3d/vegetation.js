@@ -129,7 +129,7 @@ export function createVegetation({ scene, quality, surfaceAt, blocked }) {
     const out = [];
     const add = (kind, x, z) => {
       const k = KINDS[kind];
-      const size = k.size[0] + random() * (k.size[1] - k.size[0]);
+      const size = (k.size[0] + random() * (k.size[1] - k.size[0])) * (1 - 0.5 * Math.min(1, (surfaceAt(x, z).wear ?? 0) * 3));
       const shade = (k.name === 'dry' ? 0.72 : 0.85) + random() * 0.2;
       out.push([kind, x, surfaceAt(x, z).height, z, size, 0.85 + random() * 0.3, random() * Math.PI, shade]);
     };
@@ -139,8 +139,10 @@ export function createVegetation({ scene, quality, surfaceAt, blocked }) {
       if (blocked(x, z)) continue;
       const s = surfaceAt(x, z);
       if (s.road || s.rock > 0.2 || s.gravel > 0.45) continue;
+      if (s.plot && !s.grass) continue; // (nothing grows on freshly dug or dumped ground)
       const edge = 1 - Math.abs(s.grass - 0.5) * 2;
-      const p = s.grass * 0.55 + edge * 0.5 + s.dirt * 0.03;
+      const worn = s.wear ?? 0; // (tyre tracks: flattened, then gone)
+      const p = (s.grass * 0.55 + edge * 0.5 + s.dirt * 0.03) * Math.max(0, 1 - worn * 2.2);
       if (random() > p) continue;
       const r = random();
       let kind;
@@ -194,22 +196,30 @@ export function createVegetation({ scene, quality, surfaceAt, blocked }) {
     });
   }
 
+  let stale = false;
+  let sinceRebuild = 0;
   return {
     meshes,
-    // `at` is where you are: the patches around it are (re)built when you move to a new one.
+    // `at` is where you are: the patches around it are (re)built when you move to a new one,
+    // and (at most a couple of times a second) when the ground under some of them has changed.
     update(dt, at) {
       time.value += dt;
+      sinceRebuild += dt;
       if (!at) return;
       const ccx = Math.floor(at.x / CELL);
       const ccz = Math.floor(at.z / CELL);
-      if (centre && centre[0] === ccx && centre[1] === ccz) return;
+      if (centre && centre[0] === ccx && centre[1] === ccz && !(stale && sinceRebuild > 0.5)) return;
       centre = [ccx, ccz];
+      stale = false;
+      sinceRebuild = 0;
       rebuild(ccx, ccz);
     },
-    // Forget the plants near (x, z) (after the ground there has changed).
-    refresh(x, z) {
-      cache.delete(`${Math.floor(x / CELL)},${Math.floor(z / CELL)}`);
-      centre = null;
+    // Forget the plants over a stretch of ground that has changed (dug, dumped on, worn).
+    refresh(x0, z0, x1 = x0, z1 = z0) {
+      for (let cz = Math.floor(z0 / CELL); cz <= Math.floor(z1 / CELL); cz++) {
+        for (let cx = Math.floor(x0 / CELL); cx <= Math.floor(x1 / CELL); cx++) cache.delete(`${cx},${cz}`);
+      }
+      stale = true;
     },
   };
 }

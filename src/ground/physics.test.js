@@ -249,3 +249,67 @@ describe('material earth physics', () => {
     conserved(before, restored.totals(), r.tonnes);
   });
 });
+
+describe('turf under wheels', () => {
+  // One tyre of a light pickup (0.4 t on a 0.3 m tyre) driving 6 m along z = 8.25.
+  const tyre = (g, opts = {}) => g.applyTraffic({ fromX: 5, fromZ: 8.25, x: 11, z: 8.25, heading: 0, width: 0.3, weight: 0.4, moisture: 0, slip: 0, ...opts });
+  const cellOf = (g, x, z) => [Math.floor((x - g.x0) / g.cellSize), Math.floor((z - g.z0) / g.cellSize)];
+
+  it('a light pass on dry grass flattens it a little along the tyre, and nowhere else', () => {
+    const g = make();
+    const before = g.totals();
+    tyre(g);
+    const [i, j] = cellOf(g, 8, 8.25);
+    expect(g.cellWear(i, j)).toBeGreaterThan(0);
+    expect(g.cellWear(i, j)).toBeLessThan(0.1);
+    expect(g.cellDisturbed(i, j)).toBe(false); // (still grass)
+    const [si, sj] = cellOf(g, 8, 9.5); // a metre to the side
+    expect(g.cellWear(si, sj)).toBe(0);
+    conserved(before, g.totals());
+  });
+
+  it('wet ground and a spinning wheel tear it to mud in a pass or two', () => {
+    const g = make();
+    tyre(g, { moisture: 1, slip: 1 });
+    tyre(g, { moisture: 1, slip: 1 });
+    const [i, j] = cellOf(g, 8, 8.25);
+    expect(g.cellDisturbed(i, j)).toBe(true);
+  });
+
+  it('dry passes wear through in the end, and only torn turf ruts', () => {
+    const g = make();
+    const [i, j] = cellOf(g, 8, 8.25);
+    const h0 = g.cellHeight(i, j);
+    let passes = 0;
+    while (!g.cellDisturbed(i, j) && passes < 200) {
+      tyre(g);
+      passes++;
+      if (g.cellWear(i, j) < 0.6) expect(g.cellHeight(i, j)).toBe(h0);
+    }
+    expect(passes).toBeGreaterThan(10); // (a track across a dry field, not a ditch)
+    expect(passes).toBeLessThan(60);
+  });
+
+  it('keeps its wear through a save, and a save from before wear loads with the turf whole', () => {
+    const g = make();
+    tyre(g, { moisture: 0.5 });
+    const [i, j] = cellOf(g, 8, 8.25);
+    const saved = JSON.parse(JSON.stringify(g.serialize()));
+    const restored = make();
+    restored.load(saved);
+    expect(restored.cellWear(i, j)).toBeCloseTo(g.cellWear(i, j), 2);
+    for (const c of Object.values(saved.chunks)) delete c.wear;
+    const old = make();
+    old.load(saved);
+    expect(old.cellWear(i, j)).toBe(0);
+    expect(old.cellDisturbed(i, j)).toBe(false);
+  });
+
+  it('mud grips less than dry soil, and wet sand more than dry', () => {
+    const g = make();
+    const dry = g.materialResponseAt(8, 8, { moisture: 0 }).traction;
+    expect(g.materialResponseAt(8, 8, { moisture: 1 }).traction).toBeLessThan(dry * 0.65);
+    const s = make('sand');
+    expect(s.materialResponseAt(8, 8, { moisture: 1 }).traction).toBeGreaterThan(s.materialResponseAt(8, 8, { moisture: 0 }).traction);
+  });
+});

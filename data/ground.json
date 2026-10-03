@@ -13,6 +13,7 @@
       "cohesion": 0.18,
       "flow": 0.62,
       "traction": 0.68,
+      "wetTraction": 0.38,
       "rollingResistance": 0.055
     },
     "clay": {
@@ -26,6 +27,7 @@
       "cohesion": 0.8,
       "flow": 0.18,
       "traction": 0.7,
+      "wetTraction": 0.32,
       "rollingResistance": 0.085
     },
     "sand": {
@@ -39,6 +41,7 @@
       "cohesion": 0.03,
       "flow": 0.98,
       "traction": 0.58,
+      "wetTraction": 0.62,
       "rollingResistance": 0.075
     },
     "gravel": {
@@ -52,6 +55,7 @@
       "cohesion": 0.08,
       "flow": 0.82,
       "traction": 0.76,
+      "wetTraction": 0.66,
       "rollingResistance": 0.045
     },
     "rock": {
@@ -65,6 +69,7 @@
       "cohesion": 0.12,
       "flow": 0.48,
       "traction": 0.9,
+      "wetTraction": 0.72,
       "rollingResistance": 0.025
     }
   },
@@ -122,6 +127,9 @@
     "rutDepthPerMetre": 0.012,
     "maximumRutDepth": 0.025,
     "trafficCompactionRate": 0.12,
-    "firmSlumpReduction": 0.75
+    "firmSlumpReduction": 0.75,
+    "turfWearPerPass": 0.035,
+    "turfWetWear": 3,
+    "turfSlipWear": 0.6
   }
 }

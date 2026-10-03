@@ -137,6 +137,7 @@ export function createGround(groundData, plotId, opts = {}) {
   const fillMix = new Float32Array(N * M); // retain actual fill composition, including rock
   const mix = new Float32Array(N * M); // loose material: volume share of each material
   const disturbed = new Uint8Array(N); // bit 1: dug, dumped on or scraped (no more grass); bit 2: built on (graded and firm)
+  const wear = new Float32Array(N); // turf worn by wheels and tracks: 0 untouched .. 1 torn through to bare soil
   // The outermost ring of cells never changes: the plot's edge meets the countryside around it
   // there, so it has to stay put (dig right up to it and it stands like the edge of a cutting).
   const fixed = new Uint8Array(N);
@@ -330,6 +331,24 @@ export function createGround(groundData, plotId, opts = {}) {
     return v;
   }
 
+  // Every cell whose centre is within r of the segment a..b (at least the cells it passes over).
+  function cellsAlong(ax, az, bx, bz, r, fn) {
+    const reach = Math.max(r, cell * 0.5);
+    const i0 = Math.max(0, Math.floor((Math.min(ax, bx) - reach - x0) / cell));
+    const i1 = Math.min(nx - 1, Math.floor((Math.max(ax, bx) + reach - x0) / cell));
+    const j0 = Math.max(0, Math.floor((Math.min(az, bz) - reach - z0) / cell));
+    const j1 = Math.min(nz - 1, Math.floor((Math.max(az, bz) + reach - z0) / cell));
+    const dx = bx - ax, dz = bz - az, len2 = dx * dx + dz * dz;
+    for (let j = j0; j <= j1; j++) {
+      for (let i = i0; i <= i1; i++) {
+        const cx = x0 + (i + 0.5) * cell;
+        const cz = z0 + (j + 0.5) * cell;
+        const t = len2 > 1e-9 ? Math.max(0, Math.min(1, ((cx - ax) * dx + (cz - az) * dz) / len2)) : 0;
+        if (Math.hypot(cx - ax - dx * t, cz - az - dz * t) <= reach) fn(idx(i, j));
+      }
+    }
+  }
+
   function cellsInRadius(x, z, r, fn) {
     const i0 = Math.max(0, Math.floor((x - r - x0) / cell));
     const i1 = Math.min(nx - 1, Math.floor((x + r - x0) / cell));
@@ -358,7 +377,8 @@ export function createGround(groundData, plotId, opts = {}) {
       material: mats[m], resistance, loose: isLoose, compaction: firmness,
       cohesion: (p.cohesion ?? 0) * (1 - wet * (physics.wetCohesionFactor ?? 0.5)),
       flow: p.flow ?? 0.6,
-      traction: (p.traction ?? 0.7) * (1 - wet * (mats[m] === 'clay' ? 0.5 : 0.22)) + firmness * 0.08,
+      // (mud is slippery; wet sand firms up)
+      traction: (p.traction ?? 0.7) + ((p.wetTraction ?? (p.traction ?? 0.7) * 0.78) - (p.traction ?? 0.7)) * wet + firmness * 0.08,
       rollingResistance: (p.rollingResistance ?? 0.04) * (1 + wet * 1.5) * (1 - firmness * 0.45),
     };
   }
@@ -784,6 +804,8 @@ export function createGround(groundData, plotId, opts = {}) {
     },
     cellSurface: (i, j) => topMaterial(idx(i, j)),
     cellDisturbed: (i, j) => disturbed[idx(i, j)] !== 0,
+    // How worn the turf is (0..1): tyre tracks first flatten the grass, then tear it to mud.
+    cellWear: (i, j) => wear[idx(i, j)],
     // A cell that has been built on (a graded road, ramp or level area).
     cellBuilt: (i, j) => (disturbed[idx(i, j)] & 2) === 2,
     cellLoose: (i, j) => loose[idx(i, j)],
@@ -877,30 +899,50 @@ export function createGround(groundData, plotId, opts = {}) {
 
     // Wheel/track passes firm the surface and push shallow rut spoil into the shoulders.
     // Firmness changes handling; it never silently changes the density of carried tonnes.
-    applyTraffic({ x, z, heading = 0, width = 1.8, weight = 5, distance = 0.5, slip = 0, moisture = groundMoisture }) {
+    // On grass, each pass wears the turf: a light vehicle on dry ground hardly marks it, heavy
+    // ones, wet ground and spinning or sliding tyres tear it, and once torn through it's bare
+    // soil (and only then does it rut). Given `fromX`/`fromZ`, one tyre's path from there to
+    // (x, z) is marked as one pass (`weight` then is the load on that tyre, tonnes); without,
+    // a patch around (x, z) as `distance` metres of travel.
+    applyTraffic({ x, z, fromX = null, fromZ = null, heading = 0, width = 1.8, weight = 5, distance = 0.5, slip = 0, moisture = groundMoisture }) {
       if (![x, z, heading, width, weight, distance].every(Number.isFinite) || distance <= 0 || width <= 0) return { moved: 0, compaction: 0 };
+      const swept = Number.isFinite(fromX) && Number.isFinite(fromZ);
       const out = new Float64Array(M);
       const ux = Math.cos(heading), uz = Math.sin(heading);
       const shoulder = width / 2 + cell;
       const left = cellAt(x - uz * shoulder, z + ux * shoulder);
       const right = cellAt(x + uz * shoulder, z - ux * shoulder);
       const destinations = [...new Set([left, right])].filter(k => !fixed[k] && !(disturbed[k] & 2));
+      const wet = Math.max(0, Math.min(1, moisture));
+      const tear = Math.max(0, Math.min(1, slip));
+      // (one pass over a cell counts as half a metre of travel)
+      const travel = swept ? 0.5 : distance;
+      const pressure = Math.min(2, Math.max(0, weight) / Math.max(1, width * width));
+      const tyrePressure = Math.min(3, Math.max(0.3, Math.max(0, weight) / Math.max(0.2, width) / 1.4));
+      const turfWear = (physics.turfWearPerPass ?? 0.035) * tyrePressure * (1 + wet * (physics.turfWetWear ?? 3))
+        + tear * (physics.turfSlipWear ?? 0.6) * (0.5 + wet);
       let firm = 0;
-      cellsInRadius(x, z, width / 2, k => {
+      const pass = (k) => {
         if (fixed[k] || (disturbed[k] & 2) || destinations.includes(k)) return;
         const r = response(k, moisture);
-        const pressure = Math.min(2, Math.max(0, weight) / Math.max(1, width * width));
-        compaction[k] = Math.min(1, compaction[k] + distance * pressure * (physics.trafficCompactionRate ?? 0.12));
+        compaction[k] = Math.min(1, compaction[k] + travel * pressure * (physics.trafficCompactionRate ?? 0.12));
         firm = Math.max(firm, compaction[k]);
-        if (destinations.length) {
+        let ruts = 1;
+        if (!disturbed[k]) {
+          wear[k] = Math.min(1, wear[k] + turfWear * (travel / 0.5));
+          if (wear[k] >= 1) disturbed[k] = 1; // (torn through: bare soil)
+          ruts = Math.max(0, (wear[k] - 0.6) / 0.4); // (turf holds the ground together until it's torn)
+        }
+        if (destinations.length && ruts > 0) {
           const softness = r.loose ? 1 : Math.min(0.8, moisture * 30 / Math.max(1, r.resistance));
-          const depth = Math.min(physics.maximumRutDepth ?? 0.025, distance * pressure * (physics.rutDepthPerMetre ?? 0.012) * softness * (1 + Math.min(1, slip)) * (1 - compaction[k] * 0.8));
+          const depth = ruts * Math.min(physics.maximumRutDepth ?? 0.025, travel * pressure * (physics.rutDepthPerMetre ?? 0.012) * softness * (1 + tear) * (1 - compaction[k] * 0.8));
           if (depth > 1e-5) removeTop(k, depth, out);
         }
-        disturbed[k] = 1;
         changed(k);
         activateAround(k);
-      });
+      };
+      if (swept) cellsAlong(fromX, fromZ, x, z, width / 2, pass);
+      else cellsInRadius(x, z, width / 2, pass);
       const moved = out.reduce((a, b) => a + b, 0);
       for (const k of destinations) {
         addLoose(k, Array.from(out, (t, m) => t / looseDensity[m] / destinations.length));
@@ -1099,7 +1141,7 @@ export function createGround(groundData, plotId, opts = {}) {
         let local = 0;
         for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++, local++) {
           const k = idx(i, j);
-          if (disturbed[k] || active[k] || loose[k] || compaction[k] || fill[k] || bed[k] !== bedBase[k]
+          if (disturbed[k] || wear[k] || active[k] || loose[k] || compaction[k] || fill[k] || bed[k] !== bedBase[k]
             || nat.some((layer, l) => layer[k] !== geology[l][k])) cells.push(local);
         }
         const count = cells.length;
@@ -1108,6 +1150,7 @@ export function createGround(groundData, plotId, opts = {}) {
         const heightBits = new Uint32Array(heights.buffer);
         const mixes = new Float32Array(count * M * 2);
         const flags = new Uint8Array(count);
+        const worn = new Uint8Array(count);
         for (let n = 0; n < count; n++) {
           const i = i0 + cells[n] % (i1 - i0), j = j0 + Math.floor(cells[n] / (i1 - i0));
           const k = idx(i, j);
@@ -1123,10 +1166,13 @@ export function createGround(groundData, plotId, opts = {}) {
             mixes[n * M * 2 + M + m] = fillMix[k * M + m];
           }
           flags[n] = disturbed[k] | (active[k] ? 128 : 0);
+          worn[n] = Math.round(wear[k] * 255);
         }
         chunks[c] = {
           count, cells: packFloats(Uint32Array.from(cells), 1),
           heights: packFloats(heights, K + 4), mix: packFloats(mixes, M * 2), flags: packBytes(flags),
+          // (turf wear: added after format 4 was first written; older saves have none)
+          ...(worn.some(Boolean) ? { wear: packBytes(worn) } : {}),
         };
       }
       return { format: 4, plotId, seed, x0, z0, cellSize: cell, chunkCells: CC, nx, nz, materialIds: mats, layerIds: layers.map(m => mats[m]), baseline: structuredClone(baseline), moisture: groundMoisture, chunks };
@@ -1167,7 +1213,7 @@ export function createGround(groundData, plotId, opts = {}) {
       touched.clear();
       bed.set(bedBase);
       nat.forEach((layer, l) => layer.set(geology[l]));
-      loose.fill(0); compaction.fill(0); fill.fill(0); mix.fill(0); fillMix.fill(0); disturbed.fill(0);
+      loose.fill(0); compaction.fill(0); fill.fill(0); mix.fill(0); fillMix.fill(0); disturbed.fill(0); wear.fill(0);
       for (const [cs, packed] of Object.entries(saved.chunks)) {
         const c = Number(cs);
         if (!Number.isInteger(c) || c < 0 || c >= cnx * cnz) throw new Error('Invalid saved terrain chunk');
@@ -1192,6 +1238,8 @@ export function createGround(groundData, plotId, opts = {}) {
         }
         if (heights.length !== count * (oldK + (modern ? 4 : 1)) || mixes.length !== count * (modern ? oldM * 2 : oldM + 1) || (modern && flags.length !== count)) throw new Error('Invalid saved terrain data');
         const heightBits = xorBaseline ? new Uint32Array(heights.buffer) : null;
+        const worn = sparse && packed.wear ? unpackBytes(packed.wear, count) : null;
+        if (worn && worn.length !== count) throw new Error('Invalid saved terrain data');
         for (let n = 0; n < count; n++) {
           const local = sparse ? cells[n] : n;
           const i = i0 + local % (i1 - i0), j = j0 + Math.floor(local / (i1 - i0));
@@ -1214,6 +1262,7 @@ export function createGround(groundData, plotId, opts = {}) {
           if (!modern && sum > 0) for (let m = 0; m < M; m++) mix[k * M + m] /= sum;
           const flag = modern ? flags[n] : mixes[n * (oldM + 1) + oldM];
           disturbed[k] = flag & 127;
+          if (worn) wear[k] = worn[n] / 255;
           if (modern && (flag & 128)) activate(k);
           else if (!modern && disturbed[k]) activateAround(k);
         }

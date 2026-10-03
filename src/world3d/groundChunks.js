@@ -44,9 +44,20 @@ function grassLook(x, z) {
   const dirt = Math.min(0.4, GRASS.splat[1] + 0.2 * thin);
   return { splat: [1 - dirt, dirt, 0, 0], tint };
 }
+// Grass that wheels have been over: first flattened (a darker track where the blades lie over
+// and the soil shows between them), then scuffed through to mud.
+function wornGrass(look, wear) {
+  if (wear <= 0) return look;
+  const flat = Math.min(1, wear * 3);
+  const dirt = Math.min(1, look.splat[1] + flat * 0.25 + Math.max(0, wear - 0.35) * 1.2);
+  const k = 1 - 0.16 * flat;
+  const t = look.tint;
+  return { splat: [1 - dirt, dirt, 0, 0], tint: [t[0] * k * (1 + 0.05 * flat), t[1] * k, t[2] * k * (1 - 0.08 * flat)] };
+}
 const REBUILDS_PER_FRAME = 6;
 
-export function createGroundView({ scene, physics, ground }) {
+// `onChange(x0, z0, x1, z1)` hears about each stretch of ground rebuilt after a change.
+export function createGroundView({ scene, physics, ground, onChange = null }) {
   const { RAPIER, world } = physics;
   const cell = ground.cellSize;
   const nx = ground.nx;
@@ -91,7 +102,7 @@ export function createGroundView({ scene, physics, ground }) {
         nor.set([-dx / len, 1 / len, -dz / len], v * 3);
         const mat = matIds[ground.cellSurface(i, j)];
         const grass = mat === 'topsoil' && !ground.cellDisturbed(i, j);
-        const look = grass ? grassLook(vx(i), vz(j)) : LOOK[mat];
+        const look = grass ? wornGrass(grassLook(vx(i), vz(j)), ground.cellWear?.(i, j) ?? 0) : LOOK[mat];
         // The shader samples the original contacts at the fragment's height, so a
         // sandy/clayey wall exposes real bands instead of turning every slope into rock.
         spl.set(look.splat, v * 4);
@@ -164,6 +175,10 @@ export function createGroundView({ scene, physics, ground }) {
         if (n++ >= REBUILDS_PER_FRAME) break;
         build(c);
         pending.delete(c);
+        if (onChange) {
+          const { i0, j0, i1, j1 } = ground.chunkRange(c);
+          onChange(ground.x0 + i0 * cell, ground.z0 + j0 * cell, ground.x0 + i1 * cell - 0.01, ground.z0 + j1 * cell - 0.01);
+        }
       }
     },
     dispose() {

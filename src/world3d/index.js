@@ -85,7 +85,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const half = MAP.half;
   const env = createEnvironment(scene, renderer, q, { x0: -half, x1: half, z0: -half, z1: half }, { outsideY: 28, hillDistance: [1300, 2200] });
   // Your field: its own chunked mesh and colliders, following the ground as it changes.
-  const groundView = ground ? createGroundView({ scene, physics, ground }) : null;
+  // (when the field changes, the grass tufts on it are scattered afresh: none where it's dug,
+  // dumped on or torn up)
+  let vegetation = null;
+  const groundView = ground ? createGroundView({ scene, physics, ground, onChange: (x0, z0, x1, z1) => vegetation?.refresh(x0, z0, x1, z1) }) : null;
   let yardStockpiles = null;
   const heightAt = (x, z) => Math.max(land.heightAt(x, z), yardStockpiles?.surfaceAt(x, z) ?? -Infinity);
   const onPlot = (x, z) => ground && ground.inside(x, z);
@@ -99,7 +102,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const i = Math.floor((x - ground.x0) / ground.cellSize);
       const j = Math.floor((z - ground.z0) / ground.cellSize);
       const grass = mat === 'topsoil' && !ground.cellDisturbed(i, j) ? 1 : 0;
-      return { height: ground.heightAt(x, z), ...(grass ? { grass: 1, dirt: 0, gravel: 0, rock: 0 } : PLOT_SURFACE[mat]), plot: true };
+      return { height: ground.heightAt(x, z), ...(grass ? { grass: 1, dirt: 0, gravel: 0, rock: 0 } : PLOT_SURFACE[mat]), plot: true, wear: ground.cellWear(i, j) };
     }
     return land.surfaceAt(x, z);
   }
@@ -131,11 +134,13 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   // (no tufts in the ruts of the farm tracks either)
   const farmTracks = plan.farms.map((f) => farmTrack(plan, f)).filter(Boolean).map((t) => t.points);
   const onFarmTrack = (x, z) => farmTracks.some((pts) => pts.some((p) => Math.abs(p.x - x) < 3 && Math.abs(p.z - z) < 3 && Math.hypot(p.x - x, p.z - z) < 2.6));
-  const vegetation = createVegetation({
+  // (tufts grow on your field's turf too, but trees keep off it)
+  const tuftsBlocked = noGrowth.filter(([r]) => r !== home.plot);
+  vegetation = createVegetation({
     scene,
     quality: settings.graphics,
     surfaceAt,
-    blocked: (x, z) => noGrowth.some(([r, m]) => inRect(r, x, z, m)) || onFarmTrack(x, z),
+    blocked: (x, z) => tuftsBlocked.some(([r, m]) => inRect(r, x, z, m)) || onFarmTrack(x, z),
   });
   const trees = createTrees({
     scene,
@@ -563,6 +568,42 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   // retaining the previous sample so cuts remain continuous at varying frame rates.
   const cuts = new Map();
   const traffic = new Map();
+  // Wheels and tracks wear the field's turf along their own paths (ground.applyTraffic): each
+  // tyre (or track) is followed from where it was last marked, a metre at a time, with the load
+  // it carries and how much it's slipping. A wheel spinning on the spot digs in where it is.
+  const TRACK_STEP = 1;
+  function wearTracks(veh, mm, dt) {
+    const physical = combinationStats(game.ctx, mm);
+    const tonnes = ((physical.mass ?? 2000) + (physical.trailerMass ?? 0)) / 1000 + pileTotal(cargoLoad(mm));
+    const f = veh.feel();
+    const wet = groundWeather.wet.value;
+    let marks;
+    if (veh.wheelContacts) {
+      const side = f.slip ?? 0;
+      marks = veh.wheelContacts().map((c) => ({ key: c.i, x: c.x, z: c.z, width: Math.min(0.55, 0.12 + veh.radius * 0.07), weight: tonnes / 4,
+        slip: Math.max(side * 0.5, f.locked ? 0.8 : 0, c.driven ? f.wheelspin ?? 0 : 0) }));
+    } else {
+      // (tracks: a strip each side, the weight spread along them)
+      const p = veh.position();
+      const yaw = veh.digger ? veh.houseWorldYaw?.() ?? veh.yaw() : veh.yaw();
+      const sx = Math.sin(yaw), sz = Math.cos(yaw);
+      const gauge = veh.radius * 0.38;
+      marks = [-1, 1].map((s) => ({ key: s, x: p.x + sx * gauge * s, z: p.z + sz * gauge * s, width: veh.radius * 0.22, weight: tonnes / 4, slip: (f.slip ?? 0) * 0.5 }));
+    }
+    let t = traffic.get(mm.id);
+    if (!t) traffic.set(mm.id, t = new Map());
+    for (const m of marks) {
+      const last = t.get(m.key);
+      if (!last) { t.set(m.key, { x: m.x, z: m.z, spin: 0 }); continue; }
+      const d = Math.hypot(m.x - last.x, m.z - last.z);
+      if (d > 4) { Object.assign(last, { x: m.x, z: m.z, spin: 0 }); continue; } // (teleported or recovered)
+      last.spin = m.slip > 0.3 ? last.spin + dt * m.slip : 0;
+      if (d < TRACK_STEP && last.spin < 0.6) continue;
+      const heading = d > 0.05 ? Math.atan2(m.z - last.z, m.x - last.x) : -veh.yaw();
+      ground.applyTraffic({ fromX: last.x, fromZ: last.z, x: m.x, z: m.z, heading, width: m.width, weight: m.weight, moisture: wet, slip: m.slip });
+      Object.assign(last, { x: m.x, z: m.z, spin: 0 });
+    }
+  }
   function collectBucket(v, m, dt) {
     const s = v.directState();
     let c = cuts.get(m.id);
@@ -1060,18 +1101,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     for (const veh of vehicles.values()) {
       const mm = getMachine(game.ctx, veh.machineId);
       if (!mm) continue;
-      if (!paused && onPlot(veh.position().x, veh.position().z)) {
-        let t = traffic.get(mm.id);
-        const p = veh.position();
-        if (!t) traffic.set(mm.id, t = { x: p.x, z: p.z, time: 0 });
-        t.time += dt;
-        const distance = Math.hypot(p.x - t.x, p.z - t.z);
-        if (t.time >= 0.25 && distance >= 0.5) {
-          const physical = combinationStats(game.ctx,mm);
-          ground.applyTraffic({ x: p.x, z: p.z, heading: -veh.yaw(), width: veh.radius * 0.7, weight: ((physical.mass ?? 2000) + (physical.trailerMass ?? 0)) / 1000 + pileTotal(cargoLoad(mm)), distance: Math.min(distance, 2), moisture: groundWeather.wet.value, slip: veh.feel().slip ?? 0 });
-          Object.assign(t, { x: p.x, z: p.z, time: 0 });
-        }
-      }
+      if (!paused && onPlot(veh.position().x, veh.position().z)) wearTracks(veh, mm, dt);
       if (veh.carrier || veh.road || veh.towable) {
         const cap = combinationStats(game.ctx, mm).capacity;
         const tonnes = pileTotal(cargoLoad(mm));

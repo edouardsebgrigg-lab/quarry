@@ -161,6 +161,18 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
     update,
     setCargo: (t) => phys.setCargo(t + (trailer ? (stats().trailerMass ?? 0) / 1000 : 0)),
     // Everything the sound and camera react to.
+    // Every wheel on the ground: where it touches and whether it's driven (for the tracks it
+    // wears in the grass).
+    wheelContacts() {
+      const out = [];
+      const all = profile?.driveWheels === 4;
+      for (let i = 0; i < 4; i++) {
+        if (!phys.vehicle.wheelIsInContact(i)) continue;
+        const c = phys.vehicle.wheelContactPoint(i);
+        if (c) out.push({ i, x: c.x, z: c.z, driven: all || i >= 2 });
+      }
+      return out;
+    },
     // Where the driven wheels touch the ground (for what a spinning wheel throws up).
     drivenContacts() {
       const out = [];
