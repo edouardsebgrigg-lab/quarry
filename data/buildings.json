@@ -15,7 +15,7 @@
   "stockpiles": {
     "name": "Stockpile bays",
     "price": 600,
-    "description": "Three 25 t yard bays. Store tipped material and reload it with a digger when prices improve. Mixing lowers purity; storing is not a sale.",
+    "description": "Three 25 t yard bays. Keep materials separate and reload with a digger. Upgrade individual bays to 40 t and 55 t through Quarry operations.",
     "bays": [
       {
         "id": "west",
@@ -31,6 +31,26 @@
         "id": "east",
         "name": "East bay",
         "capacity": 25
+      }
+    ],
+    "upgrades": [
+      {
+        "name": "Standard walls",
+        "price": 0,
+        "extraCapacity": 0,
+        "wallHeight": 2
+      },
+      {
+        "name": "Raised walls",
+        "price": 400,
+        "extraCapacity": 15,
+        "wallHeight": 2.7
+      },
+      {
+        "name": "Reinforced high walls",
+        "price": 850,
+        "extraCapacity": 30,
+        "wallHeight": 3.4
       }
     ]
   },

@@ -26,4 +26,4 @@ export function buyBuilding(ctx, id) {
   return { ok: true, buildingId: id, cost: price };
 }
 
-export { stockpileLoad, stockpileConfig, stockpileRoom, whyCannotStore, storeStockpile, scoopStockpile } from './stockpiles.js';
+export { upgradeStockpile, stockpileLoad, stockpileConfig, stockpileRoom, whyCannotStore, storeStockpile, scoopStockpile } from './stockpiles.js';

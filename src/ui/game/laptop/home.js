@@ -11,6 +11,7 @@ import { nextInspection, inspectionReport, dealerOffer } from '../../../happenin
 import { contractsState } from '../../../contracts/index.js';
 import { hireState } from '../../../hire/index.js';
 import { staffState, openSlots } from '../../../staff/index.js';
+import { productionQueue, productionQueueStatus } from '../../../production/index.js';
 import { milestones, pinnedMilestone } from '../../../career/index.js';
 
 const targetAmount = (metric, value) => ['tonnesSold', 'tonnesDug', 'cleanTonnes', 'gravelDug', 'processedTonnes'].includes(metric) ? tonnes(value)
@@ -53,6 +54,10 @@ export function homeApp({ game, openApp, setHead }) {
   let upcomingKey = '';
   function comingUp() {
     const rows = [];
+    for(const [id,plant] of Object.entries(data.production.plants)) {
+      const q=productionQueue(ctx,id),status=productionQueueStatus(ctx,id);
+      if(q.entries.length&&['waiting','paused'].includes(status.state))rows.push({kind:'warn',title:`${plant.name}: ${q.entries.reduce((t,e)=>t+e.remaining,0)} batches waiting`,sub:status.reason,app:'operations'});
+    }
     const visit = nextInspection(ctx);
     if (visit?.announced) {
       const r = inspectionReport(ctx);

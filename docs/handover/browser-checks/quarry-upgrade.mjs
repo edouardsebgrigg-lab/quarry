@@ -45,7 +45,7 @@ try {
   await page.getByRole('button',{name:'Quarry operations',exact:true}).click();
   await clickTab('Production');
   const crusher=page.locator('[data-plant-id="crusher"]');
-  await crusher.locator('input').fill(String(batch));
+  await crusher.locator('input[id$="-tonnes"]').fill(String(batch));
   await crusher.getByRole('button',{name:'Start batch',exact:true}).click();
   await page.locator('.qo-job').waitFor();
   const saved=await q(()=>{
@@ -63,9 +63,9 @@ try {
   assert.ok(first.reward!==undefined,'first-batch milestone not reached');
   assert.match(await page.locator('.log').innerText(),/Jaw crusher finished:.*Middle bay/);
   await app();await clickTab('Production');
-  assert.equal(await page.locator('[data-plant-id="crusher"] input').inputValue(),String(batch),'saved crusher plan lost on Continue');
+  assert.equal(await page.locator('[data-plant-id="crusher"] input[id$="-tonnes"]').inputValue(),String(batch),'saved crusher plan lost on Continue');
   const screener=page.locator('[data-plant-id="screener"]');
-  await screener.locator('input').fill(String(batch));
+  await screener.locator('input[id$="-tonnes"]').fill(String(batch));
   await screener.getByRole('button',{name:'Start batch',exact:true}).click();
   await page.locator('.qo-job').waitFor();
   const screening=await q(()=>structuredClone(window.__quarry.game.state.production.jobs));
@@ -87,11 +87,11 @@ try {
   assert.match(await page.locator('[data-batch-id="batch-2"]').innerText(),/Cancelled[\s\S]*feed returned[\s\S]*not refunded/);
   const beforePlan=await q(()=>{const g=window.__quarry.game;return JSON.stringify([g.state.money,g.state.stockpiles,g.state.production.jobs,g.state.production.history]);});
   await page.locator('[data-batch-id="batch-1"]').getByRole('button',{name:'Plan again',exact:true}).click();
-  assert.equal(await page.locator('[data-plant-id="crusher"] input').inputValue(),String(batch));
+  assert.equal(await page.locator('[data-plant-id="crusher"] input[id$="-tonnes"]').inputValue(),String(batch));
   assert.equal(await q(()=>{const g=window.__quarry.game;return JSON.stringify([g.state.money,g.state.stockpiles,g.state.production.jobs,g.state.production.history]);}),beforePlan,'planning moved inventory or money');
-  await page.locator('[data-plant-id="crusher"] input').fill('0.5');
+  await page.locator('[data-plant-id="crusher"] input[id$="-tonnes"]').fill('0.5');
   await clickTab('Yard');await clickTab('Production');
-  assert.equal(await page.locator('[data-plant-id="crusher"] input').inputValue(),'0.5');
+  assert.equal(await page.locator('[data-plant-id="crusher"] input[id$="-tonnes"]').inputValue(),'0.5');
   console.log('PASS completed/cancelled history, saved plans and review before repeating');
 
   // Handling fixture uses the real bucket, carrier, weighbridge and depot actions;

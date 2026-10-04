@@ -349,3 +349,29 @@ In **Work areas**, **Record survey** keeps a baseline for the selected area. Lat
 show how estimated reserves have changed, including material dumped back into the area.
 These are sampled estimates, not an exact extraction ledger. Replace the baseline whenever
 you want to start a new comparison.
+
+## Planning a working yard
+
+In **Quarry operations → Production**, choose a recipe, feed bay, product bay and batch
+size. **Add to queue** schedules 1–20 batches without taking material or money. Each
+plant can hold eight orders. In **Queue**, move orders earlier/later, remove them, or pause
+and resume the plant's waiting work. Orders run at your active quarry when game time
+advances. You can keep digging or drive a delivery while the yard processes its stock.
+
+A queue waits if the feed is unsuitable or insufficient, the product bay is full, the
+plant needs servicing, or there isn't enough money. Automatic batches initially leave
+**$100** in the bank; change this reserve in Queue to protect fuel and other spending.
+Every batch checks current prices, condition and capacity before starting. Queued orders
+do not reserve stock or space, and unfinished orders, pauses and the cash reserve survive
+Continue. Home highlights queues needing attention.
+
+**Pause queue** and **Remove order** leave an already running batch alone. **Cancel batch**
+returns that batch's feed and also pauses its queue; its operating cost is retained and
+the cancelled batch is not re-added. **Start batch** remains available for manual work
+and can spend below the automatic reserve.
+
+Each **Yard** bay can be expanded independently from **25 t → 40 t → 55 t**. Upgrades
+raise the actual walls and increase room without moving material or cancelling reserved
+production/deliveries. The screener also has **Recover topsoil** and **Separate clay**
+recipes: they separate material already present in the feed, returning everything else
+to its source bay. Clean recovered topsoil can be delivered to the nursery.

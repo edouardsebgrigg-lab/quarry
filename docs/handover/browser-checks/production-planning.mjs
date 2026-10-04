@@ -1,0 +1,58 @@
+// UI workflow with explicit money, stock and clock fixtures; no manual digging/driving claim.
+import assert from 'node:assert/strict';
+import {start} from './common.mjs';
+const {browser,page,q,frames,shot,errors,newGame}=await start({width:480,height:270});
+page.setDefaultTimeout(90000);
+const tab=name=>page.getByRole('button',{name,exact:true}).click();
+const picture=async name=>{if(process.env.OUT){await page.setViewportSize({width:1280,height:800});await q(()=>{document.querySelector('.lt-app-body').scrollTop=0;});await frames(2);await page.screenshot({path:`${process.env.OUT}/${name}.png`});await page.setViewportSize({width:480,height:270});await frames(2);}};
+try {
+ await newGame({force:false});console.log('PASS new game');
+ await q(()=>{const g=window.__quarry.game;g.dev.addMoney(40000);for(const id of ['stockpiles','crusher','screener']){const r=g.actions.buyBuilding(id);if(!r.ok)throw Error(r.reason);}});
+ await page.keyboard.press('b');await tab('Quarry operations');
+ const west=page.locator('[data-bay-id="west"]');
+ await west.getByRole('button',{name:/Expand to 40/}).click();
+ assert.match(await west.innerText(),/40\.0 t/);console.log('PASS bay expansion through Yard');
+ await tab('Production');
+ const crusher=page.locator('[data-plant-id="crusher"]');
+ await crusher.locator('#crusher-tonnes').fill('2');await crusher.locator('#crusher-repeats').fill('2');
+ const cash=await q(()=>window.__quarry.game.state.money);
+ await crusher.getByRole('button',{name:'Add to queue',exact:true}).click();
+ await crusher.locator('#crusher-tonnes').fill('1');await crusher.locator('#crusher-repeats').fill('1');
+ await crusher.getByRole('button',{name:'Add to queue',exact:true}).click();
+ assert.equal(await q(()=>window.__quarry.game.state.money),cash);
+ await tab('Queue');const queued=page.locator('[data-queue-plant="crusher"]');
+ assert.match(await queued.innerText(),/Not enough material/);
+ await queued.getByRole('button',{name:'Move order 2 earlier'}).click();
+ assert.match(await queued.locator('.qo-queue-entry').first().innerText(),/1\.0 t each/);
+ await queued.locator('.qo-queue-entry').first().getByRole('button',{name:'Remove order'}).click();
+ await queued.getByRole('button',{name:'Pause queue',exact:true}).click();
+ await q(async()=>{const {storeStockpile}=await import('/src/buildings/index.js');const g=window.__quarry.game;storeStockpile(g.ctx,'west',{rock:4});g.advance(1);if(g.state.production.jobs.length)throw Error('Paused work started');});
+ await page.getByLabel('Keep this much cash for other work').fill(String(cash));await tab('Save cash reserve');
+ await queued.getByRole('button',{name:'Resume queue',exact:true}).click();
+ await q(()=>window.__quarry.game.advance(1));await frames(2);
+ assert.match(await queued.innerText(),/Waiting to keep.*in the bank/);
+ console.log('PASS queue edits, pausing and cash reserve through UI');
+ await picture('production-queue');
+ if(process.env.OUT){await page.setViewportSize({width:390,height:844});await frames(2);assert.ok(await q(()=>{const n=document.querySelector('.lt-app-body');return n.scrollWidth<=n.clientWidth+1;}));await shot('production-queue-narrow',{big:false});await page.setViewportSize({width:480,height:270});}
+ await queued.getByRole('button',{name:'Pause queue',exact:true}).click();
+ const saved=await q(()=>{const g=window.__quarry.game;window.__quarry.saveTo('slot1');return JSON.stringify([g.state.production,g.state.stockpileUpgrades,g.state.stockpiles,g.state.money]);});
+ await page.reload();await page.getByText('Continue',{exact:true}).click();await page.waitForFunction(()=>window.__quarry?.world);await q(()=>window.__quarry.gate.force(false));
+ assert.equal(await q(()=>{const g=window.__quarry.game;return JSON.stringify([g.state.production,g.state.stockpileUpgrades,g.state.stockpiles,g.state.money]);}),saved);
+ console.log('PASS queued work, reserve, expanded bay, stock and cash survive Continue');
+ await page.keyboard.press('b');await tab('Quarry operations');await tab('Queue');
+ assert.match(await page.locator('[data-queue-plant="crusher"]').innerText(),/Queue paused/);
+ await page.getByLabel('Keep this much cash for other work').fill('100');await tab('Save cash reserve');
+ await page.locator('[data-queue-plant="crusher"]').getByRole('button',{name:'Resume queue',exact:true}).click();
+ const result=await q(async()=>{const {ticksPerHour}=await import('/src/core/index.js');const g=window.__quarry.game,charges=[];const off=g.events.on('moneyChanged',e=>{if(e.reason==='production:crusher')charges.push(e.amount);});g.advance(ticksPerHour(g.data));off();return {charges,reward:g.data.milestones.list.find(m=>m.id==='batch1').reward,batches:g.state.production.batches,load:g.state.stockpiles.home.middle,money:g.state.money,queue:g.state.production.schedules.home.crusher.entries};});
+ assert.equal(result.batches,2);assert.equal(result.money,cash-4+result.reward);assert.deepEqual(result.charges,[-2,-2]);assert.equal(result.queue.length,0);assert.ok(Math.abs(result.load.gravel-3.2)<1e-8);assert.ok(Math.abs(result.load.sand-.8)<1e-8);
+ console.log('PASS bounded orders, reorder/remove/pause, cash reserve, saved state and conserved automatic processing');
+ await q(async()=>{const {storeStockpile}=await import('/src/buildings/index.js');const g=window.__quarry.game;const r=storeStockpile(g.ctx,'west',{topsoil:2,clay:1});if(!r.ok)throw Error(r.reason);});
+ await tab('Production');const screener=page.locator('[data-plant-id="screener"]');
+ await screener.locator('#screener-Recipe').selectOption('screenTopsoil');await screener.locator('[id="screener-Feed bay"]').selectOption('west');
+ await screener.locator('#screener-tonnes').fill('3');await screener.getByRole('button',{name:'Start batch',exact:true}).click();
+ const recovered=await q(async()=>{const {ticksPerHour}=await import('/src/core/index.js');const g=window.__quarry.game;g.advance(ticksPerHour(g.data));return {bays:g.state.stockpiles.home,quote:g.actions.quoteBuyerDelivery('nursery',g.state.stockpiles.home.east)};});
+ assert.deepEqual(recovered.bays.west,{clay:1});assert.deepEqual(recovered.bays.east,{topsoil:2});assert.equal(recovered.quote.ok,true);
+ await tab('Yard');assert.ok(!/(null|undefined|NaN)(?![a-z])/.test(await page.locator('.lt-app-body').innerText()));await picture('expanded-yard-inventory');
+ await page.keyboard.press('Escape');await q(()=>{const w=window.__quarry.world;w.debug.teleportPlayer(182,32);w.debug.aimAt(180,49);});await frames(3);if(process.env.OUT)await shot('expanded-bay-walls');
+ assert.deepEqual(errors,[]);console.log('PASS soil recovery, expanded inventory, visible walls and no console errors');
+} finally {await browser.close();}

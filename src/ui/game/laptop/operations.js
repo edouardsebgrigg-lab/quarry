@@ -4,7 +4,8 @@ import { getDate } from '../../../core/index.js';
 import { ownsBuilding, stockpileLoad, stockpileRoom, stockpileConfig } from '../../../buildings/index.js';
 import { pileTotal, workAreas, surveyWorkArea, activeWorkArea } from '../../../quarry/index.js';
 import { bestDeliveryQuote } from '../../../economy/index.js';
-import { plantStatus } from '../../../production/index.js';
+import { productionQueuePanel } from './productionQueue.js';
+import { plantStatus, validateProductionPlan, productionQueue } from '../../../production/index.js';
 
 const materialsText = (data, load) => Object.entries(load).filter(([,t]) => t > 1e-8)
   .map(([id,t]) => `${data.materials[id]?.name ?? id}: ${tonnes(t)}`).join(' · ');
@@ -31,7 +32,7 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
       const owned=ownsBuilding(ctx,'stockpiles');
       const bays=data.buildings.stockpiles.bays.map(b=>({ ...stockpileConfig(ctx,b.id), load:stockpileLoad(ctx,b.id), room:stockpileRoom(ctx,b.id) }));
       const values=bays.map(b=>pileTotal(b.load)>0 ? bestDeliveryQuote(ctx,b.load).gross : 0);
-      const k=JSON.stringify([owned,bays,values,jobs.map(j=>j.id),game.state.production.processed]);
+      const k=JSON.stringify([owned,bays,values,jobs.map(j=>j.id),game.state.production.processed,game.state.money]);
       if(k===key)return; key=k;
       const total=bays.reduce((t,b)=>t+pileTotal(b.load),0), held=jobs.reduce((t,j)=>t+j.tonnes,0);
       clear(summary); clear(stores); clear(next);
@@ -46,7 +47,11 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
           el('progress',{max:b.capacity,value:amount,'aria-label':`${b.name} stored material`}),
           el('p',{class:'lt-note'},materialsText(data,b.load)||'Empty bay'),
           el('p',{class:'lt-note'},`${tonnes(Math.max(0,b.room))} free${reserved>1e-8 ? ` · ${tonnes(reserved)} reserved for batches or arriving loads` : ''}`),
-          quote ? el('div',{class:'qo-value'},`${quote.grade} · ${money(quote.gross)} depot value today`) : null));
+          quote ? el('div',{class:'qo-value'},`${quote.grade} · ${money(quote.gross)} depot value today`) : null,
+          el('p',{class:'lt-note'},b.upgrade.name),
+          (()=>{const next=data.buildings.stockpiles.upgrades[b.level+1];
+            const button=el('button',{class:'btn btn-small',onClick:()=>{const r=game.actions.upgradeStockpile(b.id);if(notify(r))feedback?.message(`${b.name} expanded to ${tonnes(r.capacity)}`,'good');refreshSection();}},next?`Expand to ${tonnes(b.capacity+next.extraCapacity-b.upgrade.extraCapacity)} · ${money(next.price)}`:'Fully expanded');
+            button.disabled=!owned||!next||game.state.money<next.price;return button;})()));
       }
       let advice;
       if(!owned) advice='Start with stockpile bays: keep materials separate, wait for good prices and supply your future plants.';
@@ -83,18 +88,26 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
         if(notify(r))feedback?.message(`${cfg.name}: batch started`,'good');
         refreshSection();
       }},'Start batch');
+      const repeats=el('input',{id:`${plantId}-repeats`,class:'text-input',type:'number',min:1,max:data.production.queue.maximumBatches,step:1,value:1});
+      const enqueue=el('button',{class:'btn btn-small',onClick:()=>{if(notify(game.actions.queueProduction(request(),{batches:Number(repeats.value)})))feedback?.message(`${cfg.name}: order queued. No feed or money taken yet.`,'good');refreshSection();}},'Add to queue');
+      const rate=el('p',{class:'lt-note'});
       const status=el('span',{class:'qo-plant-state'});
       const card=el('article',{class:'lt-card qo-plant',dataset:{plantId}},
         el('div',{class:'qo-plant-head'},el('h3',{},cfg.name),status),
-        el('p',{class:'lt-note'},`${cfg.tonnesPerHour} t per game hour · ${money(cfg.costPerTonne)} / t running cost`),
+        rate,
         el('div',{class:'qo-form'},recipe.node,source.node,dest.node,el('label',{class:'qo-field',for:quantity.id},'Batch tonnes',quantity)),
-        description,quoteBox,el('div',{class:'qo-actions'},start,el('button',{class:'lt-link',onClick:()=>openApp('dealer')},'Plant dealer')));
+        description,quoteBox,el('div',{class:'qo-actions'},start,el('button',{class:'lt-link',onClick:()=>openApp('dealer')},'Plant dealer')),
+        el('div',{class:'qo-form'},el('label',{class:'qo-field',for:repeats.id},'Queued batches',repeats)),
+        el('div',{class:'qo-actions'},enqueue,el('button',{class:'lt-link',onClick:()=>show('schedule')},'Manage queue')));
       forms.append(card);
       let quoteKey='';
       const update=()=>{
         const q=game.actions.quoteProduction(request());
         start.disabled=!q.ok;
-        setText(status,ownsBuilding(ctx,cfg.building)?'Commissioned':'Not commissioned');
+        const queue=productionQueue(ctx,plantId),count=Number(repeats.value),plant=plantStatus(ctx,plantId);
+        enqueue.disabled=!ownsBuilding(ctx,cfg.building)||!validateProductionPlan(ctx,request()).ok||queue.entries.length>=data.production.queue.maximumEntries||!Number.isInteger(count)||count<1||count>data.production.queue.maximumBatches;
+        setText(rate,`${(cfg.tonnesPerHour*plant.throughput).toFixed(1)} t per game hour · ${money(cfg.costPerTonne*plant.costFactor)} / t · ${plant.condition.toFixed(1)}% condition`);
+        setText(status,ownsBuilding(ctx,cfg.building)?`Commissioned${queue.entries.length?` · ${queue.entries.reduce((t,e)=>t+e.remaining,0)} queued`:''}`:'Not commissioned');
         setText(description,data.production.recipes[recipe.select.value].description);
         const k=JSON.stringify(q); if(k===quoteKey)return; quoteKey=k;
         clear(quoteBox);
@@ -110,6 +123,7 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
         game.actions.saveProductionPlan(request());
         update();
       });
+      repeats.addEventListener('input',update);
       formRefresh.push(update);
     }
     const jobNodes=new Map();
@@ -121,7 +135,7 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
         if(!item) {
           const progress=el('progress',{max:1,value:0,'aria-label':`${data.production.plants[job.plantId].name} batch progress`}), note=el('p',{class:'lt-note'});
           const cancel=el('button',{class:'btn btn-small',onClick:()=>{
-            if(notify(game.actions.cancelProduction(job.id)))feedback?.message('Batch cancelled. Feed returned; operating cost retained.','good');
+            if(notify(game.actions.cancelProduction(job.id)))feedback?.message('Batch cancelled. Feed returned; operating cost retained. Queue paused.','good');
             refreshSection();
           }},'Cancel batch');
           const n=el('article',{class:'lt-card qo-job',dataset:{jobId:job.id}},
@@ -134,6 +148,8 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
       for(const update of formRefresh)update();
     };
   }
+
+  function schedule() {const panel=productionQueuePanel({game,feedback});body.append(panel.node);refreshSection=panel.refresh;}
 
   function history() {
     const list=el('div',{class:'qo-reports'});
@@ -229,10 +245,10 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
 
   function show(id) {
     section=id;clear(tabs);clear(body);
-    for(const [key,label] of [['yard','Yard'],['production','Production'],['workshop','Plant workshop'],['history','Batch history'],['survey','Work areas'],['reports','Daily reports']]) {
+    for(const [key,label] of [['yard','Yard'],['production','Production'],['schedule','Queue'],['workshop','Plant workshop'],['history','Batch history'],['survey','Work areas'],['reports','Daily reports']]) {
       tabs.append(el('button',{class:`lt-chip ${section===key?'active':''}`,'aria-pressed':String(section===key),onClick:()=>show(key)},label));
     }
-    ({yard,production,workshop,history,survey,reports})[section]();refreshSection();
+    ({yard,production,schedule,workshop,history,survey,reports})[section]();refreshSection();
   }
   show(section);
   return {node,refresh:()=>refreshSection(),headSet:true};

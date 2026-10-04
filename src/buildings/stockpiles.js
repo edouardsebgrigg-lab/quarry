@@ -1,12 +1,30 @@
 // Yard inventory is already-dug material. Transfers never emit productSold or create tonnes.
 import { ownsBuilding } from './index.js';
 import { pileTotal, addToPile, takeProportional } from '../quarry/index.js';
+import { canAfford, spendMoney } from '../economy/index.js';
 import { loadCarrier } from '../machinery/trailers.js';
 
 export const stockpileLoad = (ctx, bayId, siteId = ctx.state.currentSiteId) => ctx.state.stockpiles?.[siteId]?.[bayId] ?? {};
-export const stockpileConfig = (ctx, bayId) => ctx.data.buildings.stockpiles?.bays.find(b => b.id === bayId);
+export function stockpileConfig(ctx,bayId,siteId=ctx.state.currentSiteId) {
+  const base=ctx.data.buildings.stockpiles?.bays.find(b=>b.id===bayId);if(!base)return undefined;
+  const level=ctx.state.stockpileUpgrades?.[siteId]?.[bayId]??0;
+  const upgrade=ctx.data.buildings.stockpiles.upgrades[level];
+  return {...base,capacity:base.capacity+upgrade.extraCapacity,level,upgrade};
+}
+export function upgradeStockpile(ctx,bayId) {
+  const cfg=stockpileConfig(ctx,bayId);
+  if(!cfg||!ownsBuilding(ctx,'stockpiles'))return {ok:false,reason:'Commission a valid stockpile bay first'};
+  const next=ctx.data.buildings.stockpiles.upgrades[cfg.level+1];
+  if(!next)return {ok:false,reason:'This bay is fully upgraded'};
+  if(!canAfford(ctx,next.price))return {ok:false,reason:'Not enough money to upgrade this bay'};
+  const st=ctx.state.stockpileUpgrades??={};
+  (st[ctx.state.currentSiteId]??={})[bayId]=cfg.level+1;
+  spendMoney(ctx,next.price,'stockpileUpgrade');
+  ctx.events.emit('stockpileChanged',{siteId:ctx.state.currentSiteId,bayId});
+  return {ok:true,capacity:cfg.capacity+next.extraCapacity-cfg.upgrade.extraCapacity};
+}
 export function stockpileRoom(ctx, bayId, siteId = ctx.state.currentSiteId, exceptMachine = null, exceptProduction = null) {
-  const b = stockpileConfig(ctx, bayId);
+  const b = stockpileConfig(ctx, bayId, siteId);
   if (!b || !ownsBuilding(ctx, 'stockpiles', siteId)) return 0;
   const reserved = ctx.state.machines.reduce((t, m) => t + (m.id !== exceptMachine && m.siteId === siteId && m.job?.type === 'tip' && m.job.params.stockpileBay === bayId ? pileTotal(loadCarrier(ctx,m)?.load) : 0), 0);
   const processing = (ctx.state.production?.jobs ?? []).reduce((t,j) => t + (j.id !== exceptProduction && j.siteId === siteId ? j.reservations[bayId] ?? 0 : 0), 0);

@@ -6,7 +6,7 @@ import {
   sellMachine as fleetSellMachine, resaleValue, mechanicQuote, callMechanic, buyMod as fleetBuyMod, dumpBucket as fleetDumpBucket, bucketCut as fleetBucketCut,
 } from '../machinery/index.js';
 import { shovelDig, shovelDump, tipBarrow } from '../handtools/index.js';
-import { buyBuilding, ownsBuilding } from '../buildings/index.js';
+import { buyBuilding, ownsBuilding, upgradeStockpile } from '../buildings/index.js';
 import { planEarthworks, buildEarthworks } from '../earthworks/index.js';
 import { acceptContract, acceptStandingOrder, declineStandingOrder } from '../contracts/index.js';
 import { acceptHire, declineHire } from '../hire/index.js';
@@ -15,7 +15,7 @@ import { hireApplicant, assignWorker, dismissWorker, configureHaul } from '../st
 import { attachTrailer, detachTrailer } from '../machinery/trailers.js';
 import { setDiggerAttachment } from '../machinery/fleet.js';
 import { pinMilestone, unpinMilestone } from '../career/index.js';
-import { quoteProduction, startProduction, cancelProduction, saveProductionPlan, upgradePlant, servicePlant } from '../production/index.js';
+import { quoteProduction, startProduction, cancelProduction, saveProductionPlan, upgradePlant, servicePlant, queueProduction, pauseProductionQueue, removeQueuedProduction, moveQueuedProduction, setProductionCashReserve } from '../production/index.js';
 import { setWorkArea, recordSurvey } from '../quarry/index.js';
 import { quoteBuyerDelivery, navigateBuyer } from '../trade/index.js';
 
@@ -27,6 +27,12 @@ export function createActions(ctx) {
   const fleetValue = () => ctx.state.machines.reduce((a, m) => a + resaleValue(ctx, m), 0);
 
   return {
+    upgradeStockpile: id => upgradeStockpile(ctx,id),
+    queueProduction: (request,options) => queueProduction(ctx,request,options),
+    pauseProductionQueue: (plantId,paused) => pauseProductionQueue(ctx,plantId,paused),
+    removeQueuedProduction: (plantId,id) => removeQueuedProduction(ctx,plantId,id),
+    moveQueuedProduction: (plantId,id,direction) => moveQueuedProduction(ctx,plantId,id,direction),
+    setProductionCashReserve: amount => setProductionCashReserve(ctx,amount),
     recordSurvey: id => recordSurvey(ctx,id),
     upgradePlant: id => upgradePlant(ctx,id),
     servicePlant: id => servicePlant(ctx,id),

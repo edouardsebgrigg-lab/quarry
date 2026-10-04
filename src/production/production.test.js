@@ -217,3 +217,14 @@ describe('paid, conserved quarry production', () => {
     expect(g.state.production.history).toEqual(completed);
   });
 });
+
+describe('soil recovery recipes',()=>{
+ for(const [recipeId,material] of [['screenTopsoil','topsoil'],['screenClay','clay']])it(`recovers ${material} without losing the other layers`,()=>{
+  const g=setup();storeStockpile(g.ctx,'west',{topsoil:2,clay:1,gravel:1});
+  const request={plantId:'screener',recipeId,sourceBay:'west',outputBay:'east',tonnes:4};
+  const q=g.actions.quoteProduction(request);expect(q.ok).toBe(true);expect(g.actions.startProduction(request).ok).toBe(true);finish(g);
+  const expected=material==='topsoil'?2:1;expect(stockpileLoad(g.ctx,'east')).toEqual({[material]:expected});
+  expect(stockpileLoad(g.ctx,'west')[material]??0).toBe(0);expect(inventory(g)).toBe(4);
+  expect(g.actions.quoteProduction(request).ok).toBe(false);
+ });
+});

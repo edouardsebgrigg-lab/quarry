@@ -263,3 +263,21 @@ without changing yields or running jobs. Capital upgrades and operating service 
 use normal bank/logbook accounting. The workshop and plant visuals reflect this state.
 `quarry/operations.js` records dated survey snapshots without changing terrain or money;
 Work areas compares fresh estimates to the saved baseline.
+
+### Finite production schedules and expandable bays
+
+`production/schedule.js` owns per-site/per-plant saved orders and pause states. Orders
+contain a validated recipe/bay/tonnage request and bounded counts of batches remaining
+to start. `productionQueueStatus` is read-only; `tickProductionQueue` starts ready orders
+at the active site after existing jobs/services advance. It reuses authoritative
+`quoteProduction`/`startProduction` checks, including current condition and reservations,
+and enforces the shared automatic cash reserve. Only a successful start consumes a count.
+Manual cancellation pauses that plant's queue; deleting/reordering waiting work never
+changes a running job. Old saves default empty schedules and the configured reserve.
+`laptop/productionQueue.js` presents controls and waiting reasons; Home highlights stalls.
+
+`buildings/stockpiles.js` derives per-site capacity from saved bay upgrade levels and JSON
+upgrade definitions. Additional capacity preserves live tip/production reservations.
+Purchases count as capital investment. `world3d/stockpiles.js` updates both wall geometry
+and Rapier colliders on inventory/upgrade refresh and restores heights on load. Soil
+recovery recipes reuse the conserved separation path; rejects stay in the feed bay.

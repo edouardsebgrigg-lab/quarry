@@ -1557,3 +1557,5 @@ body:has(.overlay-digger-tools) .feedback > :is(.mentor,.log,.toasts) { visibili
   .qo-area { font-size: .7rem; padding: .45rem; }
   .qo-plant-head { align-items: flex-start; }
 }
+
+.qo-queue-entry { padding: 14px 0; border-top: 1px solid var(--lt-border, #34383d); }

@@ -4,6 +4,8 @@ import { pileTotal, takeProportional } from '../quarry/index.js';
 import { canAfford, spendMoney, bestDeliveryQuote } from '../economy/index.js';
 import { ticksPerHour, getDate } from '../core/index.js';
 import { plantStatus, wearPlant, tickPlantServices } from './plant.js';
+import { tickProductionQueue, pauseProductionQueue } from './schedule.js';
+export { queueProduction, productionQueue, productionQueueStatus, pauseProductionQueue, removeQueuedProduction, moveQueuedProduction, setProductionCashReserve } from './schedule.js';
 export { plantStatus, upgradePlant, servicePlant } from './plant.js';
 
 const EPS = 1e-8;
@@ -15,18 +17,28 @@ export function productionState(ctx) {
   ctx.state.production.plans ??= {};
   ctx.state.production.plants ??= {};
   ctx.state.production.services ??= [];
+  ctx.state.production.schedules ??= {};
+  ctx.state.production.nextQueueId ??= 1;
+  ctx.state.production.cashReserve ??= ctx.data.production.queue.defaultCashReserve;
   return ctx.state.production;
 }
 
 // Planning never reserves material or money. Execution always gets a fresh quote.
-export function saveProductionPlan(ctx, request = {}) {
+export function validateProductionPlan(ctx, request = {}) {
   const { plantId, recipeId, sourceBay, outputBay, tonnes } = request ?? {};
   const plant = ctx.data.production.plants[plantId];
   if (!plant || !plant.recipes.includes(recipeId)) return { ok: false, reason: 'Choose a recipe for this plant' };
   if (!stockpileConfig(ctx,sourceBay) || !stockpileConfig(ctx,outputBay) || sourceBay === outputBay) return { ok: false, reason: 'Choose different feed and product bays' };
   if (!Number.isFinite(tonnes) || tonnes < plant.minimumBatch || tonnes > plant.maximumBatch) return { ok: false, reason: `Batch size must be ${plant.minimumBatch}–${plant.maximumBatch} t` };
+  return { ok: true, request: { plantId, recipeId, sourceBay, outputBay, tonnes } };
+}
+
+export function saveProductionPlan(ctx, request = {}) {
+  const valid = validateProductionPlan(ctx,request);
+  if (!valid.ok) return valid;
+  const {plantId} = valid.request;
   const plans = productionState(ctx).plans;
-  (plans[ctx.state.currentSiteId] ??= {})[plantId] = { plantId, recipeId, sourceBay, outputBay, tonnes };
+  (plans[ctx.state.currentSiteId] ??= {})[plantId] = valid.request;
   return { ok: true };
 }
 
@@ -105,6 +117,7 @@ export function cancelProduction(ctx, id) {
   st.jobs = st.jobs.filter(j => j.id !== id);
   storeStockpile(ctx, job.sourceBay, { ...job.input }, job.siteId);
   recordBatch(ctx,job,'cancelled');
+  pauseProductionQueue(ctx,job.plantId,true);
   ctx.events.emit('productionCancelled', { jobId: id, plantId: job.plantId });
   return { ok: true, returnedTonnes: job.tonnes, cost: job.cost };
 }
@@ -132,4 +145,5 @@ export function tickProduction(ctx) {
       sourceBay: job.sourceBay, outputBay: job.outputBay,
       tonnes: job.tonnes, output: { ...job.output }, rejects: { ...job.rejects } });
   }
+  tickProductionQueue(ctx);
 }

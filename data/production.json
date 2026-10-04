@@ -21,7 +21,9 @@
       "maximumBatch": 15,
       "recipes": [
         "screenGravel",
-        "screenSand"
+        "screenSand",
+        "screenTopsoil",
+        "screenClay"
       ]
     }
   },
@@ -44,6 +46,16 @@
       "name": "Separate sand",
       "separate": "sand",
       "description": "Recover the sand already in a mixed batch. Other material returns to the feed bay."
+    },
+    "screenTopsoil": {
+      "name": "Recover topsoil",
+      "separate": "topsoil",
+      "description": "Separate the topsoil already in the feed. Every other material returns to the feed bay; no material is created."
+    },
+    "screenClay": {
+      "name": "Separate clay",
+      "separate": "clay",
+      "description": "Separate the clay already in the feed. Every other material returns to the feed bay; no material is created."
     }
   },
   "maintenance": {
@@ -73,5 +85,10 @@
       "throughput": 1.7,
       "costFactor": 0.78
     }
-  ]
+  ],
+  "queue": {
+    "maximumEntries": 8,
+    "maximumBatches": 20,
+    "defaultCashReserve": 100
+  }
 }
