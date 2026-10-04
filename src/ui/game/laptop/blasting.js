@@ -83,7 +83,7 @@ export function blastingPanel({game,world,feedback}) {
       setText(detail,`${tonnes(p.estimatedTonnes)} planned · ${money(p.cost)} spent · X ${p.spec.x.toFixed(1)}, Z ${p.spec.z.toFixed(1)}${timed?` · ${minutes(p.remainingHours)} remaining`:p.stage==='countdown'?` · ${Math.ceil(p.remainingSeconds)} seconds`:''}`);
       const c=game.actions.blastClearance(p.id);
       setText(clearance,c.ok?`Field clear · stay beyond the ${p.clearance} m boundary`:c.reason);
-      setText(hold,p.holdReason??'');hold.hidden=!p.holdReason;
+      setText(hold,p.holdReason?`Last stop: ${p.holdReason}`:'');hold.hidden=!p.holdReason;
       charge.hidden=p.stage!=='drilled';charge.disabled=game.state.money<p.chargeCost;setText(charge,`Book charging · ${money(p.chargeCost)}`);
       fire.hidden=p.stage!=='ready';fire.disabled=!c.ok;abort.hidden=p.stage!=='countdown';
     }

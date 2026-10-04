@@ -7,8 +7,9 @@ Older queues and their history are in `docs/archive/`.
 
 State on 4 October 2026: `main` includes regional buyers and delivery yards, plant
 upgrades/servicing, recorded surveys, saved production queues, expandable stockpile
-bays and soil recovery, alongside the digging, driving, fleet and staff systems.
-467 unit tests pass; lint/build and smoke, production and planning browser checks pass.
+bays, soil recovery and conserved contractor rock blasting, alongside the digging,
+driving, fleet and staff systems.
+481 unit tests pass; lint/build and smoke, blasting and field-control browser checks pass.
 The latest expansions followed the owner's direct request for broad development
 beyond this queue; the manual play tasks below remain unverified.
 
@@ -35,6 +36,11 @@ about playing it properly and fixing what gets in the way.
       sun's glare at dawn and dusk isn't overpowering.
 
 ## Completed upgrades
+
+- [x] **U-5 Rock blasting** (Codex, `codex/rock-blasting`): conserved finite bedrock
+      fracturing, timed contractor preparation, live clearance, cancellable countdown,
+      direct E stop, field rig/markers/effects, saved cuts and cost/yield receipts.
+      Feature commit: `8f1ad4f`. 481 tests, lint/build and three browser checks passed.
 
 - [x] **U-4 Production planning** (Codex, `codex/production-planning`): finite saved
       queues, pause/reorder/remove, working-capital reserve, bay capacity/wall upgrades,

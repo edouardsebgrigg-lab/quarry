@@ -4,6 +4,41 @@ One short entry per task, newest at the top: the task, the agent and branch, the
 `main`, what changed, what was actually run, and what wasn't verified. Older, longer reports
 are in `docs/archive/CODEX-CHECKPOINT.md`.
 
+## 4 October 2026 · Rock blasting (Codex, `codex/rock-blasting`)
+
+- Feature commit: `8f1ad4f`. Owner-directed development beyond the task queue.
+- New physical rock-working loop: survey an exposed patch, book timed drilling, book
+  timed charging, clear the marked field and fire a cancellable countdown. Three saved
+  cut sizes trade crew cost/time for yield. Every footprint cell is checked; graded
+  ground, excess cover, changed surveys and exhausted reserves are refused.
+- Finite bedrock becomes loose rock in-place, retaining all cover and conserving tonnes.
+  Buckets still load the rubble; bays, crushers and sales retain their existing handling
+  requirements. Rig tracks, wheels, mast, braces, controls and vents are authored in
+  code; the working rig has a Rapier collider and leaves before firing. Terrain-following
+  flags/rings, map boundaries, countdown HUD, dust and a synthesised impact complete
+  the field feedback.
+- Live player, vehicle, trailer and barrow positions gate firing and every countdown
+  tick. Intrusion stops the countdown until the player explicitly restarts it. Missing
+  world positions cannot certify clearance. Old saves default empty; preparation,
+  stage quotes and charged projects persist. Bounded receipts and daily reports keep
+  loosened rock separate from excavated/sold tonnage; bank entries identify crew costs.
+- Checked: **481 tests in 77 files**, lint, build, `smoke.mjs`, `blasting.mjs` and
+  `blast-controls.mjs`. All passed with no browser console errors. Conservation includes
+  settling, save/reload, repeated cuts to the finite floor and normal bucket extraction.
+  The full action integration feeds one conserved tonne into a crusher, producing
+  0.8 t gravel and 0.2 t sand. Collider tests check the working rig and its removal.
+- Browser buttons verify both paid stages, live player/vehicle clearance, Save/Continue,
+  manual and automatic interruption, then 15.21 t released into terrain and ordinary
+  bucket → stockpile → crusher handling. Actual keyboard E stops the countdown. The
+  narrow layout places active controls above the survey and has no horizontal overflow.
+  Tests explicitly wait for the laptop's throttled refresh and give the small digger
+  enough strokes to collect the test batch.
+- Inspected desktop survey, refined rig, ready/clearance, rubble and narrow-control
+  screenshots, kept outside Git in `/workspace/.cache/quarry/blasting-shots`.
+- Limits: cloud Chromium software rendering with Low graphics; explicit funds,
+  earthmoving, viewpoints and clock fixtures. No manual driving/digging playthrough,
+  real-GPU performance measurement or sound-by-ear verification is claimed.
+
 ## 4 October 2026 · Production planning (Codex, `codex/production-planning`)
 
 - Feature commit: `aecc27d`. Continued the owner's broad development request beyond the
