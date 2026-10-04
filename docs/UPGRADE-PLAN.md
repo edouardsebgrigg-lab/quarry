@@ -1,7 +1,8 @@
 # Working Quarry upgrade
 
 Codex, `codex/quarry-upgrade`. Baseline: published Claude ground/driving work at
-`d944458`, including its cleanup and realism changes. Main is still `b7a1adb`.
+`d944458`, including its cleanup and realism changes. Implementation at `9e52f8d`
+is now on main together with that baseline; checks are recorded in `docs/LOG.md`.
 Edouard requested a substantial plan followed by implementation; this batch grows
 the quarry loop without requiring contracts or replacing the existing controls.
 

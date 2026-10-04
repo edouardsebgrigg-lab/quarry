@@ -31,18 +31,17 @@ about playing it properly and fixing what gets in the way.
       the top of the screen. Start the player facing the field, slightly down, and check the
       sun's glare at dawn and dusk isn't overpowering.
 
-## In progress
+## Completed upgrades
 
-- [ ] **U-1 Working Quarry upgrade** (Codex, `codex/quarry-upgrade`): surveyed work
+- [x] **U-1 Working Quarry upgrade** (Codex, `codex/quarry-upgrade`): surveyed work
       areas, conserved crushing/screening, yard operations, daily reports and
       optional production goals. Plan: `docs/UPGRADE-PLAN.md`.
-      Implemented and verified at `9e52f8d` (437 tests, lint/build, both browser
-      checks). Publication blocked: GitHub returns HTTP 403 for cloud identity
-      `edouardgrigg-sketch`, which lacks write access to this repository.
+      On main: `9e52f8d` (437 tests, lint/build, both browser checks).
 
-- [ ] **G-1 Ground, grass and driving** (Claude, `claude/ground-driving`): grip-limited wheels
+- [x] **G-1 Ground, grass and driving** (Claude, `claude/ground-driving`): grip-limited wheels
       (lockups, wheelspin, body roll), dry and wet surface grip in data, turf that wears into
       tyre tracks and mud, grass tufts on the field, a pedal ramp and light-pedal key.
+      On main: `d944458`, included with the Working Quarry upgrade.
 
 ## Next depth (after the play tasks)
 
