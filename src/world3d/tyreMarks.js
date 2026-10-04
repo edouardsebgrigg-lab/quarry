@@ -15,16 +15,15 @@ function treadTexture() {
   const g = c.getContext('2d');
   g.fillStyle = '#000';
   g.fillRect(0, 0, w, h);
+  g.fillStyle = 'rgb(120,120,120)'; // (the whole width is pressed down)
+  g.fillRect(4, 0, w - 8, h);
   for (let y = 0; y < h; y += 16) {
     for (const [x0, x1, shift] of [[6, 29, 0], [35, 58, 8]]) {
-      const v = 150 + Math.random() * 90;
+      const v = 165 + Math.random() * 50; // (the tread blocks press a little deeper)
       g.fillStyle = `rgb(${v},${v},${v})`;
-      g.fillRect(x0, (y + shift) % h, x1 - x0, 10);
+      g.fillRect(x0 + Math.random() * 3, (y + shift) % h, x1 - x0 - Math.random() * 4, 8 + Math.random() * 3);
     }
   }
-  g.globalCompositeOperation = 'lighter';
-  g.fillStyle = 'rgba(70,70,70,1)'; // (the whole width is pressed down a little)
-  g.fillRect(4, 0, w - 8, h);
   // Soft edges across the tyre.
   g.globalCompositeOperation = 'destination-in';
   const edge = g.createLinearGradient(0, 0, w, 0);
@@ -67,7 +66,7 @@ export function createTyreMarks(scene, { max = 4000 } = {}) {
         varying float vFade;`)
       .replace('#include <uv_vertex>', `#include <uv_vertex>
         #ifdef USE_ALPHAMAP
-        vAlphaMapUv.y *= aLength * 2.5; // (a tread block every 40 cm)
+        vAlphaMapUv.y *= aLength * 4.0; // (a row of tread blocks every 25 cm)
         #endif`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>
         // (the oldest quarter fades out before it's replaced)
@@ -143,12 +142,12 @@ export function markFor(surface, wet = 0, slide = 0) {
     case 'asphalt':
       return s > 0.3 ? { color: 0x121212, strength: 0.25 + 0.45 * s } : null; // (rubber, only when it slides)
     case 'grass':
-      return { color: w > 0.4 ? 0x33291d : 0x334022, strength: 0.18 + 0.4 * w + 0.35 * s };
+      return { color: w > 0.4 ? 0x4a3a28 : 0x3a4527, strength: 0.16 + 0.3 * w + 0.3 * s };
     case 'gravel':
       return { color: 0x4e4a44, strength: 0.18 + 0.15 * w + 0.25 * s };
     case 'rock':
       return s > 0.3 ? { color: 0x3a3836, strength: 0.2 * s } : null;
     default: // dirt and the field's soils: a tread print, deeper and darker when wet
-      return { color: w > 0.4 ? 0x2a2018 : 0x3a3022, strength: 0.35 + 0.35 * w + 0.25 * s };
+      return { color: w > 0.4 ? 0x45351f : 0x4a3d2c, strength: 0.3 + 0.25 * w + 0.2 * s };
   }
 }
