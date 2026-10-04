@@ -281,3 +281,40 @@ upgrade definitions. Additional capacity preserves live tip/production reservati
 Purchases count as capital investment. `world3d/stockpiles.js` updates both wall geometry
 and Rapier colliders on inventory/upgrade refresh and restores heights on load. Soil
 recovery recipes reuse the conserved separation path; rejects stay in the feed bay.
+
+### Saved contractor cuts and finite rock fracturing
+
+- `data/blasting.json`: abstract game cut presets, crew costs/times, clearance,
+  countdown, history and dust settings. Loaded by `core/data.js`.
+- `ground.planFracture` previews every cell in the circular footprint without mutation.
+  It rejects fixed edges, engineered fill, excess cover and exhausted reserve. A lossless
+  shape fingerprint identifies the drilled columns. `ground.fracture` requires that same
+  fingerprint and converts Float32-measured bed depletion into loose rock in-place;
+  cover remains, dirty chunks and settling activate, and terrain saves need no new format.
+- `src/blasting/index.js`: independent game rules, public actions and tick entry.
+  `state.blasting` defaults projects/history/counters for old saves. One project per
+  current site advances through drilling → drilled → charging → ready → countdown.
+  Stage quotes remain saved, each crew cost is paid once, and cancelled work is recorded
+  without refund. Only successful firing counts as loosened rock; actual digging retains
+  its existing extraction credit. Projects at other sites wait.
+- Firing uses the live `ctx.blastOccupants` provider installed/disposed by `world3d`;
+  saved positions never certify clearance. Player, barrow, visible vehicles and attached
+  trailers are included with their bounds. Every countdown tick checks clearance; commit
+  also checks the original terrain fingerprint. Missing positions, intrusion or changed
+  ground hold the project at Ready until the player gives another command.
+- `world3d/blastSite.js`: disposable preview/cut boundaries, flags, hole markers and
+  animated contractor rig. Its Rapier collider follows drilling/charging and is removed
+  from collision before firing. Fired cuts use ordinary terrain chunks/colliders, dust
+  particles and the new synthesised `quarryBlast` sound. The map and countdown HUD read
+  the same project. Interact (E by default) aborts a countdown directly in the field.
+- `ui/game/laptop/blasting.js`: sampled field map plus authoritative cut quote, staged
+  controls, live clearance and bounded receipts. Preview ownership ends on tab/overlay
+  disposal. `game/logbook.js` and Operations reports show rock cuts/loosened tonnage;
+  Bank labels crew costs as operating expenditure.
+- `blasting/blasting.test.js` covers conservation, finite reserve, stale surveys,
+  re-entrant/invalid actions, stage costs, live clearance, aborted countdowns, save/reload,
+  cancellation and legacy defaults. `world3d/blastSite.test.js` exercises actual Rapier
+  rig colliders, previews and cleanup. `browser-checks/blasting.mjs` checks the UI,
+  physical-world provider, Continue, and rubble-to-bay-to-crusher action integration
+  using explicit earthmoving, money, position and clock fixtures. `blast-controls.mjs`
+  verifies real keyboard dispatch and the narrow layout, which prioritises active controls.

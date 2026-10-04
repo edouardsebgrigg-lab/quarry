@@ -77,6 +77,7 @@ export function createAudio({ volume = 0.8 } = {}) {
       boom: [toBuffer(S.metalBoom(sr))],
       thud: [1, 2].map((k) => toBuffer(S.thud(sr, 0.35, 50 + k))),
       clunk: [toBuffer(S.clunk(sr))],
+      blast: [toBuffer(S.quarryBlast(sr))],
       hiss: [toBuffer(S.airHiss(sr))],
       shovel: [1, 2, 3].map((k) => toBuffer(S.shovelBite(sr, 90 + k))),
       soil: [1, 2, 3].map((k) => toBuffer(S.soilPour(sr, 0.6, 95 + k))),

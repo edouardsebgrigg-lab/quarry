@@ -748,6 +748,36 @@ export function createGround(groundData, plotId, opts = {}) {
     return found;
   }
 
+  // A game blast changes finite bank rock into loose rock in the same columns.
+  // Preview and commit use the identical footprint; neither excavates or deletes cover.
+  function fracturePlan({ x, z, radius, depth, maxCover = 0 } = {}) {
+    const fail = reason => ({ ok: false, reason, cells: [], tonnes: 0 });
+    if (![x,z,radius,depth,maxCover].every(Number.isFinite) || radius < cell || depth <= 0 || maxCover < 0) return fail('Choose a valid rock cut');
+    if (!api.workable(x-radius,z-radius) || !api.workable(x+radius,z+radius)) return fail('Keep the whole cut inside your field');
+    const cells = [], fingerprint = [];
+    let covered = 0, built = false, coverDepth = 0, tonnes = 0;
+    cellsInRadius(x,z,radius,k => {
+      const cover = height(k)-bed[k];
+      coverDepth = Math.max(coverDepth,cover);
+      if (cover > maxCover + 1e-6) covered++;
+      if (disturbed[k] & 2) built = true;
+      // Float32-rounded bed height is also used when measuring the released mass.
+      const floor = bedBase[k]-rockDepth;
+      let bottom = Math.fround(Math.max(floor,bed[k]-depth));
+      // Round toward the remaining reserve, never below its finite floor.
+      if (bottom < floor) bottom = Math.fround(bottom + Math.max(1,Math.abs(bottom))*2**-23);
+      const take = Math.max(0,bed[k]-bottom);
+      cells.push({ k, bottom, tonnes: take*area*bankDensity[bedMat] });
+      tonnes += take*area*bankDensity[bedMat];
+      fingerprint.push([k,bed[k],loose[k],fill[k],disturbed[k]&2,...nat.map(l=>l[k])]);
+    });
+    const reason = built ? 'Choose unbuilt ground, away from graded roads and ramps'
+      : covered ? `Strip the cover and clear loose rubble first (${coverDepth.toFixed(2)} m remains)`
+      : tonnes <= 1e-6 ? 'This cut has reached the bottom of the rock reserve' : null;
+    return { ok: !reason, reason, cells, tonnes, coverDepth, coveredCells: covered,
+      cellCount: cells.length, signature: JSON.stringify(fingerprint), material: mats[bedMat] };
+  }
+
   // ---------------------------------------------------------------- API
   const api = {
     materials: mats,
@@ -824,6 +854,27 @@ export function createGround(groundData, plotId, opts = {}) {
     },
     materialResponseAt: (x, z, opts = {}) => response(cellAt(x, z), opts.moisture),
     digResistanceAt: (x, z, opts = {}) => response(cellAt(x, z), opts.moisture).resistance,
+
+    planFracture(spec) {
+      const { cells: _cells, ...plan } = fracturePlan(spec);
+      return plan;
+    },
+    fracture(spec, expectedSignature) {
+      const plan = fracturePlan(spec);
+      if (!plan.ok) { const { cells: _cells, ...result } = plan; return result; }
+      if (expectedSignature !== plan.signature) return { ok:false,reason:'The surveyed ground changed; survey a fresh cut' };
+      for (const c of plan.cells) {
+        if (c.tonnes <= 0) continue;
+        bed[c.k] = c.bottom;
+        const volumes = new Float64Array(M);
+        volumes[bedMat] = c.tonnes/looseDensity[bedMat];
+        addLoose(c.k,volumes);
+        disturbed[c.k] = 1;
+        changed(c.k);
+        activateAround(c.k);
+      }
+      return {ok:true,tonnes:plan.tonnes,material:plan.material,cells:plan.cellCount};
+    },
 
     // A cutting edge sweeps a strip, rather than drilling a circular bowl at every sample.
     // Force is kN; scarce breakout force takes a smaller bite. Only a breaker cuts intact rock.

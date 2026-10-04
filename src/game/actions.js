@@ -18,6 +18,7 @@ import { pinMilestone, unpinMilestone } from '../career/index.js';
 import { quoteProduction, startProduction, cancelProduction, saveProductionPlan, upgradePlant, servicePlant, queueProduction, pauseProductionQueue, removeQueuedProduction, moveQueuedProduction, setProductionCashReserve } from '../production/index.js';
 import { setWorkArea, recordSurvey } from '../quarry/index.js';
 import { quoteBuyerDelivery, navigateBuyer } from '../trade/index.js';
+import { quoteBlast, startBlast, chargeBlast, fireBlast, abortBlast, cancelBlast, blastClearance } from '../blasting/index.js';
 
 export const DEFAULT_COMPANY = 'Wolds Quarry Co.';
 
@@ -27,6 +28,13 @@ export function createActions(ctx) {
   const fleetValue = () => ctx.state.machines.reduce((a, m) => a + resaleValue(ctx, m), 0);
 
   return {
+    quoteBlast: request => quoteBlast(ctx,request),
+    startBlast: request => startBlast(ctx,request),
+    chargeBlast: id => chargeBlast(ctx,id),
+    fireBlast: id => fireBlast(ctx,id),
+    abortBlast: id => abortBlast(ctx,id),
+    cancelBlast: id => cancelBlast(ctx,id),
+    blastClearance: id => blastClearance(ctx,id),
     upgradeStockpile: id => upgradeStockpile(ctx,id),
     queueProduction: (request,options) => queueProduction(ctx,request,options),
     pauseProductionQueue: (plantId,paused) => pauseProductionQueue(ctx,plantId,paused),

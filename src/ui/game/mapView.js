@@ -119,6 +119,13 @@ export function createMapView({ world }) {
     for (const area of info.workAreas ?? []) {
       if (area.id === info.activeWorkAreaId) rect(area, 'rgba(245,184,46,.25)', '#ffd775');
     }
+    if(info.blast) {
+      const p=info.blast;
+      for(const r of [p.spec.radius,p.clearance]) {
+        g.beginPath();g.arc(sx(p.spec.x),sy(p.spec.z),r*scale,0,Math.PI*2);
+        g.strokeStyle='#ff9b61';g.lineWidth=2;g.stroke();
+      }
+    }
     rect(map.home.yard, 'rgba(170, 160, 140, 0.8)');
     rect(map.depot.yard, 'rgba(170, 160, 140, 0.8)', 'rgba(255,255,255,0.35)');
     rect(map.dealer.yard, 'rgba(170, 160, 140, 0.8)');

@@ -399,6 +399,18 @@ export function thud(sr, seconds = 0.35, seed = 12) {
   return normalize(mix([low, 1], [knock, 0.6]), 0.9);
 }
 
+// Quarry cut: a low impact followed by falling rubble, with a softened attack.
+export function quarryBlast(sr, seed = 211) {
+  const n=Math.round(sr*2.8),r=rng(seed),noise=filter(white(n,r),'lowpass',360,.7,sr);
+  const grit=filter(white(n,r),'bandpass',1300,.6,sr),out=new Float32Array(n);
+  for(let i=0;i<n;i++) {
+    const t=i/sr,attack=Math.min(1,t/.012),tail=Math.min(1,(n-i)/(sr*.15));
+    out[i]=attack*tail*(noise[i]*Math.exp(-t/.55)+Math.sin(t*2*Math.PI*48)*Math.exp(-t/.22)*.35
+      +grit[i]*Math.min(1,t/.2)*Math.exp(-t/.8)*.23);
+  }
+  return normalize(out,.85);
+}
+
 // Gear change: a short metallic clunk.
 export function clunk(sr, seed = 13) {
   const n = Math.round(0.25 * sr);

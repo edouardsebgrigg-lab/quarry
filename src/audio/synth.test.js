@@ -53,7 +53,7 @@ describe('sound synthesis', { timeout: 30000 }, () => {
   it('builds one-shot sounds', () => {
     for (const buf of [S.starter(SR), S.rockPour(SR), S.metalBoom(SR), S.thud(SR), S.clunk(SR), S.airHiss(SR),
       S.footstep(SR), S.footstep(SR, { surface: 'grass' }), S.birdCall(SR), S.coin(SR), S.chime(SR), S.shovelBite(SR),
-      S.soilPour(SR), S.soilPour(SR, 1.6)]) check(buf);
+      S.soilPour(SR), S.soilPour(SR, 1.6), S.quarryBlast(SR)]) check(buf);
   });
 
   it('is deterministic for a given seed', () => {

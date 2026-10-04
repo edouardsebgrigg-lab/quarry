@@ -149,6 +149,9 @@ export function createFeedback({ game, getMoneyNode, settings = {} }) {
       const what = data.materials[e.productId].name.toLowerCase();
       message(`Sold ${e.tonnes < 1 ? `${Math.round(e.tonnes * 1000)} kg` : tonnes(e.tonnes)} of ${what} (${e.grade.toLowerCase()}) for ${money(e.revenue)}${e.buyerId?` to ${data.trade.buyers[e.buyerId].name}`:''}`, 'good');
     }),
+    game.events.on('blastPrepared',e=>toast(e.stage==='drilled'?'Rock cut drilled. Book charging in Quarry operations.':'Rock cut charged. Clear the field, then start the countdown.','good')),
+    game.events.on('blastAborted',e=>toast(`Countdown stopped: ${e.reason}`,'warn')),
+    game.events.on('blastFired',e=>toast(`${e.tonnes.toFixed(1)} t of rock loosened. Load the rubble with your bucket.`,'good')),
     game.events.on('productionCompleted', (e) => {
       const plant = data.production.plants[e.plantId].name;
       const bay = data.buildings.stockpiles.bays.find(b=>b.id===e.outputBay).name;

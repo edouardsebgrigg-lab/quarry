@@ -4,6 +4,7 @@ import { getDate } from '../../../core/index.js';
 import { ownsBuilding, stockpileLoad, stockpileRoom, stockpileConfig } from '../../../buildings/index.js';
 import { pileTotal, workAreas, surveyWorkArea, activeWorkArea } from '../../../quarry/index.js';
 import { bestDeliveryQuote } from '../../../economy/index.js';
+import { blastingPanel } from './blasting.js';
 import { productionQueuePanel } from './productionQueue.js';
 import { plantStatus, validateProductionPlan, productionQueue } from '../../../production/index.js';
 
@@ -11,14 +12,14 @@ const materialsText = (data, load) => Object.entries(load).filter(([,t]) => t > 
   .map(([id,t]) => `${data.materials[id]?.name ?? id}: ${tonnes(t)}`).join(' · ');
 const timeText = hours => `${Math.max(1,Math.ceil(hours*60))} game min`;
 
-export function operationsApp({ game, feedback, setHead, openApp }) {
+export function operationsApp({ game, feedback, setHead, openApp, world }) {
   const { data, ctx } = game;
   setHead('Quarry operations', 'Plan your dig, manage the yard and turn extracted material into saleable products');
   const node = el('div', { class: 'quarry-operations' });
   const tabs = el('nav', { class: 'lt-chips qo-tabs', 'aria-label': 'Quarry operations sections' });
   const body = el('div', { class: 'qo-body' });
   node.append(tabs,body);
-  let section = 'yard', refreshSection = () => {};
+  let section = 'yard', refreshSection = () => {}, disposeSection = () => {};
   const notify = r => { if (!r.ok) feedback?.message(r.reason,'warn'); return r.ok; };
   const jump = el('button', { class: 'lt-link', onClick: () => openApp('dealer') }, 'Open plant dealer');
   const heading = (title, text) => el('div', { class: 'qo-intro' }, el('h3',{},title),el('p',{class:'lt-note'},text));
@@ -149,6 +150,8 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
     };
   }
 
+  function blasting() {const panel=blastingPanel({game,world,feedback});body.append(panel.node);refreshSection=panel.refresh;disposeSection=panel.dispose;}
+
   function schedule() {const panel=productionQueuePanel({game,feedback});body.append(panel.node);refreshSection=panel.refresh;}
 
   function history() {
@@ -179,7 +182,7 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
 
   function survey() {
     const grid=el('div',{class:'qo-area-grid'}), detail=el('div',{class:'lt-card qo-survey'});
-    body.append(heading('Choose where to work','Nine borehole samples per area estimate the remaining layers above bedrock. These are approximate reserves, not guaranteed yields. Deposited heaps and compacted fill are included; intact bedrock needs a breaker.'),grid,detail);
+    body.append(heading('Choose where to work','Nine borehole samples per area estimate the remaining layers above bedrock. These are approximate reserves, not guaranteed yields. Deposited heaps and compacted fill are included; intact bedrock needs a breaker or a contractor cut.'),grid,detail);
     let selected=activeWorkArea(ctx)?.id??workAreas(ctx)[0]?.id;
     for(const area of workAreas(ctx)) {
       grid.append(el('button',{class:'qo-area',dataset:{areaId:area.id},onClick:()=>{selected=area.id;render();}},area.name));
@@ -234,7 +237,7 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
       if(!days.length)list.append(el('p',{class:'lt-note'},'Your first report starts when the company earns or spends money.'));
       for(const d of days) {
         const stats=[['Income',money(d.income)],['Running costs',money(d.spending)],['Net investment',money(d.invested??0)],
-          ['Dug',tonnes(d.tonnesDug)],['Sold',tonnes(d.tonnesSold)],['Processed',tonnes(d.processed??0)],['Deliveries',String(d.loads)],['Batches',String(d.productionBatches??0)]];
+          ['Dug',tonnes(d.tonnesDug)],['Sold',tonnes(d.tonnesSold)],['Processed',tonnes(d.processed??0)],['Deliveries',String(d.loads)],['Batches',String(d.productionBatches??0)],['Rock loosened',tonnes(d.rockLoosened??0)],['Rock cuts',String(d.blasts??0)]];
         const grid=el('div',{class:'qo-report-grid'},stats.map(([label,value])=>el('div',{},el('span',{},label),el('b',{},value))));
         list.append(el('article',{class:'lt-card qo-report'},
           el('div',{class:'qo-plant-head'},el('h3',{},`Day ${d.day}${d.day===getDate(game.state,data).day?' · Today':''}`),
@@ -244,12 +247,12 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
   }
 
   function show(id) {
-    section=id;clear(tabs);clear(body);
-    for(const [key,label] of [['yard','Yard'],['production','Production'],['schedule','Queue'],['workshop','Plant workshop'],['history','Batch history'],['survey','Work areas'],['reports','Daily reports']]) {
+    disposeSection();disposeSection=()=>{};section=id;clear(tabs);clear(body);
+    for(const [key,label] of [['yard','Yard'],['production','Production'],['schedule','Queue'],['workshop','Plant workshop'],['history','Batch history'],['survey','Work areas'],['blasting','Rock blasting'],['reports','Daily reports']]) {
       tabs.append(el('button',{class:`lt-chip ${section===key?'active':''}`,'aria-pressed':String(section===key),onClick:()=>show(key)},label));
     }
-    ({yard,production,schedule,workshop,history,survey,reports})[section]();refreshSection();
+    ({yard,production,schedule,workshop,history,survey,blasting,reports})[section]();refreshSection();
   }
   show(section);
-  return {node,refresh:()=>refreshSection(),headSet:true};
+  return {node,refresh:()=>refreshSection(),headSet:true,dispose:()=>disposeSection()};
 }

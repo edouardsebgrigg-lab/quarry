@@ -107,6 +107,9 @@ function today(ctx) {
 
 export function logbookOnEvent(ctx, type, e) {
   switch (type) {
+    case 'blastFired': {
+      const d=today(ctx);d.blasts=(d.blasts??0)+1;d.rockLoosened=round2((d.rockLoosened??0)+e.tonnes);break;
+    }
     case 'productionCompleted': {
       const d = today(ctx);
       d.processed = round2((d.processed ?? 0) + e.tonnes);

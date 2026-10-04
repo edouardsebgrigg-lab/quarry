@@ -29,6 +29,8 @@ const REASONS = {
   dev: 'Adjustment',
 };
 function describe(reason) {
+  if(reason==='blastDrilling')return 'Rock cut: drilling crew';
+  if(reason==='blastCharging')return 'Rock cut: charging crew';
   if (REASONS[reason]) return REASONS[reason];
   if (reason?.startsWith('building:')) return 'Yard building';
   if (reason?.startsWith('earthworks:')) return `Earthworks (${reason.split(':')[1]})`;

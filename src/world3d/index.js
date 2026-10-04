@@ -7,6 +7,8 @@ import { createRenderer, createEnvironment, createFrameRenderer } from './enviro
 import { createCountryside, planWorld, preloadCountryside } from './countryside.js';
 import { ownsBuilding, stockpileLoad, stockpileConfig } from '../buildings/index.js';
 import { createYardStockpiles } from './stockpiles.js';
+import { activeBlast } from '../blasting/index.js';
+import { createBlastSite } from './blastSite.js';
 import { createQuarryOperations } from './quarryOperations.js';
 import { createRegionalYards } from './regionalYards.js';
 import { quoteBuyerDelivery } from '../trade/index.js';
@@ -246,6 +248,19 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   };
   const planner = ground ? createPlanner({ scene, camera, game, heightAt, notify, obstacles: machineObstacles }) : null;
 
+  const blastSite=createBlastSite({scene,physics,game,heightAt});
+  const blastOccupants=()=>{
+    const list=machineObstacles();
+    for(const veh of vehicles.values()) {
+      const trailer=attachedTrailer(game.ctx,veh.machineId),at=trailer&&veh.trailerPlacement?.();
+      if(at)list.push({x:at.x,z:at.z,r:2.4*(getStats(data,trailer).modelScale??1),label:machineName(data,trailer)});
+    }
+    const at=current()?.position()??player.feet();
+    list.push({x:at.x,z:at.z,r:0,label:'You'});
+    return list;
+  };
+  game.ctx.blastOccupants=blastOccupants;
+
   // ---- modes: on foot, or in a machine ----
   let mode = { kind: 'foot' };
   let camMode = 'cab';
@@ -362,6 +377,12 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   // ---- single-press actions (from hotkeys) ----
   function handleAction(action) {
+    const blast=activeBlast(game.ctx);
+    if(action==='interact'&&blast?.stage==='countdown') {
+      game.actions.abortBlast(blast.id);
+      notify('Countdown stopped. The cut remains charged.','good');
+      return true;
+    }
     const v = current();
     const m = currentMachine();
     const report = (r) => { if (r && !r.ok) notify(r.reason, 'warn'); };
@@ -783,6 +804,13 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     if (wasDriving && vehicles.has(e.machineId)) enter(vehicles.get(e.machineId));
   }
   const offs = [
+    game.events.on('blastFired',e=>{
+      if(e.siteId!==siteId)return;
+      const v=data.blasting.visuals,at=new THREE.Vector3(e.at.x,heightAt(e.at.x,e.at.z)+.3,e.at.z);
+      particles.spawn(at,{count:v.dustCount,spread:e.at.radius*2,life:v.dustLife,size:v.dustSize,up:v.dustRise,color:0x9a9990,opacity:.7});
+      sounds?.play('blast',{pos:at,gain:.8});
+    }),
+    game.events.on('blastCountdown',e=>{if(e.siteId===siteId)sounds?.play('chime',{gain:.5});}),
     game.events.on('trailerAttached', e => rebuildTow(e)),
     game.events.on('trailerDetached', e => rebuildTow(e, true)),
     game.events.on('worksBuilt', () => {
@@ -1211,6 +1239,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
     particles.update(dt);
     quarryOperations.update(paused ? 0 : dt);
+    blastSite.update(paused ? 0 : dt);
     // The weather: sky, light and fog ease toward it; rain falls around you and wets the ground.
     const w = currentWeather(game.ctx);
     const settle = weatherSettle; // (debug: jump straight to the weather, for screenshots)
@@ -1391,6 +1420,11 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         machine.gear = f.shifting ? '–' : f.gear < 0 ? 'R' : String(f.gear);
       }
     }
+    const blast=activeBlast(game.ctx);
+    if(blast?.stage==='countdown') {
+      job={label:`Rock cut · ${Math.ceil(blast.remainingSeconds)} seconds`,progress:1-blast.remainingSeconds/blast.countdownSeconds};
+      prompt={key:key('interact'),text:'Stop countdown'};
+    }
     // Where the goal wants you: label, distance and bearing (radians, + = to your right).
     let guideInfo = null;
     if (guide) {
@@ -1433,6 +1467,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       barrow: hands.placement(),
       guide: guideTarget(),
       workAreas: workAreas(game.ctx),
+      blast: activeBlast(game.ctx),
       activeWorkAreaId: activeWorkArea(game.ctx)?.id ?? null,
       buyers:Object.entries(MAP.buyers).map(([id,b])=>({id,name:data.trade.buyers[id].name,...b})),
     };
@@ -1519,6 +1554,11 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     hudInfo,
     mapInfo,
     writePositions,
+    setBlastPreview:spec=>blastSite.setPreview(spec),
+    blastPoint:()=>{
+      const at=surveyInfo&&!surveyInfo.empty?surveyMarker.position:current()?.position()??player.feet();
+      return {x:at.x,z:at.z};
+    },
     plan,
     heightGrid: () => land.heightGrid(),
     lockMouse: () => mouse.lock(),
@@ -1546,6 +1586,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       player.destroy();
       yardStockpiles.destroy();
       quarryOperations.destroy();
+      blastSite.destroy();
+      if(game.ctx.blastOccupants===blastOccupants)delete game.ctx.blastOccupants;
       regionalYards.destroy();
       land.dispose();
       rain.dispose();

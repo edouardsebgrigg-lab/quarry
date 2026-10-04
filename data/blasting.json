@@ -1,0 +1,12 @@
+{
+  "maximumCover": 0.12,
+  "clearance": 14,
+  "countdownSeconds": 5,
+  "historyLimit": 20,
+  "patterns": {
+    "pocket": { "name": "Pocket cut", "radius": 2, "depth": 0.45, "drillHours": 0.3, "chargeHours": 0.1, "drillCost": 18, "chargeCost": 12 },
+    "bench": { "name": "Bench cut", "radius": 3, "depth": 0.7, "drillHours": 0.65, "chargeHours": 0.2, "drillCost": 35, "chargeCost": 24 },
+    "wide": { "name": "Wide cut", "radius": 4, "depth": 0.9, "drillHours": 1, "chargeHours": 0.3, "drillCost": 60, "chargeCost": 40 }
+  },
+  "visuals": { "dustCount": 60, "dustLife": 4, "dustSize": 1.8, "dustRise": 1.6 }
+}

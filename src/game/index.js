@@ -23,6 +23,7 @@ import { migrateFleet } from '../machinery/catalogue.js';
 import { fleetNavigationActions } from './fleetNavigation.js';
 import { productionState, tickProduction } from '../production/index.js';
 import { tradeState } from '../trade/index.js';
+import { blastingState, tickBlasting } from '../blasting/index.js';
 
 export function createGame({ data = loadData(), seed = Math.floor(Math.random() * 2 ** 31), state } = {}) {
   const events = createEventBus();
@@ -36,6 +37,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
   ctx.state.stockpiles ??= {}; // old saves start with empty yard bays
   productionState(ctx);
   tradeState(ctx);
+  blastingState(ctx);
   for (const id of Object.keys(data.market.products)) {
     ctx.state.market.products[id] ??= { trend:1,velocity:0,saturation:0,history:[] };
   }
@@ -74,6 +76,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
     tickJobs(ctx, tickSeconds(data));
     staffTick(ctx, tickSeconds(data));
     tickProduction(ctx);
+    tickBlasting(ctx);
     ctx.ground?.settle(4000);
     advanceClock(ctx);
     rentalTick(ctx);

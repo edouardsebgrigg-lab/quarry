@@ -1559,3 +1559,15 @@ body:has(.overlay-digger-tools) .feedback > :is(.mentor,.log,.toasts) { visibili
 }
 
 .qo-queue-entry { padding: 14px 0; border-top: 1px solid var(--lt-border, #34383d); }
+
+/* Contractor cuts: a compact field survey next to preparation and receipts. */
+.qo-blast-layout{display:grid;grid-template-columns:minmax(260px,1fr) minmax(260px,1fr);gap:16px;align-items:start}
+.qo-blast-map{display:block;width:100%;max-width:320px;height:auto;aspect-ratio:1;border:1px solid #68715e;border-radius:5px;cursor:crosshair;margin:12px auto}
+.qo-blast-survey .qo-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+.qo-blast-survey .qo-form label:last-child{grid-column:1/-1}
+.qo-blast-right{display:grid;gap:16px;min-width:0}
+.qo-blast-active progress{width:100%;accent-color:#dfac54;margin:12px 0}
+.qo-blast-active[hidden],.qo-blasting [hidden]{display:none}
+.qo-blast-record{padding:10px 0;border-top:1px solid #36433d}
+.qo-blast-record p{margin:5px 0}
+@media(max-width:760px){.qo-blast-layout{grid-template-columns:minmax(0,1fr)}.qo-blast-right{display:contents}.qo-blast-active{grid-row:1;scroll-margin-top:12px}}

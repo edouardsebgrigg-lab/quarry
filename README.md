@@ -377,3 +377,29 @@ raise the actual walls and increase room without moving material or cancelling r
 production/deliveries. The screener also has **Recover topsoil** and **Separate clay**
 recipes: they separate material already present in the feed, returning everything else
 to its source bay. Clean recovered topsoil can be delivered to the nursery.
+
+### Rock blasting: open a working bench
+
+In **Quarry operations → Rock blasting**, choose a point on the field map or use your
+current material survey point. Without an active survey, **Use field survey / position**
+uses where you are standing. The quote checks the whole footprint: strip topsoil, clay,
+sand and gravel first, and clear loose rubble from earlier cuts. Graded roads and ramps
+cannot be blasted.
+
+Choose a Pocket, Bench or Wide cut and book drilling. A contractor rig works in the
+marked area while game time advances. When drilling finishes, book the charging crew;
+each stage has its own displayed price and saved progress. Keep the surveyed ground
+unchanged during preparation. Cancellation keeps the money already spent.
+
+When the cut is ready, move yourself, vehicles, trailers and the wheelbarrow outside
+its orange boundary. Start the countdown from the laptop. **Stop countdown** returns
+it to Ready; **E** (Interact) also stops it immediately from the field. An occupant
+entering the area stops it too, and it will wait for a new
+firing command. Preparation and charged cuts survive Save and Continue.
+
+The cut loosens a finite amount of existing bedrock into a physical rubble heap.
+Load it with an ordinary bucket, tip it into a stockpile bay and crush or haul it as
+usual. Nothing goes straight into storage or earns a sale. Clear the rubble before
+cutting deeper; eventually that patch reaches the bottom of its rock reserve.
+**Cut records** keep costs and released tonnage; daily reports count loosened rock
+separately from material you actually excavate.
