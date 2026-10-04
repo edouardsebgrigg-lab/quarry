@@ -4,6 +4,32 @@ One short entry per task, newest at the top: the task, the agent and branch, the
 `main`, what changed, what was actually run, and what wasn't verified. Older, longer reports
 are in `docs/archive/CODEX-CHECKPOINT.md`.
 
+## 4 October 2026 · Regional and industrial expansion (Codex, `codex/quarry-expansion`)
+
+- Feature commit: `0f76c4a`. Owner-directed expansion beyond the task queue.
+- Three roadside businesses now buy real cargo at distinct prices, purity thresholds and
+  daily quotas. Public scales, delivery pads, map markers and navigation connect them to
+  a new Regional trade app. Supplier relationships improve prices; partial sales retain
+  excess on the actual truck/trailer. In-flight reservations prevent overselling demand,
+  receipts persist, and regional sales do not fulfil unrelated depot contracts.
+- Crusher/screener upgrades improve throughput and operating cost. Completed batches wear
+  the plant; paid servicing takes saved game time. Running batch quotes remain fixed and
+  output is conserved. Workshop controls and plant visuals reflect condition/upgrades.
+- Recorded work-area surveys compare sampled reserves over time without changing terrain.
+  New state defaults for older saves; player instructions and module documentation updated.
+- Checked: **454 tests in 72 files**, lint, production build, `smoke.mjs`, full
+  `quarry-upgrade.mjs`, and full `expansion.mjs`, all passing with no browser console errors.
+  Expansion checks cover actual UI upgrade/service/survey/buyer actions and Save/Continue;
+  fixture placements exercise all three public scales and world T-dispatch, including
+  quota-limited sales and retained excess. Existing production conservation, cancellation,
+  history/plans, accounting and reload/weigh/sell flows still pass.
+- Inspected desktop workshop/trade, narrow trade, and all three yard screenshots. Moved
+  scale signage beside the approach and fixed an empty survey comparison rendering “null”.
+  Evidence remains outside Git at `/workspace/.cache/quarry/expansion-shots`.
+- Limits: Chromium software rendering, Low graphics; fixtures provide funds, wear, cargo,
+  placement, shortened scale dwell and clock advancement. This is not a human driving
+  playthrough, real-GPU performance measurement, or sound-by-ear verification.
+
 ## 4 October 2026 · Production handoff (Codex, `codex/production-handoff`)
 
 - On main: `562d86c`; branch and main pushed normally and the remote main SHA
