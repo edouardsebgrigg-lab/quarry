@@ -6,6 +6,8 @@ A short tour of the code. The logic modules never touch the screen. Each module 
 | File | What's in it |
 |---|---|
 | `game.json` | Tick rate, day length, speeds, starting machines (the pickup) and site, save version |
+| `production.json` | Crusher/screener throughput, batch limits, operating costs and conserved recipes |
+| `operations.json` | Field work-area subdivision, names and survey sample density |
 | `economy.json` | Starting money, fuel price, debt interest, resale value |
 | `materials.json` | Materials you can sell (topsoil, clay, sand, gravel, mixed fill) and their base prices per tonne |
 | `market.json` | How prices swing (trend) and drop when you sell a lot (saturation) |
@@ -36,7 +38,7 @@ You can change any of these and reload the game. No code changes are needed.
 |---|---|
 | `src/core` | Game clock (ticks, days, hours), event bus, seeded random numbers, save slots with version upgrades |
 | `src/economy` | Money and debt, market prices and news, fuel, the depot (weighbridge tickets, grading a load by purity, paying for it), the bank (loans, statement, credit rating: `bank.js`) and overheads (insurance cover: `overheads.js`) |
-| `src/quarry` | Which sites you own, and helpers for loads (a load is `{ material: tonnes }`) |
+| `src/quarry` | Which sites you own, helpers for loads (`{ material: tonnes }`), named work areas, read-only current-ground borehole estimates and saved work-area navigation |
 | `src/ground` | The real, diggable ground: a grid of soil columns with layers; digging carves bowls and returns tonnes by material, dumped material piles up and slumps to its natural slope, undercut walls cave in; `planWorks` / `buildWorks` grade a strip (road, ramp, level) with side batters, conserving every tonne: cut first, then fill, then a gravel surface, then loose heaps within reach for what's missing, and the rest heaped beside; plans expose `touchesChangedCell({x,z,r})` over the actual grading jobs (including batters), skip occupied source cells and choose a clear spare-spoil footprint before mutation; built cells are firm (no slumping) until dug; wheels and tracks (`applyTraffic`, one tyre's swept path per call) compact the ground and wear the turf, faster wet, heavy or slipping, until it's torn to bare soil and only then ruts; mud grips less than dry soil (`wetTraction`); saves only the chunks that changed (turf wear as an optional extra, so older saves load with whole turf) |
 | `src/earthworks` | Building with material: what a road, ramp or level area may be (slope, length, width, price by area from `data/works.json`), the plan (what it costs and needs, changing nothing) and the build (checks machine/barrow circles against grading cells with the configured margin, charges the labour and asks the ground to do it); `worksBuilt` carries plain spoil-position data; the world re-seats the player on the new surface after grading, sourcing or spoil deposition |
 | `src/handtools` | Your shovel and wheelbarrow: digging a shovelful out of the real ground, tipping it into the barrow, the pickup's or a truck's bed or onto the ground, and tipping the barrow as a pile or into a bed. Loads are dug material measured by loose volume |
@@ -47,6 +49,7 @@ You can change any of these and reload the game. No code changes are needed.
 | `src/contracts` | The jobs board (customers want a tonnage of one clean material by a deadline, for a bonus), rush orders and regular customers' weekly standing orders |
 | `src/staff` | Employees: posts that open with progress, applicants, wages, and the four roles (digger operator, haulage driver, sales, fitter) worked each tick by `staffTick`; `perks.js` answers the sales bonus and the fitter's discount and imports nothing |
 | `src/buildings` | Yard facilities you commission (workshop, bulk fuel, home weighbridge) and their benefits; `stockpiles.js` holds the stockpile bays' contents |
+| `src/production` | Read-only batch quotes, paid crusher/screener jobs, held feed and capacity reservations, cancellation, tick-driven completion and lifetime throughput. Jobs and their input/output compositions are saved in `state.production`; stockpile room includes both held feed and future products |
 | `src/hire` | Hiring your machines out to contractors for a day rate (the machine leaves the yard while it's away) |
 | `src/rental` | Renting machines in from the dealer for a day or three, with a deposit |
 | `src/classifieds` | The Wolds Trader: private sellers' second-hand machines, some of them less good than the advert says |
@@ -62,7 +65,7 @@ You can change any of these and reload the game. No code changes are needed.
 |---|---|
 | `src/input` | Hotkeys and rebinding |
 | `src/audio` | Sound: `synth.js` builds every sound from maths (diesel engines, gravel, rocks, hydraulics, birds…), `index.js` plays them through a mixer with 3D positioning, engine voices driven by rpm and load, loops and one-shots |
-| `src/ui` | Main menu, pause menu, settings, save/load screens, HUD, 3D overlay (prompts, machine dash), the map (`mapView.js` draws the countryside from above, `mapOverlay.js` adds the places and your machines), the office laptop and its apps (`game/laptop/`: home, plant dealer, jobs board, milestones, depot prices, fleet, bank, messages), depot price board (`market.js`), dev panel, feedback effects. `game/timeGate.js` decides when the game clock may run (only while you're playing: not before the first click, not with the pointer released, the window hidden, or paused) and turns frame time into ticks without catch-up |
+| `src/ui` | Main menu, pause menu, settings, save/load screens, HUD, 3D overlay (prompts, machine dash), the map (`mapView.js` draws the countryside from above, `mapOverlay.js` adds the places and your machines), the office laptop and its apps (`game/laptop/`: home, quarry operations, plant dealer, jobs board, milestones, depot prices, fleet, bank, messages), depot price board (`market.js`), dev panel, feedback effects. `game/timeGate.js` decides when the game clock may run (only while you're playing: not before the first click, not with the pointer released, the window hidden, or paused) and turns frame time into ticks without catch-up |
 | `src/world3d` | The 3D world, described below |
 
 ### The 3D world (`src/world3d`)
@@ -74,6 +77,7 @@ You can change any of these and reload the game. No code changes are needed.
 | `farms.js` | Farmsteads out in the countryside (`map.farms`): a farmhouse and a steel barn from the Blender props, a feed silo, round straw bales, a packed-earth yard and a dirt track down to the nearest road (with a gap in the roadside hedge). Scenery only; the ground under each is levelled and trees keep to its edge |
 | `staticBatch.js` | Draws the props that never move (blocks, fences, poles, houses, barns, the machines parked in the farm fields) in batches once they're placed: a part that repeats becomes one `InstancedMesh`, the rest is merged by material per 96 m patch. Weathered machine paint is only merged, never instanced (its shader needs the mesh's own matrix) |
 | `planner.js` | The earthworks planner (F, on foot): aims at the ground, keeps the start, end, width and kind, re-plans as they change, draws the coloured strip and posts, and feeds the HUD card. Only the last click builds |
+| `quarryOperations.js` | Lightweight crusher/screener yard meshes, running status/rollers, enabled physical colliders and a reusable terrain-following boundary for the chosen work area; all owned geometry and colliders are released on teardown |
 | `groundChunks.js`, `groundMaterial.js` | Your diggable field: its chunked mesh and colliders that follow the real ground (grass worn by traffic shows as flattened tracks, then mud), and the shader that blends the ground textures |
 | `vegetation.js` | Grass tufts and weeds (streamed in around you), hedgerows, copses and lone trees |
 | `environment.js` | The renderer and its quality levels (low: no shadows; medium: soft shadows; high and ultra: soft shadows plus ambient occlusion, drawn through a small post-processing chain that leaves out see-through things like grass and glass), sky, sun, fog and the hills on the horizon |

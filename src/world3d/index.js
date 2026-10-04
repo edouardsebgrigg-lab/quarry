@@ -7,6 +7,7 @@ import { createRenderer, createEnvironment, createFrameRenderer } from './enviro
 import { createCountryside, planWorld, preloadCountryside } from './countryside.js';
 import { ownsBuilding, stockpileLoad, stockpileConfig } from '../buildings/index.js';
 import { createYardStockpiles } from './stockpiles.js';
+import { createQuarryOperations } from './quarryOperations.js';
 import { buildPlaces } from './places.js';
 import { surfaceGrip, blendedGrip } from './surfaces.js';
 import { pedalStep } from './pedals.js';
@@ -44,7 +45,7 @@ import { entryModel } from '../progression/objectives.js';
 import { contractsState } from '../contracts/index.js';
 import { barrowFill } from '../handtools/index.js';
 import { keyLabel } from '../input/index.js';
-import { pileTotal } from '../quarry/index.js';
+import { pileTotal, activeWorkArea, workAreas } from '../quarry/index.js';
 import { bucketFill, cuttingAttack } from '../machinery/digging.js';
 import { loadCarrier, combinationStats, attachedTrailer, cargoVolume } from '../machinery/trailers.js';
 import {
@@ -115,6 +116,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   for (const id of Object.keys(data.buildings)) places.setBuilding(id, ownsBuilding(game.ctx, id, siteId));
   yardStockpiles = createYardStockpiles({ scene, physics, game, map: MAP, siteId, heightAt: (x,z) => land.heightAt(x,z) });
   yardStockpiles.setOwned(ownsBuilding(game.ctx, 'stockpiles', siteId));
+  const quarryOperations = createQuarryOperations({scene,physics,game,map:MAP,heightAt});
   const farmScenery = buildFarms({ scene, physics, plan, heightAt });
   batchStatic(scene, [...places.statics, ...farmScenery.statics]); // (hundreds of prop meshes -> a few dozen draws)
   const particles = createParticles(scene);
@@ -847,6 +849,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const target = vehicles.get(navigation.attachedTo ?? navigation.id);
       if (target) { const p = target.position(); return { x:p.x,z:p.z,label:machineName(data,navigation),near:target.radius+1.5 }; }
     }
+    const area = activeWorkArea(game.ctx);
+    if (area) return { x: area.x, z: area.z, label: `${area.name} work area`, near: 5 };
     const o = currentObjective(game.ctx);
     if (!o?.guide) return null;
     const v = current();
@@ -1195,6 +1199,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     } else marker.visible = false;
 
     particles.update(dt);
+    quarryOperations.update(paused ? 0 : dt);
     // The weather: sky, light and fog ease toward it; rain falls around you and wets the ground.
     const w = currentWeather(game.ctx);
     const settle = weatherSettle; // (debug: jump straight to the weather, for screenshots)
@@ -1412,6 +1417,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       }),
       barrow: hands.placement(),
       guide: guideTarget(),
+      workAreas: workAreas(game.ctx),
+      activeWorkAreaId: activeWorkArea(game.ctx)?.id ?? null,
     };
   }
 
@@ -1522,6 +1529,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       for (const veh of vehicles.values()) veh.destroy();
       player.destroy();
       yardStockpiles.destroy();
+      quarryOperations.destroy();
       land.dispose();
       rain.dispose();
       env.dispose();

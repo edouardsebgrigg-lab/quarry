@@ -30,6 +30,7 @@ function describe(reason) {
   if (REASONS[reason]) return REASONS[reason];
   if (reason?.startsWith('building:')) return 'Yard building';
   if (reason?.startsWith('earthworks:')) return `Earthworks (${reason.split(':')[1]})`;
+  if (reason?.startsWith('production:')) return `Material processing (${reason.split(':')[1]})`;
   return reason ?? 'Payment';
 }
 const pctDay = (r) => `${(r * 100).toFixed(1)}% a day`;

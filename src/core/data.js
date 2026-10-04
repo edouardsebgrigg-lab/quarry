@@ -22,8 +22,10 @@ import staff from '../../data/staff.json';
 import rental from '../../data/rental.json';
 import handling from '../../data/handling.json';
 import presentation from '../../data/presentation.json';
+import production from '../../data/production.json';
+import operations from '../../data/operations.json';
 
 export function loadData() {
   // Deep copy so tests can tweak numbers without affecting each other.
-  return structuredClone({ game, economy, materials, market, machines, mods, sites, objectives, ground, tools, depot, works, contracts, weather, buildings, milestones, happenings, hire, classifieds, staff, rental, handling, presentation });
+  return structuredClone({ game, economy, materials, market, machines, mods, sites, objectives, ground, tools, depot, works, contracts, weather, buildings, milestones, happenings, hire, classifieds, staff, rental, handling, presentation, production, operations });
 }

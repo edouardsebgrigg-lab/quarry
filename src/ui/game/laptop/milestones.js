@@ -5,7 +5,7 @@ import { money, tonnes } from '../../format.js';
 import { milestones, ownedPerks, pinnedMilestone } from '../../../career/index.js';
 import { lineIcon } from './icons.js';
 
-const TONNES = new Set(['tonnesSold', 'tonnesDug', 'cleanTonnes', 'gravelDug']);
+const TONNES = new Set(['tonnesSold', 'tonnesDug', 'cleanTonnes', 'gravelDug', 'processedTonnes']);
 const MONEY = new Set(['bestDay', 'totalEarned']);
 
 // A metric's value as the player reads it.

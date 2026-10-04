@@ -1,0 +1,27 @@
+{
+  "plants": {
+    "crusher": {
+      "name": "Jaw crusher",
+      "building": "crusher",
+      "tonnesPerHour": 24,
+      "costPerTonne": 1,
+      "minimumBatch": 0.25,
+      "maximumBatch": 10,
+      "recipes": ["crushRock"]
+    },
+    "screener": {
+      "name": "Screening plant",
+      "building": "screener",
+      "tonnesPerHour": 40,
+      "costPerTonne": 0.8,
+      "minimumBatch": 0.25,
+      "maximumBatch": 15,
+      "recipes": ["screenGravel", "screenSand"]
+    }
+  },
+  "recipes": {
+    "crushRock": {"name": "Crush broken rock", "input": "rock", "outputs": {"gravel": 0.8, "sand": 0.2}, "description": "Broken rock becomes an 80/20 gravel and sand blend. Screen it into clean products afterwards."},
+    "screenGravel": {"name": "Separate gravel", "separate": "gravel", "description": "Recover the gravel already in a mixed batch. Other material returns to the feed bay."},
+    "screenSand": {"name": "Separate sand", "separate": "sand", "description": "Recover the sand already in a mixed batch. Other material returns to the feed bay."}
+  }
+}

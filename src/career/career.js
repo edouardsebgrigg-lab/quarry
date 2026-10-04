@@ -44,6 +44,8 @@ export function isCleanSale(ctx, sale) {
 
 // Every number a milestone can be measured by.
 const METRICS = {
+  processedTonnes: (ctx) => ctx.state.production?.processed ?? 0,
+  productionBatches: (ctx) => ctx.state.production?.batches ?? 0,
   tonnesSold: (ctx) => ctx.state.stats.tonnesSold ?? 0,
   tonnesDug: (ctx) => ctx.state.stats.tonnesDug ?? 0,
   totalEarned: (ctx) => ctx.state.stats.totalEarned ?? 0,
@@ -89,6 +91,8 @@ function milestoneProgress(ctx, m, c) {
 }
 
 const NEXT_STEPS = {
+  processedTonnes: 'Open Quarry operations to crush or screen material from your stockpile bays.',
+  productionBatches: 'Commission a plant, tip feed into a bay and start batches in Quarry operations.',
   tonnesSold: 'Load a road vehicle, weigh in and sell at the depot.',
   tonnesDug: 'Dig fresh ground on your land, by hand or by machine.',
   gravelDug: 'Dig below the topsoil and the clay or sand to reach gravel.',

@@ -20,10 +20,12 @@ import { fleetApp } from './fleet.js';
 import { messagesApp } from './messages.js';
 import { jobsApp } from './jobs.js';
 import { milestonesApp } from './milestones.js';
+import { operationsApp } from './operations.js';
 import { unseenMilestones, markMilestonesSeen } from '../../../career/index.js';
 
 const APPS = [
   { id: 'home', label: 'Home', icon: 'home', make: homeApp },
+  { id: 'operations', label: 'Quarry operations', icon: 'building', make: operationsApp },
   { id: 'dealer', label: 'Plant dealer', icon: 'digger', make: dealerApp },
   { id: 'classifieds', label: 'Wolds Trader', icon: 'tag', make: classifiedsApp },
   { id: 'jobs', label: 'Jobs board', icon: 'clipboard', make: jobsApp },

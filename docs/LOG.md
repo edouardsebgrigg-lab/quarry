@@ -4,6 +4,41 @@ One short entry per task, newest at the top: the task, the agent and branch, the
 `main`, what changed, what was actually run, and what wasn't verified. Older, longer reports
 are in `docs/archive/CODEX-CHECKPOINT.md`.
 
+## 4 October 2026 · Working Quarry upgrade (Codex, `codex/quarry-upgrade`)
+
+- Plan in `docs/UPGRADE-PLAN.md`; builds on Claude's completed ground/driving,
+  realism and cleanup work at `d944458`.
+- Nine named field areas sample the actual remaining geological columns. Selection
+  is saved, marks the map/field and reuses the guide; fleet navigation can replace it.
+  Refresh reads current terrain without changing reserves or adding resources.
+- Commission a jaw crusher and screening plant through the yard dealer. Paid,
+  tick-driven batches consume actual stockpile feed, retain every output/reject
+  tonne, reserve product and cancellation space, and survive Save/Continue.
+  Cancel returns feed without refunding the operating cost. Processing is not a
+  sale or another digging reward; normal loading and depot hauling are required.
+- Quarry operations brings together live bay inventories/values, production
+  quotes and active batches, sampled work areas and existing daily logbook reports.
+  Three optional milestones reward production. Lightweight visible yard plants,
+  status lights and a terrain-following area boundary release their GPU resources
+  and colliders on teardown. Added a favicon to remove Chromium's missing-icon error.
+- Checked: 437 unit tests in 70 files, lint, build, `smoke.mjs` and the new
+  `quarry-upgrade.mjs`. Real dealer/UI buttons buy plants and start/cancel batches;
+  Save/Continue preserves held feed, jobs and money. The labelled extraction
+  fixture relocates real overburden, obtains finite bedrock with breaker cuts and
+  asserts ground/feed conservation; developer cash and explicit tick advancement
+  keep the browser check bounded. A 1 t rock batch yields 0.8 t gravel + 0.2 t sand;
+  screening retains the sand and recovers the gravel, with both batches in the report.
+- Looked at local screenshots: work-area selection and both plants in the yard,
+  desktop production, narrow production/report layouts (no horizontal overflow).
+  An external fixture also checks purchased meshes and the selected boundary are
+  visible. Screenshots remain outside the checkout; both browser checks report no
+  console errors. An initial extraction assertion read the consumed transfer
+  object; preserving its receipt fixed the fixture, with conservation still checked.
+- Not checked: manual driving/digging or physical loading of processed output,
+  real GPU performance, sound by ear, a long normal-money business session,
+  offline production (deliberately unsupported) or the private Claude artifact.
+  Existing H-6 Medium+ field rendering coverage remains outstanding.
+
 ## 4 October 2026 · Ground, grass and driving (Claude, `claude/ground-driving`)
 
 - Grip-limited wheels: each wheel's braking and drive is capped by its surface friction times

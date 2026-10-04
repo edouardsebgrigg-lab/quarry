@@ -1517,3 +1517,40 @@ body:has(.overlay-digger-tools) .feedback > :is(.mentor,.log,.toasts) { visibili
 .lt-row > .btn.lt-sell { min-width: 11.5rem; justify-content: center; }
 /* Inside the laptop, a notice doesn't need to say "(laptop: Fleet)". */
 .lt-notices .log-where { display: none; }
+.quarry-operations { display: grid; gap: 1rem; min-width: 0; }
+.qo-tabs { flex-wrap: wrap; }
+.qo-body { display: grid; gap: 1rem; min-width: 0; }
+.qo-intro h3, .qo-body h3 { margin: 0 0 .5rem; }
+.qo-intro p { margin-bottom: 0; }
+.qo-bays, .qo-plants { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 1rem; }
+.qo-bay-amount { font-size: 1.3rem; font-weight: 650; margin: .6rem 0; }
+.qo-body progress { width: 100%; height: .65rem; accent-color: var(--accent); }
+.qo-value { font-weight: 600; font-size: .85rem; }
+.qo-actions, .qo-plant-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .7rem; }
+.qo-actions { margin-top: .75rem; }
+.qo-plant-state { color: var(--muted); font-size: .75rem; }
+.qo-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; margin: .8rem 0; }
+.qo-field { display: grid; gap: .4rem; min-width: 0; font-size: .8rem; }
+.qo-field input { width: 100%; min-width: 0; padding: .55rem .65rem; box-sizing: border-box; }
+.qo-quote { border-top: 1px solid var(--line); padding-top: .7rem; }
+.qo-quote > div, .qo-reserves > div { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .4rem; }
+.qo-quote > div { font-size: .85rem; }
+.qo-quote p { margin-bottom: .4rem; }
+.qo-reason { color: var(--muted); font-size: .85rem; }
+.qo-running { display: grid; gap: .7rem; }
+.qo-running:empty { display: none; }
+.qo-job progress { margin: .6rem 0; }
+.qo-job h3 { margin: 0; }
+.qo-area-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+.qo-area { color: var(--text); border: 1px solid var(--line); background: rgba(255,255,255,.035); border-radius: 8px; min-height: 3.5rem; font: inherit; font-size: .85rem; padding: .65rem; }
+.qo-area[aria-pressed=true] { background: rgba(245,184,46,.16); border-color: var(--accent); color: var(--accent); }
+.qo-reserves { margin: 1rem 0; font-size: .9rem; }
+.qo-reports { display: grid; gap: .8rem; }
+.qo-report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); gap: .8rem; margin-top: .9rem; }
+.qo-report-grid > div { display: grid; gap: .3rem; }
+.qo-report-grid span { color: var(--muted); font-size: .8rem; }
+@media (max-width: 560px) {
+  .qo-form { grid-template-columns: 1fr; }
+  .qo-area { font-size: .7rem; padding: .45rem; }
+  .qo-plant-head { align-items: flex-start; }
+}

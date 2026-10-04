@@ -16,6 +16,7 @@ export function buyBuilding(ctx, id) {
   const siteId = ctx.state.currentSiteId;
   if (ctx.data.sites[siteId]?.groundPlot !== 'home') return { ok: false, reason: 'These facilities belong to your home yard' };
   if (ownsBuilding(ctx, id)) return { ok: false, reason: 'Already commissioned at this site' };
+  if ((cfg.requires ?? []).some(required => !ownsBuilding(ctx, required))) return { ok: false, reason: 'Commission stockpile bays first' };
   const price = dealerPrice(ctx, cfg.price);
   if (!canAfford(ctx, price)) return { ok: false, reason: 'Not enough money' };
   const sites = (ctx.state.buildings ??= {});

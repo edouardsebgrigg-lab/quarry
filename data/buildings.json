@@ -38,5 +38,21 @@
     "name": "Home weighbridge",
     "price": 400,
     "description": "Weigh loaded road vehicles at your gate and see the current depot quote. The ticket lets you drive straight to the depot bays; changing or tipping the load clears it."
+  },
+  "crusher": {
+    "name": "Jaw crusher",
+    "price": 1800,
+    "requires": [
+      "stockpiles"
+    ],
+    "description": "Turn broken rock from a stockpile into an 80/20 gravel and sand blend. Paid, timed batches; stockpile bays required."
+  },
+  "screener": {
+    "name": "Screening plant",
+    "price": 1200,
+    "requires": [
+      "stockpiles"
+    ],
+    "description": "Separate gravel or sand from mixed stockpile material. Rejects remain yours in the feed bay. Stockpile bays required."
   }
 }

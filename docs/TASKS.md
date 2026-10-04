@@ -33,6 +33,10 @@ about playing it properly and fixing what gets in the way.
 
 ## In progress
 
+- [ ] **U-1 Working Quarry upgrade** (Codex, `codex/quarry-upgrade`): surveyed work
+      areas, conserved crushing/screening, yard operations, daily reports and
+      optional production goals. Plan: `docs/UPGRADE-PLAN.md`.
+
 - [ ] **G-1 Ground, grass and driving** (Claude, `claude/ground-driving`): grip-limited wheels
       (lockups, wheelspin, body roll), dry and wet surface grip in data, turf that wears into
       tyre tracks and mud, grass tufts on the field, a pedal ramp and light-pedal key.

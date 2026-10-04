@@ -15,6 +15,8 @@ import { hireApplicant, assignWorker, dismissWorker, configureHaul } from '../st
 import { attachTrailer, detachTrailer } from '../machinery/trailers.js';
 import { setDiggerAttachment } from '../machinery/fleet.js';
 import { pinMilestone, unpinMilestone } from '../career/index.js';
+import { quoteProduction, startProduction, cancelProduction } from '../production/index.js';
+import { setWorkArea } from '../quarry/index.js';
 
 export const DEFAULT_COMPANY = 'Wolds Quarry Co.';
 
@@ -88,6 +90,10 @@ export function createActions(ctx) {
     buildWorks: (input) => buildEarthworks(ctx, input),
 
     buyBuilding: (id) => buyBuilding(ctx, id),
+    quoteProduction: (request) => quoteProduction(ctx, request),
+    startProduction: (request) => startProduction(ctx, request),
+    cancelProduction: (id) => cancelProduction(ctx, id),
+    setWorkArea: (id) => setWorkArea(ctx, id),
 
     // The bank: what you could borrow, take a loan ({ amount, days } from the offers), pay one off.
     loanOffers: () => bankLoanOffers(ctx, fleetValue()),

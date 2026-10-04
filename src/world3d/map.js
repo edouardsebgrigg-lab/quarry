@@ -30,6 +30,7 @@ export const MAP = {
   // Your land: the field (the diggable ground plot, data/ground.json "home") and the yard.
   home: {
     name: 'Home Field',
+    production: { crusher: { x: 160, z: 46 }, screener: { x: 202, z: 46 } },
     plot: { x0: 0, x1: 152, z0: 0, z1: 152 },
     yard: { x0: 158, x1: 204, z0: -14, z1: 54 },
     stockpiles: [{ id: 'west', x0: 166, x1: 175, z0: 42, z1: 52 }, { id: 'middle', x0: 178, x1: 187, z0: 42, z1: 52 }, { id: 'east', x0: 190, x1: 199, z0: 42, z1: 52 }],

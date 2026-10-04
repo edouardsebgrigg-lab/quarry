@@ -182,6 +182,37 @@ All sound is generated in code (no recordings): engines by rpm and load, gear ch
 
 ## Building with material
 
+### Quarry operations: plan, process and grow
+
+Open the office laptop and choose **Quarry operations** (also linked from Home).
+The **Work areas** tab divides the field into nine areas and samples their actual
+remaining layers. Compare approximate reserves, overburden and depth to bedrock,
+then **Set as work area** to mark it in the field and on the map. **Refresh survey**
+reads the ground again after digging. The survey is an estimate; it does not create
+resources. Choosing a machine waypoint or **Follow current goal** clears the area guide.
+
+Commission **Stockpile bays**, then a **Jaw crusher** or **Screening plant** in the
+plant dealer's Yard buildings section. Tip feed into a bay using the normal vehicle
+or digger controls. In **Production**, choose the recipe, different feed/product
+bays and batch size. The live quote shows operating cost, game time, products,
+rejects and the indicative change in today's depot value.
+
+- The crusher needs clean **broken rock** and makes an **80% gravel / 20% sand** blend.
+- The screener recovers the gravel or sand already in a mixed batch. Other material
+  returns to the feed bay; every tonne remains accounted for.
+- Batches reserve both finished-product space and room to return their held feed.
+  Costs are paid at the start. **Cancel batch** returns the feed without refunding
+  the operating cost. One batch runs per plant, and both plants can work together.
+- Production runs on game time, stops with the game clock and resumes after
+  **Save/Continue**. It does not simulate progress while the game is closed.
+- Finished material still needs loading and hauling to the depot. Processing is
+  not a sale; prices, purity and saturation determine what it actually earns.
+
+The **Yard** tab shows composition, free/reserved space and today's depot quotes.
+**Daily reports** separates trading income, running costs and investment, alongside
+digging, sales, completed batches and processed tonnes. Three optional production
+milestones reward your first batch and growing throughput; no contract is required.
+
 Press **F** on foot to plan works on your field: a **haul road**, a **ramp** (steeper, for getting out of a pit) or a **level area** (flattens a patch, filling holes). Aim at the ground and click where it starts and where it ends; a coloured strip shows the finished surface (green: you can build it, amber: you can't afford it yet, red: it can't be built, with the reason on the card). The card says the slope, the price (labour, per square metre) and the material: what has to be dug out, the gravel for the surface and where it comes from.
 
 Nothing is made from nothing. The strip is cut or filled to the planned grade, gravel for the surface and any fill still needed are taken from **loose heaps within 30 m** of it (tip gravel there first: off the truck, the dumper, the barrow or a bucket), and whatever the cut left over is heaped beside the road, never lost. Roads and ramps are topped with a loose gravel surface (vehicles use the game's gravel driving behaviour: it rolls easier than dirt or grass); a built strip is firm, so it doesn't slump, but digging into it breaks it up again. Roads can be up to 10% slope, ramps 18%. Move machines and the wheelbarrow clear of the cells being graded, including the side slopes (with a 0.5 m safety margin). You can stand at the start post to build: your feet are placed on the new surface. You can't build on rock or at the edge of your land. Built ground is saved with the game.

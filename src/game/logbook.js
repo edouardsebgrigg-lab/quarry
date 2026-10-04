@@ -107,6 +107,12 @@ function today(ctx) {
 
 export function logbookOnEvent(ctx, type, e) {
   switch (type) {
+    case 'productionCompleted': {
+      const d = today(ctx);
+      d.processed = round2((d.processed ?? 0) + e.tonnes);
+      d.productionBatches = (d.productionBatches ?? 0) + 1;
+      break;
+    }
     case 'rockDug': {
       machineLog(ctx, e.machineId).tonnesDug = round2(machineLog(ctx, e.machineId).tonnesDug + e.tonnes);
       today(ctx).tonnesDug = round2(today(ctx).tonnesDug + e.tonnes);

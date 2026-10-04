@@ -116,6 +116,9 @@ export function createMapView({ world }) {
       }
     };
     rect(map.home.plot, 'rgba(120, 96, 60, 0.55)', '#f5b82e');
+    for (const area of info.workAreas ?? []) {
+      if (area.id === info.activeWorkAreaId) rect(area, 'rgba(245,184,46,.25)', '#ffd775');
+    }
     rect(map.home.yard, 'rgba(170, 160, 140, 0.8)');
     rect(map.depot.yard, 'rgba(170, 160, 140, 0.8)', 'rgba(255,255,255,0.35)');
     rect(map.dealer.yard, 'rgba(170, 160, 140, 0.8)');

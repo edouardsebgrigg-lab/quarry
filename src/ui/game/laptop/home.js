@@ -13,7 +13,7 @@ import { hireState } from '../../../hire/index.js';
 import { staffState, openSlots } from '../../../staff/index.js';
 import { milestones, pinnedMilestone } from '../../../career/index.js';
 
-const targetAmount = (metric, value) => ['tonnesSold', 'tonnesDug', 'cleanTonnes', 'gravelDug'].includes(metric) ? tonnes(value)
+const targetAmount = (metric, value) => ['tonnesSold', 'tonnesDug', 'cleanTonnes', 'gravelDug', 'processedTonnes'].includes(metric) ? tonnes(value)
   : ['bestDay', 'totalEarned'].includes(metric) ? money(value) : metric === 'roadMetres' ? `${Math.round(value)} m` : String(Math.floor(value));
 
 export function homeApp({ game, openApp, setHead }) {
@@ -142,6 +142,7 @@ export function homeApp({ game, openApp, setHead }) {
     goalCard,
     upcomingCard,
     el('div', { class: 'lt-shortcuts' },
+      shortcut('building', 'Quarry operations', 'Work areas, stockpiles and production', 'operations'),
       shortcut('digger', 'Plant dealer', 'Machines, upgrades, yard buildings', 'dealer'),
       shortcut('chart', 'Milestones', 'Choose what to work towards next', 'milestones'),
       shortcut('chart', 'Depot prices', 'What each material sells for today', 'prices'),

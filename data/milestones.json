@@ -3,7 +3,8 @@
     "selling": "Selling",
     "digging": "Digging",
     "building": "Building",
-    "business": "Business"
+    "business": "Business",
+    "production": "Production"
   },
   "perks": {
     "depotAccount": {
@@ -56,6 +57,9 @@
     { "id": "credit80", "group": "business", "title": "Good with money", "text": "Reach an Excellent credit rating with the bank.", "metric": "creditScore", "target": 80, "reward": 200 },
     { "id": "loan1", "group": "business", "title": "Paid in full", "text": "Pay off a bank loan.", "metric": "loansCleared", "target": 1, "reward": 75 },
     { "id": "earned10k", "group": "business", "title": "Ten grand", "text": "Earn $10,000 in total.", "metric": "totalEarned", "target": 10000, "reward": 500 },
-    { "id": "earned50k", "group": "business", "title": "Fifty grand", "text": "Earn $50,000 in total.", "metric": "totalEarned", "target": 50000, "reward": 2000 }
+    { "id": "earned50k", "group": "business", "title": "Fifty grand", "text": "Earn $50,000 in total.", "metric": "totalEarned", "target": 50000, "reward": 2000 },
+    {"id": "batch1", "group": "production", "title": "First finished product", "text": "Complete a crushing or screening batch.", "metric": "productionBatches", "target": 1, "reward": 60},
+    {"id": "processed25", "group": "production", "title": "Working quarry", "text": "Process 25 tonnes through your yard plants.", "metric": "processedTonnes", "target": 25, "reward": 200},
+    {"id": "processed250", "group": "production", "title": "Aggregate producer", "text": "Process 250 tonnes through your yard plants.", "metric": "processedTonnes", "target": 250, "reward": 750}
   ]
 }
