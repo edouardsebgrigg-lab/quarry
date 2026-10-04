@@ -10,6 +10,7 @@ import { createYardStockpiles } from './stockpiles.js';
 import { buildPlaces } from './places.js';
 import { surfaceGrip, blendedGrip } from './surfaces.js';
 import { pedalStep } from './pedals.js';
+import { createTyreMarks, markFor } from './tyreMarks.js';
 import { batchStatic } from './staticBatch.js';
 import { buildFarms, farmClearRect, farmWorkRect, farmTrees, farmTrack } from './farms.js';
 import { createParticles } from './particles.js';
@@ -117,6 +118,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const farmScenery = buildFarms({ scene, physics, plan, heightAt });
   batchStatic(scene, [...places.statics, ...farmScenery.statics]); // (hundreds of prop meshes -> a few dozen draws)
   const particles = createParticles(scene);
+  const tyreMarks = createTyreMarks(scene, { max: settings.graphics === 'low' ? 2000 : 4000 });
   const rain = createRain(scene);
   const workLight = createWorkLight(scene);
   let rainFelt = 0;
@@ -577,6 +579,38 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   // tyre (or track) is followed from where it was last marked, a metre at a time, with the load
   // it carries and how much it's slipping. A wheel spinning on the spot digs in where it is.
   const TRACK_STEP = 1;
+  // What each wheel and track leaves on the surface it crosses (tyreMarks.js), every 40 cm.
+  const marks = new Map();
+  function markTracks(veh) {
+    const f = veh.feel();
+    const wet = groundWeather.wet.value;
+    let points;
+    if (veh.wheelContacts) {
+      const side = Math.min(1, (f.slip ?? 0) * 0.6);
+      points = veh.wheelContacts().map((c) => ({ key: c.i, x: c.x, y: c.y, z: c.z, width: Math.min(0.55, 0.12 + veh.radius * 0.07),
+        slide: Math.max(side, f.locked ? 0.85 : 0, c.driven ? f.wheelspin ?? 0 : 0) }));
+    } else {
+      const p = veh.position();
+      const yaw = veh.digger ? veh.houseWorldYaw?.() ?? veh.yaw() : veh.yaw();
+      const sx = Math.sin(yaw), sz = Math.cos(yaw);
+      const gauge = veh.radius * 0.38;
+      points = [-1, 1].map((s) => {
+        const x = p.x + sx * gauge * s, z = p.z + sz * gauge * s;
+        return { key: s, x, y: heightAt(x, z), z, width: veh.radius * 0.22, slide: 0 };
+      });
+    }
+    let t = marks.get(veh.machineId);
+    if (!t) marks.set(veh.machineId, t = new Map());
+    for (const p of points) {
+      const last = t.get(p.key);
+      const d = last ? Math.hypot(p.x - last.x, p.z - last.z) : 0;
+      if (!last || d > 4) { t.set(p.key, { x: p.x, y: p.y, z: p.z }); continue; }
+      if (d < 0.4) continue;
+      const look = markFor(groundSurface(p.x, p.z).name, wet, p.slide);
+      if (look) tyreMarks.add({ x0: last.x, y0: last.y, z0: last.z, x1: p.x, y1: p.y, z1: p.z, width: p.width, ...look });
+      Object.assign(last, { x: p.x, y: p.y, z: p.z });
+    }
+  }
   function wearTracks(veh, mm, dt) {
     const physical = combinationStats(game.ctx, mm);
     const tonnes = ((physical.mass ?? 2000) + (physical.trailerMass ?? 0)) / 1000 + pileTotal(cargoLoad(mm));
@@ -1107,6 +1141,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const mm = getMachine(game.ctx, veh.machineId);
       if (!mm) continue;
       if (!paused && onPlot(veh.position().x, veh.position().z)) wearTracks(veh, mm, dt);
+      if (!paused && !veh.towable) markTracks(veh);
       if (veh.carrier || veh.road || veh.towable) {
         const cap = combinationStats(game.ctx, mm).capacity;
         const tonnes = pileTotal(cargoLoad(mm));

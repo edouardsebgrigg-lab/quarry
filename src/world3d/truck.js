@@ -169,7 +169,7 @@ export function createTruck({ physics, scene, terrain, machine, spawn, stats, li
       for (let i = 0; i < 4; i++) {
         if (!phys.vehicle.wheelIsInContact(i)) continue;
         const c = phys.vehicle.wheelContactPoint(i);
-        if (c) out.push({ i, x: c.x, z: c.z, driven: all || i >= 2 });
+        if (c) out.push({ i, x: c.x, y: c.y, z: c.z, driven: all || i >= 2 });
       }
       return out;
     },

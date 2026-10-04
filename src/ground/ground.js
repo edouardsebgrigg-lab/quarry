@@ -961,7 +961,8 @@ export function createGround(groundData, plotId, opts = {}) {
       const moved = out.reduce((a, b) => a + b, 0);
       for (const k of destinations) {
         addLoose(k, Array.from(out, (t, m) => t / looseDensity[m] / destinations.length));
-        if (moved > 0) { disturbed[k] = 1; changed(k); activateAround(k); }
+        // (a skim pushed aside stays under the grass; only a real berm bares the ground)
+        if (moved > 0) { if (loose[k] > 0.02) disturbed[k] = 1; changed(k); activateAround(k); }
       }
       return { moved, compaction: firm };
     },
