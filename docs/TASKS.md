@@ -5,10 +5,12 @@ open task you're suited to, claim it (put your agent and branch after the title)
 with the commit once it's on `main`. Add tasks you notice at the bottom of the right section.
 Older queues and their history are in `docs/archive/`.
 
-State on 4 October 2026: `main` includes the hand-dig start through staff, expanded
-fleet, directional digging, yard production, work-area surveys and saved batch
-plans/history, plus Claude's ground/driving improvements. 442 unit tests pass;
-lint, build and the smoke/production browser checks pass.
+State on 4 October 2026: `main` includes regional buyers and delivery yards, plant
+upgrades/servicing, recorded surveys, saved production queues, expandable stockpile
+bays and soil recovery, alongside the digging, driving, fleet and staff systems.
+467 unit tests pass; lint/build and smoke, production and planning browser checks pass.
+The latest expansions followed the owner's direct request for broad development
+beyond this queue; the manual play tasks below remain unverified.
 
 ## Play and fix (most valuable now)
 
@@ -33,6 +35,16 @@ about playing it properly and fixing what gets in the way.
       sun's glare at dawn and dusk isn't overpowering.
 
 ## Completed upgrades
+
+- [x] **U-4 Production planning** (Codex, `codex/production-planning`): finite saved
+      queues, pause/reorder/remove, working-capital reserve, bay capacity/wall upgrades,
+      topsoil/clay recovery and Home attention notices. Feature commit: `aecc27d`.
+      467 tests plus lint/build and three browser checks passed.
+
+- [x] **U-3 Regional and industrial expansion** (Codex, `codex/quarry-expansion`):
+      three roadside buyers, daily quotas/loyalty, delivery navigation, plant upgrades
+      and service timers, recorded surveys. Feature commit: `0f76c4a`.
+      454 tests plus lint/build and three browser checks passed.
 
 - [x] **U-2 Production handoff** (Codex, `codex/production-handoff`): saved batch
       history, reusable plans, completion notices and processed-material handling

@@ -4,6 +4,32 @@ One short entry per task, newest at the top: the task, the agent and branch, the
 `main`, what changed, what was actually run, and what wasn't verified. Older, longer reports
 are in `docs/archive/CODEX-CHECKPOINT.md`.
 
+## 4 October 2026 · Production planning (Codex, `codex/production-planning`)
+
+- Feature commit: `aecc27d`. Continued the owner's broad development request beyond the
+  old task queue. Finite per-plant production orders now wait for feed, space, service or
+  cash; fresh quotes start each batch and a shared adjustable reserve protects working
+  capital. Orders can be moved, removed, paused and resumed. Cancellation returns feed,
+  retains the operating cost and pauses future work without silently repeating it.
+- Individual stockpile bays expand from 25 to 40 to 55 t. Purchases preserve all stock and
+  reservations, count as capital, and raise both rendered walls and physical colliders.
+  Topsoil/clay recovery uses conserved separation, retaining rejects in the feed bay.
+  Home flags waiting queues and production forms show current upgraded/worn plant rates.
+- Checked: **467 tests in 75 files**, lint, build, `smoke.mjs`, `quarry-upgrade.mjs` and
+  `production-planning.mjs`. All passed; browser checks reported no console errors.
+  Coverage includes simultaneous plants sharing a cash reserve, linked crushing/screening,
+  unchanged waiting stock/cash, cancellation, bounded/reordered orders, legacy defaults,
+  paid service and upgraded quotes, delivery/production reservations, and actual Rapier
+  wall heights before/after upgrade and restored saves.
+- Browser buttons verified bay expansion, queue edits, pause/resume, cash protection,
+  Save/Continue and automatic batch costs paid once with normal milestone rewards active.
+  Recovered topsoil received a valid nursery quote. Inspected queue desktop/narrow,
+  expanded inventory and yard-wall screenshots, kept outside Git at
+  `/workspace/.cache/quarry/planning-shots`.
+- Limits: software-rendered Chromium, Low graphics; test fixtures supply funds/stock and
+  advance the clock/place the viewpoint. No human working session, real-GPU performance
+  measurement or sound-by-ear check is claimed.
+
 ## 4 October 2026 · Regional and industrial expansion (Codex, `codex/quarry-expansion`)
 
 - Feature commit: `0f76c4a`. Owner-directed expansion beyond the task queue.

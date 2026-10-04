@@ -355,7 +355,9 @@ you want to start a new comparison.
 In **Quarry operations → Production**, choose a recipe, feed bay, product bay and batch
 size. **Add to queue** schedules 1–20 batches without taking material or money. Each
 plant can hold eight orders. In **Queue**, move orders earlier/later, remove them, or pause
-and resume the plant's waiting work. Orders run at your active quarry when game time
+and resume the plant's waiting work. Different products mix with anything already in
+the destination bay, so choose separate bays or collect a product before changing recipes.
+Orders run at your active quarry when game time
 advances. You can keep digging or drive a delivery while the yard processes its stock.
 
 A queue waits if the feed is unsuitable or insufficient, the product bay is full, the
