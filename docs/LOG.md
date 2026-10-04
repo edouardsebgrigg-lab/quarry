@@ -6,6 +6,10 @@ are in `docs/archive/CODEX-CHECKPOINT.md`.
 
 ## 4 October 2026 · Working Quarry upgrade (Codex, `codex/quarry-upgrade`)
 
+- Feature commit: `9e52f8d`, local only. Push to `codex/quarry-upgrade` was denied
+  with HTTP 403: cloud identity `edouardgrigg-sketch` lacks repository write access.
+  GitHub `main` remains `b7a1adb`; neither this upgrade nor Claude's `d944458`
+  branch has been published to main. No force-push or credential replacement attempted.
 - Plan in `docs/UPGRADE-PLAN.md`; builds on Claude's completed ground/driving,
   realism and cleanup work at `d944458`.
 - Nine named field areas sample the actual remaining geological columns. Selection

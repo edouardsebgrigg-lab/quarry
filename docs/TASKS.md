@@ -36,6 +36,9 @@ about playing it properly and fixing what gets in the way.
 - [ ] **U-1 Working Quarry upgrade** (Codex, `codex/quarry-upgrade`): surveyed work
       areas, conserved crushing/screening, yard operations, daily reports and
       optional production goals. Plan: `docs/UPGRADE-PLAN.md`.
+      Implemented and verified at `9e52f8d` (437 tests, lint/build, both browser
+      checks). Publication blocked: GitHub returns HTTP 403 for cloud identity
+      `edouardgrigg-sketch`, which lacks write access to this repository.
 
 - [ ] **G-1 Ground, grass and driving** (Claude, `claude/ground-driving`): grip-limited wheels
       (lockups, wheelspin, body roll), dry and wet surface grip in data, turf that wears into
