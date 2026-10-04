@@ -61,7 +61,9 @@ try {
   const first=await q(()=>{const g=window.__quarry.game;return {output:g.state.stockpiles.home.middle,processed:g.state.production.processed,reward:g.state.career.reached.batch1};});
   assert.ok(Math.abs(first.output.gravel-batch*.8)<1e-8);assert.ok(Math.abs(first.output.sand-batch*.2)<1e-8);
   assert.ok(first.reward!==undefined,'first-batch milestone not reached');
+  assert.match(await page.locator('.log').innerText(),/Jaw crusher finished:.*Middle bay/);
   await app();await clickTab('Production');
+  assert.equal(await page.locator('[data-plant-id="crusher"] input').inputValue(),String(batch),'saved crusher plan lost on Continue');
   const screener=page.locator('[data-plant-id="screener"]');
   await screener.locator('input').fill(String(batch));
   await screener.getByRole('button',{name:'Start batch',exact:true}).click();
@@ -80,6 +82,38 @@ try {
   assert.ok(Math.abs(result.stockpiles.middle.sand-batch*.2)<1e-8);
   assert.equal(result.batches,2);assert.ok(Math.abs(result.processed-batch*2)<1e-8);
   assert.equal(result.day.productionBatches,2);console.log('PASS finished products, rejects and report accounting',JSON.stringify(result));
+  await clickTab('Batch history');
+  assert.equal(await page.locator('.qo-history').count(),3);
+  assert.match(await page.locator('[data-batch-id="batch-2"]').innerText(),/Cancelled[\s\S]*feed returned[\s\S]*not refunded/);
+  const beforePlan=await q(()=>{const g=window.__quarry.game;return JSON.stringify([g.state.money,g.state.stockpiles,g.state.production.jobs,g.state.production.history]);});
+  await page.locator('[data-batch-id="batch-1"]').getByRole('button',{name:'Plan again',exact:true}).click();
+  assert.equal(await page.locator('[data-plant-id="crusher"] input').inputValue(),String(batch));
+  assert.equal(await q(()=>{const g=window.__quarry.game;return JSON.stringify([g.state.money,g.state.stockpiles,g.state.production.jobs,g.state.production.history]);}),beforePlan,'planning moved inventory or money');
+  await page.locator('[data-plant-id="crusher"] input').fill('0.5');
+  await clickTab('Yard');await clickTab('Production');
+  assert.equal(await page.locator('[data-plant-id="crusher"] input').inputValue(),'0.5');
+  console.log('PASS completed/cancelled history, saved plans and review before repeating');
+
+  // Handling fixture uses the real bucket, carrier, weighbridge and depot actions;
+  // placements and driving are not exercised by this fixture.
+  const handled=await q(()=>{
+    const g=window.__quarry.game;
+    const digger=g.actions.buyMachine('miniDigger','rusty').machine,truck=g.state.machines[0];
+    if(!digger)throw new Error('mini digger purchase failed');
+    const before=g.state.stats.tonnesSold,dug=g.state.stats.tonnesDug,history=JSON.stringify(g.state.production.history);
+    const check=r=>{if(!r.ok)throw new Error(r.reason);return r;};
+    check(g.actions.bucketCut(digger.id,{stockpileBay:'east'}));
+    const moved=check(g.actions.dumpBucket(digger.id,{machineId:truck.id})).tonnes;
+    if(g.actions.tip(truck.id,{bay:'gravel'}).ok)throw new Error('unweighed load accepted');
+    check(g.actions.weighIn(truck.id));check(g.actions.tip(truck.id,{bay:'gravel'}));
+    g.advance(Math.ceil(truck.job.duration*g.data.game.ticksPerSecond)+1);
+    return {moved,sold:g.state.stats.tonnesSold-before,dug:g.state.stats.tonnesDug-dug,
+      remaining:(g.state.stockpiles.home.east.gravel??0)+(digger.load.gravel??0)+(truck.load.gravel??0),
+      historyUnchanged:history===JSON.stringify(g.state.production.history)};
+  });
+  assert.ok(handled.moved>0);assert.ok(Math.abs(handled.sold-handled.moved)<1e-8);
+  assert.ok(Math.abs(handled.remaining+handled.sold-batch*.8)<1e-8);assert.equal(handled.dug,0);assert.ok(handled.historyUnchanged);
+  console.log('PASS finished product reloaded, weighed and sold without double-counting',JSON.stringify(handled));
   await clickTab('Work areas');
   await page.locator('[data-area-id="1-1"]').click();
   await page.getByRole('button',{name:'Set as work area',exact:true}).click();
@@ -95,6 +129,8 @@ try {
     const fits=await q(()=>{const b=document.querySelector('.lt-app-body');return b.scrollWidth<=b.clientWidth+1;});
     assert.ok(fits,'production overflows narrow app body');
     await clickTab('Daily reports');await page.screenshot({path:`${out}/daily-report-narrow.png`});
+    await clickTab('Batch history');await page.screenshot({path:`${out}/batch-history-narrow.png`});
+    await page.setViewportSize({width:960,height:540});await page.screenshot({path:`${out}/batch-history-desktop.png`});
   }
   assert.deepEqual(errors,[]);console.log('PASS upgrade UI and no console errors');
 } finally {await browser.close();}

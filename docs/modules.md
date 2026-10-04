@@ -6,7 +6,7 @@ A short tour of the code. The logic modules never touch the screen. Each module 
 | File | What's in it |
 |---|---|
 | `game.json` | Tick rate, day length, speeds, starting machines (the pickup) and site, save version |
-| `production.json` | Crusher/screener throughput, batch limits, operating costs and conserved recipes |
+| `production.json` | Crusher/screener throughput, batch limits, operating costs, conserved recipes and receipt history limit |
 | `operations.json` | Field work-area subdivision, names and survey sample density |
 | `economy.json` | Starting money, fuel price, debt interest, resale value |
 | `materials.json` | Materials you can sell (topsoil, clay, sand, gravel, mixed fill) and their base prices per tonne |
@@ -49,7 +49,7 @@ You can change any of these and reload the game. No code changes are needed.
 | `src/contracts` | The jobs board (customers want a tonnage of one clean material by a deadline, for a bonus), rush orders and regular customers' weekly standing orders |
 | `src/staff` | Employees: posts that open with progress, applicants, wages, and the four roles (digger operator, haulage driver, sales, fitter) worked each tick by `staffTick`; `perks.js` answers the sales bonus and the fitter's discount and imports nothing |
 | `src/buildings` | Yard facilities you commission (workshop, bulk fuel, home weighbridge) and their benefits; `stockpiles.js` holds the stockpile bays' contents |
-| `src/production` | Read-only batch quotes, paid crusher/screener jobs, held feed and capacity reservations, cancellation, tick-driven completion and lifetime throughput. Jobs and their input/output compositions are saved in `state.production`; stockpile room includes both held feed and future products |
+| `src/production` | Read-only batch quotes, paid crusher/screener jobs, held feed and capacity reservations, cancellation, tick-driven completion and lifetime throughput. `state.production` saves jobs, bounded completed/cancelled receipts and validated per-site/per-plant plans. Planning does not reserve or spend; starting always quotes current conditions. Stockpile room includes both held feed and future products |
 | `src/hire` | Hiring your machines out to contractors for a day rate (the machine leaves the yard while it's away) |
 | `src/rental` | Renting machines in from the dealer for a day or three, with a deposit |
 | `src/classifieds` | The Wolds Trader: private sellers' second-hand machines, some of them less good than the advert says |

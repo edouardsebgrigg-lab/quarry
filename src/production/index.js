@@ -2,14 +2,40 @@
 import { ownsBuilding, stockpileLoad, stockpileConfig, stockpileRoom, storeStockpile } from '../buildings/index.js';
 import { pileTotal, takeProportional } from '../quarry/index.js';
 import { canAfford, spendMoney, bestDeliveryQuote } from '../economy/index.js';
-import { ticksPerHour } from '../core/index.js';
+import { ticksPerHour, getDate } from '../core/index.js';
 
 const EPS = 1e-8;
 const roundMoney = n => Math.round(n * 100) / 100;
 
 export function productionState(ctx) {
   ctx.state.production ??= { jobs: [], nextId: 1, processed: 0, batches: 0 };
+  ctx.state.production.history ??= [];
+  ctx.state.production.plans ??= {};
   return ctx.state.production;
+}
+
+// Planning never reserves material or money. Execution always gets a fresh quote.
+export function saveProductionPlan(ctx, request = {}) {
+  const { plantId, recipeId, sourceBay, outputBay, tonnes } = request ?? {};
+  const plant = ctx.data.production.plants[plantId];
+  if (!plant || !plant.recipes.includes(recipeId)) return { ok: false, reason: 'Choose a recipe for this plant' };
+  if (!stockpileConfig(ctx,sourceBay) || !stockpileConfig(ctx,outputBay) || sourceBay === outputBay) return { ok: false, reason: 'Choose different feed and product bays' };
+  if (!Number.isFinite(tonnes) || tonnes < plant.minimumBatch || tonnes > plant.maximumBatch) return { ok: false, reason: `Batch size must be ${plant.minimumBatch}–${plant.maximumBatch} t` };
+  const plans = productionState(ctx).plans;
+  (plans[ctx.state.currentSiteId] ??= {})[plantId] = { plantId, recipeId, sourceBay, outputBay, tonnes };
+  return { ok: true };
+}
+
+function recordBatch(ctx, job, status) {
+  const {day,hour,minute} = getDate(ctx.state,ctx.data);
+  const receipt = { id:job.id, plantId:job.plantId, recipeId:job.recipeId, siteId:job.siteId,
+    sourceBay:job.sourceBay, outputBay:job.outputBay, tonnes:job.tonnes, cost:job.cost,
+    status, day,hour,minute, output:status==='completed'?{...job.output}:{},
+    rejects:status==='completed'?{...job.rejects}:{}, returnedTonnes:status==='cancelled'?job.tonnes:0 };
+  const history = productionState(ctx).history;
+  history.push(receipt);
+  history.splice(0,Math.max(0,history.length-ctx.data.production.historyLimit));
+  return receipt;
 }
 
 export function quoteProduction(ctx, request = {}) {
@@ -56,6 +82,7 @@ export function startProduction(ctx, request) {
   delete job.ok;
   takeProportional(stockpileLoad(ctx, quote.sourceBay), quote.tonnes);
   st.jobs.push(job);
+  saveProductionPlan(ctx,quote);
   spendMoney(ctx, quote.cost, `production:${quote.plantId}`);
   ctx.events.emit('stockpileChanged', { siteId: quote.siteId, bayId: quote.sourceBay });
   ctx.events.emit('productionStarted', { jobId: job.id, plantId: job.plantId, tonnes: job.tonnes, cost: job.cost });
@@ -70,6 +97,7 @@ export function cancelProduction(ctx, id) {
   if (stockpileRoom(ctx, job.sourceBay, job.siteId, null, job.id) + EPS < job.tonnes) return { ok: false, reason: 'Feed bay is blocked; make room before cancelling' };
   st.jobs = st.jobs.filter(j => j.id !== id);
   storeStockpile(ctx, job.sourceBay, { ...job.input }, job.siteId);
+  recordBatch(ctx,job,'cancelled');
   ctx.events.emit('productionCancelled', { jobId: id, plantId: job.plantId });
   return { ok: true, returnedTonnes: job.tonnes, cost: job.cost };
 }
@@ -90,7 +118,9 @@ export function tickProduction(ctx) {
     if (rejectTonnes > EPS) storeStockpile(ctx, job.sourceBay, { ...job.rejects }, job.siteId);
     st.processed += job.tonnes;
     st.batches += 1;
+    recordBatch(ctx,job,'completed');
     ctx.events.emit('productionCompleted', { jobId: job.id, plantId: job.plantId, siteId: job.siteId,
+      sourceBay: job.sourceBay, outputBay: job.outputBay,
       tonnes: job.tonnes, output: { ...job.output }, rejects: { ...job.rejects } });
   }
 }

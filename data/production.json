@@ -1,4 +1,5 @@
 {
+  "historyLimit": 20,
   "plants": {
     "crusher": {
       "name": "Jaw crusher",

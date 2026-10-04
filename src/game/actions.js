@@ -15,7 +15,7 @@ import { hireApplicant, assignWorker, dismissWorker, configureHaul } from '../st
 import { attachTrailer, detachTrailer } from '../machinery/trailers.js';
 import { setDiggerAttachment } from '../machinery/fleet.js';
 import { pinMilestone, unpinMilestone } from '../career/index.js';
-import { quoteProduction, startProduction, cancelProduction } from '../production/index.js';
+import { quoteProduction, startProduction, cancelProduction, saveProductionPlan } from '../production/index.js';
 import { setWorkArea } from '../quarry/index.js';
 
 export const DEFAULT_COMPANY = 'Wolds Quarry Co.';
@@ -26,6 +26,7 @@ export function createActions(ctx) {
   const fleetValue = () => ctx.state.machines.reduce((a, m) => a + resaleValue(ctx, m), 0);
 
   return {
+    saveProductionPlan: request => saveProductionPlan(ctx,request),
     // Broken machines come first: repairs the selected machine if broken,
     // else the first broken machine here, else services the selected machine.
     serviceOrRepair() {

@@ -209,6 +209,11 @@ rejects and the indicative change in today's depot value.
   not a sale; prices, purity and saturation determine what it actually earns.
 
 The **Yard** tab shows composition, free/reserved space and today's depot quotes.
+Valid recipe, bay and quantity choices are saved per plant, including when you
+switch tabs or use Save/Continue. **Batch history** keeps the last 20 completed or
+cancelled batches with their outputs, destinations and operating costs. **Plan again**
+restores those choices for a fresh quote; press **Start batch** when you're ready
+to pay and begin. A completion notice tells you which bay has the finished product.
 **Daily reports** separates trading income, running costs and investment, alongside
 digging, sales, completed batches and processed tonnes. Three optional production
 milestones reward your first batch and growing throughput; no contract is required.

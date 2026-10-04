@@ -4,6 +4,30 @@ One short entry per task, newest at the top: the task, the agent and branch, the
 `main`, what changed, what was actually run, and what wasn't verified. Older, longer reports
 are in `docs/archive/CODEX-CHECKPOINT.md`.
 
+## 4 October 2026 · Production handoff (Codex, `codex/production-handoff`)
+
+- Valid recipe/bay/quantity plans survive tab changes and Save/Continue. Planning
+  changes no stock or balance; Start batch always checks present inventory,
+  capacity and prices. Completed/cancelled batches keep the latest 20 receipts,
+  including output and reject destinations, retained operating cost and time.
+  Plan again restores choices for review, without starting or charging a batch.
+- Completion notices name the finished materials and collection bay. Old saves,
+  including running jobs without history/plans, default safely; receipts stay
+  historical when their product is loaded or sold.
+- Checked: 442 tests in 70 files, lint, build, `smoke.mjs` and expanded
+  `quarry-upgrade.mjs`, both with no console errors. New tests cover fresh prices
+  on reuse, invalid plans without mutation, receipt retention/cancellation,
+  old saves, and loading/selling finished material. Browser buttons verify saved
+  plans, notices, history and review before repeating. The labelled handling
+  fixture reloaded and sold 0.116667 t of screened gravel after weighing,
+  retained 0.683333 t, added no digging credit and left receipts unchanged.
+- Inspected desktop and narrow batch-history screenshots: receipts, costs,
+  destinations and Plan again fit; production shows the remembered quantities.
+  Screenshots remain local outside the checkout.
+- Coverage limits: browser cash, extraction, placement and tick advancement use
+  fixtures; loading/selling uses game actions. This is not manual driving or a
+  physical digger playthrough. Real GPU performance and sound remain unverified.
+
 ## 4 October 2026 · Working Quarry upgrade (Codex, `codex/quarry-upgrade`)
 
 - Feature commit: `9e52f8d`, published to `main` with Claude's `d944458` work.

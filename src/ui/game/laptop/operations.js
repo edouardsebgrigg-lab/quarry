@@ -63,6 +63,7 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
     body.append(running,forms);
     const formRefresh=[];
     for(const [plantId,cfg] of Object.entries(data.production.plants)) {
+      const plan=game.state.production.plans[game.state.currentSiteId]?.[plantId];
       const makeSelect = (name,options,selected) => {
         const select=el('select',{class:'lt-select',id:`${plantId}-${name}`},options.map(([value,text])=>el('option',{value},text)));
         select.value=selected;
@@ -70,10 +71,10 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
       };
       const recipes=cfg.recipes.map(id=>[id,data.production.recipes[id].name]);
       const bayOptions=data.buildings.stockpiles.bays.map(b=>[b.id,b.name]);
-      const recipe=makeSelect('Recipe',recipes,cfg.recipes[0]);
-      const source=makeSelect('Feed bay',bayOptions,plantId==='screener'?'middle':'west');
-      const dest=makeSelect('Product bay',bayOptions,plantId==='screener'?'east':'middle');
-      const quantity=el('input',{id:`${plantId}-tonnes`,class:'text-input',type:'number',min:cfg.minimumBatch,max:cfg.maximumBatch,step:.25,value:2});
+      const recipe=makeSelect('Recipe',recipes,plan?.recipeId??cfg.recipes[0]);
+      const source=makeSelect('Feed bay',bayOptions,plan?.sourceBay??(plantId==='screener'?'middle':'west'));
+      const dest=makeSelect('Product bay',bayOptions,plan?.outputBay??(plantId==='screener'?'east':'middle'));
+      const quantity=el('input',{id:`${plantId}-tonnes`,class:'text-input',type:'number',min:cfg.minimumBatch,max:cfg.maximumBatch,step:.25,value:plan?.tonnes??2});
       const quoteBox=el('div',{class:'qo-quote','aria-live':'polite'}), description=el('p',{class:'lt-note'});
       const request=()=>({plantId,recipeId:recipe.select.value,sourceBay:source.select.value,outputBay:dest.select.value,tonnes:Number(quantity.value)});
       const start=el('button',{class:'btn btn-primary',onClick:()=>{
@@ -104,7 +105,10 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
           el('div',{},el('span',{},'Indicative value change'),el('b',{class:q.estimatedUplift>=0?'up':'down'},signedMoney(q.estimatedUplift))),
           el('p',{class:'lt-note'},'Today’s separate depot quotes, less processing cost. Prices, purity and market saturation can change; hauling is still required.'));
       };
-      for(const control of [recipe.select,source.select,dest.select,quantity])control.addEventListener('input',update);
+      for(const control of [recipe.select,source.select,dest.select,quantity])control.addEventListener('input',()=>{
+        game.actions.saveProductionPlan(request());
+        update();
+      });
       formRefresh.push(update);
     }
     const jobNodes=new Map();
@@ -127,6 +131,32 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
         setText(item.note,`${tonnes(job.tonnes)} · ${stockpileConfig(ctx,job.sourceBay).name} → ${stockpileConfig(ctx,job.outputBay).name} · ${job.blocked?'Waiting for bay space':`${timeText(job.remainingHours)} remaining`}`);
       }
       for(const update of formRefresh)update();
+    };
+  }
+
+  function history() {
+    const list=el('div',{class:'qo-reports'});
+    body.append(heading('Recent batches',`The latest ${data.production.historyLimit} completed or cancelled batches are saved. Plan again restores the recipe, bays and amount; review today's quote before starting. Valid batch plans also stay saved when you leave the laptop.`),list);
+    let key='';
+    refreshSection=()=>{
+      const entries=[...game.state.production.history].filter(e=>e.siteId===game.state.currentSiteId).reverse();
+      const k=JSON.stringify(entries);if(k===key)return;key=k;clear(list);
+      if(!entries.length)list.append(el('p',{class:'lt-note'},'No batches finished yet. Completed and cancelled batches will appear here.'));
+      const bay=id=>stockpileConfig(ctx,id)?.name??id;
+      for(const entry of entries) {
+        const completed=entry.status==='completed';
+        const time=`Day ${entry.day} · ${String(entry.hour).padStart(2,'0')}:${String(entry.minute).padStart(2,'0')}`;
+        list.append(el('article',{class:'lt-card qo-history',dataset:{batchId:entry.id}},
+          el('div',{class:'qo-plant-head'},el('h3',{},data.production.plants[entry.plantId]?.name??entry.plantId),
+            el('b',{class:completed?'up':'qo-plant-state'},completed?'Completed':'Cancelled')),
+          el('p',{class:'lt-note'},`${time} · ${tonnes(entry.tonnes)} · ${data.production.recipes[entry.recipeId]?.name??entry.recipeId}`),
+          el('p',{},completed?`${materialsText(data,entry.output)} → ${bay(entry.outputBay)}`:`${tonnes(entry.returnedTonnes)} feed returned to ${bay(entry.sourceBay)}`),
+          completed&&pileTotal(entry.rejects)>0?el('p',{class:'lt-note'},`Retained in ${bay(entry.sourceBay)}: ${materialsText(data,entry.rejects)}`):null,
+          el('div',{class:'qo-actions'},el('span',{class:'lt-note'},`${money(entry.cost)} operating cost${completed?'':' · not refunded'}`),
+            el('button',{class:'btn btn-small',onClick:()=>{
+              if(notify(game.actions.saveProductionPlan(entry)))show('production');
+            }},'Plan again'))));
+      }
     };
   }
 
@@ -174,10 +204,10 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
 
   function show(id) {
     section=id;clear(tabs);clear(body);
-    for(const [key,label] of [['yard','Yard'],['production','Production'],['survey','Work areas'],['reports','Daily reports']]) {
+    for(const [key,label] of [['yard','Yard'],['production','Production'],['history','Batch history'],['survey','Work areas'],['reports','Daily reports']]) {
       tabs.append(el('button',{class:`lt-chip ${section===key?'active':''}`,'aria-pressed':String(section===key),onClick:()=>show(key)},label));
     }
-    ({yard,production,survey,reports})[section]();refreshSection();
+    ({yard,production,history,survey,reports})[section]();refreshSection();
   }
   show(section);
   return {node,refresh:()=>refreshSection(),headSet:true};

@@ -4,6 +4,7 @@ import { loadData, ticksPerHour } from '../core/index.js';
 import { stockpileLoad, stockpileRoom, storeStockpile } from '../buildings/index.js';
 import { pileTotal } from '../quarry/index.js';
 import { bestDeliveryQuote } from '../economy/index.js';
+import { tickJobs } from '../machinery/index.js';
 
 function setup() {
   const data = loadData(); data.milestones.list = [];
@@ -142,5 +143,77 @@ describe('paid, conserved quarry production', () => {
     const loaded=createGame({state:JSON.parse(JSON.stringify(g.snapshot())),data:g.data});
     loaded.actions.startProduction(crush());finish(loaded);
     expect(loaded.state.money).toBe(money-4+60);expect(loaded.state.production.batches).toBe(2);
+  });
+
+  it('keeps plans across saves without reserving feed or spending, and rechecks current conditions at start', () => {
+    const g=setup(), cash=g.state.money;
+    const request={...crush(3),cost:0,output:{gravel:100}};
+    expect(g.actions.saveProductionPlan(request).ok).toBe(true);
+    expect(g.state.production.jobs).toEqual([]);expect(g.state.money).toBe(cash);
+    expect(stockpileRoom(g.ctx,'middle')).toBe(25);
+    const loaded=createGame({data:g.data,state:JSON.parse(JSON.stringify(g.snapshot()))});
+    const plan=loaded.state.production.plans.home.crusher;
+    expect(plan).toEqual(crush(3));
+    expect(loaded.actions.startProduction(plan).reason).toMatch(/Not enough material/);
+    storeStockpile(loaded.ctx,'west',{rock:3});
+    loaded.data.production.plants.crusher.costPerTonne=2;
+    expect(loaded.actions.startProduction(plan).ok).toBe(true);
+    expect(loaded.state.money).toBe(cash-6);
+  });
+
+  it('refuses invalid plans atomically and keeps separate plans for each plant', () => {
+    const g=setup();g.actions.saveProductionPlan(crush(3));g.actions.saveProductionPlan(screen(4));
+    const before=JSON.stringify(g.snapshot());
+    for(const request of [null,{}, {...crush(),plantId:'missing'}, {...crush(),recipeId:'screenSand'},
+      {...crush(),outputBay:'west'}, {...crush(),sourceBay:'missing'}, {...crush(),tonnes:NaN},crush(100)]) {
+      expect(g.actions.saveProductionPlan(request).ok).toBe(false);
+      expect(JSON.stringify(g.snapshot())).toBe(before);
+    }
+    expect(g.state.production.plans.home.crusher).toEqual(crush(3));
+    expect(g.state.production.plans.home.screener).toEqual(screen(4));
+  });
+
+  it('records completed and cancelled receipts once, with retained cost and actual output destinations', () => {
+    const g=setup();storeStockpile(g.ctx,'west',{rock:4});
+    const first=g.actions.startProduction(crush()).jobId;finish(g);
+    const receipt=structuredClone(g.state.production.history[0]);
+    expect(receipt).toMatchObject({id:first,status:'completed',cost:2,sourceBay:'west',outputBay:'middle',output:{gravel:1.6,sand:.4}});
+    const cash=g.state.money,second=g.actions.startProduction(crush()).jobId;
+    g.actions.cancelProduction(second);g.actions.cancelProduction(second);g.advance(1);
+    expect(g.state.production.history).toHaveLength(2);
+    expect(g.state.production.history[0]).toEqual(receipt);
+    expect(g.state.production.history[1]).toMatchObject({id:second,status:'cancelled',cost:2,returnedTonnes:2,output:{},rejects:{}});
+    expect(g.state.money).toBe(cash-2);expect(g.state.production.batches).toBe(1);
+    const loaded=createGame({data:g.data,state:JSON.parse(JSON.stringify(g.snapshot()))});
+    loaded.advance(1);expect(loaded.state.production.history).toEqual(g.state.production.history);
+  });
+
+  it('bounds saved receipts without resetting lifetime counters and defaults saves with existing jobs', () => {
+    const g=setup();g.data.production.historyLimit=2;storeStockpile(g.ctx,'west',{rock:4});
+    for(let i=0;i<3;i++){g.actions.startProduction(crush(1));finish(g);}
+    expect(g.state.production.history.map(e=>e.id)).toEqual(['batch-2','batch-3']);
+    expect(g.state.production.batches).toBe(3);
+    g.actions.startProduction(crush(1));const saved=JSON.parse(JSON.stringify(g.snapshot()));
+    delete saved.production.plans;delete saved.production.history;
+    const loaded=createGame({data:g.data,state:saved});
+    expect(loaded.state.production.history).toEqual([]);expect(loaded.state.production.plans).toEqual({});
+    finish(loaded);expect(loaded.state.production.history).toHaveLength(1);expect(loaded.state.production.batches).toBe(4);
+  });
+
+  it('reloads screened product into a carrier and sells only that material after weighing', () => {
+    const g=setup();const digger=g.actions.buyMachine('miniDigger','rusty').machine,truck=g.state.machines[0];
+    storeStockpile(g.ctx,'west',{gravel:1,sand:1});g.actions.startProduction(screen(2));finish(g);
+    const completed=structuredClone(g.state.production.history), sold=g.state.stats.tonnesSold, dug=g.state.stats.tonnesDug;
+    expect(g.actions.bucketCut(digger.id,{stockpileBay:'east'}).tonnes).toBeGreaterThan(0);
+    const moved=g.actions.dumpBucket(digger.id,{machineId:truck.id}).tonnes;
+    expect(moved).toBeGreaterThan(0);expect(g.state.stats.tonnesSold).toBe(sold);expect(g.state.stats.tonnesDug).toBe(dug);
+    expect(g.actions.tip(truck.id,{bay:'gravel'}).ok).toBe(false);
+    expect(g.actions.weighIn(truck.id).ok).toBe(true);
+    expect(g.actions.tip(truck.id,{bay:'gravel'}).ok).toBe(true);tickJobs(g.ctx,truck.job.duration+.01);
+    expect(g.state.stats.tonnesSold-sold).toBeCloseTo(moved);
+    expect(pileTotal(truck.load)).toBe(0);
+    expect(pileTotal(stockpileLoad(g.ctx,'east'))+pileTotal(digger.load)+moved).toBeCloseTo(1);
+    expect(stockpileLoad(g.ctx,'west')).toEqual({sand:1});
+    expect(g.state.production.history).toEqual(completed);
   });
 });

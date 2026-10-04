@@ -31,6 +31,12 @@ about playing it properly and fixing what gets in the way.
       the top of the screen. Start the player facing the field, slightly down, and check the
       sun's glare at dawn and dusk isn't overpowering.
 
+## In progress
+
+- [ ] **U-2 Production handoff** (Codex, `codex/production-handoff`): saved batch
+      history, reusable plans, completion notices and processed-material handling
+      checks. Each repeated plan gets a fresh quote before spending.
+
 ## Completed upgrades
 
 - [x] **U-1 Working Quarry upgrade** (Codex, `codex/quarry-upgrade`): surveyed work

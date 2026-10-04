@@ -149,6 +149,14 @@ export function createFeedback({ game, getMoneyNode, settings = {} }) {
       const what = data.materials[e.productId].name.toLowerCase();
       message(`Sold ${e.tonnes < 1 ? `${Math.round(e.tonnes * 1000)} kg` : tonnes(e.tonnes)} of ${what} (${e.grade.toLowerCase()}) for ${money(e.revenue)}`, 'good');
     }),
+    game.events.on('productionCompleted', (e) => {
+      const plant = data.production.plants[e.plantId].name;
+      const bay = data.buildings.stockpiles.bays.find(b=>b.id===e.outputBay).name;
+      const load = Object.entries(e.output).map(([id,t])=>`${tonnes(t)} ${data.materials[id].name.toLowerCase()}`).join(' + ');
+      const text = `${plant} finished: ${load} ready in ${bay}. (laptop: Quarry operations)`;
+      toast(text,'good');
+      message(text,'good');
+    }),
     game.events.on('machineBrokeDown', (e) => {
       toast(`${name(e.machineId)} broke down! Press R to repair.`, 'bad');
       message(`${name(e.machineId)} broke down`, 'bad');
