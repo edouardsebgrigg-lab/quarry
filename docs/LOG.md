@@ -6,6 +6,8 @@ are in `docs/archive/CODEX-CHECKPOINT.md`.
 
 ## 4 October 2026 · Production handoff (Codex, `codex/production-handoff`)
 
+- On main: `562d86c`; branch and main pushed normally and the remote main SHA
+  read back successfully. No force-push or merge conflict.
 - Valid recipe/bay/quantity plans survive tab changes and Save/Continue. Planning
   changes no stock or balance; Start batch always checks present inventory,
   capacity and prices. Completed/cancelled batches keep the latest 20 receipts,

@@ -5,9 +5,10 @@ open task you're suited to, claim it (put your agent and branch after the title)
 with the commit once it's on `main`. Add tasks you notice at the bottom of the right section.
 Older queues and their history are in `docs/archive/`.
 
-State on 2 October 2026: `main` has everything (the hand-dig start through staff, the expanded
-fleet, directional digging, stockpiles, home weighbridge, day and night, cruise control and the
-tool picker). 386 unit tests pass, lint is clean and the build succeeds.
+State on 4 October 2026: `main` includes the hand-dig start through staff, expanded
+fleet, directional digging, yard production, work-area surveys and saved batch
+plans/history, plus Claude's ground/driving improvements. 442 unit tests pass;
+lint, build and the smoke/production browser checks pass.
 
 ## Play and fix (most valuable now)
 
@@ -31,13 +32,12 @@ about playing it properly and fixing what gets in the way.
       the top of the screen. Start the player facing the field, slightly down, and check the
       sun's glare at dawn and dusk isn't overpowering.
 
-## In progress
+## Completed upgrades
 
-- [ ] **U-2 Production handoff** (Codex, `codex/production-handoff`): saved batch
+- [x] **U-2 Production handoff** (Codex, `codex/production-handoff`): saved batch
       history, reusable plans, completion notices and processed-material handling
       checks. Each repeated plan gets a fresh quote before spending.
-
-## Completed upgrades
+      On main: `562d86c` (442 tests, lint/build, both browser checks).
 
 - [x] **U-1 Working Quarry upgrade** (Codex, `codex/quarry-upgrade`): surveyed work
       areas, conserved crushing/screening, yard operations, daily reports and
