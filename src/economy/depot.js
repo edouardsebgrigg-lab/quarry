@@ -68,9 +68,11 @@ export function quoteDelivery(ctx, bayId, load, tonnes = pileTotal(load)) {
 }
 
 // Pay for `load` ({ material: tonnes }, already taken off the vehicle) tipped in a bay.
-export function sellLoad(ctx, machineId, bayId, load, { deliveryTarget = null } = {}) {
+export function sellLoad(ctx, machineId, bayId, load, { deliveryTarget = null, buyerId = null, priceMultiplier = 1 } = {}) {
   const tonnes = pileTotal(load);
   const q = quoteDelivery(ctx, bayId, load, tonnes);
+  q.gross *= priceMultiplier;
+  q.perTonne *= priceMultiplier;
   applySaleToMarket(ctx, q.product, tonnes);
   addMoney(ctx, q.gross, 'sale');
   delete tickets(ctx)[machineId];
@@ -80,6 +82,7 @@ export function sellLoad(ctx, machineId, bayId, load, { deliveryTarget = null } 
   const sale = {
     machineId, bayId, productId: q.product, tonnes, revenue: q.gross, pricePerTonne: q.perTonne, grade: q.grade, purity: q.purity,
     ...(deliveryTarget ? { deliveryTarget } : {}),
+    ...(buyerId ? { buyerId } : {}),
   };
   ctx.events.emit('productSold', sale);
   return { ok: true, ...sale };

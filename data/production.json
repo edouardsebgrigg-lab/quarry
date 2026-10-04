@@ -8,7 +8,9 @@
       "costPerTonne": 1,
       "minimumBatch": 0.25,
       "maximumBatch": 10,
-      "recipes": ["crushRock"]
+      "recipes": [
+        "crushRock"
+      ]
     },
     "screener": {
       "name": "Screening plant",
@@ -17,12 +19,59 @@
       "costPerTonne": 0.8,
       "minimumBatch": 0.25,
       "maximumBatch": 15,
-      "recipes": ["screenGravel", "screenSand"]
+      "recipes": [
+        "screenGravel",
+        "screenSand"
+      ]
     }
   },
   "recipes": {
-    "crushRock": {"name": "Crush broken rock", "input": "rock", "outputs": {"gravel": 0.8, "sand": 0.2}, "description": "Broken rock becomes an 80/20 gravel and sand blend. Screen it into clean products afterwards."},
-    "screenGravel": {"name": "Separate gravel", "separate": "gravel", "description": "Recover the gravel already in a mixed batch. Other material returns to the feed bay."},
-    "screenSand": {"name": "Separate sand", "separate": "sand", "description": "Recover the sand already in a mixed batch. Other material returns to the feed bay."}
-  }
+    "crushRock": {
+      "name": "Crush broken rock",
+      "input": "rock",
+      "outputs": {
+        "gravel": 0.8,
+        "sand": 0.2
+      },
+      "description": "Broken rock becomes an 80/20 gravel and sand blend. Screen it into clean products afterwards."
+    },
+    "screenGravel": {
+      "name": "Separate gravel",
+      "separate": "gravel",
+      "description": "Recover the gravel already in a mixed batch. Other material returns to the feed bay."
+    },
+    "screenSand": {
+      "name": "Separate sand",
+      "separate": "sand",
+      "description": "Recover the sand already in a mixed batch. Other material returns to the feed bay."
+    }
+  },
+  "maintenance": {
+    "wearPerTonne": 0.18,
+    "minimumCondition": 10,
+    "serviceCostPerPoint": 2,
+    "serviceHours": 0.5,
+    "minimumServiceWear": 5,
+    "minimumThroughputFactor": 0.5
+  },
+  "upgrades": [
+    {
+      "name": "Standard plant",
+      "price": 0,
+      "throughput": 1,
+      "costFactor": 1
+    },
+    {
+      "name": "Improved drive",
+      "price": 850,
+      "throughput": 1.3,
+      "costFactor": 0.9
+    },
+    {
+      "name": "High-output circuit",
+      "price": 1700,
+      "throughput": 1.7,
+      "costFactor": 0.78
+    }
+  ]
 }

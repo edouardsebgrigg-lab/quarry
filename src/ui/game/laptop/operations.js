@@ -4,6 +4,7 @@ import { getDate } from '../../../core/index.js';
 import { ownsBuilding, stockpileLoad, stockpileRoom, stockpileConfig } from '../../../buildings/index.js';
 import { pileTotal, workAreas, surveyWorkArea, activeWorkArea } from '../../../quarry/index.js';
 import { bestDeliveryQuote } from '../../../economy/index.js';
+import { plantStatus } from '../../../production/index.js';
 
 const materialsText = (data, load) => Object.entries(load).filter(([,t]) => t > 1e-8)
   .map(([id,t]) => `${data.materials[id]?.name ?? id}: ${tonnes(t)}`).join(' · ');
@@ -172,15 +173,39 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
       for(const b of grid.children)b.setAttribute('aria-pressed',String(b.dataset.areaId===selected));
       if(!s){detail.append('No field survey is available.');return;}
       const active=activeWorkArea(ctx)?.id===selected;
+      const previous=game.state.operations?.surveys?.[selected];
       detail.append(el('h3',{},s.name),el('p',{class:'lt-note'},`${Math.round(s.area).toLocaleString()} m² · cover ${s.coverDepth.toFixed(2)} m · bedrock ${s.shallowest.toFixed(1)}–${s.deepest.toFixed(1)} m below the surface`),
-        el('div',{class:'qo-reserves'},Object.entries(s.estimates).map(([id,t])=>el('div',{},el('span',{},data.materials[id]?.name??id),el('b',{},`≈ ${Math.round(t).toLocaleString()} t`)))),
+        el('div',{class:'qo-reserves'},Object.entries(s.estimates).map(([id,t])=>el('div',{},el('span',{},data.materials[id]?.name??id),el('b',{},`≈ ${Math.round(t).toLocaleString()} t${previous?` (${Math.round(t-(previous.estimates[id]??0))>=0?'+':''}${Math.round(t-(previous.estimates[id]??0)).toLocaleString()} since survey)`:''}`)))),
+        previous?el('p',{class:'lt-note'},`Compared with day ${previous.day}, ${String(previous.hour).padStart(2,'0')}:${String(previous.minute).padStart(2,'0')}. Changes are sampled estimates, including dumped material; they are not measured extraction totals.`):'',
         el('p',{class:'lt-note'},'Strip and store valuable topsoil separately. Leave room for a haul ramp and keep clay out of clean aggregate bays.'),
         el('div',{class:'qo-actions'},el('button',{class:'btn btn-primary',onClick:()=>{notify(game.actions.setWorkArea(selected));render();}},active?'Follow this work area':'Set as work area'),
           el('button',{class:'lt-link',onClick:()=>render()},'Refresh survey'),
+          el('button',{class:'lt-link',onClick:()=>{notify(game.actions.recordSurvey(selected));render();}},previous?'Replace recorded survey':'Record survey'),
           el('button',{class:'lt-link',onClick:()=>{game.actions.setWorkArea(null);render();}},'Follow current goal')),
         el('p',{class:'lt-note'},active?'Selected: marked on your map and in the field. Choosing a machine waypoint replaces this guide.':'Setting an area changes the guide, not your selected machine.'));
     };
     refreshSection=()=>{};render();
+  }
+
+  function workshop() {
+    body.append(heading('Keep the yard working','Production wears the plant and gradually reduces throughput. Upgrades increase capacity and reduce running costs. Servicing takes game time; finish or cancel material batches first.'));
+    const list=el('div',{class:'qo-plants'});body.append(list);const updates=[];
+    for(const [id,cfg] of Object.entries(data.production.plants)) {
+      const status=el('p'),detail=el('p',{class:'lt-note'}),progress=el('progress',{max:100,'aria-label':`${cfg.name} condition`});
+      const upgrade=el('button',{class:'btn btn-small',onClick:()=>{if(notify(game.actions.upgradePlant(id)))feedback.message(`${cfg.name} upgraded`,'good');refreshSection();}});
+      const service=el('button',{class:'btn btn-small',onClick:()=>{if(notify(game.actions.servicePlant(id)))feedback.message(`${cfg.name}: service started`,'good');refreshSection();}});
+      list.append(el('article',{class:'lt-card',dataset:{workshopPlant:id}},el('h3',{},cfg.name),status,progress,detail,el('div',{class:'qo-actions'},upgrade,service)));
+      updates.push(()=>{
+        const s=plantStatus(ctx,id),next=data.production.upgrades[s.level+1],owned=ownsBuilding(ctx,id);
+        const busy=!!s.service||game.state.production.jobs.some(j=>j.plantId===id&&j.siteId===game.state.currentSiteId);
+        const cost=Math.round((100-s.condition)*data.production.maintenance.serviceCostPerPoint*100)/100;
+        setText(status,owned?`${s.upgrade.name} · ${s.condition.toFixed(1)}% condition`:'Not commissioned');progress.value=s.condition;
+        setText(detail,s.service?`Servicing · ${timeText(s.service.remainingHours)} remaining`:`${(cfg.tonnesPerHour*s.throughput).toFixed(1)} t per game hour · ${money(cfg.costPerTonne*s.costFactor)} / t · Service downtime ${timeText(data.production.maintenance.serviceHours)}`);
+        setText(upgrade,next?`Fit ${next.name} · ${money(next.price)}`:'Fully upgraded');upgrade.disabled=!owned||busy||!next||game.state.money<next.price;
+        setText(service,`Service plant · ${money(cost)}`);service.disabled=!owned||busy||100-s.condition<data.production.maintenance.minimumServiceWear||game.state.money<cost;
+      });
+    }
+    refreshSection=()=>updates.forEach(f=>f());
   }
 
   function reports() {
@@ -204,10 +229,10 @@ export function operationsApp({ game, feedback, setHead, openApp }) {
 
   function show(id) {
     section=id;clear(tabs);clear(body);
-    for(const [key,label] of [['yard','Yard'],['production','Production'],['history','Batch history'],['survey','Work areas'],['reports','Daily reports']]) {
+    for(const [key,label] of [['yard','Yard'],['production','Production'],['workshop','Plant workshop'],['history','Batch history'],['survey','Work areas'],['reports','Daily reports']]) {
       tabs.append(el('button',{class:`lt-chip ${section===key?'active':''}`,'aria-pressed':String(section===key),onClick:()=>show(key)},label));
     }
-    ({yard,production,history,survey,reports})[section]();refreshSection();
+    ({yard,production,workshop,history,survey,reports})[section]();refreshSection();
   }
   show(section);
   return {node,refresh:()=>refreshSection(),headSet:true};

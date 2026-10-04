@@ -7,6 +7,11 @@
 export const MAP = {
   half: 1000, // the map is 2 km across
   cell: 4, // countryside height samples every 4 m
+  buyers: {
+    nursery: {yard:{x0:-264,x1:-214,z0:-85,z1:-34},bridge:{x0:-243,x1:-235,z0:-48,z1:-34},bay:{x0:-246,x1:-232,z0:-75,z1:-57},driveway:{x0:-245,x1:-233,z0:-34,z1:-25}},
+    concrete: {yard:{x0:612,x1:666,z0:-312,z1:-254},bridge:{x0:612,x1:628,z0:-288,z1:-280},bay:{x0:643,x1:659,z0:-295,z1:-277},driveway:{x0:582,x1:614,z0:-290,z1:-278}},
+    roadworks: {yard:{x0:-286,x1:-230,z0:-630,z1:-577},bridge:{x0:-262,x1:-254,z0:-630,z1:-616},bay:{x0:-266,x1:-250,z0:-604,z1:-587},driveway:{x0:-264,x1:-252,z0:-650,z1:-628}}
+  },
 
   // Public roads: smooth curves through these points.
   roads: [

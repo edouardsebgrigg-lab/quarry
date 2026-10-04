@@ -147,7 +147,7 @@ export function createFeedback({ game, getMoneyNode, settings = {} }) {
     game.events.on('productSold', (e) => {
       floatText(signedMoney(e.revenue), 'gain', getMoneyNode());
       const what = data.materials[e.productId].name.toLowerCase();
-      message(`Sold ${e.tonnes < 1 ? `${Math.round(e.tonnes * 1000)} kg` : tonnes(e.tonnes)} of ${what} (${e.grade.toLowerCase()}) for ${money(e.revenue)}`, 'good');
+      message(`Sold ${e.tonnes < 1 ? `${Math.round(e.tonnes * 1000)} kg` : tonnes(e.tonnes)} of ${what} (${e.grade.toLowerCase()}) for ${money(e.revenue)}${e.buyerId?` to ${data.trade.buyers[e.buyerId].name}`:''}`, 'good');
     }),
     game.events.on('productionCompleted', (e) => {
       const plant = data.production.plants[e.plantId].name;
@@ -157,6 +157,7 @@ export function createFeedback({ game, getMoneyNode, settings = {} }) {
       toast(text,'good');
       message(text,'good');
     }),
+    game.events.on('plantServiced',e=>toast(`${data.production.plants[e.plantId].name} serviced and ready`,'good')),
     game.events.on('machineBrokeDown', (e) => {
       toast(`${name(e.machineId)} broke down! Press R to repair.`, 'bad');
       message(`${name(e.machineId)} broke down`, 'bad');

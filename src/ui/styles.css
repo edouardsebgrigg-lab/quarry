@@ -1546,6 +1546,9 @@ body:has(.overlay-digger-tools) .feedback > :is(.mentor,.log,.toasts) { visibili
 .qo-area[aria-pressed=true] { background: rgba(245,184,46,.16); border-color: var(--accent); color: var(--accent); }
 .qo-reserves { margin: 1rem 0; font-size: .9rem; }
 .qo-reports { display: grid; gap: .8rem; }
+.trade-buyers { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,20rem),1fr)); gap: 1rem; }
+.trade-buyer h3 { max-width: 75%; }
+.qo-survey .qo-reserves > div { flex-wrap: wrap; }
 .qo-report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); gap: .8rem; margin-top: .9rem; }
 .qo-report-grid > div { display: grid; gap: .3rem; }
 .qo-report-grid span { color: var(--muted); font-size: .8rem; }

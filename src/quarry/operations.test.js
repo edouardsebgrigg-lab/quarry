@@ -3,6 +3,17 @@ import { createGame } from '../game/index.js';
 import { workAreas, surveyWorkArea, activeWorkArea } from './operations.js';
 
 describe('sampled excavation work areas', () => {
+  it('saves a survey baseline without changing reserves and compares fresh samples after extraction',()=>{
+    const g=createGame({seed:3}),totals=g.ctx.ground.totals(),money=g.state.money;
+    expect(g.actions.recordSurvey('missing').ok).toBe(false);
+    expect(g.actions.recordSurvey('0-0').ok).toBe(true);
+    const baseline=structuredClone(g.state.operations.surveys['0-0']);
+    expect(g.ctx.ground.totals()).toEqual(totals);expect(g.state.money).toBe(money);
+    const p=surveyWorkArea(g.ctx,'0-0').samples[0];g.ctx.ground.dig({x:p.x,z:p.z,radius:2,bottomY:-100});
+    expect(surveyWorkArea(g.ctx,'0-0').estimates.topsoil).toBeLessThan(baseline.estimates.topsoil);
+    expect(g.state.operations.surveys['0-0']).toEqual(baseline);
+    const loaded=createGame({state:JSON.parse(JSON.stringify(g.snapshot()))});expect(loaded.state.operations.surveys['0-0']).toEqual(baseline);
+  });
   it('covers the actual plot with nine disjoint areas and reads current remaining layers', () => {
     const g=createGame({seed:1}), areas=workAreas(g.ctx);
     expect(areas).toHaveLength(9); expect(areas.reduce((t,a)=>t+a.area,0)).toBeCloseTo(152*152);

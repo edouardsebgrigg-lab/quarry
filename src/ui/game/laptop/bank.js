@@ -5,7 +5,9 @@ import { bankState, owed, creditRating } from '../../../economy/index.js';
 import { profitChart } from './profitChart.js';
 
 const REASONS = {
-  sale: 'Load sold at the depot',
+  sale: 'Material delivery',
+  plantUpgrade: 'Processing plant upgraded',
+  plantService: 'Processing plant service',
   fuel: 'Diesel',
   service: 'Machine service',
   repair: 'Repair',

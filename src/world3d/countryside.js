@@ -230,6 +230,7 @@ export function createCountryside({ scene, physics, ground, plan, asphalt = asph
   // ---- 2. flat places: your land, the depot, the dealer's yard, house plots
   const home = map.home;
   const flats = [
+    ...Object.values(map.buyers??{}).map(b=>({rect:b.yard,margin:18})),
     { rect: { x0: home.boundary.x0 - 6, x1: home.boundary.x1 + 4, z0: home.boundary.z0 - 6, z1: home.boundary.z1 + 6 }, h: 0, margin: 45 },
     { rect: { x0: map.depot.yard.x0 - 2, x1: map.depot.yard.x1 + 2, z0: map.depot.yard.z0 - 2, z1: map.depot.yard.z1 + 2 }, margin: 30 },
     { rect: map.dealer.yard, margin: 20 },
@@ -375,6 +376,7 @@ export function createCountryside({ scene, physics, ground, plan, asphalt = asph
 
   // ---- surface mix for each vertex: grass, worn verges, gravel yards, steep banks
   const yards = [
+    ...Object.values(map.buyers??{}).flatMap(b=>[[b.yard,.5],[b.driveway,.5]]),
     [home.yard, 0.5], [map.depot.yard, 0.5], [map.dealer.yard, 0.5],
     [{ x0: home.driveway.x0, x1: home.driveway.x1, z0: home.yard.z0 - 14, z1: home.yard.z0 }, 0.5],
     [{ x0: map.depot.driveway.x0, x1: map.depot.driveway.x1, z0: map.depot.yard.z1, z1: map.depot.yard.z1 + 10 }, 0.5],

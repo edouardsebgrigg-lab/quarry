@@ -171,6 +171,8 @@ export function acceptContract(ctx, offerId) {
 
 // A clean load sold into a bay counts toward the soonest-due job for that material.
 export function contractsOnSale(ctx, sale) {
+  // Regional buyers buy for themselves, not for an unrelated depot contract.
+  if (sale.buyerId) return;
   const c = contractsState(ctx);
   const clean = sale.purity >= ctx.data.depot.grades[0].minPurity - 1e-9 && sale.productId === sale.bayId;
   if (!clean) return;

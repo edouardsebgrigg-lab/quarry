@@ -22,6 +22,7 @@ import { rentalTick, rentalActions } from '../rental/index.js';
 import { migrateFleet } from '../machinery/catalogue.js';
 import { fleetNavigationActions } from './fleetNavigation.js';
 import { productionState, tickProduction } from '../production/index.js';
+import { tradeState } from '../trade/index.js';
 
 export function createGame({ data = loadData(), seed = Math.floor(Math.random() * 2 ** 31), state } = {}) {
   const events = createEventBus();
@@ -34,6 +35,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
   visualClock(ctx.state, data);
   ctx.state.stockpiles ??= {}; // old saves start with empty yard bays
   productionState(ctx);
+  tradeState(ctx);
   for (const id of Object.keys(data.market.products)) {
     ctx.state.market.products[id] ??= { trend:1,velocity:0,saturation:0,history:[] };
   }

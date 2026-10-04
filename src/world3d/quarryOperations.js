@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { ownsBuilding } from '../buildings/index.js';
 import { activeWorkArea } from '../quarry/index.js';
+import { plantStatus } from '../production/index.js';
 
 export function createQuarryOperations({ scene, physics, game, map, heightAt }) {
   const root=new THREE.Group(); root.name='quarry-operations'; scene.add(root);
@@ -27,7 +28,9 @@ export function createQuarryOperations({ scene, physics, game, map, heightAt }) 
     const statusMaterial=new THREE.MeshStandardMaterial({color:0x854b22,emissive:0x000000,roughness:.5});
     box(group,[.25,.25,.1],[1.2,1.35,2.16],statusMaterial);
     const c=physics.world.createCollider(physics.RAPIER.ColliderDesc.cuboid(1.45,1.2,3.5).setTranslation(at.x,group.position.y+1.2,at.z+.8));
-    colliders.push(c);plants.push({id,group,roller,statusMaterial,collider:c});
+    const drive=box(group,[.75,.8,.8],[1.05,1.6,-1.3],yellow);
+    const circuit=box(group,[1.6,.25,1.5],[0,2.7,-.65],yellow);
+    colliders.push(c);plants.push({id,group,roller,drive,circuit,statusMaterial,collider:c});
   }
   const lineGeo=new THREE.BufferGeometry();
   lineGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(33*3),3));
@@ -38,7 +41,8 @@ export function createQuarryOperations({ scene, physics, game, map, heightAt }) 
     for(const plant of plants) {
       const owned=ownsBuilding(game.ctx,plant.id);plant.group.visible=owned;plant.collider.setEnabled(owned);
       const running=game.state.production.jobs.some(j=>j.plantId===plant.id&&j.siteId===game.state.currentSiteId);
-      plant.statusMaterial.color.setHex(running?0x7cac57:0x854b22);plant.statusMaterial.emissive.setHex(running?0x243a0f:0x000000);
+      const status=plantStatus(game.ctx,plant.id);plant.drive.visible=status.level>0;plant.circuit.visible=status.level>1;
+      plant.statusMaterial.color.setHex(status.service?0x5ca9d4:status.condition<game.data.production.maintenance.minimumCondition?0xc94832:running?0x7cac57:0x854b22);plant.statusMaterial.emissive.setHex(running?0x243a0f:0x000000);
       if(running)plant.roller.rotation.x+=dt*3;
     }
     const area=activeWorkArea(game.ctx);

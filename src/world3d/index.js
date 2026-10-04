@@ -8,6 +8,8 @@ import { createCountryside, planWorld, preloadCountryside } from './countryside.
 import { ownsBuilding, stockpileLoad, stockpileConfig } from '../buildings/index.js';
 import { createYardStockpiles } from './stockpiles.js';
 import { createQuarryOperations } from './quarryOperations.js';
+import { createRegionalYards } from './regionalYards.js';
+import { quoteBuyerDelivery } from '../trade/index.js';
 import { buildPlaces } from './places.js';
 import { surfaceGrip, blendedGrip } from './surfaces.js';
 import { pedalStep } from './pedals.js';
@@ -117,6 +119,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   yardStockpiles = createYardStockpiles({ scene, physics, game, map: MAP, siteId, heightAt: (x,z) => land.heightAt(x,z) });
   yardStockpiles.setOwned(ownsBuilding(game.ctx, 'stockpiles', siteId));
   const quarryOperations = createQuarryOperations({scene,physics,game,map:MAP,heightAt});
+  const regionalYards = createRegionalYards({scene,physics,map:MAP,data,heightAt});
   const farmScenery = buildFarms({ scene, physics, plan, heightAt });
   batchStatic(scene, [...places.statics, ...farmScenery.statics]); // (hundreds of prop meshes -> a few dozen draws)
   const particles = createParticles(scene);
@@ -129,6 +132,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   // ---- plants: grass around you, trees along hedges, roads and in copses
   const houseRects = [...plan.houses, plan.pub].map((h) => ({ x0: h.x - 8, x1: h.x + 8, z0: h.z - 8, z1: h.z + 8 }));
   const noGrowth = [
+    ...Object.values(MAP.buyers).flatMap(b=>[[b.yard,2],[b.driveway,2]]),
     [home.plot, 0.5], [home.yard, 1], [MAP.depot.yard, 1], [MAP.dealer.yard, 1],
     [{ x0: home.driveway.x0, x1: home.driveway.x1, z0: home.yard.z0 - 14, z1: home.yard.z0 }, 1],
     [{ x0: MAP.depot.driveway.x0, x1: MAP.depot.driveway.x1, z0: MAP.depot.yard.z1, z1: MAP.depot.yard.z1 + 10 }, 1],
@@ -344,6 +348,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   // behind it. Returns { bay } or { x, z } (or { reason }).
   function unloadSpot(v) {
     const u = v.unload();
+    const buyerId=v.road?regionalYards.bayAt(u.point.x,u.point.z):null;
+    if(buyerId)return {buyerId,name:data.trade.buyers[buyerId].name};
     const bay = v.road ? places.bayAt(u.point.x, u.point.z) : null;
     if (bay) return { bay: bay.id, name: bay.name };
     const store = yardStockpiles.bayAt(u.point.x, u.point.z);
@@ -351,7 +357,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const x = u.point.x + u.out.x * (v.road ? 1.2 : 1.4);
     const z = u.point.z + u.out.z * (v.road ? 1.2 : 1.4);
     if (ground?.workable(x, z)) return { x, z };
-    return { reason: v.road ? 'Unload on your field, or in a bay at Ashby Aggregates' : 'Tip on your own field' };
+    return { reason: v.road ? 'Unload on your field, at Ashby Aggregates, or on a regional delivery pad' : 'Tip on your own field' };
   }
 
   // ---- single-press actions (from hotkeys) ----
@@ -426,7 +432,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         }
         const spot = unloadSpot(v);
         if (spot.reason) notify(spot.reason, 'warn');
-        else report(game.actions.tip(m.id, spot.stockpileBay ? { stockpileBay: spot.stockpileBay } : spot.bay ? { bay: spot.bay } : { x: spot.x, z: spot.z }));
+        else report(game.actions.tip(m.id, spot.buyerId?{buyerId:spot.buyerId}:spot.stockpileBay ? { stockpileBay: spot.stockpileBay } : spot.bay ? { bay: spot.bay } : { x: spot.x, z: spot.z }));
         return true;
       }
       case 'repair': {
@@ -732,7 +738,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const m = getMachine(game.ctx, v.machineId);
       const p = v.position();
       const homeBridge = onHomeBridge(p.x, p.z);
-      const on = homeBridge || places.onWeighbridge(p.x, p.z);
+      const on = homeBridge || places.onWeighbridge(p.x, p.z) || regionalYards.onWeighbridge(p.x,p.z);
       if (!on || !m || pileTotal(cargoLoad(m)) < data.depot.minLoad || hasTicket(game.ctx, m.id) || Math.abs(v.speed()) > 0.4) {
         weigh.delete(v.machineId);
         continue;
@@ -746,7 +752,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         if (r.ok) {
           const mix = Object.entries(cargoLoad(m)).sort((a, b) => b[1] - a[1])
             .map(([id, tt]) => `${data.materials[id]?.name.toLowerCase() ?? id} ${Math.round((tt / r.tonnes) * 100)}%`).join(', ');
-          const quote = r.quote ? ` ${data.depot.bays[r.quote.bay].name}: ${r.quote.grade}, current quote $${r.quote.gross.toFixed(2)}. Drive straight to the depot bays (T).` : ' Unload in the right bay (T).';
+          const quote = regionalYards.onWeighbridge(p.x,p.z) ? ' Drive to this yard’s yellow delivery pad (T).' : r.quote ? ` ${data.depot.bays[r.quote.bay].name}: ${r.quote.grade}, current quote $${r.quote.gross.toFixed(2)}. Drive straight to the depot bays (T).` : ' Unload in the right bay (T).';
           notify(`Weighed in: ${r.tonnes.toFixed(2)} t (${mix}).${quote}`, 'good');
           sounds?.play('chime', { gain: 0.4 });
         }
@@ -844,6 +850,11 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const dominant = (load) => Object.entries(load).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
   const onField = (p) => !!ground && ground.inside(p.x, p.z);
   function guideTarget() {
+    const buyerId=game.state.player.navigationBuyerId,buyer=MAP.buyers[buyerId];
+    if(buyer) {
+      const m=currentMachine(),rect=m&&hasTicket(game.ctx,m.id)?buyer.bay:buyer.bridge;
+      return {x:(rect.x0+rect.x1)/2,z:(rect.z0+rect.z1)/2,label:`${data.trade.buyers[buyerId].name} · ${rect===buyer.bay?'delivery pad':'weighbridge'}`,near:5};
+    }
     const navigation = getMachine(game.ctx, game.state.player.navigationMachineId);
     if (navigation) {
       const target = vehicles.get(navigation.attachedTo ?? navigation.id);
@@ -1299,7 +1310,11 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const p = v.position();
       if (loaded) {
         const spot = unloadSpot(v);
-        if (spot.stockpileBay) {
+        if (spot.buyerId) {
+          const quote=quoteBuyerDelivery(game.ctx,spot.buyerId,cargoLoad(m));
+          prompt=!hasTicket(game.ctx,m.id)?{key:null,text:'Stop on this yard’s weighbridge first'}:quote.ok?
+            {key:key('tip'),text:`Deliver ${quote.tonnes.toFixed(2)} t to ${spot.name}: $${quote.gross.toFixed(2)}${quote.remaining>1e-8?' · remainder stays aboard':''}`}:{key:null,text:quote.reason};
+        } else if (spot.stockpileBay) {
           const total = pileTotal(stockpileLoad(game.ctx, spot.stockpileBay));
           const cfg = stockpileConfig(game.ctx, spot.stockpileBay);
           prompt = { key: key('tip'), text: `Store in ${cfg.name}: ${total.toFixed(1)} / ${cfg.capacity} t` };
@@ -1309,14 +1324,14 @@ export async function createWorld3D({ container, game, settings, audio = null, n
             const qd = quoteDelivery(game.ctx, spot.bay, cargoLoad(m));
             prompt = { key: key('tip'), text: `Unload in the ${spot.name} bay: ${qd.grade}, $${qd.perTonne.toFixed(2)}/t` };
           }
-        } else if (onHomeBridge(p.x, p.z) || places.onWeighbridge(p.x, p.z)) {
-          prompt = { key: null, text: hasTicket(game.ctx, m.id) ? 'Weighed in: drive on to the depot bays' : 'Stop here to weigh in…' };
+        } else if (onHomeBridge(p.x, p.z) || places.onWeighbridge(p.x, p.z) || regionalYards.onWeighbridge(p.x,p.z)) {
+          prompt = { key: null, text: hasTicket(game.ctx, m.id) ? (regionalYards.onWeighbridge(p.x,p.z)?'Weighed in: drive to the yellow delivery pad':'Weighed in: drive on to the depot bays') : 'Stop here to weigh in…' };
         } else if (spot.x !== undefined) {
           prompt = { key: key('tip'), text: v.type === 'pickup' ? 'Shovel it off here' : 'Tip here' };
         } else if (inRect(MAP.depot.yard, p.x, p.z, 10)) {
           prompt = { key: null, text: hasTicket(game.ctx, m.id) ? 'Back up into the right bay to unload' : 'Weigh in on the weighbridge at the gate' };
         } else {
-          prompt = { key: null, text: `Take it to ${MAP.depot.name} to sell (Tab: map)` };
+          prompt = { key: null, text: `Take it to ${data.trade.buyers[game.state.player.navigationBuyerId]?.name??MAP.depot.name} to sell (Tab: map)` };
         }
       }
     } else if (v.type === 'dumper' && pileTotal(cargoLoad(m)) >= data.depot.minLoad) {
@@ -1419,6 +1434,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       guide: guideTarget(),
       workAreas: workAreas(game.ctx),
       activeWorkAreaId: activeWorkArea(game.ctx)?.id ?? null,
+      buyers:Object.entries(MAP.buyers).map(([id,b])=>({id,name:data.trade.buyers[id].name,...b})),
     };
   }
 
@@ -1530,6 +1546,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       player.destroy();
       yardStockpiles.destroy();
       quarryOperations.destroy();
+      regionalYards.destroy();
       land.dispose();
       rain.dispose();
       env.dispose();
@@ -1547,6 +1564,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 function treePlan(plan) {
   const { map } = plan;
   const gaps = [
+    ...Object.values(map.buyers??{}).map(b=>[(b.driveway.x0+b.driveway.x1)/2,(b.driveway.z0+b.driveway.z1)/2,24]),
     ...plan.roads.flatMap((r) => [r.samples[0], r.samples[r.samples.length - 1]]).map((p) => [p.x, p.z, 26]),
     [(map.home.driveway.x0 + map.home.driveway.x1) / 2, map.home.yard.z0 - 10, 14],
     [(map.depot.driveway.x0 + map.depot.driveway.x1) / 2, map.depot.yard.z1 + 4, 16],

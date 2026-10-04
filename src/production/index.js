@@ -3,6 +3,8 @@ import { ownsBuilding, stockpileLoad, stockpileConfig, stockpileRoom, storeStock
 import { pileTotal, takeProportional } from '../quarry/index.js';
 import { canAfford, spendMoney, bestDeliveryQuote } from '../economy/index.js';
 import { ticksPerHour, getDate } from '../core/index.js';
+import { plantStatus, wearPlant, tickPlantServices } from './plant.js';
+export { plantStatus, upgradePlant, servicePlant } from './plant.js';
 
 const EPS = 1e-8;
 const roundMoney = n => Math.round(n * 100) / 100;
@@ -11,6 +13,8 @@ export function productionState(ctx) {
   ctx.state.production ??= { jobs: [], nextId: 1, processed: 0, batches: 0 };
   ctx.state.production.history ??= [];
   ctx.state.production.plans ??= {};
+  ctx.state.production.plants ??= {};
+  ctx.state.production.services ??= [];
   return ctx.state.production;
 }
 
@@ -46,6 +50,9 @@ export function quoteProduction(ctx, request = {}) {
   if (!plant || !recipe || !plant.recipes.includes(recipeId)) return fail('Choose a recipe for this plant');
   if (!ownsBuilding(ctx, 'stockpiles')) return fail('Commission stockpile bays at the plant dealer first');
   if (!ownsBuilding(ctx, plant.building)) return fail(`Commission the ${plant.name.toLowerCase()} at the plant dealer first`);
+  const status=plantStatus(ctx,plantId);
+  if(status.service)return fail('This plant is being serviced');
+  if(status.condition<ctx.data.production.maintenance.minimumCondition)return fail('Service this plant before starting another batch');
   if ((ctx.state.production?.jobs ?? []).some(j => j.plantId === plantId && j.siteId === ctx.state.currentSiteId)) return fail('This plant already has a batch running');
   if (!stockpileConfig(ctx, sourceBay) || !stockpileConfig(ctx, outputBay) || sourceBay === outputBay) return fail('Choose different feed and product bays');
   if (!Number.isFinite(tonnes) || tonnes < plant.minimumBatch || tonnes > plant.maximumBatch) return fail(`Batch size must be ${plant.minimumBatch}–${plant.maximumBatch} t`);
@@ -63,12 +70,12 @@ export function quoteProduction(ctx, request = {}) {
   }
   const outputTonnes = pileTotal(output);
   if (stockpileRoom(ctx, outputBay) + EPS < outputTonnes) return fail('Product bay has too little unreserved space; empty it before starting');
-  const cost = roundMoney(tonnes * plant.costPerTonne);
+  const cost = roundMoney(tonnes * plant.costPerTonne * status.costFactor);
   if (!canAfford(ctx, cost)) return fail('Not enough money for this batch');
   const inputValue = bestDeliveryQuote(ctx, input).gross;
   const outputValue = bestDeliveryQuote(ctx, output).gross + (pileTotal(rejects) ? bestDeliveryQuote(ctx, rejects).gross : 0);
   return { ok: true, plantId, recipeId, sourceBay, outputBay, tonnes, input, output, rejects,
-    outputTonnes, cost, hours: tonnes / plant.tonnesPerHour, inputValue, outputValue,
+    outputTonnes, cost, hours: tonnes / (plant.tonnesPerHour*status.throughput), inputValue, outputValue,
     estimatedUplift: roundMoney(outputValue - inputValue - cost), siteId: ctx.state.currentSiteId };
 }
 
@@ -104,6 +111,7 @@ export function cancelProduction(ctx, id) {
 
 export function tickProduction(ctx) {
   const st = productionState(ctx);
+  tickPlantServices(ctx);
   for (const job of [...st.jobs]) {
     job.remainingHours = Math.max(0, job.remainingHours - 1 / ticksPerHour(ctx.data));
     if (job.remainingHours > EPS) continue;
@@ -118,6 +126,7 @@ export function tickProduction(ctx) {
     if (rejectTonnes > EPS) storeStockpile(ctx, job.sourceBay, { ...job.rejects }, job.siteId);
     st.processed += job.tonnes;
     st.batches += 1;
+    wearPlant(ctx,job);
     recordBatch(ctx,job,'completed');
     ctx.events.emit('productionCompleted', { jobId: job.id, plantId: job.plantId, siteId: job.siteId,
       sourceBay: job.sourceBay, outputBay: job.outputBay,

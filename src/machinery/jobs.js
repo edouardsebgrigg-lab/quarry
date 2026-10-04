@@ -11,6 +11,7 @@ import { applyWear, serviceCost } from './wear.js';
 import { getMachine, machineName } from './fleet.js';
 import { loadCarrier, combinationStats } from './trailers.js';
 import { serviceSupport } from './serviceSupport.js';
+import { quoteBuyerDelivery, deliverToBuyer } from '../trade/index.js';
 
 const MIN_LOAD = 0.02;
 
@@ -64,7 +65,13 @@ export const JOBS = {
       const cargo = loadCarrier(ctx, m);
       if (!cargo) return 'Hitch a trailer first';
       if (pileTotal(cargo.load) < MIN_LOAD) return `The ${typeName(ctx.data, m.type).toLowerCase()} is empty`;
-      if (params.stockpileBay && params.bay) return 'Choose one tipping destination';
+      if ([params.stockpileBay,params.bay,params.buyerId].filter(Boolean).length>1) return 'Choose one tipping destination';
+      if (params.buyerId) {
+        if (!isRoadLegal(ctx.data,m.type)) return 'Only road vehicles can deliver to regional businesses';
+        if (!hasTicket(ctx,m.id)) return 'Weigh in on a weighbridge first';
+        const q=quoteBuyerDelivery(ctx,params.buyerId,cargo.load,m.id);
+        return q.ok?null:q.reason;
+      }
       if (params.stockpileBay) return whyCannotStore(ctx, params.stockpileBay, pileTotal(cargo.load), m.siteId, m.id);
       if (params.bay) {
         if (!ctx.data.depot.bays[params.bay]) return 'Not a depot bay';
@@ -75,13 +82,23 @@ export const JOBS = {
       if (!ctx.ground || !ctx.ground.workable(params.x, params.z)) return 'Tip on your own land, or in a bay at the depot';
       return null;
     },
-    begin(ctx, m, stats) {
+    begin(ctx, m, stats, job) {
+      if(job.params.buyerId) {
+        const q=quoteBuyerDelivery(ctx,job.params.buyerId,loadCarrier(ctx,m).load,m.id);
+        job.params.buyerTonnes=q.tonnes;job.params.buyerMaterial=q.material;
+      }
       chargeFuel(ctx, stats.fuelPerJob, m.siteId);
       return unloadSeconds(combinationStats(ctx, m), pileTotal(loadCarrier(ctx, m)?.load ?? {}));
     },
     finish(ctx, m, stats, job) {
       const cargo = loadCarrier(ctx, m);
       if (!cargo) return;
+      if(job.params.buyerId) {
+        const sale=deliverToBuyer(ctx,m,job.params.buyerId,job.params.buyerTonnes);
+        if(!sale.ok){ctx.events.emit('jobFailed',{machineId:m.id,reason:sale.reason});return;}
+        ctx.events.emit('rockHauled',{machineId:m.id,tonnes:sale.tonnes,bay:job.params.buyerMaterial});
+        applyWear(ctx,m,stats);return;
+      }
       const load = cargo.load;
       const tonnes = pileTotal(load);
       if (job.params.bay && !hasTicket(ctx, m.id)) {

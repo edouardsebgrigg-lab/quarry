@@ -122,6 +122,7 @@ export function createMapView({ world }) {
     rect(map.home.yard, 'rgba(170, 160, 140, 0.8)');
     rect(map.depot.yard, 'rgba(170, 160, 140, 0.8)', 'rgba(255,255,255,0.35)');
     rect(map.dealer.yard, 'rgba(170, 160, 140, 0.8)');
+    for(const buyer of info.buyers??[])rect(buyer.yard,'rgba(90,150,120,.7)','#85c6a1');
 
     // Roads.
     for (const [w, color] of [[3.4, COLORS.roadEdge], [2.2, COLORS.road]]) {
@@ -201,6 +202,7 @@ export function createMapView({ world }) {
     }
     const guideName = info.guide?.label?.toLowerCase();
     const place = (text, x, z, o) => label(text, x, z, { prio: 2, ...o });
+    for(const buyer of info.buyers??[])place(buyer.name,(buyer.yard.x0+buyer.yard.x1)/2,(buyer.yard.z0+buyer.yard.z1)/2,{color:'#a5d8b9',size:11});
     place('Your field', (map.home.plot.x0 + map.home.plot.x1) / 2, (map.home.plot.z0 + map.home.plot.z1) / 2, { color: '#f5b82e' });
     place(map.village.name, 690, -470, { size: 17, weight: 750, prio: 3 });
     place(map.dealer.name, (map.dealer.yard.x0 + map.dealer.yard.x1) / 2, map.dealer.yard.z1, { size: 12, dy: 12 });

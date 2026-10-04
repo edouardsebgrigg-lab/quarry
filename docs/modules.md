@@ -242,3 +242,24 @@ Career `pinnedMilestone`, `pinMilestone` and `unpinMilestone` expose an optional
 `diggerToolChoices.js` builds compatible unmodified stat previews, current-tool state and reasons cargo/rental/work blocks a swap. `diggerTools.js` opens the pausing Q overlay, rechecks the actual cab and motion before the existing authoritative `setDiggerAttachment` action, and reports errors inside its note. World `toolSwap.js` blocks real joint/slew/track motion, including in-place chassis turns. These ephemeral checks and controls introduce no saved fields. Existing settings migration leaves new Q/Z actions unbound if those keys belong to older custom bindings.
 
 Ground `planWorks().materials` uses the same allocation the build executes: cut/heaps/spoil records in tonnes, surface supply in loose cubic metres and tonnes, and required/fromCut/fromHeaps/missing fill in compacted bank cubic metres. Usable heap supply respects radius, surface priority and obstacle exclusions. `planEarthworks().gradeGuidance` estimates the run needed for the same rise at the mode's grade limit; it does not promise that an alternate alignment is obstacle-free. The planner's integrated controls/material quote and last-build note are transient presentation. Preview and failed builds remain read-only.
+
+### Regional trade, industrial maintenance and survey baselines
+
+`src/trade/index.js` and `data/trade.json` implement regional buyers, purity rules, daily
+quotas, saved supplier relationships and bounded receipts. Read-only quotes subtract other
+in-flight tip reservations. Tip jobs reserve their accepted quantity, then recheck cargo,
+ticket and current demand at completion, preserving excess on the actual load carrier.
+Sales reuse depot grading/accounting with a buyer multiplier; `buyerId` prevents unrelated
+contract credit. Player navigation targets select either a business, machine or work area.
+
+`world3d/regionalYards.js` builds the three roadside businesses from `MAP.buyers`, with
+colliders, weighbridges and unloading pads. Countryside flattening, ground surfaces and
+hedgerow gaps make the yards accessible. World actions dispatch real regional tip jobs;
+the map and laptop `trade.js` reuse buyer data and authoritative quotes.
+
+`production/plant.js` holds per-site condition/upgrade state and saved service timers.
+Data-driven wear applies only to completed batches; upgrades affect new batch quotes,
+without changing yields or running jobs. Capital upgrades and operating service expenses
+use normal bank/logbook accounting. The workshop and plant visuals reflect this state.
+`quarry/operations.js` records dated survey snapshots without changing terrain or money;
+Work areas compares fresh estimates to the saved baseline.

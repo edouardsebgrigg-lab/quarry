@@ -143,6 +143,7 @@ export function homeApp({ game, openApp, setHead }) {
     upcomingCard,
     el('div', { class: 'lt-shortcuts' },
       shortcut('building', 'Quarry operations', 'Work areas, stockpiles and production', 'operations'),
+      shortcut('chart', 'Regional trade', 'New buyers, daily demand and delivery guides', 'trade'),
       shortcut('digger', 'Plant dealer', 'Machines, upgrades, yard buildings', 'dealer'),
       shortcut('chart', 'Milestones', 'Choose what to work towards next', 'milestones'),
       shortcut('chart', 'Depot prices', 'What each material sells for today', 'prices'),

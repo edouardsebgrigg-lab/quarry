@@ -323,3 +323,29 @@ The map is 2 km across. Your land is the 150 m field and the yard next to it, on
 - `docs/design-spec.md`: the game design; `docs/implementation-plan.md`: the milestones
 - `docs/handover/browser-checks/`: headless-browser checks (`smoke.mjs` is the quick one)
 - `docs/archive/`: earlier handoffs, checkpoints and queues
+
+## Regional deliveries and plant development
+
+The laptop's **Regional trade** app compares an example load or your selected vehicle's
+actual cargo against Ashby and three new businesses. **Mill Lane Nursery** buys clean
+soil and gravel, **Ashby Concrete** buys sand and gravel, and **Wolds Roadstone** takes
+rock and mixed material. Each has its own daily demand and prices. Repeat deliveries
+build a supplier relationship with better prices; no contract is required.
+
+Choose **Guide me here**, drive to the business's public weighbridge and stop to weigh.
+Then stop with the vehicle's unloading point inside its yellow delivery pad and press
+**T**. A business only buys its remaining daily demand: excess stays aboard and needs
+weighing again before the next sale. Demand includes deliveries already tipping, resets
+each game day, and recent receipts survive saving. Regional sales do not fulfil unrelated
+depot contracts. Map distances are straight-line estimates, not road distances.
+
+In **Quarry operations → Plant workshop**, fit two successive upgrades to each owned
+crusher or screener for faster batches and lower running costs. Completed batches wear
+the plant, reducing throughput. Pay for a timed service when worn; an exhausted plant
+must be serviced before another batch. Upgrades and services require the plant to be idle.
+Running batch prices and durations remain fixed, and service progress survives Continue.
+
+In **Work areas**, **Record survey** keeps a baseline for the selected area. Later surveys
+show how estimated reserves have changed, including material dumped back into the area.
+These are sampled estimates, not an exact extraction ledger. Replace the baseline whenever
+you want to start a new comparison.

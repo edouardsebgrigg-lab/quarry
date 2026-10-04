@@ -1,4 +1,13 @@
 // Work-area surveys are samples of the current terrain, not a new resource ledger.
+import { getDate } from '../core/index.js';
+
+export function recordSurvey(ctx,id) {
+  const survey=surveyWorkArea(ctx,id);
+  if(!survey)return {ok:false,reason:'Choose a work area on your field'};
+  const operations=ctx.state.operations??={};
+  (operations.surveys??={})[id]={...getDate(ctx.state,ctx.data),estimates:{...survey.estimates},coverDepth:survey.coverDepth,bedrockDepth:survey.bedrockDepth};
+  return {ok:true};
+}
 export function workAreas(ctx) {
   const plot = ctx.data.ground.plots[ctx.data.sites[ctx.state.currentSiteId]?.groundPlot];
   if (!plot) return [];
@@ -50,6 +59,7 @@ export function setWorkArea(ctx, id) {
   ctx.state.operations.workAreaId = id;
   // A deliberate work-area selection takes over navigation, not machine selection.
   ctx.state.player.navigationMachineId = null;
+  ctx.state.player.navigationBuyerId = null;
   ctx.events.emit('workAreaChanged', { areaId: id });
   return { ok: true };
 }
