@@ -4,6 +4,39 @@ One short entry per task, newest at the top: the task, the agent and branch, the
 `main`, what changed, what was actually run, and what wasn't verified. Older, longer reports
 are in `docs/archive/CODEX-CHECKPOINT.md`.
 
+## 4 October 2026 · Ground, grass and driving (Claude, `claude/ground-driving`)
+
+- Grip-limited wheels: each wheel's braking and drive is capped by its surface friction times
+  the weight on it, less what it's using to corner (Rapier only checked forward force against
+  half its friction circle, so the pickup braked as hard on wet grass as on tarmac and never
+  spun a wheel). Past the limit a wheel locks or spins, graded by how far past, and loses
+  sideways hold. Revs flare when the wheels spin (sound only); spinning wheels throw turf, mud
+  or stones.
+- Body roll: the roll moment the ray-cast vehicle leaves out is put back; the pickup leans about
+  4 degrees in a hard bend with real load transfer.
+- Surfaces in `data/handling.json`, dry and wet, blended by the ground's wetness (soaks up in
+  rain, dries after). Mud and wet clay are slippery and wet sand firms up (`wetTraction`).
+- Turf wear: each tyre or track wears the field along its own path; dry light passes flatten
+  it, wet ground, heavy loads and slipping wheels tear it to mud, and only torn turf ruts.
+  Saved (older saves load with whole turf). Tyre marks (`tyreMarks.js`) show it at tyre width
+  anywhere: flattened tracks on grass, mud tracks, grey lines on gravel, black rubber on tarmac
+  only when a wheel locks or spins.
+- Grass tufts grow on the home field's turf (there were none), thinner on tracks, gone where
+  it's dug, dumped on or torn.
+- Keys work pedals: a held key presses the pedal over a quarter of a second; Right Shift keeps
+  it light (40%). On wet grass that gets the empty pickup to 20 km/h in 7 s instead of 10.
+- Fixed: field chunk rebuilds left their old vertex buffers on the GPU (digging leaked; with
+  turf wear two scripted drives crashed the tab). Rebuilds now free the old geometry, and a tyre
+  pass only redraws a cell when it would look different.
+- Measured headless (empty pickup): from 40 km/h it stops in about 9 m on dry tarmac and 14 m on
+  wet grass; cornering 0.9 g on tarmac, 0.45 g on wet grass; 0-50 km/h 5.7 s on tarmac.
+- Checked: tests (418), lint, build; scripted drives in the game (real key presses) on the
+  field in rain and in sunshine: wheelspin, revs, lockups, lean, tyre marks, mud tracks, field
+  tufts, memory flat across a run. Tried and reverted: letting spinning wheels make the
+  automatic change up (it hunted between first and second).
+  Not checked: a person driving with real hands, a real GPU, the tipper and tractor in the game
+  (their tests pass), sound by ear.
+
 ## 3 October 2026 · Realism and frame cost (Claude, `claude/realism`)
 
 - The sun rose in the west: the solar path was mirrored (the map's x is east), so a new game
