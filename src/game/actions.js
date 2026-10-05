@@ -14,6 +14,7 @@ import { inspectListing, buyListing } from '../classifieds/index.js';
 import { hireApplicant, assignWorker, dismissWorker, configureHaul } from '../staff/index.js';
 import { attachTrailer, detachTrailer } from '../machinery/trailers.js';
 import { setDiggerAttachment } from '../machinery/fleet.js';
+import { setGuideEnabled } from '../progression/index.js';
 import { pinMilestone, unpinMilestone } from '../career/index.js';
 import { quoteProduction, startProduction, cancelProduction, saveProductionPlan, upgradePlant, servicePlant, queueProduction, pauseProductionQueue, removeQueuedProduction, moveQueuedProduction, setProductionCashReserve } from '../production/index.js';
 import { setWorkArea, recordSurvey } from '../quarry/index.js';
@@ -28,6 +29,7 @@ export function createActions(ctx) {
   const fleetValue = () => ctx.state.machines.reduce((a, m) => a + resaleValue(ctx, m), 0);
 
   return {
+    setGuideEnabled: enabled => setGuideEnabled(ctx,enabled),
     quoteBlast: request => quoteBlast(ctx,request),
     startBlast: request => startBlast(ctx,request),
     chargeBlast: id => chargeBlast(ctx,id),

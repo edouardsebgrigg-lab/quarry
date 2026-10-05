@@ -9,6 +9,7 @@ import { unreadMessages } from '../../../game/logbook.js';
 import { contractsState } from '../../../contracts/index.js';
 import { hireState } from '../../../hire/index.js';
 import { homeApp } from './home.js';
+import { guideApp } from './guide.js';
 import { dealerApp } from './dealer.js';
 import { classifiedsApp } from './classifieds.js';
 import { staffApp } from './staff.js';
@@ -26,6 +27,7 @@ import { unseenMilestones, markMilestonesSeen } from '../../../career/index.js';
 
 const APPS = [
   { id: 'home', label: 'Home', icon: 'home', make: homeApp },
+  { id: 'guide', label: 'Field guide', icon: 'book', make: guideApp },
   { id: 'operations', label: 'Quarry operations', icon: 'building', make: operationsApp },
   { id: 'trade', label: 'Regional trade', icon: 'chart', make: tradeApp },
   { id: 'dealer', label: 'Plant dealer', icon: 'digger', make: dealerApp },
@@ -41,7 +43,7 @@ const APPS = [
 
 let openLaptopState = null; // { show(appId), current() } while the laptop is open
 
-export function openLaptop(overlays, { game, feedback, world, app = 'home' }) {
+export function openLaptop(overlays, { game, feedback, world, settings, app = 'home' }) {
   if (openLaptopState) {
     if (openLaptopState.current() === app) overlays.close('laptop');
     else openLaptopState.show(app);
@@ -86,7 +88,7 @@ export function openLaptop(overlays, { game, feedback, world, app = 'home' }) {
       function show(id) {
         const a = APPS.find((x) => x.id === id) ?? APPS[0];
         active?.instance.dispose?.();
-        const instance = a.make({ game, feedback, photos, world, openApp: show, setHead });
+        const instance = a.make({ game, feedback, photos, world, settings, openApp: show, setHead });
         active = { id: a.id, instance };
         for (const [bid, b] of buttons) {
           b.classList.toggle('active', bid === a.id);

@@ -13,6 +13,12 @@ driving, fleet and staff systems.
 The latest expansions followed the owner's direct request for broad development
 beyond this queue; the manual play tasks below remain unverified.
 
+## Active owner-directed development
+
+- [ ] **U-6 Player journey and save resilience** — Codex, `codex/game-journey`:
+      remembered goal evidence, completion journal, searchable handbook, recoverable
+      save slots and portable save files. Continues the owner's complete-game objective.
+
 ## Play and fix (most valuable now)
 
 Nobody has yet played the current game start to finish with real controls. These tasks are

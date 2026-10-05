@@ -147,6 +147,7 @@ export function homeApp({ game, openApp, setHead }) {
     goalCard,
     upcomingCard,
     el('div', { class: 'lt-shortcuts' },
+      shortcut('book', 'Field guide', 'Your journey, practical help and controls', 'guide'),
       shortcut('building', 'Quarry operations', 'Work areas, stockpiles and production', 'operations'),
       shortcut('chart', 'Regional trade', 'New buyers, daily demand and delivery guides', 'trade'),
       shortcut('digger', 'Plant dealer', 'Machines, upgrades, yard buildings', 'dealer'),

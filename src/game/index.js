@@ -8,7 +8,7 @@ import { tickJobs, fixAllMachines } from '../machinery/index.js';
 import { visualClock, advanceVisualClock } from '../core/visualClock.js';
 import { createNewState } from './state.js';
 import { createActions } from './actions.js';
-import { objectivesOnEvent, mentorOnEvent } from '../progression/index.js';
+import { objectivesOnEvent, mentorOnEvent, objectiveState } from '../progression/index.js';
 import { createGround } from '../ground/index.js';
 import { logbookOnEvent } from './logbook.js';
 import { contractsOnEvent, contractsDaily } from '../contracts/index.js';
@@ -38,6 +38,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
   productionState(ctx);
   tradeState(ctx);
   blastingState(ctx);
+  objectiveState(ctx);
   for (const id of Object.keys(data.market.products)) {
     ctx.state.market.products[id] ??= { trend:1,velocity:0,saturation:0,history:[] };
   }

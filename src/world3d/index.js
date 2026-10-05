@@ -890,7 +890,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     }
     const area = activeWorkArea(game.ctx);
     if (area) return { x: area.x, z: area.z, label: `${area.name} work area`, near: 5 };
-    const o = currentObjective(game.ctx);
+    const o = game.state.objectives?.guideEnabled===false?null:currentObjective(game.ctx);
     if (!o?.guide) return null;
     const v = current();
     const me = v ? v.position() : player.feet();

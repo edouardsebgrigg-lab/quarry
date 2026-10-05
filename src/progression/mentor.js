@@ -23,7 +23,7 @@ function tip(ctx, id) {
 
 // The message for the current goal (when it comes up, or when the game starts).
 export function mentorForStep(ctx, step) {
-  if (step?.mentor) send(ctx, step.mentor, 'goal');
+  if (ctx.state.objectives?.guideEnabled!==false && step?.mentor) send(ctx, step.mentor, 'goal');
 }
 
 export function mentorOnEvent(ctx, type, payload) {

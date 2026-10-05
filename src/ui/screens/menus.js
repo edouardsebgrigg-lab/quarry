@@ -19,7 +19,7 @@ function pauseSummary(game) {
     o ? el('div', { class: 'ps-goal' }, el('span', {}, `Goal ${o.number} of ${o.total}`), el('b', {}, o.title)) : null);
 }
 
-export function openPauseMenu(overlays, { game = null, onSave, onLoad, onSettings, onQuitToMenu }) {
+export function openPauseMenu(overlays, { game = null, onSave, onLoad, onSettings, onGuide, onSaveAndQuit, onQuitToMenu }) {
   overlays.open({
     id: 'pause',
     title: 'Paused',
@@ -29,40 +29,13 @@ export function openPauseMenu(overlays, { game = null, onSave, onLoad, onSetting
       const menu = el('div', { class: 'pause-menu' },
         el('div', { class: 'pause-title' }, 'PAUSE', el('span', {}, 'D')),
         item('Resume', close, true),
+        item('Field guide', () => { close(); onGuide(); }),
         item('Save Game', onSave),
         item('Load Game', onLoad),
         item('Settings', onSettings),
-        item('Quit to Main Menu', onQuitToMenu));
+        item('Save and quit', onSaveAndQuit),
+        item('Quit without saving', onQuitToMenu));
       return game ? el('div', { class: 'pause-layout' }, menu, pauseSummary(game)) : menu;
-    },
-  });
-}
-
-const SLOT_NAMES = { autosave: 'Autosave', slot1: 'Slot 1', slot2: 'Slot 2', slot3: 'Slot 3' };
-
-function slotDescription(slot) {
-  if (slot.empty) return 'Empty';
-  const when = new Date(slot.savedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
-  const s = slot.summary ?? {};
-  return `Day ${s.day ?? '?'}  ·  ${money(s.money ?? 0)}  ·  ${when}`;
-}
-
-// mode: 'save' or 'load'
-export function openSlotPicker(overlays, { mode, saves, onPick }) {
-  overlays.open({
-    id: 'slots',
-    title: mode === 'save' ? 'Save game' : 'Load game',
-    className: 'overlay-small',
-    build: ({ close }) => {
-      const slots = saves.list().filter((s) => mode === 'load' || s.slotId !== 'autosave');
-      return el('div', { class: 'slot-list' },
-        slots.map((slot) => el('button', {
-          class: 'btn btn-slot',
-          disabled: mode === 'load' && slot.empty,
-          onClick: () => { close(); onPick(slot.slotId); },
-        },
-        el('span', { class: 'slot-name' }, SLOT_NAMES[slot.slotId]),
-        el('span', { class: 'slot-desc' }, slotDescription(slot)))));
     },
   });
 }

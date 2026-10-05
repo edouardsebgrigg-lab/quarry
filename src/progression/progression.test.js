@@ -114,7 +114,8 @@ describe('getting-started goals', () => {
     expect(step()).toBe('earn');
     ctx.state.stats.totalEarned = 3000;
     actions.selectMachine(pickup.id); // any event re-checks the goal
-    expect(step()).toBe('usedMachine');
+    expect(step()).toBe('firstJob'); // The earlier Mini 16 purchase already satisfies the upgrade goal.
+    expect(ctx.state.objectives.history.usedMachine).toBeTruthy();
   });
 
   it('carries on after the first Used machine: jobs, the yard, clean loads, a name, a Used fleet', () => {

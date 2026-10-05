@@ -1,5 +1,6 @@
 // Line icons for the laptop's apps (24×24, drawn with the current text colour).
 const PATHS = {
+  book: '<path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2z"/>',
   home: '<path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/>',
   digger: '<path d="M3 18h10"/><rect x="4" y="12" width="8" height="4" rx="1"/><path d="M7 12V9h4l1 3"/><path d="M12 11l5-5 3 3"/><path d="M20 9l-1 5-3-1"/><circle cx="5.5" cy="18" r="1.3"/><circle cx="11.5" cy="18" r="1.3"/>',
   chart: '<path d="M4 19h16"/><path d="M5 15l4-4 3 3 6-7"/><path d="M15 7h3v3"/>',

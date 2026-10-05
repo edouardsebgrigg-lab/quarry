@@ -1571,3 +1571,64 @@ body:has(.overlay-digger-tools) .feedback > :is(.mentor,.log,.toasts) { visibili
 .qo-blast-record{padding:10px 0;border-top:1px solid #36433d}
 .qo-blast-record p{margin:5px 0}
 @media(max-width:760px){.qo-blast-layout{grid-template-columns:minmax(0,1fr)}.qo-blast-right{display:contents}.qo-blast-active{grid-row:1;scroll-margin-top:12px}}
+
+/* Field guide: readable articles and a permanent journey, on desktop or a narrow laptop. */
+.fg-tabs, .save-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.fg-tabs { margin-bottom: 1rem; }
+.fg-body { display: grid; gap: 1.25rem; }
+.field-guide h3, .save-manager h3 { margin: 0 0 .6rem; font-size: 1.05rem; }
+.field-guide p, .save-manager p { line-height: 1.55; }
+.fg-overview > h3 { margin-top: .65rem; font-size: 1.45rem; }
+.fg-overview progress { width: 100%; height: .6rem; accent-color: var(--accent); margin: .25rem 0 1rem; }
+.fg-toggle { display: flex; align-items: center; gap: .7rem; line-height: 1.5; cursor: pointer; }
+.fg-toggle input { accent-color: var(--accent); width: 1.1rem; height: 1.1rem; flex: 0 0 auto; }
+.fg-step { border-bottom: 1px solid rgba(255,255,255,.09); }
+.fg-step summary { display: flex; gap: .75rem; align-items: center; padding: .9rem .6rem; cursor: pointer; }
+.fg-step summary::marker { content: ''; }
+.fg-number { width: 1.5rem; flex: 0 0 auto; text-align: center; color: var(--muted); }
+.fg-status { margin-left: auto; color: var(--muted); font-size: .72rem; white-space: nowrap; }
+.fg-step.current { border: 1px solid rgba(229,183,98,.4); border-radius: 8px; background: rgba(229,183,98,.035); }
+.fg-step.current .fg-number, .fg-step.current .fg-status { color: var(--accent); }
+.fg-step.completed .fg-number { color: #93bf99; }
+.fg-step-body { padding: 0 1rem 1rem 2.85rem; }
+.fg-step-body p:first-child { margin-top: 0; }
+.fg-record { border-left: 2px solid var(--accent); padding-left: .85rem; }
+.fg-search { display: flex; align-items: center; flex-wrap: wrap; gap: .7rem; }
+.fg-search input { flex: 1 1 16rem; min-width: 0; }
+.fg-library { display: grid; grid-template-columns: minmax(155px, .8fr) minmax(0, 2fr); align-items: start; gap: 1rem; }
+.fg-results { display: grid; gap: .4rem; }
+.fg-result { display: grid; gap: .35rem; text-align: left; border: 1px solid transparent; border-radius: 6px; background: rgba(255,255,255,.025); color: inherit; padding: .8rem; cursor: pointer; }
+.fg-result:hover, .fg-result[aria-current="page"] { background: rgba(229,183,98,.07); border-color: rgba(229,183,98,.4); }
+.fg-reader h3 { margin-top: .7rem; font-size: 1.4rem; }
+.fg-reader ol { padding-left: 1.35rem; }
+.fg-reader li { padding-left: .35rem; margin: 1rem 0; line-height: 1.7; }
+.fg-trouble { border-top: 1px solid rgba(255,255,255,.1); padding-top: 1rem; margin-top: 1rem; }
+.fg-related { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+.fg-related > span { width: 100%; }
+.fg-controls { display: grid; grid-template-columns: 1fr auto; gap: .5rem 1rem; }
+.fg-controls dt, .fg-controls dd { margin: 0; padding: .45rem 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+.fg-controls dd { text-align: right; }
+.overlay-saves { width: 780px; max-width: 95vw; }
+.save-manager { display: grid; gap: 1rem; }
+.save-status:empty { display: none; }
+.save-status { margin: 0; }
+.save-current { justify-self: start; }
+.save-slots { display: grid; gap: .75rem; }
+.save-slot, .save-import { padding: 1rem; border: 1px solid rgba(255,255,255,.12); border-radius: 8px; }
+.save-slot > p { margin: .5rem 0 .85rem; color: var(--muted); font-size: .85rem; }
+.save-recovery { margin-top: .9rem; font-size: .85rem; }
+.save-recovery summary { cursor: pointer; color: var(--muted); line-height: 1.5; }
+.save-import input[type="file"] { width: 100%; font-size: .85rem; margin: .5rem 0; }
+.save-import-preview:empty { display: none; }
+.save-import-preview { margin-top: 1rem; }
+.save-destination { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; margin: 1rem 0; }
+@media (max-width: 650px) {
+  .fg-library { grid-template-columns: minmax(0, 1fr); }
+  .fg-results { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 180px; overflow-y: auto; }
+  .fg-result { padding: .65rem; font-size: .8rem; }
+  .fg-step summary { flex-wrap: wrap; gap: .4rem; }
+  .fg-step summary b { flex: 1; }
+  .fg-step-body { padding-left: 1rem; }
+  .fg-status { font-size: .65rem; }
+  .fg-controls { font-size: .8rem; }
+}

@@ -73,7 +73,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     audio: app.audio,
     notify: (text, level) => feedback.message(text, level),
     onLoadProgress: (f) => hud3d.setLoading(true, f),
-    onUseOffice: () => openOverlay(() => openLaptop(app.overlays, { game, feedback, world, app: 'home' })),
+    onUseOffice: () => openOverlay(() => openLaptop(app.overlays, { game, feedback, world, settings, app: 'home' })),
     // Esc (or alt-tab) released the mouse: show the pause menu, like any PC game.
     onPointerLockLost: () => {
       if (expectUnlock) {
@@ -101,8 +101,9 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
       case 'speed1': runtime.setSpeed(0); break;
       case 'speed2': runtime.setSpeed(1); break;
       case 'speed3': runtime.setSpeed(2); break;
-      case 'shop': openOverlay(() => openLaptop(app.overlays, { game, feedback, world, app: 'dealer' })); break;
-      case 'market': openOverlay(() => openLaptop(app.overlays, { game, feedback, world, app: 'prices' })); break;
+      case 'shop': openOverlay(() => openLaptop(app.overlays, { game, feedback, world, settings, app: 'dealer' })); break;
+      case 'market': openOverlay(() => openLaptop(app.overlays, { game, feedback, world, settings, app: 'prices' })); break;
+      case 'handbook': openOverlay(() => openLaptop(app.overlays, { game, feedback, world, settings, app: 'guide' })); break;
       case 'map': openOverlay(() => toggleMap(app.overlays, { game, world })); break;
       case 'hints': hud3d.toggleHints(); break;
       case 'controls':
@@ -134,7 +135,8 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
   }
 
   function summary() {
-    return { day: getDate(game.state, data).day, money: Math.round(game.state.money) };
+    return { day: getDate(game.state, data).day, money: Math.round(game.state.money),
+      company: game.actions.companyName(), goals: game.state.objectives.index, tonnesSold: game.state.stats.tonnesSold };
   }
 
   function beforeSave() {
@@ -143,6 +145,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
 
   // Small UI sounds for money in and goals done.
   const offSounds = [
+    game.events.on('journeyCompleted', () => feedback.message('Your company is established! Your journey is recorded in the Field guide. Keep growing the quarry at your own pace.', 'good')),
     game.events.on('productSold', () => app.audio?.play('coin', { bus: 'ui', gain: 0.8 })),
     game.events.on('objectiveCompleted', () => app.audio?.play('chime', { bus: 'ui', gain: 0.8 })),
     game.events.on('milestoneReached', () => app.audio?.play('chime', { bus: 'ui', gain: 0.75, rate: 1.12 })),
@@ -183,9 +186,8 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     game.events.on('marketNews', (e) => feedback.message(`${e.source}: ${game.data.materials[e.product]?.name ?? e.product} ${e.change > 0 ? 'up' : 'down'} ${Math.round(Math.abs(e.change) * 100)}% for ${e.days} days (laptop: Prices)`, e.change > 0 ? 'good' : 'warn')),
     game.events.on('weeklyReport', (r) => feedback.message(`Week ${r.week} report is in: ${r.profit >= 0 ? 'profit' : 'loss'} of $${Math.abs(Math.round(r.profit))} (laptop: Messages)`, r.profit >= 0 ? 'good' : 'warn')),
   ];
-  const offAutosave = game.events.on('dayStarted', () => {
-    if (settings.autosave) app.saveTo('autosave', { silent: true });
-  });
+  let autosaveElapsed = 0, autosaveDue = false;
+  const offAutosave = game.events.on('dayStarted', () => { autosaveDue = true; });
 
   // --- main loop ---
   let raf = 0;
@@ -212,6 +214,12 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
     const speed = devFast ? data.game.devSpeed : data.game.speeds[speedIndex];
     for (let i = ticker.frame(realDt, speed, running); i > 0; i--) game.tick();
     world?.update(realDt, { paused: paused || overlayOpen, keyboard });
+    if (running) autosaveElapsed += realDt;
+    if (settings.autosave && (autosaveDue || autosaveElapsed >= data.persistence.autosaveSeconds)) {
+      app.saveTo('autosave', { silent: true });
+      autosaveElapsed = 0; // Failed writes also wait for the next interval instead of spamming every frame.
+    }
+    autosaveDue = false;
     pausedBanner.style.display = userPaused && !overlayOpen ? '' : 'none';
     hud.update(realDt, { active: running });
     // (hints, the goal card and messages only count down while you can see and act on them)

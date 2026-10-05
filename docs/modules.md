@@ -18,6 +18,8 @@ A short tour of the code. The logic modules never touch the screen. Each module 
 | `works.json` | Earthworks: the kinds (haul road, ramp, level area) with surface, thickness, greatest slope, width range and price, plus the length limits and how far from the works loose heaps can be used |
 | `ground.json` | Diggable ground: materials (density, how much they swell when dug, the slope they settle at, how steep a wall they can stand) and each plot's layers |
 | `objectives.json` | The intro story and the goals (texts and rewards): the machine ladder, then the business (jobs, the yard, clean tonnes, a name, a Used fleet, $15,000) |
+| `handbook.json` | Four journey chapters and searchable practical articles; binding tokens resolve against the player's controls |
+| `persistence.json` | Active-play autosave interval and maximum imported file size |
 | `happenings.json` | Things that happen: the site inspector (how often, the fine per unfit machine, the reputation for a clean bill), rush orders (chance, days, bonus and size) and the dealer's offers (chance, discount, days) |
 | `milestones.json` | Company milestones (what each measures, its target and reward, its group) and the perks some of them switch on (depot account, fuel card, trade account) |
 | `tools.json` | Hand tools: how much a shovelful and a wheelbarrow hold (loose m³), reach, dig and tip times, pushing speeds |
@@ -318,3 +320,35 @@ recovery recipes reuse the conserved separation path; rejects stay in the feed b
   physical-world provider, Continue, and rubble-to-bay-to-crusher action integration
   using explicit earthmoving, money, position and clock fixtures. `blast-controls.mjs`
   verifies real keyboard dispatch and the narrow layout, which prioritises active controls.
+
+### Player journey and portable saves
+
+`progression/journal.js` defaults saved `objectives.evidence`, `history`,
+`guideEnabled` and the one-time `completion` record. Actual shovel, bucket, weighing,
+upgrade and sale events retain bounded evidence for goals reached later. Completion
+records the reward once before the index advances; the per-company guard permits
+separate games to progress independently. Legacy completed steps have an honest
+`legacy` record, without invented dates or another payout. `journeyCompleted` announces
+the final step; free play continues. `setGuideEnabled` is exposed through actions;
+HUD/world/mentor honour it while explicit navigation and milestone targets still work.
+`laptop/guide.js` presents history, search and rebound controls. `handbookText.js`
+resolves binding tokens and matches all search words; help stays in JSON.
+
+`core/save.js` retains the old slot API and adds `loadWithInfo`, previous revisions,
+portable exports, import preview and import. A new record is validated/serialized
+before any storage writes; a usable primary is copied to `.backup` before replacement.
+Quota errors leave the primary intact. Damaged primary copies never replace a usable
+backup. Checksums catch accidental record damage; legacy records without checksums
+remain supported. Future-version records can be exported intact, but cannot be imported
+or overwritten by this version. `game/saveValidation.js` checks core company/fleet/load
+shape and exercises terrain decoding and legacy defaults on an independent game.
+`exportState` works without browser storage; imported files are bounded by JSON tuning.
+
+`screens/saves.js` provides slot summaries, explicit recovery/export controls and a
+validated file preview with a manual-slot destination. The app retains the live
+company after failed Save and quit. Periodic and morning autosaves run at the end of
+a game frame, after tick handlers finish; failed periodic writes wait for the next
+interval. `journal.test.js` and `saveRecovery.test.js` cover early action credit,
+completion, old saves, isolation, checksum damage, quota failures and import/export.
+`journey.mjs` checks the actual screens, a corrupted local copy, download/upload and
+failed exits; its final-goal and shortened-autosave fixtures are explicit.

@@ -121,7 +121,7 @@ export function createHud({ game, runtime, settings }) {
       }
 
       const personal = pinnedMilestone(game.ctx);
-      const o = personal ? { ...personal, id: `personal:${personal.id}:${personal.reached ? 'reached' : 'active'}` } : currentObjective(game.ctx);
+      const o = personal ? { ...personal, id: `personal:${personal.id}:${personal.reached ? 'reached' : 'active'}` } : game.state.objectives?.guideEnabled===false?null:currentObjective(game.ctx);
       goal.style.display = o ? '' : 'none';
       goalKind.hidden = !personal;
       goal.classList.toggle('personal-target', !!personal);

@@ -1,5 +1,6 @@
 // The step-by-step goals that take a new player from a shovel to a working business.
 // Texts and rewards are in data/objectives.json; the checks for each step are here.
+import { objectiveState, observeObjectives, recordObjective, finishJourney } from './journal.js';
 import { addMoney } from '../economy/index.js';
 import { machinePrice, getStats } from '../machinery/index.js';
 import { attachedTrailer, combinationStats } from '../machinery/trailers.js';
@@ -10,7 +11,6 @@ import { contractsState, reputation } from '../contracts/index.js';
 import { careerMetric, dealerPrice } from '../career/index.js';
 
 const pickupLoad = (ctx) => Math.max(0, ...ctx.state.machines.filter((m) => m.type === 'pickup').map((m) => pileTotal(m.load)));
-const machineOf = (ctx, id) => ctx.state.machines.find((m) => m.id === id);
 const owns = (ctx, type) => ctx.state.machines.some((m) => m.type === type && !m.rental);
 const worksBuilt = (ctx) => Object.values(ctx.state.stats.works ?? {}).reduce((a, b) => a + b, 0);
 const yardBuildings = (ctx) => Object.values(ctx.state.buildings?.[ctx.state.currentSiteId] ?? {}).filter((x) => x === true).length;
@@ -24,21 +24,21 @@ const usedFleet = (ctx) => {
 
 // Each check gets (ctx, eventType, payload, step) and returns true when the step is done.
 const CHECKS = {
-  firstShovel: (ctx, type) => type === 'shovelDug',
-  fillBarrow: (ctx) => barrowFill(ctx) >= 0.9,
-  loadPickup: (ctx, type, p, step) => pickupLoad(ctx) >= step.target,
-  weighIn: (ctx, type) => type === 'weighedIn',
-  firstSale: (ctx, type) => type === 'productSold',
+  firstShovel: ctx => !!ctx.state.objectives.evidence?.shovel || pileTotal(ctx.state.tools.shovel.load)>0,
+  fillBarrow: ctx => !!ctx.state.objectives.evidence?.barrowFull || barrowFill(ctx)>=.9,
+  loadPickup: (ctx, type, p, step) => Math.max(pickupLoad(ctx),ctx.state.objectives.evidence?.pickupLoad??0) >= step.target,
+  weighIn: ctx => !!ctx.state.objectives.evidence?.weighed,
+  firstSale: ctx => !!ctx.state.objectives.evidence?.sold || ctx.state.stats.tonnesSold>0,
   buyMiniDigger: (ctx) => owns(ctx, 'miniDigger'),
   buyTractor: (ctx) => ctx.state.machines.some(m=>m.type==='tractor' && !m.rental && attachedTrailer(ctx,m)),
   buyExcavator: (ctx) => owns(ctx, 'excavator'),
   buyTruck: (ctx) => owns(ctx, 'truck'),
-  firstScoop: (ctx, type, p) => type === 'rockDug' && p.tonnes > 0,
-  sellTrailer: (ctx, type, p, step) => type === 'productSold' && machineOf(ctx, p.machineId)?.type === 'tractor' && p.tonnes >= step.target - 1e-9,
-  sell: (ctx, type, p) => type === 'productSold' && machineOf(ctx, p.machineId)?.type === 'truck',
-  firstMod: (ctx, type) => type === 'modBought',
+  firstScoop: ctx => !!ctx.state.objectives.evidence?.machineDug,
+  sellTrailer: (ctx, type, p, step) => (ctx.state.objectives.evidence?.trailerSale??0) >= step.target-1e-9,
+  sell: ctx => !!ctx.state.objectives.evidence?.truckSale,
+  firstMod: ctx => !!ctx.state.objectives.evidence?.modified || ctx.state.machines.some(m=>m.mods?.length>0),
   earn: (ctx, type, p, step) => ctx.state.stats.totalEarned >= step.target,
-  usedMachine: (ctx, type, p) => type === 'machineBought' && !p.rental && p.tier !== 'rusty',
+  usedMachine: ctx => !!ctx.state.objectives.evidence?.upgraded || ctx.state.machines.some(m=>!m.rental&&m.tier!=='rusty'),
   buildWorks: (ctx) => worksBuilt(ctx) > 0,
   firstJob: (ctx, type, p, step) => (contractsState(ctx).done ?? 0) > 0 || careerMetric(ctx,'cleanTonnes') >= step.alternativeTonnes,
   yardBuilding: (ctx) => yardBuildings(ctx) > 0,
@@ -95,13 +95,15 @@ export function currentObjective(ctx) {
   };
 }
 
-let checking = false;
+const checking = new WeakSet();
 
 // Called for every game event. Completes the current step (and any following steps
 // that are already satisfied) and pays out rewards.
 export function objectivesOnEvent(ctx, type, payload) {
-  if (checking || type === 'objectiveCompleted') return;
-  checking = true;
+  if (checking.has(ctx) || type === 'objectiveCompleted' || type === 'journeyCompleted') return;
+  objectiveState(ctx);
+  observeObjectives(ctx,type,payload);
+  checking.add(ctx);
   try {
     const steps = ctx.data.objectives.steps;
     const o = ctx.state.objectives;
@@ -109,13 +111,15 @@ export function objectivesOnEvent(ctx, type, payload) {
       const step = steps[o.index];
       const check = CHECKS[step.id];
       if (!check || !check(ctx, type, payload, step)) break;
+      recordObjective(ctx,step);
       o.index += 1;
       if (step.reward) addMoney(ctx, step.reward, 'objective');
       ctx.events.emit('objectiveCompleted', { id: step.id, title: step.title, reward: step.reward, next: steps[o.index] ?? null });
       type = 'objectiveCheck'; // later steps are only re-checked against the game state
     }
+    finishJourney(ctx);
   } finally {
-    checking = false;
+    checking.delete(ctx);
   }
 }
 

@@ -97,6 +97,7 @@ In Direct mode the tooth edge sweeps a strip through the ground. Bucket width, a
 |---|---|
 | B | Office laptop: plant dealer (machines, upgrades, yard buildings) |
 | M | Office laptop: depot prices |
+| F2 | Field guide: your journey, searchable handbook and current controls |
 | Tab | Map |
 | J | Goal details |
 | H | Show / hide the key hints |
@@ -131,7 +132,26 @@ You've bought a field off Mill Lane, outside the village of Ashby, with $200, a 
 
 The Micro 08 is affordable from your starting cash. The pacing tests estimate the first tractor/trailer pair within 40 minutes of pickup hauling, then check that larger buckets and beds make subsequent upgrades practical. These estimates assume continuous work and are not a timed playthrough.
 
-Each goal pays a small bonus. Entry equipment is small and slow; upgrades improve bucket capacity, reach, hydraulic force, speed or towing capacity.
+Some goals pay a small bonus. Entry equipment is small and slow; upgrades improve bucket capacity, reach, hydraulic force, speed or towing capacity.
+
+**Field guide (F2)** keeps all 22 goals in four chapters, including completed goals and
+their reward records. Actions such as an early upgrade or delivery are remembered, so
+you can work ahead of the guide. Completing the journey records your established company;
+you can keep working, building and choosing personal targets afterwards. The handbook
+covers digging, selling, trailers, geology, earthworks, processing, blasting, staff,
+finance and saving, with your current key bindings. Turn **Show step-by-step guidance**
+off in the introduction or Field guide to hide goal markers and Ray’s goal reminders
+while keeping the same progress and rewards.
+
+**Saving and moving your company:** Esc → **Save Game** has three manual slots. Each
+slot, including Autosave, keeps one previous revision. With Autosave enabled in Settings,
+the game saves every five active minutes and each game morning. **Save and quit** writes
+an autosave before returning to the menu; a failed save keeps the company open.
+**Load Game** offers previous revisions and **Export** / **Import** for portable JSON
+files. Import validates the company before writing your chosen manual slot. Continue
+tries the previous revision when its main copy is damaged and tells you when it recovered.
+Keep an exported file outside the browser for a lasting backup. **Export current company**
+also works from Save Game when browser storage is full.
 
 ## Selling at the depot
 

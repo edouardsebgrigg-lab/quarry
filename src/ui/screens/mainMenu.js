@@ -22,7 +22,7 @@ export function buildMainMenu({ hasSave, onContinue, onNewGame, onLoad, onSettin
       el('nav', { class: 'menu-list' },
         hasSave ? item('Continue', onContinue, { primary: true }) : null,
         item('New Game', onNewGame, { primary: !hasSave }),
-        item('Load Game', onLoad, { disabled: !hasSave }),
+        item('Load Game', onLoad),
         item('Settings', onSettings),
         item('Quit', onQuit)),
     ),

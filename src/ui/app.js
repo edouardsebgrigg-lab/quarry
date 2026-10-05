@@ -4,11 +4,13 @@ import { el, clear } from './dom.js';
 import { createOverlayStack, confirmBox } from './overlays.js';
 import { loadSettings, saveSettings, applyUiScale } from './settings.js';
 import { buildMainMenu, buildQuitScreen } from './screens/mainMenu.js';
-import { openPauseMenu, openSlotPicker } from './screens/menus.js';
+import { openPauseMenu } from './screens/menus.js';
+import { openSlotPicker } from './screens/saves.js';
 import { openSettings } from './screens/settings.js';
 import { createGameScreen } from './game/gameScreen.js';
 import { createSaveSystem, migrations } from '../core/index.js';
 import { createGame } from '../game/index.js';
+import { validateSavedGame } from '../game/saveValidation.js';
 import { createKeyboard } from '../input/index.js';
 import { createAudio } from '../audio/index.js';
 
@@ -40,7 +42,8 @@ export function startApp(root, { data, storage, isDev }) {
   };
   window.addEventListener('pointerdown', wake, true);
   window.addEventListener('keydown', wake, true);
-  const saves = createSaveSystem({ storage, version: data.game.saveVersion, migrations });
+  const saves = createSaveSystem({ storage, version: data.game.saveVersion, migrations,
+    maxImportBytes: data.persistence.maximumImportBytes, validateState: state => validateSavedGame(data, state) });
 
   const screenRoot = el('div', { class: 'screen-root' });
   root.append(screenRoot);
@@ -78,6 +81,10 @@ export function startApp(root, { data, storage, isDev }) {
   function showMainMenu() {
     endSession();
     overlays.closeAll();
+    renderMainMenu();
+  }
+
+  function renderMainMenu() {
     setScreen(buildMainMenu({
       hasSave: !!saves.latest(),
       onContinue: () => {
@@ -85,7 +92,7 @@ export function startApp(root, { data, storage, isDev }) {
         if (latest) loadSlot(latest.slotId);
       },
       onNewGame: () => startSession(createGame({ data })),
-      onLoad: () => openSlotPicker(overlays, { mode: 'load', saves, onPick: loadSlot }),
+      onLoad: () => slots('load'),
       onSettings: openSettingsScreen,
       onQuit: () => confirmBox(overlays, {
         title: 'Quit',
@@ -109,24 +116,43 @@ export function startApp(root, { data, storage, isDev }) {
     if (settings.fullscreen) enterFullscreen();
   }
 
-  function loadSlot(slotId) {
+  function loadSlot(slotId, opts) {
     try {
-      const state = saves.load(slotId);
-      if (state) startSession(createGame({ data, state }));
+      const loaded = saves.loadWithInfo(slotId, opts);
+      if (!loaded) return { ok: false, reason: 'This slot is empty' };
+      startSession(createGame({ data, state: loaded.state }));
+      if (loaded.recovered) session.feedback.message('Loaded the previous revision. Save to keep working from this recovery copy.', 'warn');
+      return { ok: true };
     } catch (err) {
       confirmBox(overlays, { title: 'Could not load', text: String(err.message ?? err), yes: 'OK', onYes: () => {} });
+      return { ok: false, reason: String(err.message ?? err) };
     }
   }
 
   function saveTo(slotId, { silent = false } = {}) {
-    if (!session) return;
+    if (!session) return { ok: false, reason: 'No company is open' };
     try {
       session.beforeSave();
       saves.save(slotId, session.game.snapshot(), session.summary());
       if (!silent) session.feedback.toast('Game saved', 'good');
+      return { ok: true };
     } catch (err) {
       session.feedback.toast(`Save failed: ${err.message ?? err}`, 'bad');
+      return { ok: false, reason: String(err.message ?? err) };
     }
+  }
+
+  function exportCurrent() {
+    if (!session) throw new Error('No company is open');
+    session.beforeSave();
+    return saves.exportState(session.game.snapshot(), session.summary());
+  }
+
+  function slots(mode) {
+    openSlotPicker(overlays, { mode, saves, maximumImportBytes: data.persistence.maximumImportBytes,
+      onPick: mode === 'load' ? loadSlot : slot => saveTo(slot),
+      exportCurrent: session ? exportCurrent : null,
+      onChanged: () => { if (!session) renderMainMenu(); } });
   }
 
   function openSettingsScreen() {
@@ -147,8 +173,16 @@ export function startApp(root, { data, storage, isDev }) {
     if (fromLockLoss) lastLockPause = performance.now();
     openPauseMenu(overlays, {
       game: session?.game ?? null,
-      onSave: () => openSlotPicker(overlays, { mode: 'save', saves, onPick: (slot) => saveTo(slot) }),
-      onLoad: () => openSlotPicker(overlays, { mode: 'load', saves, onPick: loadSlot }),
+      onSave: () => slots('save'),
+      onLoad: () => slots('load'),
+      onGuide: () => session?.handleAction('handbook'),
+      onSaveAndQuit: () => {
+        const result = saveTo('autosave', { silent: true });
+        if (result.ok) showMainMenu();
+        else confirmBox(overlays, { title: 'Your company is still open',
+          text: `The save failed: ${result.reason}. Open Save Game and export your current company before leaving.`,
+          yes: 'OK', onYes: () => {} });
+      },
       onSettings: openSettingsScreen,
       onQuitToMenu: () => confirmBox(overlays, {
         title: 'Quit to main menu',
@@ -162,6 +196,7 @@ export function startApp(root, { data, storage, isDev }) {
   // Arrow keys move between menu buttons, like a console/PC game menu.
   window.addEventListener('keydown', (e) => {
     if (e.code !== 'ArrowUp' && e.code !== 'ArrowDown') return;
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target?.tagName)) return;
     const container = overlays.top()?.panel ?? (session ? null : screenRoot);
     if (!container) return;
     const buttons = [...container.querySelectorAll('button:not([disabled])')];

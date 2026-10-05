@@ -121,7 +121,7 @@ export function openSettings(overlays, { settings, onChange, keyboard }) {
           row('Countryside sounds', range('ambientVolume', 0, 1, 0.05), 'Wind, birds and passing traffic'),
         ],
         game: () => [
-          row('Autosave every game day', toggle('autosave'), 'Saves to the autosave slot each morning'),
+          row('Autosave', toggle('autosave'), 'Saves periodically during active play and each game morning; keeps one previous copy'),
           row('Guide beam in the world', toggle('guideBeam'), 'A column of light where your goal wants you. The arrow at the top and the map still show the way without it'),
           row('Tips from Ray', toggle('mentorTips'), 'Short tips when something goes wrong. They arrive in Messages either way'),
         ],
