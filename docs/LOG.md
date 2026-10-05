@@ -4,6 +4,41 @@ One short entry per task, newest at the top: the task, the agent and branch, the
 `main`, what changed, what was actually run, and what wasn't verified. Older, longer reports
 are in `docs/archive/CODEX-CHECKPOINT.md`.
 
+## 5 October 2026 · Opening-loop handling feedback (Codex, `codex/opening-loop`)
+
+- A loaded barrow stopped against the pickup could still offer “Tip it here” without
+  explaining the obstruction. Its HUD now reports blocked forward/backward movement
+  or insufficient turning space, using the player's current movement bindings.
+  Tipping keeps priority and releasing movement restores normal prompts. Collision,
+  cargo and save rules are unchanged. README and module notes explain the feedback.
+- Reworked the old `opening.mjs` check around the current Micro 08 dealer catalogue,
+  normal-money springs purchase, direct shovel-to-pickup loading and exact saved
+  machine/mod identities. Its automatic steering now walks around the parked barrow
+  and backs out before turning. The header and result report explicitly identify
+  automated inputs, stubbed pointer lock, hidden rendering and optional haul placement.
+- Added `barrow-guidance.mjs`: actual swept collision against a placed pickup produces
+  the new prompt; reversing makes room with identical cargo; releasing movement clears
+  the warning. The load comes from real ground through shovel actions. Vehicle/player
+  placement and action calls are explicit fixtures. Its screenshot was inspected at
+  960×540; the direction and let-go prompts are readable.
+- Checked: **510 tests in 81 files**, lint, build, `smoke.mjs` and the focused barrow
+  browser check passed with no console errors. The opening check's dealer controls
+  must use a normal viewport: at the 320×180 rendering-test size its category bar can
+  cover the purchase button. At 960×540 the same controls work without forced clicks.
+- `HIDE_SCENE=1 HAUL_FIXTURE=1 opening.mjs` passed with no console errors. Starting
+  at $200, eight shovel strokes filled one barrow; transferring it and shovelling directly
+  into the bed loaded 334 kg of clean topsoil. Real weighbridge dwell issued a ticket;
+  unloading and the first-sale reward left $256.31. Actual dealer clicks fitted the
+  $30 springs and bought the $180 Micro 08, leaving $46.31 and the first-scoop goal.
+  Continue preserved machine IDs/models/mods, balance, sales, goal/mentor progress
+  and hand-tool loads. The reloaded HUD screenshot was inspected at 960×540.
+  The loaded pickup was explicitly placed at the bridge and bay; no money or cargo was
+  spawned. Recorded times describe the script, not human pacing or a complete haul.
+- Limits: automated headless Chromium on Low graphics. Full road hauling, manual
+  parking, first hire, human pacing, audio and real-GPU performance remain unverified.
+  This does not complete P-1, P-2 or P-3. Evidence is outside Git under
+  `/workspace/.cache/quarry/opening-shots`.
+
 ## 5 October 2026 · Saved working faces (Codex, `codex/working-faces`)
 
 - Feature commit: `35634d0`. Owner-directed development beyond the queue.

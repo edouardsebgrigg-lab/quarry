@@ -46,6 +46,8 @@ Use Chrome or Edge for the best experience (full screen and mouse capture work b
 | E | Let go |
 
 After tipping a barrow into the pickup, hold **S** to back away from the tailgate before turning.
+If the barrow meets a vehicle or prop, its prompt now tells you which way to move to
+make room. Release movement to see the normal tipping prompt again; **E** lets go.
 
 | Pickup, tractor and tipper truck | |
 |---|---|

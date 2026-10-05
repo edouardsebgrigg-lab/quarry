@@ -308,6 +308,7 @@ export function createHandTools({
   })();
   const THRUST = new THREE.Vector3(-0.1, -0.35, -1).normalize(); // into the ground in front of you
   const anim = { kind: null, t: 0, dur: 1, target: null, done: false, bob: 0 };
+  let barrowBlocked = null;
   const tmpQ = new THREE.Quaternion();
   const axisX = new THREE.Vector3(1, 0, 0);
 
@@ -595,6 +596,7 @@ export function createHandTools({
 
     // Steering while you push (called instead of the normal on-foot controls).
     controlHeld(dt, keys, d, sens) {
+      barrowBlocked = null;
       const turnKeys = (keys('left') ? 1 : 0) - (keys('right') ? 1 : 0);
       player.look.yaw -= d.x * sens;
       player.look.yaw += turnKeys * 1.6 * dt;
@@ -621,6 +623,7 @@ export function createHandTools({
           const pa = heldPose(ahead, yaw);
           if (blocked(pa.x, pa.z, pa.axleY, yaw, pa.pitch)) {
             go = 0;
+            barrowBlocked = fwd < 0 ? 'back' : fwd > 0 ? 'forward' : 'turn';
             const ps = heldPose(feet, yaw);
             if (blocked(ps.x, ps.z, ps.axleY, yaw, ps.pitch)) yaw = b.yaw;
           }
@@ -716,6 +719,8 @@ export function createHandTools({
         const empty = pileTotal(barrowLoad(ctx)) < 1e-6;
         const bed = bedAtTailgate();
         if (b.tipT >= 0) prompts.push({ key: null, text: 'Tipping…' });
+        else if (barrowBlocked) prompts.push({ key: key(barrowBlocked === 'back' ? 'forward' : 'back'),
+          text: barrowBlocked === 'back' ? 'Blocked behind: push forward or let go' : barrowBlocked === 'turn' ? 'No room to turn: pull back first' : 'Blocked ahead: pull back before turning' });
         else if (bed && !empty) prompts.push({ key: key('tip'), text: `Tip it into the ${bedName(bed)}` });
         else if (bed && empty) prompts.push({ key: key('back'), text: 'Back away from the tailgate before turning' });
         else if (!empty && ground?.workable(p.x, p.z)) prompts.push({ key: key('tip'), text: 'Tip it here' });

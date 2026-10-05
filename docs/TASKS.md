@@ -11,7 +11,9 @@ and a lasting player journal, searchable Field guide and recoverable portable sa
 Purchasable South Meadow and East Ridge more than double the diggable area, with
 independent terrain, physical access and shared company machinery/processing.
 Saved working faces now pair borehole profiles with precise navigation and depth
-comparisons after excavation. 510 unit tests pass; lint/build and smoke/faces browser checks pass.
+comparisons after excavation. The first sale, springs, Micro 08 and Continue are also
+checked with automated inputs and explicit depot placement. 510 unit tests pass;
+lint/build and smoke, faces, barrow-guidance and opening browser checks pass.
 The latest expansions followed the owner's direct request for broad development
 beyond this queue; the manual play tasks below remain unverified.
 
@@ -38,6 +40,12 @@ about playing it properly and fixing what gets in the way.
       sun's glare at dawn and dusk isn't overpowering.
 
 ## Completed upgrades
+
+- [x] **U-9 Opening-loop checks and handling feedback** (Codex, `codex/opening-loop`):
+      directional blocked-barrow prompts; normal-money shovel/barrow/pickup transfers,
+      weighing, first sale, springs, Micro 08 and Continue verified. 510 tests,
+      lint/build, smoke, barrow-guidance and opening browser checks passed. Automatic
+      aim/input and depot vehicle placement were fixtures; P-1 remains open.
 
 - [x] **U-8 Working-face planning** (Codex, `codex/working-faces`): field-filtered
       surveys, ordered borehole profiles, material recommendations, saved face choices,

@@ -137,6 +137,11 @@ places a new footprint, creates free material or changes existing collision shap
 The home workshop container is positioned explicitly by `MAP.home.workshop`, clear of the
 driveway. An empty barrow at the pickup tailgate prompts backing away before turning.
 
+`world3d/handTools.js` also retains a transient directional blockage reason from the
+barrow's swept collision check. The HUD suggests reversing away, making room to turn,
+or moving forward when blocked behind; letting movement go restores normal tip prompts.
+This changes feedback, not colliders, cargo, movement rules or saved barrow placement.
+
 `src/buildings/stockpiles.js` owns per-site, per-bay inventory (`state.stockpiles`),
 capacity reservations for pending carrier tips, and proportional bucket extraction by
 loose volume. Old saves default to empty inventory. Store transfers consume their supplied
