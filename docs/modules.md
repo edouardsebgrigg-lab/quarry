@@ -340,6 +340,13 @@ HUD/world/mentor honour it while explicit navigation and milestone targets still
 `laptop/guide.js` presents history, search and rebound controls. `handbookText.js`
 resolves binding tokens and matches all search words; help stays in JSON.
 
+`progression/companyJourney.test.js` exercises all 22 goals from an unchanged $200
+start, with real shovel and tooth-sweep extraction, cargo transfers, graded depot sales,
+purchases, groundworks, maintenance and calendar costs. No money, cargo, milestone
+metrics or progression indices are injected. It reloads a mid-career slot and a
+completed-company portable save, continues selling and accounts for every material.
+Vehicle positioning and haul durations are domain fixtures, not measured human play.
+
 `core/save.js` retains the old slot API and adds `loadWithInfo`, previous revisions,
 portable exports, import preview and import. A new record is validated/serialized
 before any storage writes; a usable primary is copied to `.backup` before replacement.

@@ -4,6 +4,31 @@ One short entry per task, newest at the top: the task, the agent and branch, the
 `main`, what changed, what was actually run, and what wasn't verified. Older, longer reports
 are in `docs/archive/CODEX-CHECKPOINT.md`.
 
+## 5 October 2026 · Complete-company progression (Codex, `codex/company-progression`)
+
+- Added a domain integration check from the real $200 opening to all 22 guided goals.
+  Every shovelful and bucket comes out of generated terrain; deliveries, machine and
+  workshop purchases, groundworks, repairs and services use normal game actions.
+  Calendar ticks retain market changes, fuel costs, wear, breakdowns and insurance.
+  No money, cargo, progression index, objective evidence or lifetime metric is injected.
+- The seeded run made 89 sale trips and 3,189 tooth sweeps, completed the journey after
+  502.59 t sold, then sold another load in free play. It finished with 510.59 t sold and
+  $22,536.06. Actual costs included $246.72 fuel, $360 repairs, $170.88 servicing and
+  $253.20 insurance. No customer contract was accepted or completed. These are scenario
+  results, not balance targets or promised player earnings.
+- Recovered a mid-career slot after 100 clean tonnes; saved/exported/imported the
+  completed company into another slot and kept working without another completion
+  reward. Final ground, tool/vehicle cargo and sold loads account for each material
+  separately. The complete journey found no new progression or economy defect.
+- Checked: **515 tests in 82 files**, lint, production build and `smoke.mjs` passed.
+  The browser started a fresh game, dug a shovelful, opened every laptop app and the
+  map, saved and continued with no console errors. No production behaviour changed
+  in this verification-only task.
+- Limits: domain actions omit real positioning and input. Hauls advance the actual
+  calendar by a fixed 120 seconds each way; cut time scales with the machine cycle
+  and extracted bucket share. The recorded day 29 completion is not human pacing.
+  This does not close P-1/P-2/P-3 or establish real-GPU/audio performance.
+
 ## 5 October 2026 · Digger reliability (Codex, `codex/digger-reliability`)
 
 - Feature commit: `5934923`. Continued owner-directed development beyond the queue.

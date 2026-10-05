@@ -13,8 +13,9 @@ independent terrain, physical access and shared company machinery/processing.
 Saved working faces now pair borehole profiles with precise navigation and depth
 comparisons after excavation. The first sale, springs, Micro 08 and Continue are also
 checked with automated inputs and explicit depot placement. Partial-bucket deadlocks
-are fixed; all eight current digger models pass physical scoop/dump checks. 514 unit
-tests pass, alongside lint/build and smoke/digger-cycle browser checks.
+are fixed; all eight current digger models pass physical scoop/dump checks. A normal-money
+domain simulation also completes all 22 goals and continues after saved-game recovery.
+515 tests pass, alongside lint/build and smoke/digger-cycle browser checks.
 The latest expansions followed the owner's direct request for broad development
 beyond this queue; the manual play tasks below remain unverified.
 
@@ -41,6 +42,13 @@ about playing it properly and fixing what gets in the way.
       sun's glare at dawn and dusk isn't overpowering.
 
 ## Completed upgrades
+
+- [x] **U-11 Complete-company progression** (Codex, `codex/company-progression`):
+      all 22 goals reached from $200 without injected money, cargo or progress; real
+      calendar costs, repairs, graded sales and per-material conservation. Mid-career
+      slot recovery and a completed-company portable save both permit continued work.
+      Contracts remain optional. 515 tests, lint/build and browser smoke passed.
+      Domain positions and haul times are fixtures; manual play remains open.
 
 - [x] **U-10 Digger reliability** (Codex, `codex/digger-reliability`): small bites
       remain dumpable across controls, prompts and saves; accurate partial-load advice
