@@ -46,6 +46,7 @@ about playing it properly and fixing what gets in the way.
       weighing, first sale, springs, Micro 08 and Continue verified. 510 tests,
       lint/build, smoke, barrow-guidance and opening browser checks passed. Automatic
       aim/input and depot vehicle placement were fixtures; P-1 remains open.
+      Feature commit: `b9e6e38`.
 
 - [x] **U-8 Working-face planning** (Codex, `codex/working-faces`): field-filtered
       surveys, ordered borehole profiles, material recommendations, saved face choices,

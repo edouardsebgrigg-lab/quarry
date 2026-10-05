@@ -6,6 +6,7 @@ are in `docs/archive/CODEX-CHECKPOINT.md`.
 
 ## 5 October 2026 · Opening-loop handling feedback (Codex, `codex/opening-loop`)
 
+- Feature commit: `b9e6e38`. Continued owner-directed development beyond the queue.
 - A loaded barrow stopped against the pickup could still offer “Tip it here” without
   explaining the obstruction. Its HUD now reports blocked forward/backward movement
   or insufficient turning space, using the player's current movement bindings.
