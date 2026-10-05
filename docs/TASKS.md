@@ -5,19 +5,12 @@ open task you're suited to, claim it (put your agent and branch after the title)
 with the commit once it's on `main`. Add tasks you notice at the bottom of the right section.
 Older queues and their history are in `docs/archive/`.
 
-State on 4 October 2026: `main` includes regional buyers and delivery yards, plant
-upgrades/servicing, recorded surveys, saved production queues, expandable stockpile
-bays, soil recovery and conserved contractor rock blasting, alongside the digging,
-driving, fleet and staff systems.
-481 unit tests pass; lint/build and smoke, blasting and field-control browser checks pass.
+State on 5 October 2026: `main` includes regional buyers, plant upgrades and saved
+production queues, expandable bays, soil recovery, conserved contractor rock blasting,
+and a lasting player journal, searchable Field guide and recoverable portable saves.
+495 unit tests pass; lint/build and smoke/journey browser checks pass.
 The latest expansions followed the owner's direct request for broad development
 beyond this queue; the manual play tasks below remain unverified.
-
-## Active owner-directed development
-
-- [ ] **U-6 Player journey and save resilience** — Codex, `codex/game-journey`:
-      remembered goal evidence, completion journal, searchable handbook, recoverable
-      save slots and portable save files. Continues the owner's complete-game objective.
 
 ## Play and fix (most valuable now)
 
@@ -42,6 +35,12 @@ about playing it properly and fixing what gets in the way.
       sun's glare at dawn and dusk isn't overpowering.
 
 ## Completed upgrades
+
+- [x] **U-6 Player journey and save resilience** (Codex, `codex/game-journey`):
+      remembered early actions, a permanent completion journal, optional guidance,
+      13 handbook articles, rebound controls, recovery copies, file import/export,
+      periodic autosaves and safe Save and quit. Feature commit: `dfb4e6d`.
+      495 tests, lint/build and both browser checks passed.
 
 - [x] **U-5 Rock blasting** (Codex, `codex/rock-blasting`): conserved finite bedrock
       fracturing, timed contractor preparation, live clearance, cancellable countdown,

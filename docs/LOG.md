@@ -4,6 +4,39 @@ One short entry per task, newest at the top: the task, the agent and branch, the
 `main`, what changed, what was actually run, and what wasn't verified. Older, longer reports
 are in `docs/archive/CODEX-CHECKPOINT.md`.
 
+## 5 October 2026 · Player journey and save resilience (Codex, `codex/game-journey`)
+
+- Feature commit: `dfb4e6d`. Continued owner-directed development beyond the queue.
+- Guided goals remember actual earlier shovel/bucket work, loaded pickups, weighing,
+  deliveries and upgrades. The journal retains all 22 goals in four chapters, dated
+  reward records and a one-time established-company record. Legacy completion gets no
+  invented date or duplicate reward. Guide visibility is optional; free play continues.
+- F2 and the pause/office menus open the Field guide: 13 searchable practical articles,
+  links to relevant apps, troubleshooting and current rebound controls. Article changes
+  begin at the top; tab changes reset their reading position. Intro offers guidance choice.
+- Saves retain one usable previous revision per slot, detect accidental corruption and
+  recover damaged primary copies. Portable JSON preview/import validates the company and
+  packed terrain before replacing a manual slot. Newer versions can be exported intact.
+  Exporting the current company works independently of browser storage. Failed writes
+  retain the primary, failed Save and quit keeps the company open, and periodic/morning
+  autosaves run after the frame's tick handlers finish.
+- Checked: **495 tests in 79 files**, lint, production build, `smoke.mjs` and the new
+  `journey.mjs`; all passed, no browser console errors. Unit coverage includes a real
+  early shovel-to-pickup delivery before the barrow lesson, reload, independent company
+  events, legacy histories, once-only completion, quota failures, corruption and imports.
+- Browser checks use actual menus, downloads and file uploads: guide toggle, search,
+  rebound keys, manual-save rotation, bad/valid imports, Continue recovery, failed exit,
+  emergency export, successful Save and quit, periodic autosave and completion reload.
+  The final-goal state and shortened autosave interval are explicit fixtures, not a
+  full campaign playthrough. A first run exposed a case-sensitive assertion against
+  CSS-uppercase text; the assertion now checks the displayed text without case sensitivity.
+- Inspected journal, handbook, completion and save-manager screenshots at 1280×850,
+  plus handbook/save views at 390×844. Evidence remains outside Git in
+  `/workspace/.cache/quarry/journey-shots`. UI captures hide the 3D scene for speed;
+  smoke still exercises normal world startup, a physical shovelful, all apps and reload.
+- Limits: Chromium software rendering, Low graphics. No manual end-to-end playthrough,
+  real-GPU performance measurement or listening test is claimed.
+
 ## 4 October 2026 · Rock blasting (Codex, `codex/rock-blasting`)
 
 - Feature commit: `8f1ad4f`. Owner-directed development beyond the task queue.
