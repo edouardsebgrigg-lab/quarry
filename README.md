@@ -88,6 +88,9 @@ make room. Release movement to see the normal tipping prompt again; **E** lets g
 | W A S D | Drive on tracks |
 
 In Direct mode the tooth edge sweeps a strip through the ground. Bucket width, angle, available room, machine force and material resistance determine the bite. A partly filled bucket keeps collecting until its loose-volume capacity is reached. The load pours only when the bucket opens, into the bed beneath it or onto your field. Assisted mode performs a real reach/bite/drag/curl/lift stroke; use the wheel to adjust reach and Right Shift + wheel to adjust cut depth. Both modes show reach, depth and load in the HUD.
+In Assisted mode, empty each bite before starting the next stroke, even if only a few
+kilos came out. The dump prompt and target ring recognise small loads; Direct mode
+can keep filling a partly loaded bucket. Empty it before changing attachments.
 
 | Site dumper | |
 |---|---|

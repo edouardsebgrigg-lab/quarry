@@ -1,8 +1,13 @@
 // Shared physical-operation rules. A loaded bucket is not necessarily a full bucket.
+import { pileTotal } from '../quarry/piles.js';
+
+// Match the material-transfer precision so a small bite remains possible to empty.
+export const hasBucketLoad = load => pileTotal(load ?? {}) > 1e-9;
+
 export function bucketFill(ground, stats, load) {
   const volume = ground.looseVolume(load);
   const capacity = Math.max(0.001, stats.bucketVolume);
-  return { volume, capacity, fraction: Math.min(1, volume / capacity), full: capacity - volume < 0.002, loaded: volume > 1e-6 };
+  return { volume, capacity, fraction: Math.min(1, volume / capacity), full: capacity - volume < 0.002, loaded: hasBucketLoad(load) };
 }
 
 // Teeth should pull into the face with a curled cutting edge, not harvest material by

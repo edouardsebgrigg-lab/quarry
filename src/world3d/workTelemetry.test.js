@@ -20,4 +20,11 @@ describe('operating feedback',()=>{
   expect(workFeedback({digger:true,fill:.99,full:false,feel:running})).toBeNull();
   expect(workFeedback({digger:true,attachment:'breaker',material:'rock',loose:true,blocked:true,feel:running}).label).toContain('use a bucket');
  });
+ it('a partial Assisted bite calls for unloading while Direct can keep cutting',()=>{
+  const sample={digger:true,loaded:true,full:false,fill:.02,feel:running};
+  expect(workFeedback(sample).label).toBe('Bucket loaded — swing to unload');
+  expect(workFeedback({...sample,direct:true})).toBeNull();
+  expect(workFeedback({...sample,feel:{...running,digging:true}}).label).toBe('Cutting material');
+  expect(workFeedback({...sample,feel:{...running,pour:.3}}).label).toBe('Pouring material');
+ });
 });

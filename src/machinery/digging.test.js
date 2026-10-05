@@ -3,8 +3,38 @@ import { createTestGame } from '../game/testing.js';
 import { bucketFill, cuttingAttack } from './digging.js';
 import { getStats, tickJobs } from './index.js';
 import { pileTotal } from '../quarry/index.js';
+import { diggerToolChoices } from '../ui/game/diggerToolChoices.js';
 
 describe('physical machine operation', () => {
+  it.each([.005, 1e-7])('a %s t remainder stays loaded and can be emptied before another cycle', tonnes => {
+    const game=createTestGame(18),g=game.ctx.ground;
+    const m=game.state.machines.find(m=>m.type==='excavator');
+    m.load={topsoil:tonnes};
+    const total=()=>pileTotal(g.totals())+pileTotal(m.load);
+    const before=total();
+    expect(bucketFill(g,getStats(game.data,m),m.load)).toMatchObject({loaded:true,full:false});
+    expect(game.actions.scoop(m.id,{x:40,z:40})).toMatchObject({ok:false,reason:'The bucket still contains material. Dump it first.'});
+    expect(diggerToolChoices(game.data,m).reason).toMatch(/Empty the bucket/);
+    expect(game.actions.setDiggerAttachment(m.id,'trench').ok).toBe(false);
+    expect(game.actions.dumpBucket(m.id,{x:44,z:40})).toMatchObject({ok:true,tonnes});
+    expect(m.load).toEqual({});
+    expect(total()).toBeCloseTo(before,7);
+    expect(game.actions.scoop(m.id,{x:40,z:40}).ok).toBe(true);
+  });
+
+  it('a zero-share pour leaves a small load, terrain and transfer events untouched', () => {
+    const game=createTestGame(19),g=game.ctx.ground;
+    const m=game.state.machines.find(m=>m.type==='excavator'),truck=game.state.machines.find(m=>m.type==='truck');
+    m.load={topsoil:.004,clay:.002};
+    const before=structuredClone({load:m.load,ground:g.totals(),truck:truck.load});
+    const events=[];game.events.on('bucketDumped',e=>events.push(e));
+    for(const target of [{x:44,z:40},{machineId:truck.id}]) {
+      expect(game.actions.dumpBucket(m.id,target,0)).toMatchObject({ok:true,tonnes:0});
+      expect({load:m.load,ground:g.totals(),truck:truck.load}).toEqual(before);
+    }
+    expect(events).toEqual([]);
+  });
+
   it('a first bite remains refillable until actual loose-volume capacity', () => {
     const game = createTestGame(18), g = game.ctx.ground;
     const m = game.state.machines.find(m => m.type === 'excavator'), stats = getStats(game.data, m);

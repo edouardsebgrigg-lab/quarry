@@ -8,6 +8,7 @@ import { applyWear } from './wear.js';
 import { dealerPrice } from '../career/index.js';
 import { offerPrice } from '../happenings/index.js';
 import { loadCarrier, combinationStats, canDeliver, cargoRoom } from './trailers.js';
+import { hasBucketLoad } from './digging.js';
 
 export function createMachine(state, data, type, tier, siteId) {
   const td = tierData(data, type, tier);
@@ -137,7 +138,8 @@ export function dumpBucket(ctx, diggerId, target = {}, share = 1) {
   const ex = getMachine(ctx, diggerId);
   if (!ex || !isDigger(ctx.data, ex.type)) return { ok: false, reason: 'Not a digger' };
   const amount = pileTotal(ex.load) * Math.min(1, Math.max(0, share));
-  if (pileTotal(ex.load) <= 1e-9) return { ok: false, reason: 'The bucket is empty' };
+  if (!hasBucketLoad(ex.load)) return { ok: false, reason: 'The bucket is empty' };
+  if (amount <= 1e-9) return { ok: true, tonnes: 0 };
   let moved = 0;
   if (target.stockpileBay) {
     if (!stockpileConfig(ctx, target.stockpileBay)) return { ok: false, reason: 'Unknown stockpile bay' };
@@ -165,7 +167,7 @@ export function dumpBucket(ctx, diggerId, target = {}, share = 1) {
     if (all) ex.load = {};
     moved = ground.deposit({ x: target.x, z: target.z, tonnes: out, radius: target.radius ?? 0.7 });
   }
-  if (pileTotal(ex.load) <= 1e-9) ex.load = {};
+  if (!hasBucketLoad(ex.load)) ex.load = {};
   ctx.events.emit('bucketDumped', { machineId: diggerId, truckId: target.machineId ?? null, tonnes: moved });
   return { ok: true, tonnes: moved };
 }
@@ -219,7 +221,7 @@ export function setDiggerAttachment(ctx, machineId, attachment) {
   const m = getMachine(ctx, machineId);
   if (!m || !isDigger(ctx.data, m.type)) return { ok: false, reason: 'Choose a digger' };
   if (m.rental) return { ok: false, reason: 'Return rented equipment unchanged' };
-  if (m.job || pileTotal(m.load) > 1e-6) return { ok: false, reason: 'Finish work and empty the bucket before changing attachments' };
+  if (m.job || hasBucketLoad(m.load)) return { ok: false, reason: 'Finish work and empty the bucket before changing attachments' };
   const choices = tierData(ctx.data, m.type, m.tier).attachments ?? ['standard', 'trench', 'grading'];
   if (!choices.includes(attachment)) return { ok: false, reason: 'This attachment does not fit' };
   m.attachment = attachment;

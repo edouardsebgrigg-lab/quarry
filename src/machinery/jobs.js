@@ -12,6 +12,7 @@ import { applyWear, serviceCost } from './wear.js';
 import { getMachine, machineName } from './fleet.js';
 import { loadCarrier, combinationStats } from './trailers.js';
 import { serviceSupport } from './serviceSupport.js';
+import { bucketFill, hasBucketLoad } from './digging.js';
 import { quoteBuyerDelivery, deliverToBuyer } from '../trade/index.js';
 
 const MIN_LOAD = 0.02;
@@ -35,7 +36,8 @@ export const JOBS = {
         if (!stockpileConfig(ctx, params.stockpileBay) || !ownsBuilding(ctx, 'stockpiles', m.siteId)) return 'Commission the stockpile bays first';
         if (pileTotal(stockpileLoad(ctx, params.stockpileBay, m.siteId)) <= 0) return 'Stockpile bay is empty';
       } else if (!groundAt(ctx,params.x,params.z)?.workable(params.x, params.z)) return 'You can only dig on your own land';
-      if (pileTotal(m.load) > 1e-9) return 'The bucket is full. Dump it first.';
+      if (hasBucketLoad(m.load)) return bucketFill(ctx.ground, stats, m.load).full
+        ? 'The bucket is full. Dump it first.' : 'The bucket still contains material. Dump it first.';
       return null;
     },
     begin(ctx, m, stats, job) {

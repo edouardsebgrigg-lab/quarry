@@ -225,7 +225,7 @@ Ground `materialResponseAt` exposes resistance, cohesion, flow, wet grip and rol
 
 ### Digging operation
 
-`machinery/digging.js` centralises true loose-volume bucket fill and directional attack. Assisted jobs marked `physical` receive material incrementally from world tooth sweeps and never mint a fallback bucket on completion. Dumps retain cargo until the real joint pose opens. Direct mouse and independent joint/slew keys use material resistance feedback, free look and precision. Digger placement saves optional arm/house/reach/depth/last-dump state. Attachments alter cut geometry and available tools through the action boundary.
+`machinery/digging.js` centralises true loose-volume bucket fill and directional attack. Its shared `hasBucketLoad` uses the transfer system’s material precision across Assisted inputs, Direct pouring, target rings, prompts, timed-job eligibility and attachment selection. A sub-10-kg bite remains dumpable; a zero-share pour leaves cargo, ground and transfer events untouched. Assisted jobs marked `physical` receive material incrementally from world tooth sweeps and never mint a fallback bucket on completion. Dumps retain cargo until the real joint pose opens. Direct mouse and independent joint/slew keys use material resistance feedback, free look and precision. Digger placement saves optional arm/house/reach/depth/last-dump state. Attachments alter cut geometry and available tools through the action boundary.
 
 ### First hire
 

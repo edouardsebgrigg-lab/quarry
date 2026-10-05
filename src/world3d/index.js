@@ -53,7 +53,7 @@ import { contractsState } from '../contracts/index.js';
 import { barrowFill } from '../handtools/index.js';
 import { keyLabel } from '../input/index.js';
 import { pileTotal, activeWorkArea, workAreas, activeWorkFace } from '../quarry/index.js';
-import { bucketFill, cuttingAttack } from '../machinery/digging.js';
+import { bucketFill, cuttingAttack, hasBucketLoad } from '../machinery/digging.js';
 import { loadCarrier, combinationStats, attachedTrailer, cargoVolume } from '../machinery/trailers.js';
 import {
   getStats, machinesAt, machineName, getMachine, JOBS, jobProgress, isDigger, typeName, machinePrice,
@@ -434,7 +434,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         return true;
       case 'tip': {
         if (v?.digger) {
-          if (pileTotal(cargoLoad(m)) > 1e-6 && settings.diggerControls === 'assisted' && v.state.lastDump) {
+          if (hasBucketLoad(cargoLoad(m)) && settings.diggerControls === 'assisted' && v.state.lastDump) {
             const destination = v.state.lastDump;
             const bed = destination.machineId ? vehicles.get(destination.machineId) : null;
             const point = bed?.bedWorld() ?? (destination.x != null ? destination : null);
@@ -739,9 +739,9 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     if (m.broken || working || dt <= 0) return;
 
     const target = v.bucketTarget();
-    const full = pileTotal(cargoLoad(m)) > 0.01;
+    const loaded = hasBucketLoad(cargoLoad(m));
     const store = yardStockpiles.bayAt(target.x, target.z);
-    if (!full && mouse.isDown()) {
+    if (!loaded && mouse.isDown()) {
       if (store || ground?.workable(target.x, target.z)) {
         const r = game.actions.scoop(m.id, { x: target.x, z: target.z, stockpileBay: store?.id, physical: true, depth: v.state.cutDepth, groundY: heightAt(target.x, target.z) });
         if (!r.ok && clicked) notify(r.reason, 'warn');
@@ -749,7 +749,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         notify('Swing the bucket over your field to dig', 'warn');
         digHintShown = true;
       }
-    } else if (full && clicked) {
+    } else if (loaded && clicked) {
       const bed = bedUnder(target);
       const destination = { x:target.x,z:target.z,...(bed ? { machineId: bed.machineId } : store ? { stockpileBay: store.id } : {}) };
       if (!bed && !store && !ground?.workable(target.x, target.z)) notify('Swing over your field or a truck to dump', 'warn');
@@ -1241,12 +1241,12 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     } else if (v?.digger && !m.job) {
       const t = v.bucketTarget();
       const bed = bedUnder(t);
-      const full = pileTotal(cargoLoad(m)) > 0.01;
+      const loaded = hasBucketLoad(cargoLoad(m));
       const store = yardStockpiles.bayAt(t.x, t.z);
       const diggable = !!store || ground?.workable(t.x, t.z);
       marker.visible = true;
       marker.position.set(t.x, (bed ? bed.bedWorld().y : heightAt(t.x, t.z)) + 0.08, t.z);
-      marker.material.color.set(full ? (bed ? 0x4fc3f7 : (diggable ? 0xf2b632 : 0x888888)) : (diggable ? 0x7ee07e : 0x888888));
+      marker.material.color.set(loaded ? (bed ? 0x4fc3f7 : (diggable ? 0xf2b632 : 0x888888)) : (diggable ? 0x7ee07e : 0x888888));
     } else marker.visible = false;
 
     particles.update(dt);
@@ -1330,7 +1330,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       } else prompt = { key: 'Wheel', text: 'Lower the boom, push the stick out, then curl and pull in' };
     } else if (v.digger) {
       const t = v.bucketTarget();
-      const full = pileTotal(cargoLoad(m)) > 0.01;
+      const loaded = hasBucketLoad(cargoLoad(m));
       const bed = bedUnder(t);
       const store = yardStockpiles.bayAt(t.x, t.z);
       const diggable = !!store || ground?.workable(t.x, t.z);
@@ -1339,7 +1339,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         prompt = !store && face.material === 'rock' && !face.loose
           ? { key: 'Hold LMB', text: 'Break exposed rock into rubble' }
           : { key: 'T', text: 'Use a bucket to remove soil or collect rubble' };
-      } else if (!full) {
+      } else if (!loaded) {
         prompt = diggable
           ? { key: 'Hold LMB', text: store ? `Load from ${stockpileConfig(game.ctx, store.id).name}` : `Dig ${(data.ground.materials[ground.surfaceAt(t.x, t.z)]?.name ?? '').toLowerCase()}` }
           : { key: null, text: 'Swing the bucket over your field to dig' };
@@ -1419,7 +1419,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       machine.attachment=v.digger?({standard:'Standard bucket',trench:'Trenching bucket',grading:'Grading bucket',breaker:'Hydraulic breaker'}[m.attachment??'standard']??m.attachment):null;
       machine.grossLoadTonnes=stats.grossTrailerMass!=null?stats.grossTrailerMass/1000:null;
       machine.towLimitTonnes=stats.maxTowMass!=null?stats.maxTowMass/1000:null;
-      machine.workFeedback=workFeedback({digger:v.digger,attachment:m.attachment??'standard',fill:machine.bucketFill01??0,full:filling?.full??false,
+      machine.workFeedback=workFeedback({digger:v.digger,attachment:m.attachment??'standard',fill:machine.bucketFill01??0,full:filling?.full??false,loaded:filling?.loaded??false,direct:machine.direct,
         blocked:cuts.get(m.id)?.blocked,resistance:v.state?.resistance??0,force:stats.breakoutForce??60,material:materialId,loose:response?.loose,feel:f,overloaded:stats.overloaded});
       if (v.road && roadNotice?.machineId === m.id && roadNotice.left > 0) machine.workFeedback = { kind: 'warn', label: roadNotice.text, intensity: 1 };
       machine.engine = f.engine; // off / cranking / running / idleOut / stopping / stall

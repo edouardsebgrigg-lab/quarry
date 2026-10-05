@@ -278,9 +278,10 @@ export function createHud3d({ settings }) {
       const volumeFill = !digger && m.capacityVolume > 0 ? (m.loadVolume ?? 0) / m.capacityVolume : 0;
       const fill01 = digger && Number.isFinite(m.bucketFill01) ? m.bucketFill01 : Math.max(volumeFill, capacity > 0 ? amount / capacity : 0);
       load.fill.style.width = `${Math.round(Math.max(0, Math.min(1, fill01)) * 100)}%`;
-      const dp = capacity < 1 ? 2 : 1;
+      const dp = digger && (capacity < .1 || amount > 0 && amount < .01) ? 3 : capacity < 1 ? 2 : 1;
+      const reading = amount > 0 && amount < 10 ** -dp ? `<${(10 ** -dp).toFixed(dp)}` : amount.toFixed(dp);
       load.node.style.display = capacity > 0 ? '' : 'none';
-      setText(load.val, `${amount.toFixed(dp)}/${capacity.toFixed(dp)} ${digger ? 'm³' : 't'}`);
+      setText(load.val, `${reading}/${capacity.toFixed(dp)} ${digger ? 'm³' : 't'}`);
 
       workMaterial.style.display = m.material || m.attachment ? '' : 'none';
       setText(materialName, m.material?.name ?? m.material?.id ?? '');

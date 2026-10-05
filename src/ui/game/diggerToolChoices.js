@@ -1,6 +1,6 @@
 // Read-only attachment descriptions and availability. The game action still validates a swap.
 import { getStats, isDigger } from '../../machinery/index.js';
-import { pileTotal } from '../../quarry/index.js';
+import { hasBucketLoad } from '../../machinery/digging.js';
 
 const TOOLS = {
   standard: { name: 'Standard bucket', purpose: 'General digging and loading.' },
@@ -13,7 +13,7 @@ export function diggerToolChoices(data, machine, { busy = false } = {}) {
   if (!machine || !isDigger(data, machine.type)) return { reason: 'Get into a digger to choose a tool', choices: [] };
   const reason = machine.rental ? 'Rented equipment must be returned with its original tool.'
     : machine.job || busy ? 'Stop the machine and finish the current stroke before changing tools.'
-    : pileTotal(machine.load ?? {}) > 1e-6 ? 'Empty the bucket before changing tools.' : null;
+    : hasBucketLoad(machine.load) ? 'Empty the bucket before changing tools.' : null;
   const compatible = getStats(data, machine).attachments ?? ['standard', 'trench', 'grading'];
   const choices = compatible.map(id => {
     const stats = getStats(data, { ...machine, attachment: id });

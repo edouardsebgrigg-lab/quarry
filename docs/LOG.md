@@ -4,6 +4,40 @@ One short entry per task, newest at the top: the task, the agent and branch, the
 `main`, what changed, what was actually run, and what wasn't verified. Older, longer reports
 are in `docs/archive/CODEX-CHECKPOINT.md`.
 
+## 5 October 2026 · Digger reliability (Codex, `codex/digger-reliability`)
+
+- Reproduced an Assisted-mode deadlock with 3.1 kg cut from actual ground: the HUD
+  offered “Dig topsoil”, but the job system rejected another stroke as a full bucket.
+  Shared loaded-bucket detection now matches material-transfer precision in input
+  routing, target rings, Direct pouring, remembered dumps, job checks and tool selection.
+  Any meaningful small bite can be emptied. Fullness still uses loose-volume capacity;
+  Direct controls can continue filling a partial bucket.
+- Partial Assisted cargo now reads “Bucket loaded — swing to unload” instead of
+  “Ready to dig”. Small bucket readings use three decimal places and positive amounts
+  below display precision use a less-than value instead of a misleading zero.
+  README and the Field guide explain emptying each Assisted stroke.
+- A second regression reproduced a zero-share pour emptying a 6 kg bucket through
+  the old crumbs rule. Zero transfers now leave ground, carrier cargo and events alone.
+  Unit coverage includes 5 kg and sub-gram remainders, action/UI attachment restrictions,
+  dumping and resuming digging, zero-share ground/carrier transfers and feedback priority.
+- New `digger-cycles.mjs` exercises all eight current authored models with physical
+  arm motion, real tooth cuts and dump timing. Money, machine placement, pointer lock,
+  fixed-step world/job updates and small-load setup from actual ground are explicit
+  fixtures. Rendering is hidden between screenshots. This is not a human playthrough,
+  road-haul check or real-GPU performance test.
+
+- Checked: **514 tests in 81 files**, lint, build, smoke and `digger-cycles.mjs`
+  passed. All four compact diggers and all four excavators started physical strokes,
+  cut nonzero cargo within actual bucket capacity, emptied through real arm motion
+  and conserved terrain-plus-machine mass. A saved small bite retained identical cargo
+  and money after Continue, still offered a dump and emptied successfully. No browser
+  console errors. Inspected the small-load and Heavy 320 screenshots at 960×540;
+  prompt, loaded advice and nonzero volume are legible. Evidence is outside Git in
+  `/workspace/.cache/quarry/digger-shots`.
+- Limits: the multi-model check covers Assisted digging into ground and ground dumping,
+  not every attachment, Direct lever path, carrier alignment, human control feel, audio
+  or real-GPU performance. Existing Direct/material/attachment rule tests also passed.
+
 ## 5 October 2026 · Opening-loop handling feedback (Codex, `codex/opening-loop`)
 
 - Feature commit: `b9e6e38`. Continued owner-directed development beyond the queue.

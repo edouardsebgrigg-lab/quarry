@@ -12,8 +12,9 @@ Purchasable South Meadow and East Ridge more than double the diggable area, with
 independent terrain, physical access and shared company machinery/processing.
 Saved working faces now pair borehole profiles with precise navigation and depth
 comparisons after excavation. The first sale, springs, Micro 08 and Continue are also
-checked with automated inputs and explicit depot placement. 510 unit tests pass;
-lint/build and smoke, faces, barrow-guidance and opening browser checks pass.
+checked with automated inputs and explicit depot placement. Partial-bucket deadlocks
+are fixed; all eight current digger models pass physical scoop/dump checks. 514 unit
+tests pass, alongside lint/build and smoke/digger-cycle browser checks.
 The latest expansions followed the owner's direct request for broad development
 beyond this queue; the manual play tasks below remain unverified.
 
@@ -40,6 +41,13 @@ about playing it properly and fixing what gets in the way.
       sun's glare at dawn and dusk isn't overpowering.
 
 ## Completed upgrades
+
+- [x] **U-10 Digger reliability** (Codex, `codex/digger-reliability`): small bites
+      remain dumpable across controls, prompts and saves; accurate partial-load advice
+      and readouts; zero-share pours preserve cargo. All eight current digger models
+      completed physical Assisted scoop/dump cycles with conserved material. 514 tests,
+      lint/build, smoke and digger-cycles browser checks passed. Simulation/placement
+      fixtures are explicit; human operation remains unverified.
 
 - [x] **U-9 Opening-loop checks and handling feedback** (Codex, `codex/opening-loop`):
       directional blocked-barrow prompts; normal-money shovel/barrow/pickup transfers,
