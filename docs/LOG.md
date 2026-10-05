@@ -4,6 +4,40 @@ One short entry per task, newest at the top: the task, the agent and branch, the
 `main`, what changed, what was actually run, and what wasn't verified. Older, longer reports
 are in `docs/archive/CODEX-CHECKPOINT.md`.
 
+## 5 October 2026 · Neighbouring land expansion (Codex, `codex/land-expansion`)
+
+- Feature commit: `eae6e76`. Continued owner-directed development beyond the queue.
+- Added South Meadow ($4,000, 1.95 ha) and East Ridge ($6,500, 0.70 ha), expanding
+  total diggable ground from 23,104 to 49,600 m². South has deeper sand; Ridge has
+  shallow cover and a deeper finite rock reserve. Both share the existing company,
+  machinery and processing yard. Purchases are once-only capital expenditure.
+- Extra fields use independent seeded grids and packed save records; Home Field's
+  grid dimensions and existing excavations stay intact. Terrain routing covers hand
+  tools, Direct/Assisted machines, tips, staff, earthworks and contractor cuts. Unowned
+  fields can be surveyed but cannot be excavated or altered through these actions.
+- Land cards provide reserve estimates and entrance navigation. Owned fields add work
+  areas and a blasting-map selector. World meshes, physics holes, corner stakes,
+  ownership signs, map boundaries and two access strips make the fields physically
+  usable; the southern hedge has a real opening. A new handbook article explains them.
+- Checked: **503 tests in 80 files**, lint, build, `smoke.mjs` and `land.mjs`; all passed,
+  no browser console errors. Rules cover preserved Home terrain/RNG, once-only payment,
+  material transfer conservation, operators, grading, saved contractor cuts, legacy
+  defaults and rejected corrupt extra terrain.
+- Browser used actual purchase/survey/navigation controls, new work areas and the
+  blasting field selector. A tracked digger stopped before purchase, then crossed
+  South's opening to Z191.1 and Ridge's entrance to X237.4 after purchase. A physical
+  shovel removed new-field material; a transfer to the other field conserved it.
+  Save and Continue restored money, both purchase receipts and all terrain totals.
+  Money, placement and fixed-step steering were explicit fixtures, not a human drive.
+- Inspected purchase/survey and map screenshots at 1280×850, purchase layout at
+  390×844 (no horizontal overflow), and the changed ownership board/southern entrance
+  at 960×540. Evidence stays outside Git in `/workspace/.cache/quarry/land-shots`.
+  UI screenshots hid the 3D scene for speed; the world/physical-tool checks rendered it.
+  The first feature run exposed an ambiguous accessible name on the wrapped Field
+  selector; an explicit label fixed it, and the complete check passed afterwards.
+- Limits: Chromium software rendering and Low graphics. No manual full-company
+  playthrough, long-session balance check, listening test or real-GPU benchmark.
+
 ## 5 October 2026 · Player journey and save resilience (Codex, `codex/game-journey`)
 
 - Feature commit: `dfb4e6d`. Continued owner-directed development beyond the queue.

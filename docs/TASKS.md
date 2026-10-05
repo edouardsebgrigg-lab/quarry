@@ -8,15 +8,13 @@ Older queues and their history are in `docs/archive/`.
 State on 5 October 2026: `main` includes regional buyers, plant upgrades and saved
 production queues, expandable bays, soil recovery, conserved contractor rock blasting,
 and a lasting player journal, searchable Field guide and recoverable portable saves.
-495 unit tests pass; lint/build and smoke/journey browser checks pass.
+Purchasable South Meadow and East Ridge more than double the diggable area, with
+independent terrain, physical access and shared company machinery/processing.
+503 unit tests pass; lint/build and smoke/land browser checks pass.
 The latest expansions followed the owner's direct request for broad development
 beyond this queue; the manual play tasks below remain unverified.
 
 ## Play and fix (most valuable now)
-
-- [ ] **U-7 Land expansion** — Codex, `codex/land-expansion`: neighbouring purchasable
-      fields, distinct geology, conserved terrain, access, surveys and navigation.
-      Owner-directed development beyond queue ordering.
 
 Nobody has yet played the current game start to finish with real controls. These tasks are
 about playing it properly and fixing what gets in the way.
@@ -39,6 +37,13 @@ about playing it properly and fixing what gets in the way.
       sun's glare at dawn and dusk isn't overpowering.
 
 ## Completed upgrades
+
+- [x] **U-7 Land expansion** (Codex, `codex/land-expansion`): South Meadow and East
+      Ridge purchases, distinct geology, independent saved terrain, physical access,
+      surveys, map markers and navigation. Shovels, machinery, staff, earthworks and
+      blasting route to owned fields. Feature commit: `eae6e76`.
+      503 tests, lint/build and both browser checks passed. Fixed-step vehicle inputs
+      and seeded finances were fixtures; manual play and GPU performance remain open.
 
 - [x] **U-6 Player journey and save resilience** (Codex, `codex/game-journey`):
       remembered early actions, a permanent completion journal, optional guidance,
