@@ -6,6 +6,7 @@ are in `docs/archive/CODEX-CHECKPOINT.md`.
 
 ## 5 October 2026 · Complete-company progression (Codex, `codex/company-progression`)
 
+- Verification commit: `7f908e6`. Continued owner-directed development beyond the queue.
 - Added a domain integration check from the real $200 opening to all 22 guided goals.
   Every shovelful and bucket comes out of generated terrain; deliveries, machine and
   workshop purchases, groundworks, repairs and services use normal game actions.

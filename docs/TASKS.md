@@ -49,6 +49,7 @@ about playing it properly and fixing what gets in the way.
       slot recovery and a completed-company portable save both permit continued work.
       Contracts remain optional. 515 tests, lint/build and browser smoke passed.
       Domain positions and haul times are fixtures; manual play remains open.
+      Verification commit: `7f908e6`.
 
 - [x] **U-10 Digger reliability** (Codex, `codex/digger-reliability`): small bites
       remain dumpable across controls, prompts and saves; accurate partial-load advice
