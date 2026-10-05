@@ -116,6 +116,7 @@ export function createMapView({ world }) {
       }
     };
     rect(map.home.plot, 'rgba(120, 96, 60, 0.55)', '#f5b82e');
+    for(const p of info.landParcels??[])rect(p,p.owned?'rgba(120,96,60,.55)':'rgba(75,108,78,.35)',p.owned?'#f5b82e':'#8db19d');
     for (const area of info.workAreas ?? []) {
       if (area.id === info.activeWorkAreaId) rect(area, 'rgba(245,184,46,.25)', '#ffd775');
     }
@@ -211,6 +212,7 @@ export function createMapView({ world }) {
     const place = (text, x, z, o) => label(text, x, z, { prio: 2, ...o });
     for(const buyer of info.buyers??[])place(buyer.name,(buyer.yard.x0+buyer.yard.x1)/2,(buyer.yard.z0+buyer.yard.z1)/2,{color:'#a5d8b9',size:11});
     place('Your field', (map.home.plot.x0 + map.home.plot.x1) / 2, (map.home.plot.z0 + map.home.plot.z1) / 2, { color: '#f5b82e' });
+    for(const p of info.landParcels??[])place(`${p.name}${p.owned?'':' · for sale'}`,(p.x0+p.x1)/2,(p.z0+p.z1)/2,{color:p.owned?'#f5b82e':'#a9cbb6'});
     place(map.village.name, 690, -470, { size: 17, weight: 750, prio: 3 });
     place(map.dealer.name, (map.dealer.yard.x0 + map.dealer.yard.x1) / 2, map.dealer.yard.z1, { size: 12, dy: 12 });
     for (const f of plan.farms ?? []) label(f.name, f.x, f.z, { size: 11, weight: 550, color: COLORS.textDim, prio: 1, dy: 18 });

@@ -835,7 +835,8 @@ export function createGround(groundData, plotId, opts = {}) {
       if (loose[k]>1e-5) { const m=mixture(mix);add(m.material,loose[k],'loose',m.composition); }
       if (fill[k]>1e-5) { const m=mixture(fillMix);add(m.material,fill[k],'compacted',m.composition); }
       for(let l=K-1;l>=0;l--) add(mats[layers[l]],nat[l][k],'natural');
-      return {surface:{...response(k),coverMaterial:rows[0]?.material??mats[bedMat]},layers:rows,bedrock:mats[bedMat],bedrockDepth:depth,height:height(k)};
+      return {surface:{...response(k),coverMaterial:rows[0]?.material??mats[bedMat]},layers:rows,bedrock:mats[bedMat],bedrockDepth:depth,
+        rockRemaining:Math.max(0,bed[k]-bedBase[k]+rockDepth),height:height(k)};
     },
     cellSurface: (i, j) => topMaterial(idx(i, j)),
     cellDisturbed: (i, j) => disturbed[idx(i, j)] !== 0,

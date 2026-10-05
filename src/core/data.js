@@ -28,8 +28,9 @@ import trade from '../../data/trade.json';
 import blasting from '../../data/blasting.json';
 import persistence from '../../data/persistence.json';
 import handbook from '../../data/handbook.json';
+import land from '../../data/land.json';
 
 export function loadData() {
   // Deep copy so tests can tweak numbers without affecting each other.
-  return structuredClone({ game, economy, materials, market, machines, mods, sites, objectives, ground, tools, depot, works, contracts, weather, buildings, milestones, happenings, hire, classifieds, staff, rental, handling, presentation, production, operations, trade, blasting, persistence, handbook });
+  return structuredClone({ game, economy, materials, market, machines, mods, sites, objectives, ground, tools, depot, works, contracts, weather, buildings, milestones, happenings, hire, classifieds, staff, rental, handling, presentation, production, operations, trade, blasting, persistence, handbook, land });
 }

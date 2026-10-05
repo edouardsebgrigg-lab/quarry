@@ -14,6 +14,10 @@ beyond this queue; the manual play tasks below remain unverified.
 
 ## Play and fix (most valuable now)
 
+- [ ] **U-7 Land expansion** — Codex, `codex/land-expansion`: neighbouring purchasable
+      fields, distinct geology, conserved terrain, access, surveys and navigation.
+      Owner-directed development beyond queue ordering.
+
 Nobody has yet played the current game start to finish with real controls. These tasks are
 about playing it properly and fixing what gets in the way.
 

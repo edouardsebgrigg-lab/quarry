@@ -11,7 +11,7 @@ const round2 = (n) => Math.round(n * 100) / 100;
 // (money movements that aren't trading: borrowing and paying back)
 const NOT_TRADE = new Set(['loan', 'loanPayment', 'loanRepaid', 'dev']);
 // (buying and selling machines, upgrades and buildings is investment, not the day's trading)
-const isCapital = (reason) => reason === 'machine' || reason === 'mod' || reason === 'stockpileUpgrade' || reason === 'plantUpgrade' || reason === 'machineSale' || reason?.startsWith('building:');
+const isCapital = (reason) => reason === 'landPurchase' || reason === 'machine' || reason === 'mod' || reason === 'stockpileUpgrade' || reason === 'plantUpgrade' || reason === 'machineSale' || reason?.startsWith('building:');
 
 export function logbook(ctx) {
   ctx.state.logbook ??= { machines: {}, days: [], messages: [], read: 0 };

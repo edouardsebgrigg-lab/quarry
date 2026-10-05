@@ -1,5 +1,6 @@
 // Work-area surveys are samples of the current terrain, not a new resource ledger.
 import { getDate } from '../core/index.js';
+import { landParcels, groundAt } from './land.js';
 
 export function recordSurvey(ctx,id) {
   const survey=surveyWorkArea(ctx,id);
@@ -12,14 +13,16 @@ export function workAreas(ctx) {
   const plot = ctx.data.ground.plots[ctx.data.sites[ctx.state.currentSiteId]?.groundPlot];
   if (!plot) return [];
   const { columns, rows } = ctx.data.operations.survey;
-  const [x0,z0] = plot.origin;
-  const width = plot.width / columns, depth = plot.depth / rows;
-  return Array.from({ length: rows * columns }, (_,i) => {
+  const plots=[{id:'home',plot},...landParcels(ctx).filter(p=>p.owned).map(p=>({id:p.id,name:p.name,plot:ctx.data.ground.plots[p.plot]}))];
+  return plots.flatMap(({id,name,plot})=>{
+    const [x0,z0]=plot.origin,width=plot.width/columns,depth=plot.depth/rows;
+    return Array.from({ length: rows * columns }, (_,i) => {
     const col = i % columns, row = Math.floor(i / columns);
-    return { id: `${row}-${col}`, name: `${ctx.data.operations.areas.rows[row]} ${ctx.data.operations.areas.columns[col]}`,
+    return { id: `${id==='home'?'':id+'/'}${row}-${col}`, parcelId:id, name: `${name?name+' · ':''}${ctx.data.operations.areas.rows[row]} ${ctx.data.operations.areas.columns[col]}`,
       x0: x0 + col * width, x1: x0 + (col + 1) * width,
       z0: z0 + row * depth, z1: z0 + (row + 1) * depth,
       x: x0 + (col + 0.5) * width, z: z0 + (row + 0.5) * depth, area: width * depth };
+    });
   });
 }
 
@@ -34,7 +37,7 @@ export function surveyWorkArea(ctx, id) {
   for (let row = 0; row < side; row++) for (let col = 0; col < side; col++) {
     const x = area.x0 + (col + 0.5) / side * (area.x1 - area.x0);
     const z = area.z0 + (row + 0.5) / side * (area.z1 - area.z0);
-    const column = ctx.ground.inspectAt(x,z);
+    const column = groundAt(ctx,x,z)?.inspectAt(x,z);
     if (!column) continue;
     samples.push({ x,z,bedrockDepth: column.bedrockDepth, surface: column.surface.coverMaterial,
       coverDepth: column.layers.filter(l => l.material === 'topsoil' || l.material === 'clay').reduce((t,l) => t+l.thickness,0) });
@@ -60,6 +63,7 @@ export function setWorkArea(ctx, id) {
   // A deliberate work-area selection takes over navigation, not machine selection.
   ctx.state.player.navigationMachineId = null;
   ctx.state.player.navigationBuyerId = null;
+  ctx.state.player.navigationLandId = null;
   ctx.events.emit('workAreaChanged', { areaId: id });
   return { ok: true };
 }

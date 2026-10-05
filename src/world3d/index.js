@@ -1,3 +1,6 @@
+import { availableGrounds, landParcels, ownsLandAt, groundAt } from '../quarry/land.js';
+import { createGroundAccess } from './groundAccess.js';
+import { createLandMarkers } from './landMarkers.js';
 // The 3D world: the countryside map with your field, the village and the depot. Reads the
 // game state, draws it, and turns walking, driving and digging into calls to the same game
 // actions the rest of the game uses.
@@ -74,7 +77,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const { data } = game;
   const siteId = game.state.currentSiteId;
   const home = MAP.home;
-  const ground = game.ctx.ground;
+  const grounds=availableGrounds(game.ctx,{all:true});
+  const ground=createGroundAccess(game.ctx);
 
   const canvas = document.createElement('canvas');
   canvas.className = 'world-canvas';
@@ -88,14 +92,14 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   // ---- the land
   const plan = planWorld(MAP);
-  const land = createCountryside({ scene, physics, ground, plan });
+  const land = createCountryside({ scene, physics, ground:game.ctx.ground, grounds, plan });
   const half = MAP.half;
   const env = createEnvironment(scene, renderer, q, { x0: -half, x1: half, z0: -half, z1: half }, { outsideY: 28, hillDistance: [1300, 2200] });
   // Your field: its own chunked mesh and colliders, following the ground as it changes.
   // (when the field changes, the grass tufts on it are scattered afresh: none where it's dug,
   // dumped on or torn up)
   let vegetation = null;
-  const groundView = ground ? createGroundView({ scene, physics, ground, onChange: (x0, z0, x1, z1) => vegetation?.refresh(x0, z0, x1, z1) }) : null;
+  const groundViews=grounds.map(ground=>createGroundView({scene,physics,ground,onChange:(x0,z0,x1,z1)=>vegetation?.refresh(x0,z0,x1,z1)}));
   let yardStockpiles = null;
   const heightAt = (x, z) => Math.max(land.heightAt(x, z), yardStockpiles?.surfaceAt(x, z) ?? -Infinity);
   const onPlot = (x, z) => ground && ground.inside(x, z);
@@ -105,6 +109,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   // Height and surface mix anywhere (your field uses the real ground's top material).
   function surfaceAt(x, z) {
     if (onPlot(x, z)) {
+      const ground=groundAt(game.ctx,x,z,{ownedOnly:false});
       const mat = ground.surfaceAt(x, z);
       const i = Math.floor((x - ground.x0) / ground.cellSize);
       const j = Math.floor((z - ground.z0) / ground.cellSize);
@@ -122,6 +127,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   yardStockpiles.setOwned(ownsBuilding(game.ctx, 'stockpiles', siteId));
   const quarryOperations = createQuarryOperations({scene,physics,game,map:MAP,heightAt});
   const regionalYards = createRegionalYards({scene,physics,map:MAP,data,heightAt});
+  const landMarkers=createLandMarkers({scene,physics,game,heightAt});
   const farmScenery = buildFarms({ scene, physics, plan, heightAt });
   batchStatic(scene, [...places.statics, ...farmScenery.statics]); // (hundreds of prop meshes -> a few dozen draws)
   const particles = createParticles(scene);
@@ -135,6 +141,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const houseRects = [...plan.houses, plan.pub].map((h) => ({ x0: h.x - 8, x1: h.x + 8, z0: h.z - 8, z1: h.z + 8 }));
   const noGrowth = [
     ...Object.values(MAP.buyers).flatMap(b=>[[b.yard,2],[b.driveway,2]]),
+    ...landParcels(game.ctx).map(p=>[p,0.5]),
     [home.plot, 0.5], [home.yard, 1], [MAP.depot.yard, 1], [MAP.dealer.yard, 1],
     [{ x0: home.driveway.x0, x1: home.driveway.x1, z0: home.yard.z0 - 14, z1: home.yard.z0 }, 1],
     [{ x0: MAP.depot.driveway.x0, x1: MAP.depot.driveway.x1, z0: MAP.depot.yard.z1, z1: MAP.depot.yard.z1 + 10 }, 1],
@@ -146,7 +153,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const farmTracks = plan.farms.map((f) => farmTrack(plan, f)).filter(Boolean).map((t) => t.points);
   const onFarmTrack = (x, z) => farmTracks.some((pts) => pts.some((p) => Math.abs(p.x - x) < 3 && Math.abs(p.z - z) < 3 && Math.hypot(p.x - x, p.z - z) < 2.6));
   // (tufts grow on your field's turf too, but trees keep off it)
-  const tuftsBlocked = noGrowth.filter(([r]) => r !== home.plot);
+  const tuftsBlocked = noGrowth.filter(([r]) => r !== home.plot && !r.plot);
   vegetation = createVegetation({
     scene,
     quality: settings.graphics,
@@ -189,6 +196,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     if (!onPlot(x, z) && land.onRoad(x, z)) return surfaceGrip('asphalt', wet);
     const s = surfaceAt(x, z);
     if (onPlot(x,z)) {
+      const ground=groundAt(game.ctx,x,z,{ownedOnly:false});
       const i = Math.floor((x-ground.x0)/ground.cellSize), j = Math.floor((z-ground.z0)/ground.cellSize);
       if (!s.grass && !ground.cellBuilt(i,j)) {
         const r = ground.materialResponseAt(x,z);
@@ -202,7 +210,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   // Site machines (not road-legal) stay on your land.
   let blockedNoteT = 0;
-  const onYourLand = (x, z) => inRect(home.boundary, x, z);
+  const onYourLand = (x,z)=>inRect(home.boundary,x,z)||ownsLandAt(game.ctx,x,z);
   // (`fresh`: just back from hire, so it's parked in its spot, not where it was left)
   function addVehicle(machine, { fresh = false } = {}) {
     const spot = (!fresh && saved.machines?.[machine.id]) || parkingSpot(machine.type);
@@ -876,7 +884,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   const beacon = createGuideBeacon(scene);
   const vehicleOf = (type) => [...vehicles.values()].find((x) => x.type === type) ?? null;
   const dominant = (load) => Object.entries(load).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
-  const onField = (p) => !!ground && ground.inside(p.x, p.z);
+  const onField = p=>ground.workable(p.x,p.z);
   function guideTarget() {
     const buyerId=game.state.player.navigationBuyerId,buyer=MAP.buyers[buyerId];
     if(buyer) {
@@ -888,6 +896,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const target = vehicles.get(navigation.attachedTo ?? navigation.id);
       if (target) { const p = target.position(); return { x:p.x,z:p.z,label:machineName(data,navigation),near:target.radius+1.5 }; }
     }
+    const parcel=landParcels(game.ctx).find(p=>p.id===game.state.player.navigationLandId);
+    if(parcel)return {...parcel.entrance,label:parcel.name+(parcel.owned?'':' · for sale'),near:8};
     const area = activeWorkArea(game.ctx);
     if (area) return { x: area.x, z: area.z, label: `${area.name} work area`, near: 5 };
     const o = game.state.objectives?.guideEnabled===false?null:currentObjective(game.ctx);
@@ -1172,7 +1182,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     else controlDumper(v, m, keys, delta, sens, paused ? 0 : dt);
 
     if (!paused) physics.step(dt);
-    groundView?.update();
+    groundViews.forEach(view=>view.update());
     if (planning && (v || hands.holding())) planner.cancel();
     // (while planning, the shovel is put away and the clicks belong to the planner)
     hands.update(paused ? 0 : dt, { onFoot: !v && !planner?.active, clicked: clicked && !paused && !planner?.active, paused, repeat: !!settings.repeatShovel && mouse.isDown() });
@@ -1467,6 +1477,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       barrow: hands.placement(),
       guide: guideTarget(),
       workAreas: workAreas(game.ctx),
+      landParcels:landParcels(game.ctx),
       blast: activeBlast(game.ctx),
       activeWorkAreaId: activeWorkArea(game.ctx)?.id ?? null,
       buyers:Object.entries(MAP.buyers).map(([id,b])=>({id,name:data.trade.buyers[id].name,...b})),
@@ -1578,7 +1589,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       resizeObserver.disconnect();
       mouse.destroy();
       sounds?.destroy();
-      groundView?.dispose();
+      groundViews.forEach(view=>view.dispose());
       hands.destroy();
       beacon.destroy();
       surveyMarker.geometry.dispose();surveyMarker.material.dispose();
@@ -1589,6 +1600,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       blastSite.destroy();
       if(game.ctx.blastOccupants===blastOccupants)delete game.ctx.blastOccupants;
       regionalYards.destroy();
+      landMarkers.destroy();
       land.dispose();
       rain.dispose();
       env.dispose();

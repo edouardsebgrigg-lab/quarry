@@ -145,6 +145,7 @@ export function createGameScreen({ game, app, settings, keyboard, isDev }) {
 
   // Small UI sounds for money in and goals done.
   const offSounds = [
+    game.events.on('landPurchased', () => app.audio?.play('coin', { bus: 'ui', gain: 0.7 })),
     game.events.on('journeyCompleted', () => feedback.message('Your company is established! Your journey is recorded in the Field guide. Keep growing the quarry at your own pace.', 'good')),
     game.events.on('productSold', () => app.audio?.play('coin', { bus: 'ui', gain: 0.8 })),
     game.events.on('objectiveCompleted', () => app.audio?.play('chime', { bus: 'ui', gain: 0.8 })),

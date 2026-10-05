@@ -128,7 +128,8 @@ export const MAP = {
 
   // Field hedges (as well as the ones along the roads), copses and single trees.
   hedges: [
-    [[-6, -8], [-6, 158], [158, 158], [158, 40]], // round the west, south and east of your field
+    [[-6, -8], [-6, 158], [62, 158]], // south access between 62 and 90 m
+    [[90, 158], [158, 158], [158, 40]], // round the west, south and east of your field
     [[-6, -8], [158, -8]], // along the lane side of your field
     [[-300, -20], [-300, -620]],
     [[-620, 300], [340, 300], [360, 700]],

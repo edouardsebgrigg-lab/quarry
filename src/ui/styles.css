@@ -1632,3 +1632,16 @@ body:has(.overlay-digger-tools) .feedback > :is(.mentor,.log,.toasts) { visibili
   .fg-status { font-size: .65rem; }
   .fg-controls { font-size: .8rem; }
 }
+
+/* Adjacent fields: clear purchase choices, with measured geology when requested. */
+.qo-land { display: grid; gap: 1rem; }
+.qo-land-card { display: grid; gap: .7rem; }
+.qo-land-card p, .qo-land-card h3 { margin: 0; line-height: 1.6; }
+.qo-land-status { white-space: nowrap; color: var(--muted); font-size: .8rem; }
+.qo-land-estimates { display: grid; grid-template-columns: 1fr auto; gap: .5rem 1rem; }
+.qo-land-estimates dt, .qo-land-estimates dd { margin: 0; }
+.qo-land-estimates dd { text-align: right; font-variant-numeric: tabular-nums; }
+.qo-land-survey:empty { display: none; }
+.qo-land-survey { border-top: 1px solid var(--line); padding-top: .8rem; }
+.qo-land-survey h4 { margin: 0 0 .6rem; }
+.map-land { display: grid; gap: .4rem; }

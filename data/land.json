@@ -1,0 +1,21 @@
+{
+  "surveySamplesPerSide": 3,
+  "parcels": {
+    "south": {
+      "name": "South Meadow", "plot": "south", "price": 4000, "seedOffset": 104729,
+      "description": "A broad sandy field beyond your southern hedge. More stripping and haul distance, with room to develop a second working face.",
+      "geology": "Thick sand below useful topsoil; thinner gravel at depth.",
+      "entrance": {"x":76,"z":172},
+      "access": {"x0":64,"x1":88,"z0":148,"z1":180},
+      "sign": {"x":89,"z":163,"yaw":0}
+    },
+    "ridge": {
+      "name": "East Ridge", "plot": "ridge", "price": 6500, "seedOffset": 130363,
+      "description": "A compact rock reserve beside the yard. Short hauls favour crushing, but its thin cover leaves little easy work for a shovel.",
+      "geology": "Shallow rock beneath thin soil, clay, sand and gravel.",
+      "entrance": {"x":220,"z":28},
+      "access": {"x0":200,"x1":230,"z0":18,"z1":38},
+      "sign": {"x":211,"z":40,"yaw":1.5707963267948966}
+    }
+  }
+}

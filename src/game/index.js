@@ -24,6 +24,7 @@ import { fleetNavigationActions } from './fleetNavigation.js';
 import { productionState, tickProduction } from '../production/index.js';
 import { tradeState } from '../trade/index.js';
 import { blastingState, tickBlasting } from '../blasting/index.js';
+import { loadLand, saveLand, availableGrounds } from '../quarry/land.js';
 
 export function createGame({ data = loadData(), seed = Math.floor(Math.random() * 2 ** 31), state } = {}) {
   const events = createEventBus();
@@ -48,6 +49,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
   const plotId = data.sites[ctx.state.currentSiteId]?.groundPlot;
   ctx.ground = plotId ? createGround(data.ground, plotId, { seed: ctx.state.seed ?? 1 }) : null;
   if (ctx.ground && ctx.state.ground) ctx.ground.load(ctx.state.ground);
+  loadLand(ctx);
 
   events.on('hourPassed', () => marketHourly(ctx));
   events.on('hourPassed', (e) => happeningsHourly(ctx, e));
@@ -78,7 +80,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
     staffTick(ctx, tickSeconds(data));
     tickProduction(ctx);
     tickBlasting(ctx);
-    ctx.ground?.settle(4000);
+    for(const ground of availableGrounds(ctx))ground.settle(4000);
     advanceClock(ctx);
     rentalTick(ctx);
   }
@@ -109,6 +111,7 @@ export function createGame({ data = loadData(), seed = Math.floor(Math.random() 
     // The state to save: the plain game state plus the ground's changes.
     snapshot() {
       if (ctx.ground) ctx.state.ground = ctx.ground.serialize();
+      saveLand(ctx);
       return ctx.state;
     },
     actions: { ...createActions(ctx), ...rentalActions(ctx), ...fleetNavigationActions(ctx) },

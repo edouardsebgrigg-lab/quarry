@@ -35,6 +35,8 @@ export function toggleMap(overlays, { game, world }) {
         places.append(el('div', { class: 'row-between' }, el('span', {}, name), d));
         return d;
       });
+      const properties=el('div',{class:'map-land'},(world.mapInfo().landParcels??[]).map(p=>
+        el('button',{class:'btn btn-ghost',onClick:()=>game.actions.navigateLand(p.id)},`${p.name} · ${p.owned?'owned':'for sale'}`)));
       let acc = 1;
       entry.update = (dt) => {
         view.update(dt);
@@ -73,6 +75,7 @@ export function toggleMap(overlays, { game, world }) {
       return el('div', { class: 'map-layout' }, view.node,
         el('div', { class: 'sidebar' },
           el('section', { class: 'panel' }, el('h3', {}, 'Places'), places),
+          el('section',{class:'panel'},el('h3',{},'Neighbouring fields'),properties,el('p',{class:'small muted'},'Guide to an entrance here. Buy land in Quarry operations → Land.')),
           el('section', { class: 'panel' }, el('h3', {}, 'Your machines'), el('p',{class:'small muted'},'Click a machine to select it and follow its marker.'),
             el('button',{class:'btn btn-small',onClick:()=>game.actions.navigateFleet(null)},'Follow the current goal'),fleet),
           el('section', { class: 'panel' }, el('h3', {}, 'Stockpile bays'), stores),

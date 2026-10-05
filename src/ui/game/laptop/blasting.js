@@ -1,12 +1,15 @@
 import { el, clear, setText } from '../../dom.js';
 import { money, tonnes } from '../../format.js';
 import { activeBlast } from '../../../blasting/index.js';
+import { landParcels, parcelGround, groundAt } from '../../../quarry/land.js';
 
 const stages={drilling:'Drilling',drilled:'Drilled · awaiting charging crew',charging:'Charging',ready:'Ready to fire',countdown:'Countdown'};
 const minutes=h=>`${Math.max(1,Math.ceil(h*60))} game min`;
 
 export function blastingPanel({game,world,feedback}) {
-  const {data,ctx}=game,ground=ctx.ground;
+  const {data,ctx}=game;
+  const aimed=activeBlast(ctx)?.spec??world?.blastPoint?.();
+  let ground=aimed&&groundAt(ctx,aimed.x,aimed.z)||ctx.ground;
   const node=el('div',{class:'qo-blasting'});
   node.append(el('div',{class:'qo-intro'},el('h3',{},'Open the rock, then work the rubble'),
     el('p',{class:'lt-note'},'Strip the surface to bedrock with your digger. Book a contractor cut, let the crew drill and charge it, then move yourself and your equipment beyond the orange boundary. Firing leaves loose rock on the field for your bucket and crusher.')));
@@ -16,12 +19,15 @@ export function blastingPanel({game,world,feedback}) {
   const x=el('input',{id:'blast-x',class:'text-input',type:'number',step:.5,value:here.x.toFixed(2)});
   const z=el('input',{id:'blast-z',class:'text-input',type:'number',step:.5,value:here.z.toFixed(2)});
   const pattern=el('select',{id:'blast-pattern',class:'lt-select'},Object.entries(data.blasting.patterns).map(([id,p])=>el('option',{value:id},p.name)));
+  const parcel=el('select',{id:'blast-field',class:'lt-select','aria-label':'Field'},el('option',{value:'home'},'Home Field'),
+    landParcels(ctx).filter(p=>p.owned).map(p=>el('option',{value:p.id},p.name)));
+  parcel.value=landParcels(ctx).find(p=>parcelGround(ctx,p.id)===ground)?.id??'home';
   const field=(title,id,n)=>el('label',{class:'qo-field',for:id},title,n);
   const request=()=>({x:Number(x.value),z:Number(z.value),patternId:pattern.value});
   const map=el('canvas',{class:'qo-blast-map',width:320,height:320,'aria-label':'Quarry field: click to choose a rock cut. Coordinate fields also set the location.'});
   const quote=el('div',{class:'qo-quote','aria-live':'polite'});
   const book=el('button',{class:'btn btn-primary',onClick:()=>{if(notify(game.actions.startBlast(request())))feedback?.message('Drilling crew booked. Your cut is marked in the field.','good');refresh(true);}},'Book drilling');
-  const survey=el('article',{class:'lt-card qo-blast-survey'},el('h3',{},'Survey a cut'),map,
+  const survey=el('article',{class:'lt-card qo-blast-survey'},el('h3',{},'Survey a cut'),field('Field','blast-field',parcel),map,
     el('p',{class:'lt-note'},'Green/brown: cover · grey: exposed rock · amber: loose material. Click the field, enter coordinates, or use your survey point.'),
     el('div',{class:'qo-form'},field('East / X','blast-x',x),field('South / Z','blast-z',z),field('Cut size','blast-pattern',pattern)),
     el('div',{class:'qo-actions'},el('button',{class:'btn btn-small',onClick:()=>{const p=world?.blastPoint?.();if(p){x.value=p.x.toFixed(2);z.value=p.z.toFixed(2);refresh(true);}}},'Use field survey / position')),
@@ -59,9 +65,12 @@ export function blastingPanel({game,world,feedback}) {
     if(me){c.fillStyle='#83d9ff';c.beginPath();c.arc((me.x-ground.x0)/span*size,(me.z-ground.z0)/depth*size,3,0,Math.PI*2);c.fill();}
   }
   map.addEventListener('click',e=>{const rect=map.getBoundingClientRect();x.value=(ground.x0+(e.clientX-rect.left)/rect.width*ground.nx*ground.cellSize).toFixed(2);z.value=(ground.z0+(e.clientY-rect.top)/rect.height*ground.nz*ground.cellSize).toFixed(2);refresh(true);});
+  parcel.addEventListener('change',()=>{ground=parcelGround(ctx,parcel.value);x.value=ground.x0+ground.nx*ground.cellSize/2;z.value=ground.z0+ground.nz*ground.cellSize/2;refresh(true);});
   for(const control of [x,z,pattern])control.addEventListener('input',()=>refresh(true));
   function refresh(force=false) {
     const p=activeBlast(ctx),now=performance.now();
+    const at=request(),atGround=groundAt(ctx,at.x,at.z);
+    if(atGround&&atGround!==ground){ground=atGround;parcel.value=landParcels(ctx).find(p=>parcelGround(ctx,p.id)===ground)?.id??'home';force=true;}
     if(force||now-lastCheck>500) {
       lastCheck=now;const q=game.actions.quoteBlast(request()),k=JSON.stringify([q.reason,q.tonnes,q.patternId,q.cost,q.affordable,q.spec]);
       if(k!==lastQuote||force) {

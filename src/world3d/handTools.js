@@ -1,3 +1,4 @@
+import { createGroundAccess } from './groundAccess.js';
 // Your hands: the shovel you carry and the wheelbarrow you push.
 //
 // Shovel: held in front of you (first person). Look at the ground on the field and click to
@@ -140,7 +141,7 @@ export function createHandTools({
 }) {
   const { data } = game;
   const ctx = game.ctx;
-  const ground = ctx.ground;
+  const ground = createGroundAccess(ctx);
   const { RAPIER, world } = physics;
   const shovelSpec = data.tools.shovel;
   const barrowSpec = data.tools.wheelbarrow;

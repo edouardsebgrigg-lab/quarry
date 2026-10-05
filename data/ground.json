@@ -115,6 +115,90 @@
         }
       ],
       "rockDepth": 4
+    },
+    "south": {
+      "name": "South Meadow",
+      "origin": [
+        0,
+        168
+      ],
+      "width": 152,
+      "depth": 128,
+      "surfaceRoll": 0.3,
+      "bedrock": "rock",
+      "strata": [
+        {
+          "material": "gravel",
+          "thickness": [
+            0.7,
+            1.6
+          ]
+        },
+        {
+          "material": "sand",
+          "thickness": [
+            2.5,
+            4.6
+          ]
+        },
+        {
+          "material": "clay",
+          "thickness": [
+            0.15,
+            0.4
+          ]
+        },
+        {
+          "material": "topsoil",
+          "thickness": [
+            0.35,
+            0.55
+          ]
+        }
+      ],
+      "rockDepth": 4
+    },
+    "ridge": {
+      "name": "East Ridge",
+      "origin": [
+        216,
+        0
+      ],
+      "width": 80,
+      "depth": 88,
+      "surfaceRoll": 0.7,
+      "bedrock": "rock",
+      "strata": [
+        {
+          "material": "gravel",
+          "thickness": [
+            0.1,
+            0.4
+          ]
+        },
+        {
+          "material": "sand",
+          "thickness": [
+            0.1,
+            0.3
+          ]
+        },
+        {
+          "material": "clay",
+          "thickness": [
+            0.1,
+            0.25
+          ]
+        },
+        {
+          "material": "topsoil",
+          "thickness": [
+            0.18,
+            0.28
+          ]
+        }
+      ],
+      "rockDepth": 7
     }
   },
   "physics": {

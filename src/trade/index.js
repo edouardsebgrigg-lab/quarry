@@ -55,6 +55,7 @@ export function navigateBuyer(ctx,id) {
   if(id!==null&&!ctx.data.trade.buyers[id])return {ok:false,reason:'Unknown delivery business'};
   ctx.state.player.navigationBuyerId=id;
   ctx.state.player.navigationMachineId=null;
+  ctx.state.player.navigationLandId=null;
   if(ctx.state.operations)ctx.state.operations.workAreaId=null;
   return {ok:true};
 }

@@ -1,3 +1,4 @@
+import { groundAt } from '../quarry/land.js';
 // Staff: people you employ to work the quarry while you do something else. Each has four skills
 // (digging, driving, selling, fixing; 1 to 5 stars) and a daily wage that goes with them, and you
 // give them a role:
@@ -263,7 +264,7 @@ function heapTarget(ctx, w, m) {
     const a = w.spot.face + Math.PI + (k - 1.5) * 0.42 + tries * 0.6;
     const f = fwd(a);
     const p = { x: w.spot.x + f.x * r, z: w.spot.z + f.z * r };
-    if (!ctx.ground || ctx.ground.workable(p.x, p.z)) return p;
+    if (groundAt(ctx,p.x,p.z)?.workable(p.x,p.z)) return p;
   }
   return null;
 }
@@ -280,7 +281,7 @@ function workDig(ctx, w, m, dt) {
     w.t -= dt;
     return;
   }
-  const g = ctx.ground;
+  const g = groundAt(ctx,w.spot.x,w.spot.z)??ctx.ground;
   if (!g) {
     w.status = 'Nothing to dig here';
     return;
@@ -292,8 +293,9 @@ function workDig(ctx, w, m, dt) {
       // Swing to the next spot; if it's too deep for the arm (or off the field), turn to new ground.
       for (let i = 0; i < 8; i++) {
         const p = digTarget(ctx, w, m);
-        const deep = g.heightAt(w.spot.x, w.spot.z) - g.heightAt(p.x, p.z) > st.reach * D.maxDepthOfReach;
-        if (g.workable(p.x, p.z) && !deep) break;
+        const targetGround=groundAt(ctx,p.x,p.z);
+        const deep=targetGround && targetGround.heightAt(w.spot.x,w.spot.z)-targetGround.heightAt(p.x,p.z)>st.reach*D.maxDepthOfReach;
+        if (targetGround?.workable(p.x,p.z) && !deep) break;
         w.spot.face += 0.7;
       }
       w.target = digTarget(ctx, w, m);
@@ -371,8 +373,7 @@ function looseHeaps(g) {
 }
 
 // Fill the bed from the heaps: the material there's most of first, so a load is as clean as it can be.
-function loadUp(ctx, m, room, material = null) {
-  const g = ctx.ground;
+function loadUp(ctx, m, room, material = null, g = ctx.ground) {
   const heaps = looseHeaps(g);
   const area = g.cellSize * g.cellSize;
   const kinds = Object.entries(heaps).map(([k, cells]) => [k, cells, cells.reduce((t, c) => t + c.depth * area, 0)]).sort((a, b) => b[2] - a[2]);
@@ -434,10 +435,11 @@ function workHaul(ctx, w, m, dt) {
       const remaining = order ? Math.max(0,(order.tonnes ?? order.tonnesPerWeek)-order.delivered) : Infinity;
       const goal = Math.min(st.capacity,remaining);
       const room = Math.max(0, goal - pileTotal(carrier.load));
-      const load = w.partnerId ? {} : loadUp(ctx, m, room, order?.material);
+      const source=groundAt(ctx,w.spot?.x,w.spot?.z)??ctx.ground;
+      const load = w.partnerId ? {} : loadUp(ctx, m, room, order?.material,source);
       const t = pileTotal(load);
       if (pileTotal(carrier.load) + t < Math.min(T.minLoad, goal)) {
-        if (t > 0) ctx.ground.deposit({ ...looseSpot(ctx), tonnes: load, radius: 1 }); // (not worth the trip: put it back)
+        if (t > 0) source.deposit({ ...looseSpot(source), tonnes: load, radius: 1 }); // (not worth the trip: put it back)
         w.status = w.partnerId ? 'Waiting for the paired operator to load' : order ? `Waiting for clean ${order.material} for ${order.client}` : 'Waiting for material to haul';
         w.phase = 'wait';
         w.t = T.checkEvery;
@@ -488,8 +490,7 @@ function workHaul(ctx, w, m, dt) {
       w.phase = 'wait';
   }
 }
-function looseSpot(ctx) {
-  const g = ctx.ground;
+function looseSpot(g) {
   return { x: g.x0 + (g.nx * g.cellSize) / 2, z: g.z0 + (g.nz * g.cellSize) / 2 };
 }
 

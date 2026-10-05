@@ -6,7 +6,7 @@ import { profitChart } from './profitChart.js';
 
 const REASONS = {
   sale: 'Material delivery',
-  stockpileUpgrade: 'Stockpile bay expansion', plantUpgrade: 'Processing plant upgraded',
+  landPurchase: 'Land purchased', stockpileUpgrade: 'Stockpile bay expansion', plantUpgrade: 'Processing plant upgraded',
   plantService: 'Processing plant service',
   fuel: 'Diesel',
   service: 'Machine service',

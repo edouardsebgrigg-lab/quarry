@@ -189,7 +189,7 @@ export function terrainTiles(geometry, N, cells) {
   return out;
 }
 
-export function createCountryside({ scene, physics, ground, plan, asphalt = asphaltTexture }) {
+export function createCountryside({ scene, physics, ground, grounds = ground ? [ground] : [], plan, asphalt = asphaltTexture }) {
   const { RAPIER, world } = physics;
   const { map, roads } = plan;
   const half = map.half;
@@ -201,11 +201,10 @@ export function createCountryside({ scene, physics, ground, plan, asphalt = asph
   const roadDist = new Float32Array(N * N).fill(1e9); // distance to the nearest road centre line
   const roadHW = new Float32Array(N * N); // that road's half width
 
-  const plot = ground
-    ? { x0: ground.x0, z0: ground.z0, x1: ground.x0 + ground.nx * ground.cellSize, z1: ground.z0 + ground.nz * ground.cellSize }
-    : null;
-  const onPlot = (x, z) => plot && x >= plot.x0 && x <= plot.x1 && z >= plot.z0 && z <= plot.z1;
-  const deepInPlot = (x, z) => plot && x > plot.x0 + 1.01 && x < plot.x1 - 1.01 && z > plot.z0 + 1.01 && z < plot.z1 - 1.01;
+  const plots=grounds.map(g=>({x0:g.x0,z0:g.z0,x1:g.x0+g.nx*g.cellSize,z1:g.z0+g.nz*g.cellSize,ground:g}));
+  const plot=plots[0]??null;
+  const plotAt=(x,z)=>plots.find(p=>x>=p.x0&&x<=p.x1&&z>=p.z0&&z<=p.z1);
+  const deepInPlot=(x,z)=>plots.some(p=>x>p.x0+1.01&&x<p.x1-1.01&&z>p.z0+1.01&&z<p.z1-1.01);
 
   // ---- 1. natural ground
   for (let r = 0; r < N; r++) {
@@ -230,6 +229,7 @@ export function createCountryside({ scene, physics, ground, plan, asphalt = asph
   // ---- 2. flat places: your land, the depot, the dealer's yard, house plots
   const home = map.home;
   const flats = [
+    ...plots.slice(1).map(p=>({rect:p,h:0,margin:24})),
     ...Object.values(map.buyers??{}).map(b=>({rect:b.yard,margin:18})),
     { rect: { x0: home.boundary.x0 - 6, x1: home.boundary.x1 + 4, z0: home.boundary.z0 - 6, z1: home.boundary.z1 + 6 }, h: 0, margin: 45 },
     { rect: { x0: map.depot.yard.x0 - 2, x1: map.depot.yard.x1 + 2, z0: map.depot.yard.z0 - 2, z1: map.depot.yard.z1 + 2 }, margin: 30 },
@@ -337,12 +337,14 @@ export function createCountryside({ scene, physics, ground, plan, asphalt = asph
     for (let c = 0; c < N; c++) {
       const x = X0 + c * step;
       const z = X0 + r * step;
-      if (onPlot(x, z)) H[vi(c, r)] = ground.heightAt(x, z);
+      const p=plotAt(x,z);
+      if (p) H[vi(c,r)]=p.ground.heightAt(x,z);
     }
   }
 
   function heightAt(x, z) {
-    if (onPlot(x, z)) return ground.heightAt(x, z);
+    const p=plotAt(x,z);
+    if (p) return p.ground.heightAt(x,z);
     return gridHeight(x, z);
   }
 
@@ -447,7 +449,7 @@ export function createCountryside({ scene, physics, ground, plan, asphalt = asph
     for (let c = 0; c < N - 1; c++) {
       const cx = X0 + c * step;
       const cz = X0 + r * step;
-      if (plot && cx >= plot.x0 && cx + step <= plot.x1 && cz >= plot.z0 && cz + step <= plot.z1) continue; // the field's hole
+      if (plots.some(p=>cx>=p.x0&&cx+step<=p.x1&&cz>=p.z0&&cz+step<=p.z1)) continue; // the field's hole
       const a = vi(c, r);
       const b = a + 1;
       const d = a + N;

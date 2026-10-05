@@ -1,3 +1,4 @@
+import { groundAt } from '../quarry/land.js';
 import { stockpileRoom, stockpileConfig, storeStockpile, scoopStockpile } from '../buildings/index.js';
 // Owning machines: create, buy, sell, fit mods.
 import { canAfford, spendMoney, addMoney, isInDebt, chargeFuel } from '../economy/index.js';
@@ -157,11 +158,12 @@ export function dumpBucket(ctx, diggerId, target = {}, share = 1) {
     if (pileTotal(ex.load) - moved < 0.01 && room >= pileTotal(ex.load) - 1e-9) moved = pileTotal(ex.load); // the last few crumbs go in too
     addToPile(bed.load, takeProportional(ex.load, moved));
   } else {
-    if (!ctx.ground || !ctx.ground.workable(target.x, target.z)) return { ok: false, reason: 'You can only dump on your own land' };
+    const ground=groundAt(ctx,target.x,target.z);
+    if (!ground?.workable(target.x, target.z)) return { ok: false, reason: 'You can only dump on your own land' };
     const all = pileTotal(ex.load) - amount < 0.01; // the last few crumbs come out too
     const out = all ? ex.load : takeProportional(ex.load, amount);
     if (all) ex.load = {};
-    moved = ctx.ground.deposit({ x: target.x, z: target.z, tonnes: out, radius: target.radius ?? 0.7 });
+    moved = ground.deposit({ x: target.x, z: target.z, tonnes: out, radius: target.radius ?? 0.7 });
   }
   if (pileTotal(ex.load) <= 1e-9) ex.load = {};
   ctx.events.emit('bucketDumped', { machineId: diggerId, truckId: target.machineId ?? null, tonnes: moved });
@@ -176,24 +178,25 @@ export function bucketCut(ctx, diggerId, { x, z, bottomY, radius, stockpileBay, 
   if (!m || !isDigger(ctx.data, m.type)) return { ok: false, reason: 'Not a digger' };
   if (m.broken) return { ok: false, reason: `${machineName(ctx.data, m)} is broken down. Repair it first.` };
   if (m.job && !(m.job.type === 'dig' && m.job.params.physical)) return { ok: false, reason: `${machineName(ctx.data, m)} is busy` };
-  if (!stockpileBay && (!ctx.ground || !ctx.ground.workable(x, z))) return { ok: false, reason: 'You can only dig on your own land' };
+  const ground=stockpileBay?ctx.ground:groundAt(ctx,x,z);
+  if (!stockpileBay && !ground?.workable(x, z)) return { ok: false, reason: 'You can only dig on your own land' };
   const stats = getStats(ctx.data, m);
   const breaking = m.attachment === 'breaker';
   if (breaking && stockpileBay) return {ok:true,tonnes:0,full:false,blocked:true,resistance:0};
   if (breaking && !stockpileBay) {
-    const surface = ctx.ground.materialResponseAt(x,z,{moisture});
+    const surface = ground.materialResponseAt(x,z,{moisture});
     if (surface.loose || surface.material !== 'rock') return {ok:true,tonnes:0,full:false,blocked:true,resistance:surface.resistance};
   }
-  const room = stats.bucketVolume - ctx.ground.looseVolume(m.load);
+  const room = stats.bucketVolume - ground.looseVolume(m.load);
   if (room < 0.002) return { ok: true, tonnes: 0, full: true };
   const r = stockpileBay ? scoopStockpile(ctx, stockpileBay, room * attack, m.siteId)
-    : from && to ? ctx.ground.cutSweep({ from, to, width: stats.bucketWidth ?? Math.max(0.35, Math.cbrt(stats.bucketVolume)), maxVolume: room, force: stats.breakoutForce ?? 60, attack, moisture, tool: m.attachment === 'breaker' ? 'breaker' : tool })
-      : ctx.ground.dig({ x, z, radius, bottomY, maxVolume: room });
+    : from && to ? ground.cutSweep({ from, to, width: stats.bucketWidth ?? Math.max(0.35, Math.cbrt(stats.bucketVolume)), maxVolume: room, force: stats.breakoutForce ?? 60, attack, moisture, tool: m.attachment === 'breaker' ? 'breaker' : tool })
+      : ground.dig({ x, z, radius, bottomY, maxVolume: room });
   if (r.total <= 0) return { ok: true, tonnes: 0, full: false, resistance: r.resistance ?? 0, blocked: !!r.blocked };
   if (breaking) {
     // A hammer leaves rubble on the ground for a bucket to collect; it has no scoop.
-    const dx = Math.max(ctx.ground.x0+ctx.ground.cellSize*2,Math.min(ctx.ground.x0+ctx.ground.nx*ctx.ground.cellSize-ctx.ground.cellSize*2,x));
-    ctx.ground.deposit({x:dx,z,tonnes:r.tonnes,radius:.6});
+    const dx = Math.max(ground.x0+ground.cellSize*2,Math.min(ground.x0+ground.nx*ground.cellSize-ground.cellSize*2,x));
+    ground.deposit({x:dx,z,tonnes:r.tonnes,radius:.6});
   } else addToPile(m.load, r.tonnes);
   const share = r.volume / stats.bucketVolume;
   chargeFuel(ctx, stats.fuelPerJob * share, m.siteId);

@@ -6,7 +6,7 @@
 // - shovelDump() tips the shovel into the barrow, a vehicle's bed, or onto the ground as a heap.
 // - tipBarrow() empties the barrow onto the ground (a real pile) or into a low bed (the pickup).
 // Tonnes are always conserved: whatever doesn't fit stays where it was.
-import { pileTotal, addToPile, takeProportional } from '../quarry/index.js';
+import { pileTotal, addToPile, takeProportional, groundAt } from '../quarry/index.js';
 import { getMachine } from '../machinery/index.js';
 import { loadCarrier, combinationStats, cargoRoom } from '../machinery/trailers.js';
 
@@ -48,7 +48,7 @@ export const barrowFill = (ctx) => barrowVolume(ctx) / ctx.data.tools.wheelbarro
 
 // Can you dig at (x, z)? Returns a reason, or null.
 export function whyCannotDig(ctx, x, z) {
-  if (!ctx.ground || !ctx.ground.workable(x, z)) return 'You can only dig on your own field';
+  if (!groundAt(ctx,x,z)?.workable(x,z)) return 'You can only dig on your own field';
   if (shovelFull(ctx)) return 'Tip the shovel first';
   return null;
 }
@@ -57,11 +57,12 @@ export function whyCannotDig(ctx, x, z) {
 export function shovelDig(ctx, { x, z }) {
   const reason = whyCannotDig(ctx, x, z);
   if (reason) return { ok: false, reason };
+  const ground=groundAt(ctx,x,z);
   const spec = ctx.data.tools.shovel;
-  const resistance = ctx.ground.digResistanceAt?.(x,z) ?? spec.force;
+  const resistance = ground.digResistanceAt?.(x,z) ?? spec.force;
   const effort = Math.max(spec.minimumBiteFactor,Math.min(1,spec.force/Math.max(1,resistance)));
-  const r = ctx.ground.dig({
-    x, z, radius: spec.radius, bottomY: ctx.ground.heightAt(x, z) - spec.depth * effort, maxVolume: spec.volume * effort,
+  const r = ground.dig({
+    x, z, radius: spec.radius, bottomY: ground.heightAt(x, z) - spec.depth * effort, maxVolume: spec.volume * effort,
   });
   if (r.total < 1e-4) return { ok: false, reason: 'Solid rock: too hard for a shovel' };
   tools(ctx).shovel.load = r.tonnes;
@@ -90,8 +91,9 @@ export function shovelDump(ctx, target) {
     moved = r.tonnes;
   } else {
     const { x, z } = target;
-    if (!ctx.ground || !ctx.ground.workable(x, z)) return { ok: false, reason: 'You can only tip it on your field (or into the barrow)' };
-    moved = ctx.ground.deposit({ ...cellCentre(ctx.ground, x, z), tonnes: load, radius: 0.25 });
+    const ground=groundAt(ctx,x,z);
+    if (!ground?.workable(x, z)) return { ok: false, reason: 'You can only tip it on your field (or into the barrow)' };
+    moved = ground.deposit({ ...cellCentre(ground, x, z), tonnes: load, radius: 0.25 });
     tools(ctx).shovel.load = {};
   }
   if (pileTotal(load) <= EPS) tools(ctx).shovel.load = {};
@@ -126,8 +128,9 @@ export function tipBarrow(ctx, { x, z, machineId = null }) {
     if (!r.ok) return r;
     moved = r.tonnes;
   } else {
-    if (!ctx.ground || !ctx.ground.workable(x, z)) return { ok: false, reason: 'Tip it on your field, or into the pickup' };
-    moved = ctx.ground.deposit({ ...cellCentre(ctx.ground, x, z), tonnes: load, radius: 0.35 }); // it slumps from there
+    const ground=groundAt(ctx,x,z);
+    if (!ground?.workable(x, z)) return { ok: false, reason: 'Tip it on your field, or into the pickup' };
+    moved = ground.deposit({ ...cellCentre(ground, x, z), tonnes: load, radius: 0.35 }); // it slumps from there
     tools(ctx).barrow.load = {};
   }
   if (pileTotal(load) <= EPS) tools(ctx).barrow.load = {};

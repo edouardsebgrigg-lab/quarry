@@ -1,5 +1,6 @@
 // Fictional contractor cuts. Rock stays on the field; machines still have to load it.
 import { ticksPerHour, tickSeconds, getDate } from '../core/index.js';
+import { groundAt } from '../quarry/land.js';
 import { canAfford, spendMoney } from '../economy/index.js';
 
 export function blastingState(ctx) {
@@ -14,9 +15,9 @@ const project = (ctx,id) => activeBlast(ctx)?.id===id ? activeBlast(ctx) : null;
 export function quoteBlast(ctx,request={}) {
   const cfg=ctx.data.blasting.patterns[request.patternId];
   if(!cfg)return fail('Choose a cut size');
-  if(!ctx.ground)return fail('There is no quarry field here');
+  const ground=groundAt(ctx,request.x,request.z);
   const spec={x:request.x,z:request.z,radius:cfg.radius,depth:cfg.depth,maxCover:ctx.data.blasting.maximumCover};
-  const plan=ctx.ground.planFracture(spec);
+  const plan=ground?ground.planFracture(spec):fail('Choose exposed ground on a field you own');
   const affordable=canAfford(ctx,cfg.drillCost);
   const busy=!!activeBlast(ctx);
   return {...plan,spec,name:cfg.name,patternId:request.patternId,drillCost:cfg.drillCost,chargeCost:cfg.chargeCost,
@@ -39,7 +40,7 @@ export function startBlast(ctx,request) {
 }
 
 function unchanged(ctx,p) {
-  const now=ctx.ground?.planFracture(p.spec);
+  const now=groundAt(ctx,p.spec.x,p.spec.z)?.planFracture(p.spec);
   if(!now?.ok)return fail(now?.reason??'The quarry ground is unavailable');
   if(now.signature!==p.signature)return fail('The drilled ground changed. Cancel this cut and survey again');
   return {ok:true};
@@ -100,7 +101,7 @@ export function tickBlasting(ctx) {
     if(!r.ok){p.stage='ready';p.remainingSeconds=0;p.holdReason=r.reason;ctx.events.emit('blastAborted',{id:p.id,reason:r.reason});return;}
     p.remainingSeconds=Math.max(0,p.remainingSeconds-tickSeconds(ctx.data));
     if(p.remainingSeconds>1e-8)return;
-    const result=ctx.ground.fracture(p.spec,p.signature);
+    const result=groundAt(ctx,p.spec.x,p.spec.z)?.fracture(p.spec,p.signature)??fail('The quarry ground is unavailable');
     if(!result.ok){p.stage='ready';p.holdReason=result.reason;ctx.events.emit('blastAborted',{id:p.id,reason:result.reason});return;}
     const s=blastingState(ctx);s.releasedTonnes+=result.tonnes;s.fired++;
     finish(ctx,p,'fired',result.tonnes);

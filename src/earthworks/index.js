@@ -3,6 +3,7 @@
 // what it costs, and charges for it. Nothing is created from nothing: the road is built from
 // what is dug out of it plus loose heaps you have tipped within reach, and any left over is
 // heaped beside it (see docs/modules.md).
+import { groundAt } from '../quarry/land.js';
 import { spendMoney } from '../economy/index.js';
 
 export const WORKS_MODES = ['road', 'ramp', 'level'];
@@ -54,13 +55,14 @@ export const worksCost = (data, mode, area) => {
 // { x, z, r, label } (machines and the barrow) that mustn't be under the works.
 // The player is repositioned by the world after worksBuilt, and does not block.
 export function planEarthworks(ctx, input) {
-  const { data, ground } = ctx;
+  const { data } = ctx;
+  const ground=groundAt(ctx,input.ax,input.az);
   const cfg = worksConfig(data, input.mode);
   const bad = (reason, extra = {}) => ({ ok: false, valid: false, affordable: false, cost: 0, reason, mode: input.mode, ...extra });
-  if (!ground) return bad('There is no ground of yours to build on here');
   if (!cfg) return bad('Unknown kind of works');
   if (input.width !== undefined && !Number.isFinite(input.width)) return bad('Pick a finite width');
   if ([input.ax, input.az, input.bx, input.bz].some((v) => !Number.isFinite(v))) return bad('Pick where it starts and ends');
+  if (!ground) return bad('There is no ground of yours to build on here');
   const length = Math.hypot(input.bx - input.ax, input.bz - input.az);
   if (length < data.works.minLength) return bad(`Too short: at least ${data.works.minLength} m`, { length });
   if (length > data.works.maxLength) return bad(`Too long: at most ${data.works.maxLength} m at a time`, { length });
@@ -115,7 +117,7 @@ function worksReason(p, cfg, data) {
 export function buildEarthworks(ctx, input) {
   const plan = planEarthworks(ctx, input);
   if (!plan.ok) return plan;
-  const done = ctx.ground.buildWorks(worksSpec(ctx.data, input));
+  const done = groundAt(ctx,input.ax,input.az).buildWorks(worksSpec(ctx.data, input));
   if (!done.ok) return { ...plan, ...done, ok: false, reason: worksReason(done, worksConfig(ctx.data, input.mode), ctx.data) };
   spendMoney(ctx, plan.cost, `earthworks:${input.mode}`);
   const stats = (ctx.state.stats.works ??= {});

@@ -20,6 +20,7 @@ import { quoteProduction, startProduction, cancelProduction, saveProductionPlan,
 import { setWorkArea, recordSurvey } from '../quarry/index.js';
 import { quoteBuyerDelivery, navigateBuyer } from '../trade/index.js';
 import { quoteBlast, startBlast, chargeBlast, fireBlast, abortBlast, cancelBlast, blastClearance } from '../blasting/index.js';
+import { buyLand, navigateLand, groundAt } from '../quarry/land.js';
 
 export const DEFAULT_COMPANY = 'Wolds Quarry Co.';
 
@@ -29,6 +30,8 @@ export function createActions(ctx) {
   const fleetValue = () => ctx.state.machines.reduce((a, m) => a + resaleValue(ctx, m), 0);
 
   return {
+    buyLand:id=>buyLand(ctx,id),
+    navigateLand:id=>navigateLand(ctx,id),
     setGuideEnabled: enabled => setGuideEnabled(ctx,enabled),
     quoteBlast: request => quoteBlast(ctx,request),
     startBlast: request => startBlast(ctx,request),
@@ -90,14 +93,16 @@ export function createActions(ctx) {
 
     // Real ground: carve a bowl (returns { tonnes: { material: t }, total }) or drop material.
     digGround(opts) {
-      if (!ctx.ground) return { tonnes: {}, total: 0 };
-      const r = ctx.ground.dig(opts);
+      const ground=groundAt(ctx,opts.x,opts.z);
+      if (!ground) return { tonnes: {}, total: 0 };
+      const r = ground.dig(opts);
       if (r.total > 0) ctx.events.emit('groundDug', { ...r, x: opts.x, z: opts.z });
       return r;
     },
     dumpGround(opts) {
-      if (!ctx.ground) return;
-      ctx.ground.deposit(opts);
+      const ground=groundAt(ctx,opts.x,opts.z);
+      if (!ground) return;
+      ground.deposit(opts);
       ctx.events.emit('groundDumped', { x: opts.x, z: opts.z, tonnes: opts.tonnes });
     },
 

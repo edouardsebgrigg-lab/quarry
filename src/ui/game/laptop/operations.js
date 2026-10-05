@@ -5,6 +5,7 @@ import { ownsBuilding, stockpileLoad, stockpileRoom, stockpileConfig } from '../
 import { pileTotal, workAreas, surveyWorkArea, activeWorkArea } from '../../../quarry/index.js';
 import { bestDeliveryQuote } from '../../../economy/index.js';
 import { blastingPanel } from './blasting.js';
+import { landPanel } from './land.js';
 import { productionQueuePanel } from './productionQueue.js';
 import { plantStatus, validateProductionPlan, productionQueue } from '../../../production/index.js';
 
@@ -23,6 +24,10 @@ export function operationsApp({ game, feedback, setHead, openApp, world }) {
   const notify = r => { if (!r.ok) feedback?.message(r.reason,'warn'); return r.ok; };
   const jump = el('button', { class: 'lt-link', onClick: () => openApp('dealer') }, 'Open plant dealer');
   const heading = (title, text) => el('div', { class: 'qo-intro' }, el('h3',{},title),el('p',{class:'lt-note'},text));
+
+  function land() {
+    const panel=landPanel({game,feedback});body.append(panel.node);refreshSection=panel.refresh;
+  }
 
   function yard() {
     const summary=el('div',{class:'lt-stats'}), stores=el('div',{class:'qo-bays'}), next=el('div',{class:'lt-card'});
@@ -248,10 +253,10 @@ export function operationsApp({ game, feedback, setHead, openApp, world }) {
 
   function show(id) {
     disposeSection();disposeSection=()=>{};section=id;clear(tabs);clear(body);
-    for(const [key,label] of [['yard','Yard'],['production','Production'],['schedule','Queue'],['workshop','Plant workshop'],['history','Batch history'],['survey','Work areas'],['blasting','Rock blasting'],['reports','Daily reports']]) {
+    for(const [key,label] of [['yard','Yard'],['land','Land'],['production','Production'],['schedule','Queue'],['workshop','Plant workshop'],['history','Batch history'],['survey','Work areas'],['blasting','Rock blasting'],['reports','Daily reports']]) {
       tabs.append(el('button',{class:`lt-chip ${section===key?'active':''}`,'aria-pressed':String(section===key),onClick:()=>show(key)},label));
     }
-    ({yard,production,schedule,workshop,history,survey,blasting,reports})[section]();refreshSection();
+    ({yard,land,production,schedule,workshop,history,survey,blasting,reports})[section]();refreshSection();
   }
   show(section);
   return {node,refresh:()=>refreshSection(),headSet:true,dispose:()=>disposeSection()};

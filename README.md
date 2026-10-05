@@ -139,7 +139,7 @@ their reward records. Actions such as an early upgrade or delivery are remembere
 you can work ahead of the guide. Completing the journey records your established company;
 you can keep working, building and choosing personal targets afterwards. The handbook
 covers digging, selling, trailers, geology, earthworks, processing, blasting, staff,
-finance and saving, with your current key bindings. Turn **Show step-by-step guidance**
+land expansion, finance and saving, with your current key bindings. Turn **Show step-by-step guidance**
 off in the introduction or Field guide to hide goal markers and Ray’s goal reminders
 while keeping the same progress and rewards.
 
@@ -332,7 +332,29 @@ The numbers are in `data/happenings.json`.
 
 ## The map
 
-The map is 2 km across. Your land is the 150 m field and the yard next to it, on Mill Lane. The lane runs east and then north through **Ashby** (a village with a pub and the machine dealer, **Ashby Plant**). In the middle of the village **Quarry Road** turns off west to **Ashby Aggregates**, the depot where you sell. It's about 1.2 km from your gate by road, a couple of minutes in the pickup. Site machines (the excavator) aren't road-legal and stay on your land; the pickup and the tipper truck can go anywhere. Four farms sit back from the lanes (Mill Farm is across the lane from your gate); they're scenery for now.
+The map is 2 km across. You start with Home Field and the yard next to it, on Mill Lane. Two neighbouring fields can be bought as the company grows. The lane runs east and then north through **Ashby** (a village with a pub and the machine dealer, **Ashby Plant**). In the middle of the village **Quarry Road** turns off west to **Ashby Aggregates**, the depot where you sell. It's about 1.2 km from your gate by road, a couple of minutes in the pickup. Site machines (the excavator) aren't road-legal and stay on your land and its access strips; the pickup and the tipper truck can go anywhere. Four farms sit back from the lanes (Mill Farm is across the lane from your gate); they're scenery for now.
+
+### Buy neighbouring fields
+
+Open **B → Quarry operations → Land** to survey or purchase a field. Buying both
+expands your diggable ground from **2.31 to 4.96 hectares**. Every field shares your
+existing company, fleet, storage bays and processing yard.
+
+| Field | Price | Area | Ground and access |
+|---|---:|---:|---|
+| South Meadow | $4,000 | 1.95 ha | Thick sand beneath topsoil; take the marked opening in Home Field's southern hedge |
+| East Ridge | $6,500 | 0.70 ha | Shallow soil over a deeper rock reserve; enter from the east side of your yard |
+
+**Survey ground** samples current layers before you buy; its reserve figures are
+estimates, not saleable stock. **Guide to entrance** marks the route in the world and
+on **Tab**. Signs and corner stakes identify each property. You can inspect land for
+sale, but site machines, digging, tipping, earthworks and blasting need ownership.
+
+Purchases are permanent and appear as capital spending in Bank and daily reports.
+Use **Work areas** for the new field's working faces and boreholes, or choose it in
+**Rock blasting → Field**. Shovels, buckets, breakers, haulers and assigned operators
+work on purchased terrain. Each field retains its own excavations, spoil and remaining
+rock when you save; your existing Home Field excavation stays intact.
 
 ## For developers and agents
 
@@ -400,7 +422,7 @@ to its source bay. Clean recovered topsoil can be delivered to the nursery.
 
 ### Rock blasting: open a working bench
 
-In **Quarry operations → Rock blasting**, choose a point on the field map or use your
+In **Quarry operations → Rock blasting**, select an owned **Field**, then choose a point on its map or use your
 current material survey point. Without an active survey, **Use field survey / position**
 uses where you are standing. The quote checks the whole footprint: strip topsoil, clay,
 sand and gravel first, and clear loose rubble from earlier cuts. Graded roads and ramps

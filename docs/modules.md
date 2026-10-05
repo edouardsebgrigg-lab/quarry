@@ -13,7 +13,8 @@ A short tour of the code. The logic modules never touch the screen. Each module 
 | `market.json` | How prices swing (trend) and drop when you sell a lot (saturation) |
 | `machines.json` | Every machine tier's stats and price (including mass and engine power, used by the driving physics and the engine sound). Each type says what it is (`kind`: a `digger` with a bucket or a `carrier` with a bed), whether it's road-legal, whether it's sold in the shop and how it unloads |
 | `mods.json` | Cheap upgrades you can fit to machines |
-| `sites.json` | Your properties (just Home Field for now) and which ground plot each one has |
+| `sites.json` | Company sites and their primary ground plot; Home remains the shared yard and fleet site |
+| `land.json` | Purchasable neighbouring parcels: plot IDs, prices, independent seed offsets, access strips, signs and survey density |
 | `depot.json` | The selling depot: its bays, the purity grades (clean, slightly mixed) and what they pay |
 | `works.json` | Earthworks: the kinds (haul road, ramp, level area) with surface, thickness, greatest slope, width range and price, plus the length limits and how far from the works loose heaps can be used |
 | `ground.json` | Diggable ground: materials (density, how much they swell when dug, the slope they settle at, how steep a wall they can stand) and each plot's layers |
@@ -40,7 +41,7 @@ You can change any of these and reload the game. No code changes are needed.
 |---|---|
 | `src/core` | Game clock (ticks, days, hours), event bus, seeded random numbers, save slots with version upgrades |
 | `src/economy` | Money and debt, market prices and news, fuel, the depot (weighbridge tickets, grading a load by purity, paying for it), the bank (loans, statement, credit rating: `bank.js`) and overheads (insurance cover: `overheads.js`) |
-| `src/quarry` | Which sites you own, helpers for loads (`{ material: tonnes }`), named work areas, read-only current-ground borehole estimates and saved work-area navigation |
+| `src/quarry` | Site/load helpers, neighbouring land purchases and terrain routing, named work areas, current-ground borehole estimates and saved navigation |
 | `src/ground` | The real, diggable ground: a grid of soil columns with layers; digging carves bowls and returns tonnes by material, dumped material piles up and slumps to its natural slope, undercut walls cave in; `planWorks` / `buildWorks` grade a strip (road, ramp, level) with side batters, conserving every tonne: cut first, then fill, then a gravel surface, then loose heaps within reach for what's missing, and the rest heaped beside; plans expose `touchesChangedCell({x,z,r})` over the actual grading jobs (including batters), skip occupied source cells and choose a clear spare-spoil footprint before mutation; built cells are firm (no slumping) until dug; wheels and tracks (`applyTraffic`, one tyre's swept path per call) compact the ground and wear the turf, faster wet, heavy or slipping, until it's torn to bare soil and only then ruts; mud grips less than dry soil (`wetTraction`); saves only the chunks that changed (turf wear as an optional extra, so older saves load with whole turf) |
 | `src/earthworks` | Building with material: what a road, ramp or level area may be (slope, length, width, price by area from `data/works.json`), the plan (what it costs and needs, changing nothing) and the build (checks machine/barrow circles against grading cells with the configured margin, charges the labour and asks the ground to do it); `worksBuilt` carries plain spoil-position data; the world re-seats the player on the new surface after grading, sourcing or spoil deposition |
 | `src/handtools` | Your shovel and wheelbarrow: digging a shovelful out of the real ground, tipping it into the barrow, the pickup's or a truck's bed or onto the ground, and tipping the barrow as a pile or into a bed. Loads are dug material measured by loose volume |
@@ -352,3 +353,40 @@ interval. `journal.test.js` and `saveRecovery.test.js` cover early action credit
 completion, old saves, isolation, checksum damage, quota failures and import/export.
 `journey.mjs` checks the actual screens, a corrupted local copy, download/upload and
 failed exits; its final-goal and shortened-autosave fixtures are explicit.
+
+### Neighbouring land and independent terrain
+
+`quarry/land.js` owns parcel descriptions, purchases, reserve samples and coordinate
+routing. `state.land.owned` and dated `purchases` default for legacy saves. Buying
+initialises the plot before charging once, records `landPurchase` as capital spending
+and emits `landPurchased`. All parcels retain the Home company/site, fleet and yard;
+there is no site switch or automatic transport.
+
+The original `ctx.ground` and packed Home terrain retain their dimensions and format.
+Extra grids are cached by parcel ID in `ctx.parcelGrounds` and snapshotted independently
+into `state.parcelGrounds`. Generation uses configured seed offsets without advancing
+company RNG. Loading rejects unknown parcel IDs, mismatched plot IDs and invalid packed
+terrain. `game/index.js` settles each instantiated grid and snapshots all of them.
+
+`groundAt(ctx,x,z)` returns only owned terrain by default. Shovel/barrow actions,
+Direct/Assisted buckets, carrier tips, earthworks, blasting and staff jobs route through
+it. Transfers retain their material composition; contractor cuts consume the selected
+grid's finite rock reserve. Earthworks stay within a single field. Read-only surveys and
+rendering explicitly request unowned terrain. Original nine work-area IDs stay stable;
+owned neighbours add parcel-prefixed areas. Land, work-area, buyer and fleet navigation
+clear one another when selected.
+
+`world3d/groundAccess.js` routes world-coordinate reads over all visible fields and
+traffic mutations over owned fields. Each raw grid has its own `groundChunks` mesh and
+colliders; `countryside.js` removes the corresponding terrain/physics tiles underneath
+all fields. Site-machine travel accepts owned parcels and their access strips. The
+southern hedge has a physical opening, and `landMarkers.js` owns disposable corner
+stakes, signs and post colliders; purchase events repaint their ownership state.
+
+`laptop/land.js` presents purchase, survey and entrance navigation; map views show field
+boundaries and ownership. The blasting selector maps the chosen owned grid and actual
+world coordinates. `land.test.js` checks ownership, capital charges, conserved transfers,
+staff work, earthworks, saved contractor cuts, isolated RNG and legacy saves.
+`browser-checks/land.mjs` exercises actual purchase controls, tracked-machine boundaries,
+both access strips, a physical shovel, map navigation and independent terrain reload.
+Its money, machine placement and fixed-step steering are explicit test fixtures.
