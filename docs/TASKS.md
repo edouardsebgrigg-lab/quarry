@@ -48,6 +48,7 @@ about playing it properly and fixing what gets in the way.
       completed physical Assisted scoop/dump cycles with conserved material. 514 tests,
       lint/build, smoke and digger-cycles browser checks passed. Simulation/placement
       fixtures are explicit; human operation remains unverified.
+      Feature commit: `5934923`.
 
 - [x] **U-9 Opening-loop checks and handling feedback** (Codex, `codex/opening-loop`):
       directional blocked-barrow prompts; normal-money shovel/barrow/pickup transfers,

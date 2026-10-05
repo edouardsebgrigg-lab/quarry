@@ -6,6 +6,7 @@ are in `docs/archive/CODEX-CHECKPOINT.md`.
 
 ## 5 October 2026 · Digger reliability (Codex, `codex/digger-reliability`)
 
+- Feature commit: `5934923`. Continued owner-directed development beyond the queue.
 - Reproduced an Assisted-mode deadlock with 3.1 kg cut from actual ground: the HUD
   offered “Dig topsoil”, but the job system rejected another stroke as a full bucket.
   Shared loaded-bucket detection now matches material-transfer precision in input
