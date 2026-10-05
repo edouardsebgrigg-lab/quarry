@@ -10,15 +10,12 @@ production queues, expandable bays, soil recovery, conserved contractor rock bla
 and a lasting player journal, searchable Field guide and recoverable portable saves.
 Purchasable South Meadow and East Ridge more than double the diggable area, with
 independent terrain, physical access and shared company machinery/processing.
-503 unit tests pass; lint/build and smoke/land browser checks pass.
+Saved working faces now pair borehole profiles with precise navigation and depth
+comparisons after excavation. 510 unit tests pass; lint/build and smoke/faces browser checks pass.
 The latest expansions followed the owner's direct request for broad development
 beyond this queue; the manual play tasks below remain unverified.
 
 ## Play and fix (most valuable now)
-
-- [ ] **U-8 Working-face planning** — Codex, `codex/working-faces`: field-filtered
-      boreholes, material depth profiles, saved face choices and exact navigation.
-      Owner-directed development beyond queue ordering.
 
 Nobody has yet played the current game start to finish with real controls. These tasks are
 about playing it properly and fixing what gets in the way.
@@ -41,6 +38,12 @@ about playing it properly and fixing what gets in the way.
       sun's glare at dawn and dusk isn't overpowering.
 
 ## Completed upgrades
+
+- [x] **U-8 Working-face planning** (Codex, `codex/working-faces`): field-filtered
+      surveys, ordered borehole profiles, material recommendations, saved face choices,
+      exact navigation and original-vs-current depth readings. Depleted targets remain
+      honestly depleted; refreshing changes no material or saved baseline.
+      Feature commit: `35634d0`. 510 tests, lint/build, smoke and faces browser checks passed.
 
 - [x] **U-7 Land expansion** (Codex, `codex/land-expansion`): South Meadow and East
       Ridge purchases, distinct geology, independent saved terrain, physical access,

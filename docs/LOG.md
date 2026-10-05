@@ -4,6 +4,41 @@ One short entry per task, newest at the top: the task, the agent and branch, the
 `main`, what changed, what was actually run, and what wasn't verified. Older, longer reports
 are in `docs/archive/CODEX-CHECKPOINT.md`.
 
+## 5 October 2026 · Saved working faces (Codex, `codex/working-faces`)
+
+- Feature commit: `35634d0`. Owner-directed development beyond the queue.
+- Work areas now filter by owned field and show nine real borehole columns. Choosing
+  a target material identifies its shallowest suitable sampled layer and displays
+  top-down depths, thicknesses, loose/compacted mixtures and finite intact bedrock.
+  The configured 80% volume-share threshold is a digging aid, separate from cargo
+  mass purity used by the depot. Ground between samples can differ.
+- One dated face plan per area retains material, sample and original depth/thickness.
+  Navigation points to that sample rather than the area's centre. Plans survive other
+  waypoints and reload; clearing a plan preserves ordinary area navigation. Refreshing
+  reports current depths or depletion without resetting the baseline, earning money
+  or treating sampled reserve differences as actual production. Old survey records
+  and legacy area IDs remain usable. Invalid face metadata is ignored safely.
+- Moved work-area presentation into `laptop/workAreas.js`; compact field filtering,
+  sample buttons, layer profiles and collapsible area estimates replace the growing
+  all-fields grid. README and the geology handbook explain the workflow. Existing
+  browser scripts were adjusted for the new field selector and face-plan action.
+- Checked: **510 tests in 81 files**, lint, build, `smoke.mjs` and `faces.mjs`; all passed,
+  no browser console errors. Rule tests cover untouched company/terrain during surveys,
+  mixed fill, remaining rock, actual target depletion, rejected choices, saved exact
+  navigation, independent plans and legacy defaults.
+- Feature browser used actual field/material/sample controls, saved rock and topsoil
+  plans in separate fields, recorded a survey, cut and redeposited terrain through
+  actions with per-material conservation, then refreshed to see the exhausted target.
+  It verified unchanged money/baseline, Continue recovery of both plans and the precise
+  guide, clearing one plan, and returning to goal navigation. Money and earthmoving
+  were explicit fixtures; no human excavation session is claimed.
+- Inspected final planning/profile screenshots at 1280×850 and depleted-target UI at
+  390×844, without horizontal overflow. Review caught and fixed low-contrast native
+  button text before the final browser runs. Evidence remains outside Git in
+  `/workspace/.cache/quarry/faces-shots`; UI captures hid the scene for speed.
+- Limits: headless Chromium on Low graphics. Full-session balance, manual controls,
+  audio and real-GPU performance remain unverified.
+
 ## 5 October 2026 · Neighbouring land expansion (Codex, `codex/land-expansion`)
 
 - Feature commit: `eae6e76`. Continued owner-directed development beyond the queue.
