@@ -116,7 +116,7 @@ try {
   console.log('PASS finished product reloaded, weighed and sold without double-counting',JSON.stringify(handled));
   await clickTab('Work areas');
   await page.locator('[data-area-id="1-1"]').click();
-  await page.getByRole('button',{name:'Set as work area',exact:true}).click();
+  await page.getByRole('button',{name:'Save face plan and guide here',exact:true}).click();
   assert.equal(await q(()=>window.__quarry.world.mapInfo().activeWorkAreaId),'1-1');
   assert.match(await q(()=>window.__quarry.world.mapInfo().guide.label),/Central/);
   await q(()=>window.__quarry.saveTo('slot1'));

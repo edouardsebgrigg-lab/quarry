@@ -2,10 +2,11 @@ import { el, clear, setText } from '../../dom.js';
 import { money, tonnes, signedMoney } from '../../format.js';
 import { getDate } from '../../../core/index.js';
 import { ownsBuilding, stockpileLoad, stockpileRoom, stockpileConfig } from '../../../buildings/index.js';
-import { pileTotal, workAreas, surveyWorkArea, activeWorkArea } from '../../../quarry/index.js';
+import { pileTotal } from '../../../quarry/index.js';
 import { bestDeliveryQuote } from '../../../economy/index.js';
 import { blastingPanel } from './blasting.js';
 import { landPanel } from './land.js';
+import { workAreasPanel } from './workAreas.js';
 import { productionQueuePanel } from './productionQueue.js';
 import { plantStatus, validateProductionPlan, productionQueue } from '../../../production/index.js';
 
@@ -185,31 +186,7 @@ export function operationsApp({ game, feedback, setHead, openApp, world }) {
     };
   }
 
-  function survey() {
-    const grid=el('div',{class:'qo-area-grid'}), detail=el('div',{class:'lt-card qo-survey'});
-    body.append(heading('Choose where to work','Nine borehole samples per area estimate the remaining layers above bedrock. These are approximate reserves, not guaranteed yields. Deposited heaps and compacted fill are included; intact bedrock needs a breaker or a contractor cut.'),grid,detail);
-    let selected=activeWorkArea(ctx)?.id??workAreas(ctx)[0]?.id;
-    for(const area of workAreas(ctx)) {
-      grid.append(el('button',{class:'qo-area',dataset:{areaId:area.id},onClick:()=>{selected=area.id;render();}},area.name));
-    }
-    const render=()=>{
-      const s=surveyWorkArea(ctx,selected);clear(detail);
-      for(const b of grid.children)b.setAttribute('aria-pressed',String(b.dataset.areaId===selected));
-      if(!s){detail.append('No field survey is available.');return;}
-      const active=activeWorkArea(ctx)?.id===selected;
-      const previous=game.state.operations?.surveys?.[selected];
-      detail.append(el('h3',{},s.name),el('p',{class:'lt-note'},`${Math.round(s.area).toLocaleString()} m² · cover ${s.coverDepth.toFixed(2)} m · bedrock ${s.shallowest.toFixed(1)}–${s.deepest.toFixed(1)} m below the surface`),
-        el('div',{class:'qo-reserves'},Object.entries(s.estimates).map(([id,t])=>el('div',{},el('span',{},data.materials[id]?.name??id),el('b',{},`≈ ${Math.round(t).toLocaleString()} t${previous?` (${Math.round(t-(previous.estimates[id]??0))>=0?'+':''}${Math.round(t-(previous.estimates[id]??0)).toLocaleString()} since survey)`:''}`)))),
-        previous?el('p',{class:'lt-note'},`Compared with day ${previous.day}, ${String(previous.hour).padStart(2,'0')}:${String(previous.minute).padStart(2,'0')}. Changes are sampled estimates, including dumped material; they are not measured extraction totals.`):'',
-        el('p',{class:'lt-note'},'Strip and store valuable topsoil separately. Leave room for a haul ramp and keep clay out of clean aggregate bays.'),
-        el('div',{class:'qo-actions'},el('button',{class:'btn btn-primary',onClick:()=>{notify(game.actions.setWorkArea(selected));render();}},active?'Follow this work area':'Set as work area'),
-          el('button',{class:'lt-link',onClick:()=>render()},'Refresh survey'),
-          el('button',{class:'lt-link',onClick:()=>{notify(game.actions.recordSurvey(selected));render();}},previous?'Replace recorded survey':'Record survey'),
-          el('button',{class:'lt-link',onClick:()=>{game.actions.setWorkArea(null);render();}},'Follow current goal')),
-        el('p',{class:'lt-note'},active?'Selected: marked on your map and in the field. Choosing a machine waypoint replaces this guide.':'Setting an area changes the guide, not your selected machine.'));
-    };
-    refreshSection=()=>{};render();
-  }
+  function survey() {const panel=workAreasPanel({game,feedback});body.append(panel.node);refreshSection=panel.refresh;}
 
   function workshop() {
     body.append(heading('Keep the yard working','Production wears the plant and gradually reduces throughput. Upgrades increase capacity and reduce running costs. Servicing takes game time; finish or cancel material batches first.'));

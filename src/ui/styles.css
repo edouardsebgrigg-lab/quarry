@@ -1645,3 +1645,19 @@ body:has(.overlay-digger-tools) .feedback > :is(.mentor,.log,.toasts) { visibili
 .qo-land-survey { border-top: 1px solid var(--line); padding-top: .8rem; }
 .qo-land-survey h4 { margin: 0 0 .6rem; }
 .map-land { display: grid; gap: .4rem; }
+.qo-work-areas, .qo-face-detail, .qo-face-card { display: grid; gap: .9rem; }
+.qo-work-areas p, .qo-face-card h3 { margin: 0; }
+.qo-boreholes { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .5rem; }
+.qo-borehole { display: grid; gap: .4rem; padding: .85rem; text-align: left; color: var(--text); font: inherit; border: 1px solid var(--line); background: rgba(255,255,255,.025); border-radius: .5rem; cursor: pointer; }
+.qo-borehole[aria-pressed="true"] { border-color: var(--accent); background: rgba(245,184,46,.1); }
+.qo-borehole small, .qo-column-layer small { color: var(--muted); }
+.qo-column-profile { display: grid; gap: .3rem; }
+.qo-column-layer { display: grid; grid-template-columns: 9rem 1fr; gap: .3rem 1rem; padding: .65rem .8rem; border-left: .4rem solid; background: rgba(255,255,255,.025); }
+.qo-column-layer small { grid-column: 2; }
+.qo-area-reserves summary { cursor: pointer; }
+.qo-area-reserves .qo-reserves { margin-top: 1rem; }
+@media (max-width: 600px) {
+  .qo-borehole { padding: .5rem; font-size: .72rem; overflow-wrap: anywhere; }
+  .qo-column-layer { grid-template-columns: 1fr; }
+  .qo-column-layer small { grid-column: 1; }
+}

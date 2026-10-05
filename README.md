@@ -356,6 +356,27 @@ Use **Work areas** for the new field's working faces and boreholes, or choose it
 work on purchased terrain. Each field retains its own excavations, spoil and remaining
 rock when you save; your existing Home Field excavation stays intact.
 
+### Plan a working face
+
+In **Quarry operations → Work areas**, choose a field, one of its nine areas, and a
+**Target material**. The nine boreholes show real sampled columns from today's ground.
+The suggested sample has the least cover over a layer containing at least 80% of your
+target by volume. That is a digging aid; depot grading uses the actual mass in your load.
+
+Select a borehole to read the depth and thickness of each layer, including loose heaps,
+compacted fill and the finite intact rock below. **Save face plan and guide here** marks
+that exact sample in the world and on the map. There is one saved plan per area, so you
+can keep a sand face in South Meadow and a rock face in East Ridge. Choosing another
+navigation target keeps the plans saved.
+
+Dig normally, then **Refresh boreholes** to compare the current cover and layer thickness
+with the plan's original readings. If that material has gone, the plan says so and lets
+you inspect another sample. **Update plan and guide here** deliberately replaces the
+baseline; **Clear saved face** returns that area's guide to its centre. An area-wide
+**Record survey** remains available for reserve comparisons. These are sampled depth
+and reserve estimates, not production counters or guaranteed yields; ground between
+samples can differ. Plans survive Save and Continue.
+
 ## For developers and agents
 
 - `AGENTS.md`: how to work on this repository (branches, checks, code rules). Start here.

@@ -16,6 +16,10 @@ beyond this queue; the manual play tasks below remain unverified.
 
 ## Play and fix (most valuable now)
 
+- [ ] **U-8 Working-face planning** — Codex, `codex/working-faces`: field-filtered
+      boreholes, material depth profiles, saved face choices and exact navigation.
+      Owner-directed development beyond queue ordering.
+
 Nobody has yet played the current game start to finish with real controls. These tasks are
 about playing it properly and fixing what gets in the way.
 

@@ -52,8 +52,8 @@ try {
   await ridge.locator('.qo-land-status').filter({hasText:'Owned'}).waitFor();
   assert.equal(await q(()=>window.__quarry.game.state.money),before-10500);
   await click('Work areas');
-  assert.match(await page.locator('.qo-area-grid').innerText(),/South Meadow/);
-  assert.match(await page.locator('.qo-area-grid').innerText(),/East Ridge/);
+  assert.match(await page.locator('#work-field').textContent(),/South Meadow/);
+  assert.match(await page.locator('#work-field').textContent(),/East Ridge/);
   await click('Rock blasting');await page.getByLabel('Field',{exact:true}).selectOption('ridge');
   assert.equal(Number(await page.locator('#blast-x').inputValue()),256);
   assert.equal(Number(await page.locator('#blast-z').inputValue()),44);

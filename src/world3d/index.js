@@ -52,7 +52,7 @@ import { entryModel } from '../progression/objectives.js';
 import { contractsState } from '../contracts/index.js';
 import { barrowFill } from '../handtools/index.js';
 import { keyLabel } from '../input/index.js';
-import { pileTotal, activeWorkArea, workAreas } from '../quarry/index.js';
+import { pileTotal, activeWorkArea, workAreas, activeWorkFace } from '../quarry/index.js';
 import { bucketFill, cuttingAttack } from '../machinery/digging.js';
 import { loadCarrier, combinationStats, attachedTrailer, cargoVolume } from '../machinery/trailers.js';
 import {
@@ -899,6 +899,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     const parcel=landParcels(game.ctx).find(p=>p.id===game.state.player.navigationLandId);
     if(parcel)return {...parcel.entrance,label:parcel.name+(parcel.owned?'':' · for sale'),near:8};
     const area = activeWorkArea(game.ctx);
+    const face=area&&activeWorkFace(game.ctx);
+    if(face)return {...face,near:3};
     if (area) return { x: area.x, z: area.z, label: `${area.name} work area`, near: 5 };
     const o = game.state.objectives?.guideEnabled===false?null:currentObjective(game.ctx);
     if (!o?.guide) return null;

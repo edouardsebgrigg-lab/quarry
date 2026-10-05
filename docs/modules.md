@@ -7,7 +7,7 @@ A short tour of the code. The logic modules never touch the screen. Each module 
 |---|---|
 | `game.json` | Tick rate, day length, speeds, starting machines (the pickup) and site, save version |
 | `production.json` | Crusher/screener throughput, batch limits, operating costs, conserved recipes and receipt history limit |
-| `operations.json` | Field work-area subdivision, names and survey sample density |
+| `operations.json` | Field work-area subdivision, names, survey sample density and minimum target-layer material share |
 | `economy.json` | Starting money, fuel price, debt interest, resale value |
 | `materials.json` | Materials you can sell (topsoil, clay, sand, gravel, mixed fill) and their base prices per tonne |
 | `market.json` | How prices swing (trend) and drop when you sell a lot (saturation) |
@@ -390,3 +390,28 @@ staff work, earthworks, saved contractor cuts, isolated RNG and legacy saves.
 `browser-checks/land.mjs` exercises actual purchase controls, tracked-machine boundaries,
 both access strips, a physical shovel, map navigation and independent terrain reload.
 Its money, machine placement and fixed-step steering are explicit test fixtures.
+
+### Saved working faces
+
+`quarry/operations.js` returns each borehole's ordered current layers and remaining
+bedrock alongside the original area reserve estimates. `quarry/faces.js` chooses the
+first layer whose target share meets `operations.survey.targetMinimumShare`; intact
+rock is a separate finite fallback. Candidate samples sort by least cover, then target
+share, then thickness. This is a volume-composition aid, separate from depot mass grading.
+
+`planWorkFace` validates an owned area and current sampled layer before saving
+`operations.faces[areaId]` with material, sample index, date and baseline depth/thickness.
+The action selects that area for navigation. Refreshing samples never rewrites the
+baseline, consumes material or spends money. Plans persist when navigation changes;
+`clearWorkFace` removes only the chosen area's plan. Legacy saves need no migration.
+`workFacePlan` ignores invalid saved metadata, and `activeWorkFace` computes a waypoint
+from the grid index without resurveying terrain every render frame.
+
+`ui/game/laptop/workAreas.js` owns the field filter, nine area buttons, target selector,
+nine boreholes, ordered layer profile, baseline comparison and collapsible area reserves.
+`world3d/index.js` uses a saved face's exact point when guiding an active work area; the
+map reads the same guide. Ordinary area-centre navigation remains available to old saves.
+`faces.test.js` covers actual columns, mixed fill, finite rock, depletion, state isolation,
+reload and invalid choices. `browser-checks/faces.mjs` uses the real controls and two
+saved field plans, with explicit finances and a conserved earthmoving fixture to verify
+exhaustion, refresh, reload and clearing.

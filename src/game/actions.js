@@ -17,7 +17,7 @@ import { setDiggerAttachment } from '../machinery/fleet.js';
 import { setGuideEnabled } from '../progression/index.js';
 import { pinMilestone, unpinMilestone } from '../career/index.js';
 import { quoteProduction, startProduction, cancelProduction, saveProductionPlan, upgradePlant, servicePlant, queueProduction, pauseProductionQueue, removeQueuedProduction, moveQueuedProduction, setProductionCashReserve } from '../production/index.js';
-import { setWorkArea, recordSurvey } from '../quarry/index.js';
+import { setWorkArea, recordSurvey, planWorkFace, clearWorkFace } from '../quarry/index.js';
 import { quoteBuyerDelivery, navigateBuyer } from '../trade/index.js';
 import { quoteBlast, startBlast, chargeBlast, fireBlast, abortBlast, cancelBlast, blastClearance } from '../blasting/index.js';
 import { buyLand, navigateLand, groundAt } from '../quarry/land.js';
@@ -47,6 +47,8 @@ export function createActions(ctx) {
     moveQueuedProduction: (plantId,id,direction) => moveQueuedProduction(ctx,plantId,id,direction),
     setProductionCashReserve: amount => setProductionCashReserve(ctx,amount),
     recordSurvey: id => recordSurvey(ctx,id),
+    planWorkFace: request => planWorkFace(ctx,request),
+    clearWorkFace: areaId => clearWorkFace(ctx,areaId),
     upgradePlant: id => upgradePlant(ctx,id),
     servicePlant: id => servicePlant(ctx,id),
     quoteBuyerDelivery: (id,load) => quoteBuyerDelivery(ctx,id,load),

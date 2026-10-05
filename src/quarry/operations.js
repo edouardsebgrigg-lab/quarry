@@ -39,7 +39,8 @@ export function surveyWorkArea(ctx, id) {
     const z = area.z0 + (row + 0.5) / side * (area.z1 - area.z0);
     const column = groundAt(ctx,x,z)?.inspectAt(x,z);
     if (!column) continue;
-    samples.push({ x,z,bedrockDepth: column.bedrockDepth, surface: column.surface.coverMaterial,
+    samples.push({ x,z,bedrockDepth: column.bedrockDepth, rockRemaining:column.rockRemaining??0,
+      layers:column.layers, surface: column.surface.coverMaterial,
       coverDepth: column.layers.filter(l => l.material === 'topsoil' || l.material === 'clay').reduce((t,l) => t+l.thickness,0) });
     for (const layer of column.layers) {
       const mix = layer.composition ?? { [layer.material]: 1 };
