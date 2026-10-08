@@ -129,8 +129,9 @@ export function* basinSteps(height, nx, nz, { holds = null, rain = 1 } = {}) {
   const wet = (n) => spill[n] > h[n] + 1e-4;
   for (let k = 0; k < N; k++) {
     if (k % (STEP * 4) === 0) yield;
+    if (seen[k]) continue; // (already in a hollow found earlier)
     floor[k] = h[k];
-    if (seen[k] || !wet(k)) continue;
+    if (!wet(k)) continue;
     let count = 0;
     let top = 0;
     let low = Infinity;

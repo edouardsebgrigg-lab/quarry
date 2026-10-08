@@ -1539,6 +1539,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     settleWeather() { weatherSettle = true; },
     groundWeather,
     waterDepthAt: (x, z) => waterDepthAt(x, z),
+    waterInfo(x, z) {
+      const i = grounds.findIndex((g) => g.inside(x, z));
+      return i < 0 ? null : { ...groundViews[i].waterInfo(x, z), world: heightAt(x, z), field: i };
+    },
     groundSurface: (x, z) => groundSurface(x, z),
     hands,
     renderer,

@@ -381,7 +381,7 @@ export function createGroundMaterial({ fields = false, strata = false, water = n
           if (rise > 0.002 && wd > -0.03) {
             // (a damp rim, and waterlogged ground under water too shallow to cover the grass,
             // which stands up through it: open water only once it's deeper than the grass)
-            diffuseColor.rgb *= 1.0 - 0.35 * smoothstep(-0.03, 0.0, wd);
+            diffuseColor.rgb *= 1.0 - 0.35 * smoothstep(-0.03, 0.0, wd) * (1.0 - 0.6 * b.x);
             float grassTop = 0.08 * b.x;
             waterAmt = smoothstep(grassTop, grassTop + 0.03, wd);
             diffuseColor.rgb = mix(diffuseColor.rgb, mix(diffuseColor.rgb * 0.55, vec3(0.06, 0.058, 0.045), smoothstep(0.03, 0.4, wd)), waterAmt);

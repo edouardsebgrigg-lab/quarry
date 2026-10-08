@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { findBasins, basinSteps, waterLevel } from './basins.js';
+import weather from '../../data/weather.json';
+import handling from '../../data/handling.json';
 
 // A flat 20 × 20 patch at height 0 with a pit dug in it (1 m deep in the middle, 0.5 m round it)
 // and a trench that runs off the edge.
@@ -20,7 +22,8 @@ describe('where rainwater stands', () => {
     const g = ground({ rain: 0.1 });
     expect(g.spill[9 * g.nx + 9]).toBeCloseTo(0);
     expect(g.floor[9 * g.nx + 9]).toBeCloseTo(-1);
-    expect(g.floor[8 * g.nx + 8]).toBeCloseTo(-1); // (the shallow ledge is part of the same hollow)
+    // (the shallow ledge is part of the same hollow, on every side: the water lies flat)
+    for (const [i, j] of [[8, 8], [11, 11], [10, 8], [8, 11]]) expect(g.floor[j * g.nx + i]).toBeCloseTo(-1);
     expect(level(g, 9, 9)).toBeCloseTo(-0.6); // (1.6 m over the 4 deep cells: 0.4 m deep)
     expect(level(g, 8, 8)).toBeCloseTo(-0.6); // (the same level, though the ledge stands dry)
     expect(level(ground({ rain: 10 }), 9, 9)).toBeCloseTo(0);
@@ -65,6 +68,23 @@ describe('where rainwater stands', () => {
     expect(waterLevel(b.floor[k], b.rise[k], 1)).toBeLessThan(-0.05);
     // (in a lighter shower the water stays down in the pit)
     expect(waterLevel(b.floor[k], b.rise[k], 0.3)).toBeLessThan(-0.5);
+  });
+
+  it('a broad, nearly flat field in the heaviest rain gets shallow puddles, hardly any to wade in', () => {
+    // (the worst case: 60 x 60 cells of turf, gently rolling by 2 cm, closed in by a raised edge)
+    const n = 64;
+    const height = (i, j) => (i === 0 || j === 0 || i === n - 1 || j === n - 1 ? 0.06 : 0.02 * Math.sin(i * 0.4) * Math.cos(j * 0.3));
+    const W = weather.standingWater;
+    const b = findBasins(height, n, n, { holds: () => W.turfHolds, rain: W.maxDepth });
+    let wading = 0, deepest = 0;
+    for (let j = 1; j < n - 1; j++) for (let i = 1; i < n - 1; i++) {
+      const d = b.floor[j * n + i] + b.rise[j * n + i] - height(i, j);
+      if (d > handling.wading.minDepth) wading++;
+      deepest = Math.max(deepest, d);
+    }
+    expect(deepest).toBeGreaterThan(0.005); // (the lowest spots do get wet)
+    expect(deepest).toBeLessThan(0.05);
+    expect(wading / ((n - 2) * (n - 2))).toBeLessThan(0.05);
   });
 
   it('can be worked out a little at a time, on a copy of the heights', () => {

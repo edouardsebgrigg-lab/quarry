@@ -19,6 +19,6 @@
     "risePerSecond": 0.008,
     "fallPerSecond": 0.0015,
     "maxDepth": 0.6,
-    "turfHolds": 0.15
+    "turfHolds": 0.02
   }
 }

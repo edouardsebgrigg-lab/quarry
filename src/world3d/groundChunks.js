@@ -283,6 +283,14 @@ export function createGroundView({ scene, physics, ground, onChange = null }) {
       const k = (j * nx + i) * 4;
       return waterLevel(waterData[k], waterData[k + 2], depth / STANDING.maxDepth);
     },
+    // (debug: the hollow under (x, z))
+    waterInfo(x, z) {
+      const i = Math.floor((x - ground.x0) / cell);
+      const j = Math.floor((z - ground.z0) / cell);
+      if (i < 0 || j < 0 || i >= nx || j >= nz) return null;
+      const k = j * nx + i;
+      return { floor: waterData[k * 4], spill: waterData[k * 4 + 1], rise: waterData[k * 4 + 2], height: heights[k], keeps: holds[k], busy: !!waterJob };
+    },
     dispose() {
       for (const { mesh, collider } of chunks.values()) {
         scene.remove(mesh);
