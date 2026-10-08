@@ -4,6 +4,7 @@
 // gravel, and layered rock faces on steep cut walls.
 import * as THREE from 'three';
 import { createGroundMaterial } from './groundMaterial.js';
+import { findBasins } from '../ground/basins.js';
 
 // Surface mix (grass, dirt, gravel, rock) and colour tint for each material.
 const LOOK = {
@@ -64,7 +65,28 @@ export function createGroundView({ scene, physics, ground, onChange = null }) {
   const nx = ground.nx;
   const nz = ground.nz;
   const matIds = ground.materials;
-  const material = createGroundMaterial({ strata: true });
+  // Where rainwater can stand: each cell's hollow floor and spill level, in a texture the
+  // shader reads (worked out again a moment after the ground stops changing, not every frame).
+  const waterData = new Float32Array(nx * nz * 4);
+  const waterTexture = new THREE.DataTexture(waterData, nx, nz, THREE.RGBAFormat, THREE.FloatType);
+  waterTexture.magFilter = THREE.NearestFilter;
+  waterTexture.minFilter = THREE.NearestFilter;
+  waterTexture.needsUpdate = true;
+  function findWater() {
+    const { spill, floor } = findBasins((i, j) => ground.cellHeight(i, j), nx, nz);
+    for (let k = 0; k < nx * nz; k++) {
+      waterData[k * 4] = floor[k];
+      waterData[k * 4 + 1] = spill[k];
+    }
+    waterTexture.needsUpdate = true;
+  }
+  findWater();
+  let groundChangedAt = 0;
+  let waterFoundAt = 0;
+  const material = createGroundMaterial({
+    strata: true,
+    water: { texture: waterTexture, xform: new THREE.Vector4(ground.x0, ground.z0, 1 / (nx * cell), 1 / (nz * cell)) },
+  });
   const chunks = new Map(); // chunk index -> { mesh, collider }
   const pending = new Set();
   for (let c = 0; c < ground.chunksX * ground.chunksZ; c++) pending.add(c);
@@ -178,7 +200,16 @@ export function createGroundView({ scene, physics, ground, onChange = null }) {
   return {
     // Rebuild the chunks whose ground changed (a few per frame).
     update() {
-      for (const c of ground.takeDirtyChunks()) pending.add(c);
+      for (const c of ground.takeDirtyChunks()) {
+        pending.add(c);
+        groundChangedAt = performance.now();
+      }
+      // (the hollows: a second after digging stops, or every few seconds while it goes on)
+      const now = performance.now();
+      if (groundChangedAt > waterFoundAt && (now - groundChangedAt > 1000 || now - waterFoundAt > 4000)) {
+        findWater();
+        waterFoundAt = now;
+      }
       let n = 0;
       for (const c of pending) {
         if (n++ >= REBUILDS_PER_FRAME) break;

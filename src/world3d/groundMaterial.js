@@ -20,7 +20,9 @@ const DAMP_SHEEN = `
 
 // How wet the ground is (0 dry .. 1 soaked), shared by every ground material: wet soil is darker
 // and shinier. The world eases it up when it rains and down again after.
-export const groundWeather = { wet: { value: 0 } };
+export const groundWeather = { wet: { value: 0 }, water: { value: 0 } };
+// (`water`: metres of rainwater standing in the field's hollows, rising while it rains and
+// draining away slowly after; how high it can get in each one comes from src/ground/basins.js)
 // (Grass doesn't pool water, so it only gets a little of the sheen: b.x is the grass share.)
 const WET = `
   float wetK = uWet * (1.0 - 0.8 * b.x);
@@ -167,7 +169,9 @@ export async function preloadGround(renderer) {
 
 // `fields`: farmland beyond the map (the far strips and hills): a patchwork of fields in
 // different crops with dark hedge lines between them, the way English hills look from afar.
-export function createGroundMaterial({ fields = false, strata = false } = {}) {
+// `water` (the field: strata on) is { texture, xform }: a texture of each cell's hollow floor and
+// spill level (red, green) and where it lies (x0, z0, 1 / width, 1 / depth).
+export function createGroundMaterial({ fields = false, strata = false, water = null } = {}) {
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.94, metalness: 0, envMapIntensity: 0.7 });
   if (fields) mat.defines = { ...mat.defines, FIELDS: '' };
   if (strata) mat.defines = { ...mat.defines, STRATA: '' };
@@ -177,6 +181,11 @@ export function createGroundMaterial({ fields = false, strata = false } = {}) {
     uniforms[`t_${name}N`] = { value: textures[`${name}N`] ?? placeholder([128, 128, 128, 255]) };
   }
   uniforms.t_macro = { value: textures.macro ?? placeholder([128, 128, 128, 255]) };
+  if (strata) {
+    uniforms.t_water = { value: water?.texture ?? placeholder([0, 0, 0, 255]) };
+    uniforms.uWaterXform = { value: water?.xform ?? new THREE.Vector4(0, 0, 1, 1) };
+    uniforms.uWaterDepth = groundWeather.water;
+  }
 
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
@@ -217,6 +226,11 @@ export function createGroundMaterial({ fields = false, strata = false } = {}) {
         #endif
         ${LAYERS.map((n) => `uniform sampler2D t_${n}A; uniform sampler2D t_${n}N;`).join('\n')}
         uniform sampler2D t_macro;
+        #ifdef STRATA
+        uniform sampler2D t_water;
+        uniform vec4 uWaterXform;
+        uniform float uWaterDepth;
+        #endif
 
         // Two samples at different scales and angles, mixed by a large noise field,
         // so a repeating texture doesn't show a grid pattern.
@@ -328,14 +342,31 @@ export function createGroundMaterial({ fields = false, strata = false } = {}) {
         #endif
         diffuseColor *= vec4(albedo.rgb, 1.0);
         diffuseColor.rgb *= mix(1.0, mix(0.68, 0.84, b.x), uWet);
+        // Rainwater standing in a hollow: wet mud at its margin, then still, murky water, as
+        // deep as the rain has filled it and never above where it would spill out.
+        float waterAmt = 0.0;
+        #ifdef STRATA
+        {
+          vec2 fs = texture2D(t_water, (vWPos.xz - uWaterXform.xy) * uWaterXform.zw).rg;
+          float level = min(fs.y, fs.x + uWaterDepth);
+          float wd = level - vWPos.y;
+          if (fs.y - fs.x > 0.02 && uWaterDepth > 0.002 && wd > -0.03) {
+            diffuseColor.rgb *= 1.0 - 0.35 * smoothstep(-0.03, 0.0, wd) * step(wd, 0.0); // (the damp rim)
+            waterAmt = smoothstep(0.0, 0.03, wd);
+            diffuseColor.rgb = mix(diffuseColor.rgb, mix(diffuseColor.rgb * 0.55, vec3(0.06, 0.058, 0.045), smoothstep(0.03, 0.4, wd)), waterAmt);
+          }
+        }
+        #endif
 
         vec2 topSlope = gN.xy * b.x + dN.xy * b.y + vN.xy * b.z;
         vec3 topWN = normalize(vec3(wn.x + topSlope.x, wn.y, wn.z + topSlope.y));
         vec3 groundWN = normalize(topWN * (1.0 - b.w) + rockWN * b.w);
       `)
-      .replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>${DAMP_SHEEN}${WET}`)
+      .replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>${DAMP_SHEEN}${WET}
+        material.roughness = mix(material.roughness, 0.04, waterAmt);
+        material.specularF90 = mix(material.specularF90, 1.0, waterAmt);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
-        normal = normalize((viewMatrix * vec4(groundWN, 0.0)).xyz);
+        normal = normalize((viewMatrix * vec4(mix(groundWN, vec3(0.0, 1.0, 0.0), waterAmt), 0.0)).xyz);
       `);
   };
   mat.customProgramCacheKey = () => `quarry-ground-v4${fields ? '-fields' : ''}${strata ? '-strata' : ''}`;

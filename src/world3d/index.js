@@ -1258,6 +1258,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     weatherSettle = false;
     const felt = env.weather(paused ? 0 : settle ? 10 : dt, w, visualHour(game.state, data));
     groundWeather.wet.value += ((felt.rain > 0.05 ? Math.min(1, felt.rain * 1.3) : 0) - groundWeather.wet.value) * (settle ? 1 : Math.min(1, dt * (felt.rain > 0.05 ? 0.08 : 0.02)));
+    // Rainwater in the hollows: it collects while it rains (a heavy shower fills a pit's bottom
+    // in a minute or so) and soaks away far more slowly.
+    if (settle) groundWeather.water.value = felt.rain > 0.05 ? 0.45 * Math.min(1, felt.rain * 1.3) : 0;
+    else groundWeather.water.value = Math.max(0, Math.min(0.6, groundWeather.water.value + dt * (felt.rain > 0.05 ? felt.rain * 0.008 : -0.0015)));
     rain.update(paused ? 0 : dt, camera, felt.rain);
     rainFelt = paused ? 0 : felt.rain;
     const here = v ? v.position() : player.feet();
