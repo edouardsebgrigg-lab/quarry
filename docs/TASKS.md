@@ -115,6 +115,10 @@ about playing it properly and fixing what gets in the way.
       tyre tracks and mud, grass tufts on the field, a pedal ramp and light-pedal key.
       On main: `d944458`, included with the Working Quarry upgrade.
 
+- [ ] **H-7 A slow save test.** `saveRecovery.test.js` "exports, validates and imports into the
+      chosen slot" takes about 1.7 s alone; it failed once in a full run while a headless browser
+      was rendering (likely the 5 s timeout) and passed in three reruns. Find what makes it slow.
+
 ## Next depth (after the play tasks)
 
 - [ ] **N-1 Propose the next small batch of depth and fun**, based on P-1 to P-3, and agree it
