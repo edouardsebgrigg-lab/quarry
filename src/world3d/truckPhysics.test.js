@@ -292,6 +292,19 @@ describe('grip', () => {
     expect(timeTo30(WET_GRASS, 0.6).t).toBeLessThan(wet.t);
   });
 
+  it('changes up on spinning wheels without hunting between gears', () => {
+    const { car, run } = pickupOn(WET_GRASS);
+    car.control.throttle = 1;
+    const gears = [];
+    run(20, () => {
+      const g = car.telemetry().gear;
+      if (gears[gears.length - 1] !== g) gears.push(g);
+    });
+    expect(gears.slice(0, 3)).toEqual([1, 2, 3]);
+    expect(gears.length).toBeLessThanOrEqual(5); // (up through the box, not 1-2-1-2...)
+    expect(car.speed()).toBeGreaterThan(30 / 3.6);
+  });
+
   it('leans out of a bend, a few degrees, and stays on its wheels', () => {
     const { car, run } = pickupOn(TARMAC);
     car.control.throttle = 1;

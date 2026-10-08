@@ -324,13 +324,18 @@ export function createTruckPhysics({ RAPIER, world }, {
 
     // ---- automatic gearbox
     eng.shiftT = Math.max(0, eng.shiftT - dt);
+    eng.spinHold = Math.max(0, (eng.spinHold ?? 0) - dt);
     if (eng.gear > 0 && eng.shiftT === 0) {
       const rpm = wheelRpmAt(v, eng.gear);
-      if (rpm > E.maxRpm * E.upshiftAt && eng.gear < E.gears.length && throttle > 0.1) {
+      // (an automatic reads its output shaft, so wheels spinning hard make it change up, and
+      // the taller gear calms them; it then holds that gear a while rather than hunting)
+      const shaft = rpm * (1 + out.wheelspin * 1.1);
+      if ((rpm > E.maxRpm * E.upshiftAt || (out.wheelspin > 0.6 && shaft > E.maxRpm * E.upshiftAt)) && eng.gear < E.gears.length && throttle > 0.1) {
+        if (rpm <= E.maxRpm * E.upshiftAt) eng.spinHold = 2;
         eng.gear += 1;
         eng.shiftT = E.shiftTime;
         out.shifted += 1;
-      } else if (eng.gear > 1 && rpm < E.downshiftAt) {
+      } else if (eng.gear > 1 && rpm < E.downshiftAt && eng.spinHold === 0) {
         eng.gear -= 1;
         eng.shiftT = E.shiftTime * 0.7;
         out.shifted += 1;
