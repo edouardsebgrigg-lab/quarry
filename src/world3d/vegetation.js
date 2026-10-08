@@ -97,6 +97,183 @@ function rng(seed) {
   };
 }
 
+// Smooth value noise (0..1) on the ground, the same every time: where tussocks and weeds
+// gather and where the grass is short.
+function hash2(x, z) {
+  const h = Math.sin(x * 127.1 + z * 311.7) * 43758.5453;
+  return h - Math.floor(h);
+}
+function noise2(x, z) {
+  const xi = Math.floor(x), zi = Math.floor(z);
+  const fx = x - xi, fz = z - zi;
+  const u = fx * fx * (3 - 2 * fx), w = fz * fz * (3 - 2 * fz);
+  const a = hash2(xi, zi), b = hash2(xi + 1, zi), c = hash2(xi, zi + 1), d = hash2(xi + 1, zi + 1);
+  return a + (b - a) * u + (c - a) * w + (a - b - c + d) * u * w;
+}
+
+// ---------------------------------------------------------------- the sward
+
+// Short grass blades across a card (drawn here: the Blender atlas has clumps, not sward).
+function swardTexture() {
+  const w = 256;
+  const h = 128;
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  const g = c.getContext('2d');
+  const random = rng(31);
+  // (the colour behind the blades: alpha 0 there, but mipmaps blend it in, so not black)
+  g.fillStyle = 'rgba(70,90,40,0)';
+  g.fillRect(0, 0, w, h);
+  g.lineCap = 'round';
+  for (let i = 0; i < 260; i++) {
+    const x = 6 + random() * (w - 12);
+    const len = h * (0.35 + random() * 0.6);
+    const lean = (random() - 0.5) * 0.7;
+    const k = random();
+    const r = Math.round(58 + k * 40 + (random() < 0.12 ? 40 : 0));
+    const gg = Math.round(92 + k * 50);
+    const b = Math.round(34 + k * 18);
+    g.strokeStyle = `rgb(${r},${gg},${b})`;
+    g.lineWidth = 1.2 + random() * 1.6;
+    g.beginPath();
+    g.moveTo(x, h);
+    g.quadraticCurveTo(x + lean * len * 0.3, h - len * 0.6, x + lean * len, h - len);
+    g.stroke();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+// A carpet of short grass right around you, so the ground near your feet is a sward and not a
+// painted lawn: small blade cards every half metre or so on grass, shrinking away towards the
+// edge of the patch (in the shader, by distance from the camera), none on tracks, roads, yards
+// or dug ground. Generated in 8 m patches as you move, like the tufts.
+function createSward({ scene, quality, surfaceAt, blocked, time }) {
+  const R = { low: 14, medium: 22, high: 30, ultra: 36 }[quality] ?? 22;
+  const spacing = { low: 0.6, medium: 0.5, high: 0.45, ultra: 0.42 }[quality] ?? 0.5;
+  const CELL = 8;
+  const span = Math.ceil(R / CELL);
+  const perCell = Math.round((CELL / spacing) ** 2);
+  const capacity = Math.ceil((2 * span + 1) ** 2 * perCell * 0.8);
+  const material = new THREE.MeshStandardMaterial({
+    map: swardTexture(), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.95, metalness: 0, envMapIntensity: 0.5,
+  });
+  const radius = { value: R };
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = time;
+    shader.uniforms.uRadius = radius;
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform float uTime;\nuniform float uRadius;')
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        {
+          vec3 root = instanceMatrix[3].xyz;
+          // (shrink towards the edge of the carpet, so it has no edge)
+          float fade = 1.0 - smoothstep(uRadius * 0.6, uRadius, distance(root.xz, cameraPosition.xz));
+          transformed *= fade;
+          float bend = position.y * position.y;
+          transformed.x += bend * 0.05 * sin(uTime * 1.6 + root.x * 0.3 + root.z * 0.2);
+        }`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <normal_fragment_begin>', `#include <normal_fragment_begin>
+        normal = normalize(normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz) + vec3(0.0, 0.0, 0.4));`)
+      .replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>
+        material.specularColor *= 0.25;
+        material.specularF90 = 0.1;`);
+  };
+  material.customProgramCacheKey = () => 'sward';
+  const mesh = new THREE.InstancedMesh(cardGeometry(0, 1), material, capacity);
+  mesh.count = 0;
+  mesh.receiveShadow = true;
+  mesh.frustumCulled = false;
+  mesh.name = 'sward';
+  scene.add(mesh);
+
+  const cache = new Map();
+  function patch(cx, cz) {
+    const key = `${cx},${cz}`;
+    if (cache.has(key)) return cache.get(key);
+    const random = rng((Math.imul(cx, 2654435761) ^ Math.imul(cz, 40503) ^ 113) >>> 0);
+    const out = [];
+    const n = CELL / spacing;
+    for (let a = 0; a < n; a++) {
+      for (let b = 0; b < n; b++) {
+        const x = (cx * n + a + random()) * spacing;
+        const z = (cz * n + b + random()) * spacing;
+        if (blocked(x, z)) continue;
+        const s = surfaceAt(x, z);
+        if (s.road || (s.grass ?? 0) < 0.55 || (s.plot && !s.grass)) continue;
+        const worn = s.wear ?? 0;
+        if (random() < worn * 2.5) continue; // (flattened and gone on tyre tracks)
+        // (longer in some places, short and thin in others)
+        const lush = noise2(x / 9, z / 9);
+        if (random() > 0.45 + lush * 0.6) continue;
+        const width = 0.45 + random() * 0.35;
+        const height = (0.1 + lush * 0.16 + random() * 0.08) * (1 - worn);
+        const shade = 0.72 + random() * 0.18 + lush * 0.1;
+        out.push([x, s.height, z, width, height, random() * Math.PI, shade]);
+      }
+    }
+    cache.set(key, out);
+    if (cache.size > 900) cache.delete(cache.keys().next().value);
+    return out;
+  }
+
+  const m = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const up = new THREE.Vector3(0, 1, 0);
+  const sc = new THREE.Vector3();
+  const pos = new THREE.Vector3();
+  const tint = new THREE.Color();
+  let centre = null;
+  let stale = false;
+  let since = 0;
+  function rebuild(ccx, ccz) {
+    let k = 0;
+    for (let dz = -span; dz <= span; dz++) {
+      for (let dx = -span; dx <= span; dx++) {
+        if (dx * dx + dz * dz > (span + 0.5) ** 2) continue;
+        for (const [x, y, z, width, height, turn, shade] of patch(ccx + dx, ccz + dz)) {
+          if (k >= capacity) break;
+          sc.set(width, height, width);
+          q.setFromAxisAngle(up, turn);
+          pos.set(x, y - 0.02, z);
+          m.compose(pos, q, sc);
+          mesh.setMatrixAt(k, m);
+          mesh.setColorAt(k, tint.setRGB(shade, shade, shade * 0.92));
+          k++;
+        }
+      }
+    }
+    mesh.count = k;
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  }
+  return {
+    mesh,
+    update(dt, at) {
+      since += dt;
+      if (!at) return;
+      const ccx = Math.floor(at.x / CELL);
+      const ccz = Math.floor(at.z / CELL);
+      if (centre && centre[0] === ccx && centre[1] === ccz && !(stale && since > 0.5)) return;
+      centre = [ccx, ccz];
+      stale = false;
+      since = 0;
+      rebuild(ccx, ccz);
+    },
+    refresh(x0, z0, x1, z1) {
+      for (let cz = Math.floor(z0 / CELL); cz <= Math.floor(z1 / CELL); cz++) {
+        for (let cx = Math.floor(x0 / CELL); cx <= Math.floor(x1 / CELL); cx++) cache.delete(`${cx},${cz}`);
+      }
+      stale = true;
+    },
+  };
+}
+
+// ---------------------------------------------------------------- tufts and weeds
+
 // `surfaceAt(x, z)` -> { height, grass, dirt, gravel, rock }; `blocked(x, z)` -> true where
 // nothing should grow (pits, buildings, parking).
 // Grass tufts, dry grass, ragwort and thistles, in 16 m patches generated around you as you
@@ -105,6 +282,7 @@ function rng(seed) {
 export function createVegetation({ scene, quality, surfaceAt, blocked }) {
   if (!atlas) return { update() {} };
   const time = { value: 0 };
+  const sward = createSward({ scene, quality, surfaceAt, blocked, time });
   const material = swayingCardMaterial(atlas, time, 1);
   const CELL = 16;
   const R = { low: 55, medium: 75, high: 95, ultra: 120 }[quality] ?? 75;
@@ -142,7 +320,9 @@ export function createVegetation({ scene, quality, surfaceAt, blocked }) {
       if (s.plot && !s.grass) continue; // (nothing grows on freshly dug or dumped ground)
       const edge = 1 - Math.abs(s.grass - 0.5) * 2;
       const worn = s.wear ?? 0; // (tyre tracks: flattened, then gone)
-      const p = (s.grass * 0.55 + edge * 0.5 + s.dirt * 0.03) * Math.max(0, 1 - worn * 2.2);
+      // (tussocks and weeds gather in drifts: thick in places, hardly any in others)
+      const drift = Math.min(1.6, Math.max(0.15, (noise2(x / 21, z / 21) - 0.3) * 2.6));
+      const p = (s.grass * 0.55 + edge * 0.5 + s.dirt * 0.03) * Math.max(0, 1 - worn * 2.2) * drift;
       if (random() > p) continue;
       const r = random();
       let kind;
@@ -205,6 +385,7 @@ export function createVegetation({ scene, quality, surfaceAt, blocked }) {
     update(dt, at) {
       time.value += dt;
       sinceRebuild += dt;
+      sward.update(dt, at);
       if (!at) return;
       const ccx = Math.floor(at.x / CELL);
       const ccz = Math.floor(at.z / CELL);
@@ -216,6 +397,7 @@ export function createVegetation({ scene, quality, surfaceAt, blocked }) {
     },
     // Forget the plants over a stretch of ground that has changed (dug, dumped on, worn).
     refresh(x0, z0, x1 = x0, z1 = z0) {
+      sward.refresh(x0, z0, x1, z1);
       for (let cz = Math.floor(z0 / CELL); cz <= Math.floor(z1 / CELL); cz++) {
         for (let cx = Math.floor(x0 / CELL); cx <= Math.floor(x1 / CELL); cx++) cache.delete(`${cx},${cz}`);
       }
