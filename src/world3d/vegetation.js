@@ -128,13 +128,15 @@ function swardTexture() {
   g.lineCap = 'round';
   for (let i = 0; i < 260; i++) {
     const x = 6 + random() * (w - 12);
-    const len = h * (0.35 + random() * 0.6);
+    // (tallest in the middle, short at the sides: a clump, not a strip)
+    const middle = 1 - Math.abs(x / w - 0.5) * 2;
+    const len = h * (0.2 + random() * 0.35 + middle * 0.45);
     const lean = (random() - 0.5) * 0.7;
     const k = random();
-    const straw = random() < 0.14; // (a few dead blades among the green)
-    const r = Math.round(straw ? 120 + k * 30 : 46 + k * 30);
-    const gg = Math.round(straw ? 110 + k * 25 : 70 + k * 34);
-    const b = Math.round(straw ? 60 + k * 15 : 24 + k * 14);
+    const straw = random() < 0.16; // (a few dead blades among the green)
+    const r = Math.round(straw ? 118 + k * 30 : 52 + k * 28);
+    const gg = Math.round(straw ? 106 + k * 25 : 68 + k * 28);
+    const b = Math.round(straw ? 58 + k * 15 : 26 + k * 12);
     g.strokeStyle = `rgb(${r},${gg},${b})`;
     g.lineWidth = 1.2 + random() * 1.6;
     g.beginPath();
@@ -207,14 +209,16 @@ function createSward({ scene, quality, surfaceAt, blocked, time }) {
         if (s.road || (s.grass ?? 0) < 0.55 || (s.plot && !s.grass)) continue;
         const worn = s.wear ?? 0;
         if (random() < worn * 2.5) continue; // (flattened and gone on tyre tracks)
-        // (longer in some places, short and thin in others)
+        // (longer in some places, short and thin in others, and in clumps with gaps between,
+        // not evenly spread like a planted bed)
         const lush = noise2(x / 9, z / 9);
-        if (random() > 0.45 + lush * 0.6) continue;
+        const clump = noise2(x / 1.7 + 31, z / 1.7 - 17);
+        if (random() > (0.25 + lush * 0.5) * (0.3 + clump * 1.2)) continue;
         // (small clumps of blades, about as wide as they're tall: seen from above they all but
         // vanish and the ground shows; from the side they make a sward)
-        const width = 0.18 + random() * 0.14;
-        const height = (0.1 + lush * 0.14 + random() * 0.07) * (1 - worn);
-        const shade = 0.62 + random() * 0.16 + lush * 0.1;
+        const width = 0.14 + random() * 0.2;
+        const height = (0.07 + lush * 0.13 + random() * 0.1) * (1 - worn);
+        const shade = 0.5 + random() * 0.18 + lush * 0.1;
         out.push([x, s.height, z, width, height, random() * Math.PI, shade]);
       }
     }

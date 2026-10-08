@@ -367,7 +367,13 @@ export function createGroundMaterial({ fields = false, strata = false, water = n
         material.specularF90 = mix(material.specularF90, 1.0, waterAmt);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         normal = normalize((viewMatrix * vec4(mix(groundWN, vec3(0.0, 1.0, 0.0), waterAmt), 0.0)).xyz);
-      `);
+      `)
+      // (it only rains under cloud, but the environment map is a clear sky: wet ground and
+      // standing water reflect grey, dimmer light, not a blue sky)
+      .replace('#include <lights_fragment_maps>', `#include <lights_fragment_maps>
+        #if defined( RE_IndirectSpecular )
+        radiance = mix(radiance, vec3(dot(radiance, vec3(0.3, 0.59, 0.11))) * 0.6, uWet);
+        #endif`);
   };
   mat.customProgramCacheKey = () => `quarry-ground-v4${fields ? '-fields' : ''}${strata ? '-strata' : ''}`;
   return mat;
