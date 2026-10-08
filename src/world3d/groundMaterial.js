@@ -385,8 +385,10 @@ export function createGroundMaterial({ fields = false, strata = false, water = n
             float grassTop = 0.08 * b.x;
             waterAmt = smoothstep(grassTop, grassTop + 0.03, wd);
             diffuseColor.rgb = mix(diffuseColor.rgb, mix(diffuseColor.rgb * 0.55, vec3(0.06, 0.058, 0.045), smoothstep(0.03, 0.4, wd)), waterAmt);
-            if (uRain > 0.02 && waterAmt > 0.0) {
-              vec2 rings = rainRings(vWPos.xz, uTime) * 0.12 * uRain;
+            // (rings fade out with distance, before they're too small to draw cleanly)
+            float ringsNear = 1.0 - smoothstep(10.0, 30.0, distance(vWPos, cameraPosition));
+            if (uRain > 0.02 && waterAmt > 0.0 && ringsNear > 0.0) {
+              vec2 rings = rainRings(vWPos.xz, uTime) * 0.12 * uRain * ringsNear;
               waterN = normalize(vec3(-rings.x, 1.0, -rings.y));
             }
           }
