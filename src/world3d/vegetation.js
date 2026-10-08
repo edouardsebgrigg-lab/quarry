@@ -131,9 +131,10 @@ function swardTexture() {
     const len = h * (0.35 + random() * 0.6);
     const lean = (random() - 0.5) * 0.7;
     const k = random();
-    const r = Math.round(58 + k * 40 + (random() < 0.12 ? 40 : 0));
-    const gg = Math.round(92 + k * 50);
-    const b = Math.round(34 + k * 18);
+    const straw = random() < 0.14; // (a few dead blades among the green)
+    const r = Math.round(straw ? 120 + k * 30 : 46 + k * 30);
+    const gg = Math.round(straw ? 110 + k * 25 : 70 + k * 34);
+    const b = Math.round(straw ? 60 + k * 15 : 24 + k * 14);
     g.strokeStyle = `rgb(${r},${gg},${b})`;
     g.lineWidth = 1.2 + random() * 1.6;
     g.beginPath();
@@ -152,7 +153,7 @@ function swardTexture() {
 // or dug ground. Generated in 8 m patches as you move, like the tufts.
 function createSward({ scene, quality, surfaceAt, blocked, time }) {
   const R = { low: 14, medium: 22, high: 30, ultra: 36 }[quality] ?? 22;
-  const spacing = { low: 0.6, medium: 0.5, high: 0.45, ultra: 0.42 }[quality] ?? 0.5;
+  const spacing = { low: 0.5, medium: 0.42, high: 0.38, ultra: 0.35 }[quality] ?? 0.42;
   const CELL = 8;
   const span = Math.ceil(R / CELL);
   const perCell = Math.round((CELL / spacing) ** 2);
@@ -209,9 +210,11 @@ function createSward({ scene, quality, surfaceAt, blocked, time }) {
         // (longer in some places, short and thin in others)
         const lush = noise2(x / 9, z / 9);
         if (random() > 0.45 + lush * 0.6) continue;
-        const width = 0.45 + random() * 0.35;
-        const height = (0.1 + lush * 0.16 + random() * 0.08) * (1 - worn);
-        const shade = 0.72 + random() * 0.18 + lush * 0.1;
+        // (small clumps of blades, about as wide as they're tall: seen from above they all but
+        // vanish and the ground shows; from the side they make a sward)
+        const width = 0.18 + random() * 0.14;
+        const height = (0.1 + lush * 0.14 + random() * 0.07) * (1 - worn);
+        const shade = 0.62 + random() * 0.16 + lush * 0.1;
         out.push([x, s.height, z, width, height, random() * Math.PI, shade]);
       }
     }
