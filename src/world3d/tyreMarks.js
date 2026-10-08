@@ -4,6 +4,7 @@
 // through mud and soil, grey lines on gravel, and on tarmac black rubber only where a wheel
 // locked or spun. One draw for all of them; the oldest fade away as new ones take their place.
 import * as THREE from 'three';
+import { groundWeather } from './groundMaterial.js';
 
 // A tread print: blocks across the tyre, a little irregular, soft at the edges.
 function treadTexture() {
@@ -57,6 +58,7 @@ export function createTyreMarks(scene, { max = 4000 } = {}) {
   });
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uNewest = newest;
+    shader.uniforms.uWet = groundWeather.wet;
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>
         attribute float aStrength;
@@ -74,7 +76,10 @@ export function createTyreMarks(scene, { max = 4000 } = {}) {
         vFade = aStrength * (1.0 - smoothstep(0.75, 1.0, age));`);
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>\nvarying float vFade;')
-      .replace('#include <alphamap_fragment>', '#include <alphamap_fragment>\ndiffuseColor.a *= vFade;');
+      .replace('#include <alphamap_fragment>', '#include <alphamap_fragment>\ndiffuseColor.a *= vFade;')
+      // (in the rain, water stands in the ruts: darker and glinting)
+      .replace('#include <common>', '#include <common>\nuniform float uWet;')
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.12, uWet * 0.9);\ndiffuseColor.rgb *= 1.0 - 0.3 * uWet;');
   };
   material.customProgramCacheKey = () => 'tyre-marks';
   const mesh = new THREE.InstancedMesh(geometry, material, max);
