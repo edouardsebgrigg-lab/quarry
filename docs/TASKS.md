@@ -115,9 +115,17 @@ about playing it properly and fixing what gets in the way.
       tyre tracks and mud, grass tufts on the field, a pedal ramp and light-pedal key.
       On main: `d944458`, included with the Working Quarry upgrade.
 
-- [ ] **H-7 A slow save test.** `saveRecovery.test.js` "exports, validates and imports into the
-      chosen slot" takes about 1.7 s alone; it failed once in a full run while a headless browser
-      was rendering (likely the 5 s timeout) and passed in three reruns. Find what makes it slow.
+- [ ] **G-2 More ground, grass and driving** (Claude, `claude/ground-driving-2`): the automatic
+      changes up when the wheels spin (without hunting), wet tyre marks, a short-grass sward
+      round you, rainwater standing in pits and hollows.
+
+- [x] **H-7 A slow save test** (Claude, `claude/ground-driving-2`). `saveRecovery.test.js`
+      "exports, validates and imports into the chosen slot" took about 1.6 s alone and failed once
+      in a full run while a headless browser was rendering (the 5 s timeout). Why: every save,
+      load and import check rebuilds the whole company from the file to prove its terrain unpacks
+      (about 0.2 s each in Node), and that test does it five times plus two games of its own. The
+      three tests that build a company now allow 20 s. Saving only happens from the menus, so
+      the cost isn't felt while playing.
 
 ## Next depth (after the play tasks)
 

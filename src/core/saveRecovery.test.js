@@ -3,6 +3,10 @@ import {createMemoryStorage,createSaveSystem,loadData,migrations} from './index.
 import {createGame} from '../game/index.js';
 import {validateSavedGame} from '../game/saveValidation.js';
 
+// Every save check rebuilds the whole company from the file (about 0.2 s each), so these take a
+// second or two alone and more while the machine is busy.
+const slow={timeout:20000};
+
 it('keeps an independent previous revision and recovers a damaged primary',()=>{
  const storage=createMemoryStorage(),s=createSaveSystem({storage,version:1});
  s.save('slot1',{money:4});s.save('slot1',{money:9});
@@ -26,7 +30,7 @@ it('never destroys the primary when recovery storage or the next write runs out 
   expect(()=>s.save('slot1',{money:10})).toThrow('Storage full');expect(s.load('slot1')).toEqual({money:5});
  }
 });
-it('exports, validates and imports into the chosen slot without changing the source or paying anything',()=>{
+it('exports, validates and imports into the chosen slot without changing the source or paying anything',slow,()=>{
  const data=loadData(),storage=createMemoryStorage(),s=createSaveSystem({storage,version:6,migrations,validateState:state=>validateSavedGame(data,state)});
  const g=createGame({data,seed:7});g.actions.shovelDig({x:20,z:20});s.save('slot1',g.snapshot(),{company:'Stone Co.',day:1});
  const text=s.exportSave('slot1'),before=s.load('slot1');expect(s.inspectImport(text).summary.company).toBe('Stone Co.');
@@ -41,7 +45,7 @@ it('rejects bad, oversized and future imports before any slot changes; exports n
  createSaveSystem({storage,version:3}).save('slot2',{money:9});
  expect(JSON.parse(s.exportSave('slot2')).version).toBe(3);expect(()=>s.save('slot2',{})).toThrow(/newer-version/);
 });
-it('validates imported terrain before displacing an existing save and accepts legacy metadata',()=>{
+it('validates imported terrain before displacing an existing save and accepts legacy metadata',slow,()=>{
  const data=loadData(),storage=createMemoryStorage(),s=createSaveSystem({storage,version:6,migrations,validateState:state=>validateSavedGame(data,state)});
  const g=createGame({data,seed:8});s.save('slot1',g.snapshot());const before=storage.getItem('quarry.save.slot1');
  const old={version:6,savedAt:100,summary:{},state:structuredClone(g.snapshot())};expect(s.inspectImport(JSON.stringify(old)).version).toBe(6);
@@ -55,7 +59,7 @@ it('isolates migrated loads and reports blocked storage without breaking the men
  expect(s.load('slot1')).toEqual({money:3,upgraded:true});
  const blocked=createSaveSystem({storage:{getItem(){throw Error('Storage disabled');}},version:1});expect(blocked.latest()).toBeNull();expect(blocked.list()[0].error).toBe('Storage disabled');
 });
-it('exports the current company when browser storage is unavailable',()=>{
+it('exports the current company when browser storage is unavailable',slow,()=>{
  const data=loadData(),g=createGame({data,seed:19});g.actions.shovelDig({x:30,z:20});
  const s=createSaveSystem({storage:{getItem(){throw Error('Blocked');},setItem(){throw Error('Full');}},
   version:data.game.saveVersion,migrations,validateState:state=>validateSavedGame(data,state)});
