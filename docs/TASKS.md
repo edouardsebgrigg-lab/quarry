@@ -115,10 +115,10 @@ about playing it properly and fixing what gets in the way.
       tyre tracks and mud, grass tufts on the field, a pedal ramp and light-pedal key.
       On main: `d944458`, included with the Working Quarry upgrade.
 
-- [ ] **G-2 More ground, grass and driving** (Claude, `claude/ground-driving-2`): the automatic
+- [x] **G-2 More ground, grass and driving** (Claude, `claude/ground-driving-2`): the automatic
       changes up when the wheels spin (without hunting), wet tyre marks, a short-grass sward
       round you, rainwater standing in pits and hollows (turf soaks most of it up), wading
-      (drag, spray, splashing sounds, slower walking).
+      (drag, spray, splashing sounds, slower walking). On the branch; not yet on main.
 
 - [x] **H-7 A slow save test** (Claude, `claude/ground-driving-2`). `saveRecovery.test.js`
       "exports, validates and imports into the chosen slot" took about 1.6 s alone and failed once

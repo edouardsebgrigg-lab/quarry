@@ -4,6 +4,42 @@ One short entry per task, newest at the top: the task, the agent and branch, the
 `main`, what changed, what was actually run, and what wasn't verified. Older, longer reports
 are in `docs/archive/CODEX-CHECKPOINT.md`.
 
+## 8 October 2026 · More ground, grass and driving (Claude, `claude/ground-driving-2`)
+
+- Gearbox: an automatic reads its output shaft, so hard wheelspin now makes it change up, then
+  hold that gear for two seconds (changing up on spin alone hunted 1-2-1-2). Headless, empty
+  pickup 0-40 km/h floored: wet grass 18.2 to 16.5 s, dry grass 7.3 to 6.9 s; tarmac unchanged.
+- Tyre marks darken and glint in the rain (water in the ruts).
+- A short-grass sward round you: small blade cards every half metre or so within 14-36 m (by
+  graphics setting), fading out by distance, thinner on tracks, none on dug ground; tufts in
+  drifts. First pass read as bright stars, then as rows of rectangles; now darker, olive,
+  rounder and clumped.
+- Rainwater: `src/ground/basins.js` finds each hollow (priority flood) and fills it from its
+  lowest point with the rain its own ground keeps (dug, tipped or torn ground all of it, turf
+  2%), never past its spill. The field shader draws still, murky water with a damp rim; on
+  grass, water shallower than the grass shows as waterlogged ground. Raindrops ring on it.
+  Wet ground reflects a grey sky (the clear-sky environment map made puddles blue mirrors).
+  The search runs in slices of 2 ms or less after the ground's shape stops changing (about
+  50 ms whole on the home field in Node, 46 slices).
+  Found on the way: hollows' floors were being reset to each cell's own height, so water was
+  drawn as a sheet following the ground over whole dips (the first tests only checked cells
+  where the two agree); and turf keeping 15% of the rain flooded flat dips 8 cm deep. Both
+  fixed, with tests.
+- Wading: standing water drags at tyres by depth and takes a little grip, wheels and tracks
+  throw spray, tyres wash and slosh (synthesised), footsteps splash, walking slows.
+- H-7: the slow save test rebuilt the company five times (about 0.2 s each); the three tests
+  that build a company now allow 20 s.
+- Checked: unit tests (526), lint and build for every commit. Browser, Low quality, scripted:
+  the pit in rain (a flat pond in its bottom with a clean shoreline, the field round it dry;
+  with water switched off, the same view is dry); the sward from above and at eye level; a
+  scraped trench filling flat (27-36 cm, 1 cm on the grass beside it); the pickup driven into
+  it with real key presses (13 km/h to 2.8 km/h as it drops in); the pickup pushed through
+  shallow puddles at 9-12 km/h throwing 6-18 spray droplets, none on dry ground. No console
+  errors.
+  Not checked: sound by ear, a real GPU, a person driving, Medium and above. From above, shallow
+  muddy puddles read as dark wet mud (they reflect only a few per cent of the sky at that
+  angle); low down they show as grey water.
+
 ## 5 October 2026 · Complete-company progression (Codex, `codex/company-progression`)
 
 - Verification commit: `7f908e6`. Continued owner-directed development beyond the queue.
