@@ -69,6 +69,7 @@ export function createAudio({ volume = 0.8 } = {}) {
       beeper: toBuffer(S.beeper(sr)),
       alarm: toBuffer(S.broadbandAlarm(sr)),
       rain: toBuffer(S.rain(sr)),
+      wade: toBuffer(S.wade(sr)),
     });
     Object.assign(b.oneShots, {
       starter: [toBuffer(S.starter(sr))],
@@ -84,6 +85,7 @@ export function createAudio({ volume = 0.8 } = {}) {
       soilLong: [toBuffer(S.soilPour(sr, 1.6, 99))],
       stepGravel: [1, 2, 3, 4].map((k) => toBuffer(S.footstep(sr, { surface: 'gravel', seed: 60 + k }))),
       stepGrass: [1, 2, 3].map((k) => toBuffer(S.footstep(sr, { surface: 'grass', seed: 70 + k }))),
+      stepWater: [1, 2, 3].map((k) => toBuffer(S.splash(sr, 74 + k))),
       bird: [1, 2, 3, 4, 5, 6].map((k) => toBuffer(S.birdCall(sr, 80 + k))),
       coin: [toBuffer(S.coin(sr))],
       chime: [toBuffer(S.chime(sr))],

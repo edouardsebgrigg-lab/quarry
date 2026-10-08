@@ -261,6 +261,7 @@ export function createTruckPhysics({ RAPIER, world }, {
     slip: 0, bump: 0, airborne: false,
     wheelspin: 0, // 0..1: driven wheels asked for more than the ground can take
     locked: false, // braking harder than the ground allows: the wheels slide
+    wading: 0, // metres of standing water round the deepest wheel
   };
   // Each wheel's sideways force last step (N), to share its grip between cornering and braking
   // or driving (a tyre has one budget of grip: the friction circle).
@@ -388,10 +389,12 @@ export function createTruckPhysics({ RAPIER, world }, {
     const brakeForce = brake * T.brakeDecel * (mass + (towBraked ? cargoTonnes * 1000 * .85 : 0)); // fixed brake power: loaded trucks stop slower
     let grip = 0;
     let spinDemand = 0, spinGrip = 0, lockedWheels = 0;
+    out.wading = 0;
     for (let i = 0; i < 4; i++) {
       const surf = surfaceUnder(i);
       grip += surf.grip / 4;
       if (i === 0) out.surface = surf.name;
+      out.wading = Math.max(out.wading, surf.depth ?? 0); // (how deep the deepest wheel is in water)
       const front = i < 2;
       const load = (m * g) / 4;
       const rolling = surf.roll * load;

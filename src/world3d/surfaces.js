@@ -33,3 +33,17 @@ export function blendedGrip(shares, wet = 0, table = TABLE) {
   if (total <= 0) return surfaceGrip('dirt', wet, table);
   return { grip: grip / total, roll: roll / total, name };
 }
+
+// A tyre wading through `depth` metres of standing water on `surface` (from surfaceGrip or
+// blendedGrip): extra drag by depth, a little less grip, named 'water' (`under` is the ground).
+// Shallower than a few centimetres it's just wet ground and `surface` comes back unchanged.
+export function wading(surface, depth, table = handling.wading) {
+  if (!(depth >= table.minDepth)) return surface;
+  return {
+    grip: surface.grip * (1 - table.gripLoss),
+    roll: surface.roll + Math.min(table.maxDrag, depth * table.dragPerMetre),
+    name: 'water',
+    under: surface.name,
+    depth,
+  };
+}

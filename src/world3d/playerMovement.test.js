@@ -15,6 +15,13 @@ describe('responsive character movement',()=>{
     let drift=0;for(let i=0;i<10;i++){const d=floorTick(m,1/60,input());drift+=Math.hypot(d.x,d.z);}
     expect(m.state.speed).toBe(0);expect(drift).toBeLessThan(.25);
   });
+  it('wades more slowly the deeper the water, but always gets through',()=>{
+    const top=(wading)=>{const m=grounded();for(let i=0;i<40;i++)floorTick(m,1/60,input({forward:1,wading}));return m.state.speed;};
+    expect(top(0.01)).toBeCloseTo(4.5,6); // (a puddle doesn't slow you)
+    expect(top(0.2)).toBeLessThan(4.5);
+    expect(top(0.4)).toBeLessThan(top(0.2));
+    expect(top(3)).toBeGreaterThan(1.5);
+  });
   it('does not add coasting, strafing or sprinting to constrained barrow travel',()=>{
     const m=grounded();floorTick(m,1/60,input({forward:1,maxSpeed:1.7,moveYaw:Math.PI/2}));
     expect(m.state.x).toBeCloseTo(-1.7);expect(m.state.z).toBeCloseTo(0);

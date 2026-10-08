@@ -1,7 +1,8 @@
 import handling from '../../data/handling.json';
 
 // Pure movement state; Rapier resolves the requested displacement and feeds the result back.
-export function createPlayerMovement(tuning = handling.player) {
+// `input.wading` is how deep the water is round your feet (metres): it slows you down.
+export function createPlayerMovement(tuning = handling.player, wade = handling.wading) {
   const state = { x:0, z:0, vy:0, grounded:false, coyote:0, buffer:0, jumpDown:false, spent:false,
     speed:0, forwardSpeed:0, strafeSpeed:0, moving:false, sprinting:false, constrained:false, landed:false, landingSpeed:0,landingT:0 };
   let lastYaw = 0;
@@ -22,7 +23,8 @@ export function createPlayerMovement(tuning = handling.player) {
       let x=fx*input.forward+rx*input.right,z=fz*input.forward+rz*input.right;
       const length=Math.hypot(x,z);
       if(length>1){x/=length;z/=length;}
-      const speed=input.maxSpeed ?? (input.sprint?tuning.sprintSpeed:tuning.walkSpeed);
+      const depth=input.wading>=wade.minDepth?input.wading:0;
+      const speed=(input.maxSpeed ?? (input.sprint?tuning.sprintSpeed:tuning.walkSpeed))*Math.max(wade.walkSlowest,1-depth*wade.walkSlowPerMetre);
       const tx=x*speed,tz=z*speed;
       state.constrained=input.maxSpeed!=null;
       state.sprinting=!!input.sprint&&!state.constrained&&length>0;

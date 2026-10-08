@@ -93,5 +93,14 @@
       "roll": 0.02,
       "wetRoll": 0.02
     }
+  },
+  "wading": {
+    "_note": "Standing rainwater over a surface: drag on a tyre grows with how deep it wades (rolling resistance per metre of water, up to a cap), and the film of mud under the water takes a little grip. Shallower than minDepth is just wet ground. Walking, you slow by walkSlowPerMetre of your speed per metre of water, to no less than walkSlowest of it.",
+    "minDepth": 0.03,
+    "dragPerMetre": 0.4,
+    "maxDrag": 0.2,
+    "gripLoss": 0.1,
+    "walkSlowPerMetre": 1.4,
+    "walkSlowest": 0.4
   }
 }

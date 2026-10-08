@@ -16,7 +16,7 @@ import { createQuarryOperations } from './quarryOperations.js';
 import { createRegionalYards } from './regionalYards.js';
 import { quoteBuyerDelivery } from '../trade/index.js';
 import { buildPlaces } from './places.js';
-import { surfaceGrip, blendedGrip } from './surfaces.js';
+import { surfaceGrip, blendedGrip, wading } from './surfaces.js';
 import { pedalStep } from './pedals.js';
 import { createTyreMarks, markFor } from './tyreMarks.js';
 import { batchStatic } from './staticBatch.js';
@@ -75,6 +75,7 @@ const PLOT_SURFACE = {
 
 export async function createWorld3D({ container, game, settings, audio = null, notify, onPointerLockLost, onUseOffice, onLoadProgress }) {
   const { data } = game;
+  const STANDING = data.weather.standingWater; // (rainwater in hollows)
   const siteId = game.state.currentSiteId;
   const home = MAP.home;
   const grounds=availableGrounds(game.ctx,{all:true});
@@ -191,6 +192,7 @@ export async function createWorld3D({ container, game, settings, audio = null, n
 
   // What the ground is like under a wheel or track: grip (friction) and rolling resistance,
   // by surface and by how wet the ground is (it soaks up in the rain and dries after).
+  // Standing in a flooded hollow, the surface is water over the ground (see wading()).
   function groundSurface(x, z) {
     const wet = groundWeather.wet.value;
     if (!onPlot(x, z) && land.onRoad(x, z)) return surfaceGrip('asphalt', wet);
@@ -200,10 +202,18 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const i = Math.floor((x-ground.x0)/ground.cellSize), j = Math.floor((z-ground.z0)/ground.cellSize);
       if (!s.grass && !ground.cellBuilt(i,j)) {
         const r = ground.materialResponseAt(x,z);
-        return { grip: r.traction, roll: r.rollingResistance, name: r.material };
+        return wading({ grip: r.traction, roll: r.rollingResistance, name: r.material }, waterDepthAt(x, z));
       }
     }
-    return blendedGrip(s, wet);
+    return wading(blendedGrip(s, wet), waterDepthAt(x, z));
+  }
+  // How deep rainwater stands at (x, z) on one of your fields (0 if it's dry there).
+  function waterDepthAt(x, z) {
+    const depth = groundWeather.water.value;
+    if (!(depth > 0)) return 0;
+    const i = grounds.findIndex((g) => g.inside(x, z));
+    const level = i < 0 ? null : groundViews[i].waterAt(x, z, depth);
+    return level === null ? 0 : Math.max(0, level - heightAt(x, z));
   }
 
   const sounds = audio ? createWorldSounds({ audio, carRoute: laneRoute(plan, heightAt), groundSurface }) : null;
@@ -512,6 +522,8 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     player.input.right = (keys('right') ? 1 : 0) - (keys('left') ? 1 : 0);
     player.input.sprint = keys('sprint');
     player.input.jump = keys('jump');
+    const feet = player.feet();
+    player.input.wading = waterDepthAt(feet.x, feet.z); // (deep water slows you down)
   }
 
   // Road vehicles. A key works a pedal (pedals.js): it goes down over a quarter of a second, as a
@@ -643,7 +655,9 @@ export async function createWorld3D({ container, game, settings, audio = null, n
       const d = last ? Math.hypot(p.x - last.x, p.z - last.z) : 0;
       if (!last || d > 4) { t.set(p.key, { x: p.x, y: p.y, z: p.z }); continue; }
       if (d < 0.4) continue;
-      const look = markFor(groundSurface(p.x, p.z).name, wet, p.slide);
+      const surf = groundSurface(p.x, p.z);
+      // (through shallow water the tracks still show; deeper, nothing does)
+      const look = surf.name === 'water' && surf.depth > 0.1 ? null : markFor(surf.under ?? surf.name, wet, p.slide);
       if (look) tyreMarks.add({ x0: last.x, y0: last.y, z0: last.z, x1: p.x, y1: p.y, z1: p.z, width: p.width, ...look });
       Object.assign(last, { x: p.x, y: p.y, z: p.z });
     }
@@ -1150,7 +1164,13 @@ export async function createWorld3D({ container, game, settings, audio = null, n
           }
         }
       }
+      // Through standing water: spray off each wheel, more the faster and deeper it goes.
+      if ((f.wading ?? 0) > 0 && speed > 0.8 && veh.wheelContacts) splash(st, veh.wheelContacts(), speed, dt);
     } else {
+      if (groundWeather.water.value > 0 && Math.abs(veh.speed()) > 0.5) {
+        const p = veh.position();
+        splash(st, [{ x: p.x, y: heightAt(p.x, p.z), z: p.z }], Math.abs(veh.speed()), dt, veh.radius * 0.6);
+      }
       st.dust += dt * ((f.digging ? 9 : 0) + f.travel * 5) * (1 - 0.8 * wet);
       while (st.dust > 1) {
         st.dust -= 1;
@@ -1159,6 +1179,28 @@ export async function createWorld3D({ container, game, settings, audio = null, n
         particles.spawn(at, { count: 1, spread: 0.6, up: f.digging ? 0.8 : 0.3, life: 2, size: 1, color: wet > 0.5 ? 0x6a5a46 : 0xb7a07c, opacity: 0.28 * (1 - 0.5 * wet) });
       }
     }
+  }
+
+  // Droplets thrown up where wheels or tracks (`points`, on the ground) push through water.
+  function splash(st, points, speed, dt, spread = 0.3) {
+    st.splash = (st.splash ?? 0) + dt * speed * 6;
+    if (st.splash < 1) return;
+    st.splash = Math.min(st.splash, 4);
+    for (const c of points) {
+      const depth = waterDepthAt(c.x, c.z);
+      if (depth < 0.03) continue;
+      const n = Math.floor(st.splash * Math.min(1, depth * 5));
+      const lift = 1 + Math.min(3, speed * 0.4) * Math.min(1, depth * 4);
+      for (let k = 0; k < n; k++) {
+        const a = Math.random() * Math.PI * 2;
+        const out = 0.6 + speed * 0.25;
+        particles.spawn({ x: c.x, y: c.y + depth, z: c.z }, {
+          count: 1, spread, life: 0.8, size: 0.06 + Math.random() * 0.06, color: 0x8c8474, opacity: 0.7,
+          velocity: { x: Math.cos(a) * out, y: lift, z: Math.sin(a) * out }, gravity: 9.8, growth: 0,
+        });
+      }
+    }
+    st.splash -= Math.floor(st.splash);
   }
 
   function update(dt, { paused, keyboard }) {
@@ -1260,8 +1302,10 @@ export async function createWorld3D({ container, game, settings, audio = null, n
     groundWeather.wet.value += ((felt.rain > 0.05 ? Math.min(1, felt.rain * 1.3) : 0) - groundWeather.wet.value) * (settle ? 1 : Math.min(1, dt * (felt.rain > 0.05 ? 0.08 : 0.02)));
     // Rainwater in the hollows: it collects while it rains (a heavy shower fills a pit's bottom
     // in a minute or so) and soaks away far more slowly.
-    if (settle) groundWeather.water.value = felt.rain > 0.05 ? 0.45 * Math.min(1, felt.rain * 1.3) : 0;
-    else groundWeather.water.value = Math.max(0, Math.min(0.6, groundWeather.water.value + dt * (felt.rain > 0.05 ? felt.rain * 0.008 : -0.0015)));
+    groundWeather.rain.value = felt.rain;
+    groundWeather.time.value = (groundWeather.time.value + dt) % 1000;
+    if (settle) groundWeather.water.value = felt.rain > 0.05 ? STANDING.settledDepth * Math.min(1, felt.rain * 1.3) : 0;
+    else groundWeather.water.value = Math.max(0, Math.min(STANDING.maxDepth, groundWeather.water.value + dt * (felt.rain > 0.05 ? felt.rain * STANDING.risePerSecond : -STANDING.fallPerSecond)));
     rain.update(paused ? 0 : dt, camera, felt.rain);
     rainFelt = paused ? 0 : felt.rain;
     const here = v ? v.position() : player.feet();
@@ -1493,6 +1537,9 @@ export async function createWorld3D({ container, game, settings, audio = null, n
   // For automated play tests and the dev console.
   const debug = {
     settleWeather() { weatherSettle = true; },
+    groundWeather,
+    waterDepthAt: (x, z) => waterDepthAt(x, z),
+    groundSurface: (x, z) => groundSurface(x, z),
     hands,
     renderer,
     places,

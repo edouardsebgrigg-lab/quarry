@@ -41,12 +41,14 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
         ? {
           gravel: audio.loopVoice('gravel'),
           road: audio.loopVoice('road'),
+          wade: audio.loopVoice('wade'),
           beeper: v.type === 'truck' ? audio.loopVoice('beeper') : null,
           ram: v.type === 'truck' || v.type === 'tractor' ? audio.loopVoice('tipperRam') : null,
           pto: v.type === 'tractor' ? audio.loopVoice('pto') : null,
         }
         : {
           tracks: audio.loopVoice('tracks'), crunch: audio.loopVoice('gravel'), hyd: audio.loopVoice('hydraulic'), scrape: audio.loopVoice('scrape'), pump: audio.whineVoice(),
+          wade: audio.loopVoice('wade'),
           relief: v.digger ? audio.whineVoice() : null, // the relief valve squealing
           // Site plant warns people nearby when it moves: the dumper when it reverses, a used
           // digger whenever it tracks (a modern broadband alarm). The rusty dumper still has
@@ -102,7 +104,10 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
     const paved = f.surface === 'asphalt';
     const roll = Math.min(1, speed / 12);
     const muffle = inside ? 0.55 : 1;
-    m.extra.gravel?.set({ gain: (paved ? 0 : roll * 0.55 + f.slip * 0.3) * muffle, rate: 0.55 + speed / 14, pos: body, cutoff: inside ? 2500 : 16000 });
+    // (through standing water the tyres wash and slosh instead)
+    const wading = Math.min(1, (f.wading ?? 0) * 4);
+    m.extra.gravel?.set({ gain: (paved ? 0 : roll * 0.55 + f.slip * 0.3) * muffle * (1 - 0.7 * wading), rate: 0.55 + speed / 14, pos: body, cutoff: inside ? 2500 : 16000 });
+    m.extra.wade?.set({ gain: wading * Math.min(1, speed / 4) * 0.6 * muffle, rate: 0.8 + Math.min(0.5, speed / 16), pos: body, cutoff: inside ? 2000 : 9000 });
     m.extra.road?.set({ gain: (paved ? roll * 0.45 : roll * 0.08) * muffle, rate: 0.6 + speed / 20, pos: body, cutoff: inside ? 1500 : 16000 });
     // Air brakes let go with a "pssht" when you stop.
     if (m.braking && !f.braking && speed < 0.8) audio.play('hiss', { pos: body, gain: inside ? 0.35 : 0.5 });
@@ -173,7 +178,10 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
     // Tracks clanking round.
     m.extra.tracks?.set({ gain: Math.min(1, f.travel / 1.2) * 0.8, rate: 0.35 + f.travel * 0.9, pos: v3(v.position()) });
     // Stone crushing under the track shoes: slower and duller than tyres.
-    m.extra.crunch?.set({ gain: Math.min(1, f.travel / 1.5) * (inside ? 0.2 : 0.35), rate: 0.4 + f.travel * 0.35, pos: v3(v.position()), cutoff: inside ? 1800 : 5000 });
+    const p = v.position();
+    const water = groundSurface(p.x, p.z).depth ?? 0;
+    m.extra.crunch?.set({ gain: Math.min(1, f.travel / 1.5) * (inside ? 0.2 : 0.35) * (water > 0 ? 0.4 : 1), rate: 0.4 + f.travel * 0.35, pos: v3(p), cutoff: inside ? 1800 : 5000 });
+    m.extra.wade?.set({ gain: Math.min(1, water * 4) * Math.min(1, f.travel / 1.2) * (inside ? 0.25 : 0.45), rate: 0.7 + f.travel * 0.2, pos: v3(p), cutoff: inside ? 1800 : 8000 });
     if (m.extra.alarm) {
       const moving = v.type === 'dumper' ? f.reversing : f.travel > 0.08;
       m.extra.alarm.set({ gain: moving && m.level > 0.5 ? 0.3 : 0, pos: v3(v.position()) });
@@ -283,8 +291,9 @@ export function createWorldSounds({ audio, carRoute = null, groundSurface }) {
         stepDist = 0;
         const s = groundSurface(feet.x, feet.z);
         const soft = s.name === 'grass';
-        audio.play(soft ? 'stepGrass' : 'stepGravel', {
-          gain: (player.input?.sprint ? 0.42 : 0.3) * (soft ? 0.8 : 1), rate: 0.9 + Math.random() * 0.2,
+        const water = s.name === 'water';
+        audio.play(water ? 'stepWater' : soft ? 'stepGrass' : 'stepGravel', {
+          gain: (player.input?.sprint ? 0.42 : 0.3) * (soft ? 0.8 : water ? 0.5 + Math.min(0.5, s.depth * 2) : 1), rate: 0.9 + Math.random() * 0.2,
         });
       }
     }

@@ -117,7 +117,8 @@ about playing it properly and fixing what gets in the way.
 
 - [ ] **G-2 More ground, grass and driving** (Claude, `claude/ground-driving-2`): the automatic
       changes up when the wheels spin (without hunting), wet tyre marks, a short-grass sward
-      round you, rainwater standing in pits and hollows.
+      round you, rainwater standing in pits and hollows (turf soaks most of it up), wading
+      (drag, spray, splashing sounds, slower walking).
 
 - [x] **H-7 A slow save test** (Claude, `claude/ground-driving-2`). `saveRecovery.test.js`
       "exports, validates and imports into the chosen slot" took about 1.6 s alone and failed once

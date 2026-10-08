@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { surfaceGrip, blendedGrip } from './surfaces.js';
+import { surfaceGrip, blendedGrip, wading } from './surfaces.js';
 
 describe('grip under a tyre', () => {
   it('ranks the surfaces the way tyres feel them: tarmac, rock, dirt and gravel, then grass', () => {
@@ -25,5 +25,20 @@ describe('grip under a tyre', () => {
     expect(b.name).toBe('gravel');
     expect(b.grip).toBeCloseTo(0.25 * surfaceGrip('grass').grip + 0.75 * surfaceGrip('gravel').grip);
     expect(blendedGrip({}).name).toBe('dirt');
+  });
+
+  it('standing water drags at a wading tyre, more the deeper it is, and takes a little grip', () => {
+    const mud = surfaceGrip('dirt', 1);
+    expect(wading(mud, 0.01)).toBe(mud); // (a film of water is just wet ground)
+    const ankle = wading(mud, 0.1);
+    const knee = wading(mud, 0.4);
+    expect(ankle.name).toBe('water');
+    expect(ankle.under).toBe('dirt');
+    expect(ankle.roll).toBeGreaterThan(mud.roll);
+    expect(knee.roll).toBeGreaterThan(ankle.roll);
+    expect(knee.grip).toBeLessThan(mud.grip);
+    expect(knee.grip).toBeGreaterThan(mud.grip * 0.8);
+    // (deep water drags hard but doesn't stop a vehicle dead)
+    expect(wading(mud, 5).roll).toBeLessThan(0.3);
   });
 });

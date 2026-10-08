@@ -43,7 +43,7 @@ describe('sound synthesis', { timeout: 30000 }, () => {
   });
 
   it('builds seamless loops for rolling, tracks, digging, hydraulics and wind', () => {
-    for (const f of [S.gravelRoll, S.roadRoll, S.trackClank, S.scrape, S.hydraulicHiss, S.tipperRam, S.ptoDrive, S.wind, S.beeper]) {
+    for (const f of [S.gravelRoll, S.roadRoll, S.trackClank, S.scrape, S.hydraulicHiss, S.tipperRam, S.ptoDrive, S.wind, S.beeper, S.wade]) {
       const buf = f(SR);
       check(buf);
       seamless(buf);
@@ -53,7 +53,7 @@ describe('sound synthesis', { timeout: 30000 }, () => {
   it('builds one-shot sounds', () => {
     for (const buf of [S.starter(SR), S.rockPour(SR), S.metalBoom(SR), S.thud(SR), S.clunk(SR), S.airHiss(SR),
       S.footstep(SR), S.footstep(SR, { surface: 'grass' }), S.birdCall(SR), S.coin(SR), S.chime(SR), S.shovelBite(SR),
-      S.soilPour(SR), S.soilPour(SR, 1.6), S.quarryBlast(SR)]) check(buf);
+      S.soilPour(SR), S.soilPour(SR, 1.6), S.quarryBlast(SR), S.splash(SR)]) check(buf);
   });
 
   it('is deterministic for a given seed', () => {

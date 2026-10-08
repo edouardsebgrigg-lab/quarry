@@ -152,6 +152,8 @@ export function markFor(surface, wet = 0, slide = 0) {
       return { color: 0x4e4a44, strength: 0.18 + 0.15 * w + 0.25 * s };
     case 'rock':
       return s > 0.3 ? { color: 0x3a3836, strength: 0.2 * s } : null;
+    case 'water': // (under standing water: nothing to see)
+      return null;
     default: // dirt and the field's soils: a tread print, deeper and darker when wet
       return { color: w > 0.4 ? 0x45351f : 0x4a3d2c, strength: 0.3 + 0.25 * w + 0.2 * s };
   }

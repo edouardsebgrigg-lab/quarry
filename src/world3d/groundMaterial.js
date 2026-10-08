@@ -20,9 +20,10 @@ const DAMP_SHEEN = `
 
 // How wet the ground is (0 dry .. 1 soaked), shared by every ground material: wet soil is darker
 // and shinier. The world eases it up when it rains and down again after.
-export const groundWeather = { wet: { value: 0 }, water: { value: 0 } };
+export const groundWeather = { wet: { value: 0 }, water: { value: 0 }, rain: { value: 0 }, time: { value: 0 } };
 // (`water`: metres of rainwater standing in the field's hollows, rising while it rains and
-// draining away slowly after; how high it can get in each one comes from src/ground/basins.js)
+// draining away slowly after; how high it can get in each one comes from src/ground/basins.js;
+// `rain` 0..1 is how hard it's raining now and `time` runs in seconds, for the drops' rings)
 // (Grass doesn't pool water, so it only gets a little of the sheen: b.x is the grass share.)
 const WET = `
   float wetK = uWet * (1.0 - 0.8 * b.x);
@@ -185,6 +186,9 @@ export function createGroundMaterial({ fields = false, strata = false, water = n
     uniforms.t_water = { value: water?.texture ?? placeholder([0, 0, 0, 255]) };
     uniforms.uWaterXform = { value: water?.xform ?? new THREE.Vector4(0, 0, 1, 1) };
     uniforms.uWaterDepth = groundWeather.water;
+    uniforms.uWaterFull = { value: water?.full ?? 1 };
+    uniforms.uRain = groundWeather.rain;
+    uniforms.uTime = groundWeather.time;
   }
 
   mat.onBeforeCompile = (shader) => {
@@ -230,6 +234,29 @@ export function createGroundMaterial({ fields = false, strata = false, water = n
         uniform sampler2D t_water;
         uniform vec4 uWaterXform;
         uniform float uWaterDepth;
+        uniform float uWaterFull;
+        uniform float uRain;
+        uniform float uTime;
+        // Raindrops landing on standing water: each drop sends out a ring that spreads and fades.
+        // Drops fall at random in a grid of cells (two grids, offset); returns the surface's slope.
+        vec2 rainRings(vec2 p, float t) {
+          vec2 slope = vec2(0.0);
+          for (int layer = 0; layer < 2; layer++) {
+            vec2 q = p * (layer == 0 ? 2.1 : 2.9) + float(layer) * 7.13;
+            vec2 cell = floor(q);
+            for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++) {
+              vec2 c = cell + vec2(float(dx), float(dy));
+              vec3 h = fract(sin(vec3(dot(c, vec2(127.1, 311.7)), dot(c, vec2(269.5, 183.3)), dot(c, vec2(419.2, 371.9)))) * 43758.5453);
+              float phase = fract(t * (0.8 + 0.4 * h.z) + h.z);
+              vec2 d = q - (c + h.xy);
+              float r = length(d);
+              float x = r - phase * 0.9;
+              float ring = sin(x * 28.0) * exp(-x * x * 90.0) * (1.0 - phase) * (1.0 - phase);
+              slope += d / max(r, 1e-3) * ring;
+            }
+          }
+          return slope;
+        }
         #endif
 
         // Two samples at different scales and angles, mixed by a large noise field,
@@ -345,15 +372,23 @@ export function createGroundMaterial({ fields = false, strata = false, water = n
         // Rainwater standing in a hollow: wet mud at its margin, then still, murky water, as
         // deep as the rain has filled it and never above where it would spill out.
         float waterAmt = 0.0;
+        vec3 waterN = vec3(0.0, 1.0, 0.0);
         #ifdef STRATA
         {
-          vec2 fs = texture2D(t_water, (vWPos.xz - uWaterXform.xy) * uWaterXform.zw).rg;
-          float level = min(fs.y, fs.x + uWaterDepth);
-          float wd = level - vWPos.y;
-          if (fs.y - fs.x > 0.02 && uWaterDepth > 0.002 && wd > -0.03) {
-            diffuseColor.rgb *= 1.0 - 0.35 * smoothstep(-0.03, 0.0, wd) * step(wd, 0.0); // (the damp rim)
-            waterAmt = smoothstep(0.0, 0.03, wd);
+          vec3 fs = texture2D(t_water, (vWPos.xz - uWaterXform.xy) * uWaterXform.zw).rgb; // floor, spill, rise when full
+          float rise = fs.z * clamp(uWaterDepth / uWaterFull, 0.0, 1.0);
+          float wd = fs.x + rise - vWPos.y;
+          if (rise > 0.002 && wd > -0.03) {
+            // (a damp rim, and waterlogged ground under water too shallow to cover the grass,
+            // which stands up through it: open water only once it's deeper than the grass)
+            diffuseColor.rgb *= 1.0 - 0.35 * smoothstep(-0.03, 0.0, wd);
+            float grassTop = 0.08 * b.x;
+            waterAmt = smoothstep(grassTop, grassTop + 0.03, wd);
             diffuseColor.rgb = mix(diffuseColor.rgb, mix(diffuseColor.rgb * 0.55, vec3(0.06, 0.058, 0.045), smoothstep(0.03, 0.4, wd)), waterAmt);
+            if (uRain > 0.02 && waterAmt > 0.0) {
+              vec2 rings = rainRings(vWPos.xz, uTime) * 0.12 * uRain;
+              waterN = normalize(vec3(-rings.x, 1.0, -rings.y));
+            }
           }
         }
         #endif
@@ -366,7 +401,7 @@ export function createGroundMaterial({ fields = false, strata = false, water = n
         material.roughness = mix(material.roughness, 0.04, waterAmt);
         material.specularF90 = mix(material.specularF90, 1.0, waterAmt);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
-        normal = normalize((viewMatrix * vec4(mix(groundWN, vec3(0.0, 1.0, 0.0), waterAmt), 0.0)).xyz);
+        normal = normalize((viewMatrix * vec4(mix(groundWN, waterN, waterAmt), 0.0)).xyz);
       `)
       // (it only rains under cloud, but the environment map is a clear sky: wet ground and
       // standing water reflect grey, dimmer light, not a blue sky)

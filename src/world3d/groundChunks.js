@@ -4,7 +4,10 @@
 // gravel, and layered rock faces on steep cut walls.
 import * as THREE from 'three';
 import { createGroundMaterial } from './groundMaterial.js';
-import { findBasins } from '../ground/basins.js';
+import { findBasins, basinSteps, waterLevel } from '../ground/basins.js';
+import weather from '../../data/weather.json';
+
+const STANDING = weather.standingWater;
 
 // Surface mix (grass, dirt, gravel, rock) and colour tint for each material.
 const LOOK = {
@@ -66,26 +69,76 @@ export function createGroundView({ scene, physics, ground, onChange = null }) {
   const nz = ground.nz;
   const matIds = ground.materials;
   // Where rainwater can stand: each cell's hollow floor and spill level, in a texture the
-  // shader reads (worked out again a moment after the ground stops changing, not every frame).
+  // shader reads. Worked out again a moment after the ground's shape stops changing (not when
+  // only the grass wears), a few milliseconds a frame so digging doesn't stutter.
   const waterData = new Float32Array(nx * nz * 4);
   const waterTexture = new THREE.DataTexture(waterData, nx, nz, THREE.RGBAFormat, THREE.FloatType);
   waterTexture.magFilter = THREE.NearestFilter;
   waterTexture.minFilter = THREE.NearestFilter;
-  waterTexture.needsUpdate = true;
-  function findWater() {
-    const { spill, floor } = findBasins((i, j) => ground.cellHeight(i, j), nx, nz);
+  // (whole turf soaks most rain up; dug, tipped or torn ground keeps it: data/weather.json; the
+  // texture holds each cell's hollow floor, spill level and how far the water rises when full)
+  const heights = new Float32Array(nx * nz);
+  const holds = new Float32Array(nx * nz);
+  const holdAt = (i, j) => (ground.cellDisturbed(i, j) ? 1 : STANDING.turfHolds);
+  for (let j = 0; j < nz; j++) {
+    for (let i = 0; i < nx; i++) {
+      heights[j * nx + i] = ground.cellHeight(i, j);
+      holds[j * nx + i] = holdAt(i, j);
+    }
+  }
+  const basinOptions = { holds, rain: STANDING.maxDepth };
+  function showWater({ spill, floor, rise }) {
     for (let k = 0; k < nx * nz; k++) {
       waterData[k * 4] = floor[k];
       waterData[k * 4 + 1] = spill[k];
+      waterData[k * 4 + 2] = rise[k];
     }
     waterTexture.needsUpdate = true;
   }
-  findWater();
+  showWater(findBasins(heights, nx, nz, basinOptions));
+  let waterStale = false;
   let groundChangedAt = 0;
-  let waterFoundAt = 0;
+  let waterStartedAt = 0;
+  let waterJob = null;
+  // (a redrawn chunk whose heights moved, or whose turf was dug or torn: the hollows and what
+  // they keep may have changed)
+  function reshaped(c) {
+    const { i0, j0, i1, j1 } = ground.chunkRange(c);
+    let moved = false;
+    for (let j = j0; j < j1; j++) {
+      for (let i = i0; i < i1; i++) {
+        const k = j * nx + i;
+        const h = ground.cellHeight(i, j);
+        const keep = holdAt(i, j);
+        if (Math.abs(h - heights[k]) > 1e-3 || keep !== holds[k]) {
+          heights[k] = h;
+          holds[k] = keep;
+          moved = true;
+        }
+      }
+    }
+    return moved;
+  }
+  function updateWater(now) {
+    if (!waterJob && waterStale && (now - groundChangedAt > 1000 || now - waterStartedAt > 4000)) {
+      waterJob = basinSteps(heights, nx, nz, basinOptions);
+      waterStale = false;
+      waterStartedAt = now;
+    }
+    if (!waterJob) return;
+    for (;;) {
+      const r = waterJob.next();
+      if (r.done) {
+        showWater(r.value);
+        waterJob = null;
+        return;
+      }
+      if (performance.now() - now > 3) return;
+    }
+  }
   const material = createGroundMaterial({
     strata: true,
-    water: { texture: waterTexture, xform: new THREE.Vector4(ground.x0, ground.z0, 1 / (nx * cell), 1 / (nz * cell)) },
+    water: { texture: waterTexture, xform: new THREE.Vector4(ground.x0, ground.z0, 1 / (nx * cell), 1 / (nz * cell)), full: STANDING.maxDepth },
   });
   const chunks = new Map(); // chunk index -> { mesh, collider }
   const pending = new Set();
@@ -200,16 +253,16 @@ export function createGroundView({ scene, physics, ground, onChange = null }) {
   return {
     // Rebuild the chunks whose ground changed (a few per frame).
     update() {
+      const now = performance.now();
       for (const c of ground.takeDirtyChunks()) {
         pending.add(c);
-        groundChangedAt = performance.now();
+        if (reshaped(c)) {
+          waterStale = true;
+          groundChangedAt = now;
+        }
       }
       // (the hollows: a second after digging stops, or every few seconds while it goes on)
-      const now = performance.now();
-      if (groundChangedAt > waterFoundAt && (now - groundChangedAt > 1000 || now - waterFoundAt > 4000)) {
-        findWater();
-        waterFoundAt = now;
-      }
+      updateWater(now);
       let n = 0;
       for (const c of pending) {
         if (n++ >= REBUILDS_PER_FRAME) break;
@@ -220,6 +273,15 @@ export function createGroundView({ scene, physics, ground, onChange = null }) {
           onChange(ground.x0 + i0 * cell, ground.z0 + j0 * cell, ground.x0 + i1 * cell - 0.01, ground.z0 + j1 * cell - 0.01);
         }
       }
+    },
+    // The level of the water standing at (x, z) when `depth` metres of rain have fallen (see
+    // groundWeather.water), or null.
+    waterAt(x, z, depth) {
+      const i = Math.floor((x - ground.x0) / cell);
+      const j = Math.floor((z - ground.z0) / cell);
+      if (i < 0 || j < 0 || i >= nx || j >= nz || !(depth > 0)) return null;
+      const k = (j * nx + i) * 4;
+      return waterLevel(waterData[k], waterData[k + 2], depth / STANDING.maxDepth);
     },
     dispose() {
       for (const { mesh, collider } of chunks.values()) {

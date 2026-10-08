@@ -25,7 +25,7 @@ export function createPlayer({ physics, spawn }) {
   const look = { yaw: spawn.yaw ?? 0, pitch: 0 };
   // maxSpeed and moveYaw (optional) override the walking speed and direction, e.g. while
   // pushing a wheelbarrow you walk slower and go where the barrow points.
-  const input = { forward: 0, right: 0, sprint: false, jump: false, maxSpeed: null, moveYaw: null };
+  const input = { forward: 0, right: 0, sprint: false, jump: false, maxSpeed: null, moveYaw: null, wading: 0 };
 
   function step(dt) {
     if (!active || !Number.isFinite(dt) || dt <= 0) return;

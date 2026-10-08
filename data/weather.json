@@ -12,5 +12,13 @@
     "rain": { "sunny": 0.15, "cloudy": 0.35, "showers": 0.25, "rain": 0.25 }
   },
   "first": "sunny",
-  "changeHours": [9, 15]
+  "changeHours": [9, 15],
+  "standingWater": {
+    "_note": "Rainwater in hollows (world view and wading). While it rains, rain 'falls' at risePerSecond x rain (metres a second) up to maxDepth; after, it drains at fallPerSecond. settledDepth is where it starts when you load into rain. Each hollow keeps the rain on its own ground (all of it on dug, tipped or torn ground, turfHolds of it on whole turf) and fills from its lowest point, never past where it would spill.",
+    "settledDepth": 0.45,
+    "risePerSecond": 0.008,
+    "fallPerSecond": 0.0015,
+    "maxDepth": 0.6,
+    "turfHolds": 0.15
+  }
 }

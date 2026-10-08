@@ -546,6 +546,49 @@ export function footstep(sr, { surface = 'gravel', seed = 17 } = {}) {
   return normalize(mix([crunch, 1], [heel, hard ? 0.35 : 0.5]), 0.8);
 }
 
+// Water's voice is bubbles: each one rings briefly at a pitch set by its size (a 3 mm bubble
+// near 1 kHz) and rises in pitch as it reaches the surface. Adds one to `buf` at sample `at`.
+function bubble(buf, sr, at, f0, amp, decay) {
+  const n = Math.min(buf.length - at, Math.round(decay * 6 * sr));
+  let phase = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / sr;
+    phase += (2 * Math.PI * f0 * (1 + 6 * t)) / sr;
+    buf[at + i] += Math.sin(phase) * amp * Math.exp(-t / decay) * Math.min(1, i / 8);
+  }
+}
+
+// A foot (or a wheel) going into shallow water: a slap, a burst of bubbles, then drips.
+export function splash(sr, seed = 23) {
+  const n = Math.round(0.6 * sr);
+  const r = rng(seed);
+  const slap = white(n, r);
+  for (let i = 0; i < n; i++) slap[i] *= Math.exp(-i / (0.018 * sr));
+  const bubbles = new Float32Array(n);
+  for (let k = 0; k < 26; k++) {
+    const t = Math.pow(r(), 1.8) * 0.3; // (most at the start)
+    bubble(bubbles, sr, Math.floor(t * sr), 350 + r() * 1800, (0.3 + r()) * (1 - t * 2), 0.006 + r() * 0.02);
+  }
+  for (let k = 0; k < 6; k++) bubble(bubbles, sr, Math.floor((0.2 + r() * 0.35) * sr), 1400 + r() * 2200, 0.15 + r() * 0.2, 0.004 + r() * 0.006);
+  return normalize(mix([filter(slap, 'bandpass', 1100, 0.6, sr), 0.6], [bubbles, 1]), 0.8);
+}
+
+// Wheels or tracks pushing through standing water (loop): a sloshing wash with bubbles
+// rolling through it. Played louder the deeper and faster.
+export function wade(sr, seconds = 2, seed = 24) {
+  const n = Math.round(seconds * sr);
+  const fade = Math.round(0.2 * sr);
+  const r = rng(seed);
+  const wash = filter(white(n + fade, r), 'bandpass', 700, 0.5, sr);
+  for (let i = 0; i < n + fade; i++) {
+    const t = i / sr;
+    wash[i] *= 0.45 + 0.35 * Math.abs(Math.sin(2 * Math.PI * 1.3 * t)) + 0.2 * Math.abs(Math.sin(2 * Math.PI * 2.9 * t + 1));
+  }
+  const bubbles = new Float32Array(n + fade);
+  for (let k = 0; k < seconds * 70; k++) bubble(bubbles, sr, Math.floor(r() * (n + fade - 0.1 * sr)), 250 + r() * 1300, 0.2 + r() * 0.6, 0.008 + r() * 0.025);
+  return normalize(loopify(mix([normalize(wash, 0.5), 1], [normalize(bubbles, 0.5), 1]), fade), 0.75);
+}
+
 // A bird's call: a few quick whistled notes (skylark-ish twittering).
 export function birdCall(sr, seed = 18) {
   const r = rng(seed);
